@@ -1,0 +1,49 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>org.jboss.logmanager</groupId>
+    <artifactId>jboss-logmanager</artifactId>
+    <packaging>jar</packaging>
+    <version>1.0.0.CR1</version>
+    <dependencies/>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.0.2</version>
+                <configuration>
+                    <source>1.5</source>
+                    <target>1.5</target>
+                </configuration>
+            </plugin>
+        </plugins>
+        <finalName>jboss-logmanager</finalName>
+    </build>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <doclet>net.gleamynode.apiviz.APIviz</doclet>
+                    <docletArtifact>
+                        <groupId>org.jboss.apiviz</groupId>
+                        <artifactId>apiviz</artifactId>
+                        <version>1.2.5.GA</version>
+                    </docletArtifact>
+                    <doctitle><![CDATA[JBoss LogManager 1.0.0.CR1]]></doctitle>
+                    <header><![CDATA[JBoss LogManager 1.0.0.CR1]]></header>
+                    <footer><![CDATA[JBoss LogManager 1.0.0.CR1]]></footer>
+                    <bottom><![CDATA[<i>Copyright &#169; 2009 JBoss, a division of Red Hat, Inc.</i>]]></bottom>
+                    <links>
+                        <link>http://java.sun.com/j2se/1.5.0/docs/api/</link>
+                    </links>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
+</project>

@@ -1,0 +1,250 @@
+package org.jboss.logmanager;
+
+import java.beans.PropertyChangeListener;
+import java.io.InputStream;
+import java.io.PrintStream;
+import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.NoSuchElementException;
+import java.util.Iterator;
+import java.util.ListIterator;
+import java.util.Collection;
+
+import java.util.logging.Logger;
+
+/**
+ * Simplified log manager.  Designed to work around the (many) design flaws of the JDK platform log manager.
+ */
+public final class LogManager extends java.util.logging.LogManager {
+
+    /**
+     * Construct a new logmanager instance.  Attempts to plug a known memory leak in {@link java.util.logging.Level} as
+     * well.
+     */
+    public LogManager() {
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @SuppressWarnings ({"unchecked"})
+            public Void run() {
+                final Class<java.util.logging.Level> lc = java.util.logging.Level.class;
+                try {
+                    /* This mysterious-looking hack is designed to trick JDK logging into not leaking classloaders and
+                       so forth when adding levels, by simply shutting down the craptastic level name "registry" that it keeps.
+                    */
+                    synchronized(lc) {
+                        final Field knownField = lc.getDeclaredField("known");
+                        knownField.setAccessible(true);
+                        final ArrayList<java.util.logging.Level> old = (ArrayList<java.util.logging.Level>) knownField.get(null);
+                        if (! (old instanceof ReadOnlyArrayList)) {
+                            knownField.set(null, new ReadOnlyArrayList<java.util.logging.Level>(old));
+                        }
+                    }
+                } catch (Exception e) {
+                    // ignore; just don't install
+                }
+                return null;
+            }
+        });
+    }
+
+    private static final class ReadOnlyArrayList<T> extends ArrayList<T> {
+
+        private static final long serialVersionUID = -6048215349511680936L;
+
+        private ReadOnlyArrayList(final Collection<? extends T> c) {
+            super(c);
+        }
+
+        public T set(final int index, final T element) {
+            // ignore
+            return null;
+        }
+
+        public T remove(final int index) {
+            // ignore
+            return null;
+        }
+
+        public boolean remove(final Object o) {
+            // ignore
+            return false;
+        }
+
+        public void clear() {
+            // ignore
+        }
+
+        protected void removeRange(final int fromIndex, final int toIndex) {
+            // ignore
+        }
+
+        public Iterator<T> iterator() {
+            final Iterator<T> superIter = super.iterator();
+            return new Iterator<T>() {
+                public boolean hasNext() {
+                    return superIter.hasNext();
+                }
+
+                public T next() {
+                    return superIter.next();
+                }
+
+                public void remove() {
+                    // ignore
+                }
+            };
+        }
+
+        public ListIterator<T> listIterator(final int index) {
+            final ListIterator<T> superIter = super.listIterator(index);
+            return new ListIterator<T>() {
+                public boolean hasNext() {
+                    return superIter.hasNext();
+                }
+
+                public T next() {
+                    return superIter.next();
+                }
+
+                public boolean hasPrevious() {
+                    return superIter.hasPrevious();
+                }
+
+                public T previous() {
+                    return superIter.previous();
+                }
+
+                public int nextIndex() {
+                    return superIter.nextIndex();
+                }
+
+                public int previousIndex() {
+                    return superIter.previousIndex();
+                }
+
+                public void remove() {
+                    // ignore
+                }
+
+                public void set(final T o) {
+                    // ignore
+                }
+
+                public void add(final T o) {
+                    // ignore
+                }
+            };
+        }
+
+        public boolean removeAll(final Collection<?> c) {
+            // ignore
+            return false;
+        }
+
+        public boolean retainAll(final Collection<?> c) {
+            // ignore
+            return false;
+        }
+    }
+
+    // Configuration
+
+    /**
+     * Do nothing.  Does not support non-programmatic configuraiton.
+     */
+    public void readConfiguration() {
+        return;
+    }
+
+    /**
+     * Do nothing.  Does not support non-programmatic configuraiton.
+     *
+     * @param ins ignored
+     */
+    public void readConfiguration(InputStream ins) {
+        return;
+    }
+
+    /**
+     * Do nothing.  Properties and their listeners are not supported.
+     *
+     * @param l ignored
+     */
+    public void addPropertyChangeListener(PropertyChangeListener l) {
+        // no operation - properties are never changed
+    }
+
+    /**
+     * Do nothing.  Properties and their listeners are not supported.
+     *
+     * @param l ignored
+     */
+    public void removePropertyChangeListener(PropertyChangeListener l) {
+        // no operation - properties are never changed
+    }
+
+    /**
+     * Does nothing.  Properties are not supported.
+     *
+     * @param name ignored
+     * @return {@code null}
+     */
+    public String getProperty(String name) {
+        // no properties
+        return null;
+    }
+
+    /**
+     * Does nothing.  This method only causes trouble.
+     */
+    public void reset() {
+        // no operation!
+    }
+
+    /**
+     * Does nothing.  Logger names are not available.
+     *
+     * @return an empty enumeration
+     */
+    public Enumeration<String> getLoggerNames() {
+        return new Enumeration<String>() {
+            public boolean hasMoreElements() {
+                return false;
+            }
+
+            public String nextElement() {
+                throw new NoSuchElementException("No elements");
+            }
+        };
+    }
+
+    /**
+     * Do nothing.  Loggers are only added/acquired via {@link #getLogger(String)}.
+     *
+     * @param logger ignored
+     * @return {@code false}
+     */
+    public boolean addLogger(Logger logger) {
+        return false;
+    }
+
+    /**
+     * Get or create a logger with the given name.
+     *
+     * @param name the logger name
+     * @return the corresponding logger
+     */
+    public Logger getLogger(String name) {
+        return LogContext.getLogContext().getLogger(name);
+    }
+
+    public static void installSystemOut(String name, java.util.logging.Level level) {
+        System.setOut(new PrintStream(new WriterOutputStream(new LoggingWriter(name, level))));
+    }
+
+    public static void installSystemErr(String name, java.util.logging.Level level) {
+        System.setErr(new PrintStream(new WriterOutputStream(new LoggingWriter(name, level))));
+    }
+}
