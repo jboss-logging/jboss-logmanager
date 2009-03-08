@@ -50,11 +50,11 @@ public final class LogManager extends java.util.logging.LogManager {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @SuppressWarnings ({"unchecked"})
             public Void run() {
+                /* This mysterious-looking hack is designed to trick JDK logging into not leaking classloaders and
+                   so forth when adding levels, by simply shutting down the craptastic level name "registry" that it keeps.
+                */
                 final Class<java.util.logging.Level> lc = java.util.logging.Level.class;
                 try {
-                    /* This mysterious-looking hack is designed to trick JDK logging into not leaking classloaders and
-                       so forth when adding levels, by simply shutting down the craptastic level name "registry" that it keeps.
-                    */
                     synchronized(lc) {
                         final Field knownField = lc.getDeclaredField("known");
                         knownField.setAccessible(true);
@@ -65,6 +65,17 @@ public final class LogManager extends java.util.logging.LogManager {
                     }
                 } catch (Exception e) {
                     // ignore; just don't install
+                }
+                /* Next hack: the default Sun JMX implementation has a horribly inefficient log implementation which
+                   kills performance if a custom logmanager is used.  We'll just blot that out.
+                 */
+                try {
+                    final Class<?> traceManagerClass = Class.forName("com.sun.jmx.trace.Trace");
+                    final Field outField = traceManagerClass.getDeclaredField("out");
+                    outField.setAccessible(true);
+                    outField.set(null, null);
+                } catch (Exception e) {
+                    // ignore; just skip it
                 }
                 return null;
             }
