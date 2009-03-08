@@ -24,6 +24,8 @@ package org.jboss.logmanager;
 
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
+import java.util.HashMap;
 import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.WEAK;
 import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 
@@ -83,9 +85,7 @@ final class LoggerNode {
         } else {
             fullName = parent.fullName + "." + nodeName;
         }
-        synchronized(parent.children) {
-            parent.children.put(nodeName, this);
-        }
+        parent.children.put(nodeName, this);
         this.context = context;
     }
 
