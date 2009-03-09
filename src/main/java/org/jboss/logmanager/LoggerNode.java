@@ -30,7 +30,7 @@ import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.STRO
 /**
  * A node in the tree of logger names.  Maintains weak references to children and a strong reference to its parent.
  */
-final class LoggerNode {
+class LoggerNode {
 
     /**
      * The log manager.
@@ -126,6 +126,7 @@ final class LoggerNode {
             if (instance == null) {
                 instance = new LoggerInstance(this, fullName);
                 loggerRef = new WeakReference<LoggerInstance>(instance);
+                instance.setLevel(null);
             }
             return instance;
         }
@@ -169,11 +170,13 @@ final class LoggerNode {
     void updateChildEffectiveLevel(int newLevel) {
         for (LoggerNode node : children.values()) {
             if (node != null) {
-                final WeakReference<LoggerInstance> loggerRef = node.loggerRef;
-                if (loggerRef != null) {
-                    final LoggerInstance instance = loggerRef.get();
-                    if (instance != null) {
-                        instance.setEffectiveLevel(newLevel);
+                synchronized (node) {
+                    final WeakReference<LoggerInstance> loggerRef = node.loggerRef;
+                    if (loggerRef != null) {
+                        final LoggerInstance instance = loggerRef.get();
+                        if (instance != null) {
+                            instance.setEffectiveLevel(newLevel);
+                        }
                     }
                 }
             }

@@ -43,6 +43,7 @@ public class ExtLogRecord extends LogRecord {
      */
     public ExtLogRecord(java.util.logging.Level level, String msg) {
         super(level, msg);
+        setSourceClassName(null);
         ndc = NDC.get();
     }
 

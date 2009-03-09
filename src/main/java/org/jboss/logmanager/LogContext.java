@@ -34,14 +34,15 @@ import java.util.logging.LoggingPermission;
  */
 public final class LogContext {
     private static final LogContext SYSTEM_CONTEXT = new LogContext();
-    private static final Permission CREATE_CONTEXT_PERMISSION = new RuntimePermission("createLogContext", null);
-    private static final Permission SET_CONTEXT_SELECTOR_PERMISSION = new RuntimePermission("setLogContextSelector", null);
-    private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
+
+    static final Permission CREATE_CONTEXT_PERMISSION = new RuntimePermission("createLogContext", null);
+    static final Permission SET_CONTEXT_SELECTOR_PERMISSION = new RuntimePermission("setLogContextSelector", null);
+    static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
 
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggerNode rootLogger = new LoggerNode(this);
 
-    final Lock levelTreeLock = new ReentrantLock(false);
+    final Lock treeLock = new ReentrantLock(false);
 
     LogContext() {
     }
@@ -109,7 +110,7 @@ public final class LogContext {
         logContextSelector = newSelector;
     }
 
-    void checkAccess() {
+    static void checkAccess() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
