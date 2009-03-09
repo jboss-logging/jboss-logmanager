@@ -74,7 +74,8 @@ class LoggerNode {
      * @param nodeName the name of this subnode
      */
     private LoggerNode(LogContext context, LoggerNode parent, String nodeName) {
-        if (nodeName.trim().length() == 0) {
+        nodeName = nodeName.trim();
+        if (nodeName.length() == 0) {
             throw new IllegalArgumentException("nodeName is empty, or just whitespace");
         }
         this.parent = parent;
