@@ -129,7 +129,6 @@ public final class LoggerInstance extends Logger {
 
     /** {@inheritDoc} */
     public boolean isLoggable(Level level) {
-        if (true) return true;
         final int effectiveLevel = this.effectiveLevel;
         return effectiveLevel <= level.intValue() && effectiveLevel != Level.OFF.intValue();
     }
