@@ -39,6 +39,12 @@ public final class MDC {
     }
 
     public static String put(String key, String value) {
+        if (key == null) {
+            throw new NullPointerException("key is null");
+        }
+        if (value == null) {
+            throw new NullPointerException("value is null");
+        }
         return mdc.get().put(key, value);
     }
 
@@ -48,6 +54,10 @@ public final class MDC {
 
     public static Map<String, String> copy() {
         return new HashMap<String, String>(mdc.get());
+    }
+
+    public static void clear() {
+        mdc.get().clear();
     }
 
     private static final class Holder extends InheritableThreadLocal<Map<String, String>> {
