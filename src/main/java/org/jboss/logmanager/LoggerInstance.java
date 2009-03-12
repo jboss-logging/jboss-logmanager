@@ -67,6 +67,7 @@ public class LoggerInstance extends Logger {
      * The empty handler list.
      */
     private static final Handler[] EMPTY_HANDLERS = new Handler[0];
+    private static final String LOGGER_CLASS_NAME = LoggerInstance.class.getName();
 
     /**
      * Construct a new instance of an actual logger.
@@ -261,11 +262,12 @@ public class LoggerInstance extends Logger {
      * @param record the log record
      */
     private void doLog(final LogRecord record) {
+        final ExtLogRecord extRecord = (record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME);
         // todo - resource bundle
-        record.setLoggerName(getName());
+        extRecord.setLoggerName(getName());
         final Filter filter = this.filter;
         try {
-            if (filter != null && ! filter.isLoggable(record)) {
+            if (filter != null && ! filter.isLoggable(extRecord)) {
                 return;
             }
         } catch (VirtualMachineError e) {
@@ -278,7 +280,7 @@ public class LoggerInstance extends Logger {
             final Handler[] handlers = current.handlers;
             if (handlers != null) {
                 for (Handler handler : handlers) try {
-                    handler.publish(record);
+                    handler.publish(extRecord);
                 } catch (VirtualMachineError e) {
                     throw e;
                 } catch (Throwable t) {
@@ -313,7 +315,7 @@ public class LoggerInstance extends Logger {
         if (FINER_INT < effectiveLevel) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY");
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY", LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         doLog(rec);
@@ -323,7 +325,7 @@ public class LoggerInstance extends Logger {
         if (FINER_INT < effectiveLevel) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY {0}");
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY {0}", LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setParameters(new Object[] { param1 });
@@ -338,7 +340,7 @@ public class LoggerInstance extends Logger {
         for (int i = 0; i < params.length; i++) {
             builder.append(" {").append(i).append('}');
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, builder.toString());
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, builder.toString(), LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         if (params != null) rec.setParameters(params);
@@ -349,7 +351,7 @@ public class LoggerInstance extends Logger {
         if (FINER_INT < effectiveLevel) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN");
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN", LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         doLog(rec);
@@ -359,7 +361,7 @@ public class LoggerInstance extends Logger {
         if (FINER_INT < effectiveLevel) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN {0}");
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN {0}", LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setParameters(new Object[] { result });
@@ -370,7 +372,7 @@ public class LoggerInstance extends Logger {
         if (FINER_INT < effectiveLevel) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "THROW");
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "THROW", LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setThrown(thrown);
@@ -381,49 +383,49 @@ public class LoggerInstance extends Logger {
         if (SEVERE_INT < effectiveLevel) {
             return;
         }
-        doLog(new ExtLogRecord(Level.SEVERE, msg));
+        doLog(new ExtLogRecord(Level.SEVERE, msg, LOGGER_CLASS_NAME));
     }
 
     public void warning(final String msg) {
         if (WARNING_INT < effectiveLevel) {
             return;
         }
-        doLog(new ExtLogRecord(Level.WARNING, msg));
+        doLog(new ExtLogRecord(Level.WARNING, msg, LOGGER_CLASS_NAME));
     }
 
     public void info(final String msg) {
         if (INFO_INT < effectiveLevel) {
             return;
         }
-        doLog(new ExtLogRecord(Level.INFO, msg));
+        doLog(new ExtLogRecord(Level.INFO, msg, LOGGER_CLASS_NAME));
     }
 
     public void config(final String msg) {
         if (CONFIG_INT < effectiveLevel) {
             return;
         }
-        doLog(new ExtLogRecord(Level.CONFIG, msg));
+        doLog(new ExtLogRecord(Level.CONFIG, msg, LOGGER_CLASS_NAME));
     }
 
     public void fine(final String msg) {
         if (FINE_INT < effectiveLevel) {
             return;
         }
-        doLog(new ExtLogRecord(Level.FINE, msg));
+        doLog(new ExtLogRecord(Level.FINE, msg, LOGGER_CLASS_NAME));
     }
 
     public void finer(final String msg) {
         if (FINER_INT < effectiveLevel) {
             return;
         }
-        doLog(new ExtLogRecord(Level.FINER, msg));
+        doLog(new ExtLogRecord(Level.FINER, msg, LOGGER_CLASS_NAME));
     }
 
     public void finest(final String msg) {
         if (FINEST_INT < effectiveLevel) {
             return;
         }
-        doLog(new ExtLogRecord(Level.FINEST, msg));
+        doLog(new ExtLogRecord(Level.FINEST, msg, LOGGER_CLASS_NAME));
     }
 
     public void log(final Level level, final String msg) {
@@ -431,7 +433,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        doLog(new ExtLogRecord(level, msg));
+        doLog(new ExtLogRecord(level, msg, LOGGER_CLASS_NAME));
     }
 
     public void log(final Level level, final String msg, final Object param1) {
@@ -439,7 +441,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { param1 });
         doLog(rec);
     }
@@ -449,7 +451,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         if (params != null) rec.setParameters(params);
         doLog(rec);
     }
@@ -459,7 +461,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setThrown(thrown);
         doLog(rec);
     }
@@ -469,7 +471,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         doLog(rec);
@@ -480,7 +482,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setParameters(new Object[] { param1 });
@@ -492,7 +494,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         if (params != null) rec.setParameters(params);
@@ -504,7 +506,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setThrown(thrown);
@@ -516,7 +518,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setResourceBundleName(bundleName);
@@ -528,7 +530,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setResourceBundleName(bundleName);
@@ -541,7 +543,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setResourceBundleName(bundleName);
@@ -554,7 +556,7 @@ public class LoggerInstance extends Logger {
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setResourceBundleName(bundleName);
