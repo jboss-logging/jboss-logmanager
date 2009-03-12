@@ -28,6 +28,6 @@ import org.slf4j.Logger;
 public final class Slf4jLoggerFactory implements ILoggerFactory {
 
     public Logger getLogger(final String name) {
-        return (Logger) LogContext.getLogContext().getLogger(name);
+        return LogContext.getLogContext().getLogger(name);
     }
 }
