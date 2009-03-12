@@ -72,6 +72,16 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
     private static final String LOGGER_CLASS_NAME = Logger.class.getName();
 
     /**
+     * Static logger factory method which returns a JBoss LogManager logger.
+     *
+     * @param name the logger name
+     * @return the logger
+     */
+    public static Logger getLogger(final String name) {
+        return LogContext.getLogContext().getLogger(name);
+    }
+
+    /**
      * Construct a new instance of an actual logger.
      *
      * @param loggerNode the node in the named logger tree
