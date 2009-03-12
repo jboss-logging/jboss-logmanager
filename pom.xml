@@ -8,7 +8,13 @@
     <artifactId>jboss-logmanager</artifactId>
     <packaging>jar</packaging>
     <version>1.1.0.CR1</version>
-    <dependencies/>
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.5.6</version>
+        </dependency>
+    </dependencies>
     <build>
         <plugins>
             <plugin>

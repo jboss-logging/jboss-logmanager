@@ -31,10 +31,13 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
+import org.slf4j.spi.LocationAwareLogger;
+import org.slf4j.Marker;
+
 /**
  * An actual logger instance.  This is the end-user interface into the logging system.
  */
-public class LoggerInstance extends Logger {
+public class LoggerInstance extends Logger implements LocationAwareLogger {
 
     /**
      * The named logger tree node.
@@ -294,6 +297,7 @@ public class LoggerInstance extends Logger {
     }
 
     private static final int OFF_INT = Level.OFF.intValue();
+
     private static final int SEVERE_INT = Level.SEVERE.intValue();
     private static final int WARNING_INT = Level.WARNING.intValue();
     private static final int INFO_INT = Level.INFO.intValue();
@@ -301,6 +305,12 @@ public class LoggerInstance extends Logger {
     private static final int FINE_INT = Level.FINE.intValue();
     private static final int FINER_INT = Level.FINER.intValue();
     private static final int FINEST_INT = Level.FINEST.intValue();
+
+    private static final int ALT_ERROR_INT = org.jboss.logmanager.Level.ERROR.intValue();
+    private static final int ALT_WARN_INT = org.jboss.logmanager.Level.WARN.intValue();
+    private static final int ALT_INFO_INT = org.jboss.logmanager.Level.INFO.intValue();
+    private static final int ALT_DEBUG_INT = org.jboss.logmanager.Level.DEBUG.intValue();
+    private static final int ALT_TRACE_INT = org.jboss.logmanager.Level.TRACE.intValue();
 
     /** {@inheritDoc} */
     public void log(LogRecord record) {
@@ -579,4 +589,488 @@ public class LoggerInstance extends Logger {
             super.finalize();
         }
     }
+
+    // slf4j implementation
+
+    public void log(final Marker marker, final String fqcn, final int levelVal, final String message, final Throwable t) {
+        // ignore marker
+        final Level level;
+        switch (levelVal) {
+            case LocationAwareLogger.TRACE_INT: level = org.jboss.logmanager.Level.TRACE; break;
+            case LocationAwareLogger.DEBUG_INT: level = org.jboss.logmanager.Level.DEBUG; break;
+            case LocationAwareLogger.INFO_INT: level = org.jboss.logmanager.Level.INFO; break;
+            case LocationAwareLogger.WARN_INT: level = org.jboss.logmanager.Level.WARN; break;
+            case LocationAwareLogger.ERROR_INT: level = org.jboss.logmanager.Level.ERROR; break;
+            default: level = org.jboss.logmanager.Level.DEBUG; break;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, message, fqcn);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isTraceEnabled() {
+        return ALT_TRACE_INT < effectiveLevel;
+    }
+
+    public void trace(final String msg) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.TRACE, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void trace(final String format, final Object arg) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void trace(final String format, final Object arg1, final Object arg2) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void trace(final String format, final Object[] argArray) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void trace(final String msg, final Throwable t) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isTraceEnabled(final Marker marker) {
+        return ALT_TRACE_INT < effectiveLevel;
+    }
+
+    public void trace(final Marker marker, final String msg) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.TRACE, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void trace(final Marker marker, final String format, final Object arg) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void trace(final Marker marker, final String format, final Object arg1, final Object arg2) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void trace(final Marker marker, final String format, final Object[] argArray) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void trace(final Marker marker, final String msg, final Throwable t) {
+        if (ALT_TRACE_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isDebugEnabled() {
+        return ALT_DEBUG_INT < effectiveLevel;
+    }
+
+    public void debug(final String msg) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void debug(final String format, final Object arg) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void debug(final String format, final Object arg1, final Object arg2) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void debug(final String format, final Object[] argArray) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void debug(final String msg, final Throwable t) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isDebugEnabled(final Marker marker) {
+        return ALT_DEBUG_INT < effectiveLevel;
+    }
+
+    public void debug(final Marker marker, final String msg) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void debug(final Marker marker, final String format, final Object arg) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void debug(final Marker marker, final String format, final Object arg1, final Object arg2) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void debug(final Marker marker, final String format, final Object[] argArray) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void debug(final Marker marker, final String msg, final Throwable t) {
+        if (ALT_DEBUG_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isInfoEnabled() {
+        return ALT_INFO_INT < effectiveLevel;
+    }
+
+    // info(String) is defined above, and happens to be compatible
+
+    public void info(final String format, final Object arg) {
+        if (ALT_INFO_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void info(final String format, final Object arg1, final Object arg2) {
+        if (ALT_INFO_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void info(final String format, final Object[] argArray) {
+        if (ALT_INFO_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void info(final String msg, final Throwable t) {
+        if (ALT_INFO_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isInfoEnabled(final Marker marker) {
+        return ALT_INFO_INT < effectiveLevel;
+    }
+
+    public void info(final Marker marker, final String msg) {
+        if (ALT_INFO_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void info(final Marker marker, final String format, final Object arg) {
+        if (ALT_INFO_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void info(final Marker marker, final String format, final Object arg1, final Object arg2) {
+        if (ALT_INFO_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void info(final Marker marker, final String format, final Object[] argArray) {
+        if (ALT_INFO_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void info(final Marker marker, final String msg, final Throwable t) {
+        if (ALT_INFO_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isWarnEnabled() {
+        return ALT_WARN_INT < effectiveLevel;
+    }
+
+    public void warn(final String msg) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.WARN, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void warn(final String format, final Object arg) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void warn(final String format, final Object arg1, final Object arg2) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void warn(final String format, final Object[] argArray) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void warn(final String msg, final Throwable t) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isWarnEnabled(final Marker marker) {
+        return ALT_WARN_INT < effectiveLevel;
+    }
+
+    public void warn(final Marker marker, final String msg) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.WARN, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void warn(final Marker marker, final String format, final Object arg) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void warn(final Marker marker, final String format, final Object arg1, final Object arg2) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void warn(final Marker marker, final String format, final Object[] argArray) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void warn(final Marker marker, final String msg, final Throwable t) {
+        if (ALT_WARN_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isErrorEnabled() {
+        return ALT_ERROR_INT < effectiveLevel;
+    }
+
+    public void error(final String msg) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.ERROR, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void error(final String format, final Object arg) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void error(final String format, final Object arg1, final Object arg2) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void error(final String format, final Object[] argArray) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void error(final String msg, final Throwable t) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
+    public boolean isErrorEnabled(final Marker marker) {
+        return ALT_ERROR_INT < effectiveLevel;
+    }
+
+    public void error(final Marker marker, final String msg) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.ERROR, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void error(final Marker marker, final String format, final Object arg) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void error(final Marker marker, final String format, final Object arg1, final Object arg2) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void error(final Marker marker, final String format, final Object[] argArray) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void error(final Marker marker, final String msg, final Throwable t) {
+        if (ALT_ERROR_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
+
 }
