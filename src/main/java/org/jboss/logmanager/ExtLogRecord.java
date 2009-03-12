@@ -74,8 +74,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     private final String ndc;
-    private final String loggerClassName;
-
+    private transient final String loggerClassName;
     private transient boolean calculateCaller = true;
 
     private Map<String, String> mdcCopy;
