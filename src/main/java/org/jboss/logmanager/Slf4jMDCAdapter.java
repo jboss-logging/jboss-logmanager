@@ -23,8 +23,9 @@
 package org.jboss.logmanager;
 
 import java.util.Map;
+import org.slf4j.spi.MDCAdapter;
 
-public final class Slf4jMDCAdapter implements org.slf4j.spi.MDCAdapter {
+public final class Slf4jMDCAdapter implements MDCAdapter {
 
     public void put(final String key, final String val) {
         MDC.put(key, val);
