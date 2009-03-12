@@ -35,8 +35,6 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Collection;
 
-import java.util.logging.Logger;
-
 /**
  * Simplified log manager.  Designed to work around the (many) design flaws of the JDK platform log manager.
  */
@@ -259,7 +257,7 @@ public final class LogManager extends java.util.logging.LogManager {
      * @param logger ignored
      * @return {@code false}
      */
-    public boolean addLogger(Logger logger) {
+    public boolean addLogger(java.util.logging.Logger logger) {
         return false;
     }
 

@@ -29,7 +29,6 @@ import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.logging.Logger;
 
 import org.slf4j.spi.LocationAwareLogger;
 import org.slf4j.Marker;
@@ -37,7 +36,7 @@ import org.slf4j.Marker;
 /**
  * An actual logger instance.  This is the end-user interface into the logging system.
  */
-public class LoggerInstance extends Logger implements LocationAwareLogger {
+public class Logger extends java.util.logging.Logger implements LocationAwareLogger {
 
     /**
      * The named logger tree node.
@@ -64,13 +63,13 @@ public class LoggerInstance extends Logger implements LocationAwareLogger {
     /**
      * The atomic updater for the {@link #handlers} field.
      */
-    private static final AtomicReferenceFieldUpdater<LoggerInstance, Handler[]> handlersUpdater = AtomicReferenceFieldUpdater.newUpdater(LoggerInstance.class, Handler[].class, "handlers");
+    private static final AtomicReferenceFieldUpdater<Logger, Handler[]> handlersUpdater = AtomicReferenceFieldUpdater.newUpdater(Logger.class, Handler[].class, "handlers");
 
     /**
      * The empty handler list.
      */
     private static final Handler[] EMPTY_HANDLERS = new Handler[0];
-    private static final String LOGGER_CLASS_NAME = LoggerInstance.class.getName();
+    private static final String LOGGER_CLASS_NAME = Logger.class.getName();
 
     /**
      * Construct a new instance of an actual logger.
@@ -78,14 +77,13 @@ public class LoggerInstance extends Logger implements LocationAwareLogger {
      * @param loggerNode the node in the named logger tree
      * @param name the fully-qualified name of this node
      */
-    LoggerInstance(final LoggerNode loggerNode, final String name) {
+    Logger(final LoggerNode loggerNode, final String name) {
         // Logger.getLogger(*) will set up the resource bundle for us, how kind
         super(name, null);
         // We maintain our own level
         super.setLevel(Level.ALL);
         this.loggerNode = loggerNode;
     }
-
     // Filter mgmt
 
     /** {@inheritDoc} */
@@ -129,7 +127,7 @@ public class LoggerInstance extends Logger implements LocationAwareLogger {
                 level = newLevel;
                 newEffectiveLevel = newLevel.intValue();
             } else {
-                final LoggerInstance parent = (LoggerInstance) getParent();
+                final Logger parent = (Logger) getParent();
                 if (parent == null) {
                     level = Level.INFO;
                     newEffectiveLevel = INFO_INT;
@@ -245,7 +243,7 @@ public class LoggerInstance extends Logger implements LocationAwareLogger {
     // Parent/child
 
     /** {@inheritDoc} */
-    public LoggerInstance getParent() {
+    public Logger getParent() {
         return loggerNode.getParentLogger();
     }
 
@@ -253,7 +251,7 @@ public class LoggerInstance extends Logger implements LocationAwareLogger {
      * <b>Not allowed.</b>  This method may never be called.
      * @throws SecurityException always
      */
-    public void setParent(Logger parent) {
+    public void setParent(java.util.logging.Logger parent) {
         throw new SecurityException("setParent() disallowed");
     }
 
@@ -279,7 +277,7 @@ public class LoggerInstance extends Logger implements LocationAwareLogger {
             // todo - error handler
             // treat an errored filter as "pass" (I guess?)
         }
-        for (LoggerInstance current = this; current != null; current = current.getParent()) {
+        for (Logger current = this; current != null; current = current.getParent()) {
             final Handler[] handlers = current.handlers;
             if (handlers != null) {
                 for (Handler handler : handlers) try {

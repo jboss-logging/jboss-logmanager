@@ -48,7 +48,7 @@ class LoggerNode {
     /**
      * A weak reference to the logger instance.  Protected by {@code this}.
      */
-    private WeakReference<LoggerInstance> loggerRef = null;
+    private WeakReference<Logger> loggerRef = null;
 
     /**
      * The map of names to child nodes.  The child node references are weak.
@@ -121,12 +121,12 @@ class LoggerNode {
      *
      * @return a logger instance
      */
-    LoggerInstance getOrCreateLogger() {
+    Logger getOrCreateLogger() {
         synchronized(this) {
-            LoggerInstance instance = loggerRef == null ? null : loggerRef.get();
+            Logger instance = loggerRef == null ? null : loggerRef.get();
             if (instance == null) {
-                instance = new LoggerInstance(this, fullName);
-                loggerRef = new WeakReference<LoggerInstance>(instance);
+                instance = new Logger(this, fullName);
+                loggerRef = new WeakReference<Logger>(instance);
                 instance.setLevel(null);
             }
             return instance;
@@ -138,11 +138,11 @@ class LoggerNode {
      *
      * @return the parent logger instance, or {@code null} for none
      */
-    LoggerInstance getParentLogger() {
+    Logger getParentLogger() {
         LoggerNode node = parent;
         while (node != null) {
             synchronized(node) {
-                final LoggerInstance instance = node.loggerRef == null ? null : node.loggerRef.get();
+                final Logger instance = node.loggerRef == null ? null : node.loggerRef.get();
                 if (instance != null) {
                     return instance;
                 }
@@ -172,9 +172,9 @@ class LoggerNode {
         for (LoggerNode node : children.values()) {
             if (node != null) {
                 synchronized (node) {
-                    final WeakReference<LoggerInstance> loggerRef = node.loggerRef;
+                    final WeakReference<Logger> loggerRef = node.loggerRef;
                     if (loggerRef != null) {
-                        final LoggerInstance instance = loggerRef.get();
+                        final Logger instance = loggerRef.get();
                         if (instance != null) {
                             instance.setEffectiveLevel(newLevel);
                         }
