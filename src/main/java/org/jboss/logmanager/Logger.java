@@ -184,6 +184,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
 
     /** {@inheritDoc} */
     public void addHandler(Handler handler) throws SecurityException {
+        LogContext.checkAccess();
         boolean ok;
         do {
             final Handler[] oldHandlers = handlers;
@@ -201,6 +202,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
 
     /** {@inheritDoc} */
     public void removeHandler(Handler handler) throws SecurityException {
+        LogContext.checkAccess();
         boolean ok;
         do {
             final Handler[] oldHandlers = handlers;
@@ -238,6 +240,16 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
     public Handler[] getHandlers() {
         final Handler[] handlers = this.handlers;
         return handlers == null ? EMPTY_HANDLERS : handlers.clone();
+    }
+
+    /**
+     * A convenience method to quickly clear all handlers.
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public void clearHandlers() throws SecurityException {
+        LogContext.checkAccess();
+        handlersUpdater.set(this, null);
     }
 
     /** {@inheritDoc} */
