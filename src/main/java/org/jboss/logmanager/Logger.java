@@ -24,6 +24,8 @@ package org.jboss.logmanager;
 
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Lock;
+import java.util.Comparator;
+import java.util.Arrays;
 
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -182,9 +184,18 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
 
     // Handler mgmt
 
+    private static final Comparator<Handler> IHC_COMPARATOR = new Comparator<Handler>() {
+        public int compare(final Handler o1, final Handler o2) {
+            return Integer.signum(System.identityHashCode(o1) - System.identityHashCode(o2));
+        }
+    };
+
     /** {@inheritDoc} */
     public void addHandler(Handler handler) throws SecurityException {
         LogContext.checkAccess();
+        if (handler == null) {
+            throw new NullPointerException("handler is null");
+        }
         boolean ok;
         do {
             final Handler[] oldHandlers = handlers;
@@ -192,7 +203,15 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
             if (oldHandlers != null) {
                 final int len = oldHandlers.length;
                 newHandlers = new Handler[len + 1];
-                System.arraycopy(oldHandlers, 0, newHandlers, 0, len);
+                final int pos = Arrays.binarySearch(oldHandlers, handler, IHC_COMPARATOR);
+                if (pos >= 0) {
+                    // already in there!
+                    return;
+                }
+                final int ip = -pos - 1;
+                newHandlers[ip] = handler;
+                System.arraycopy(oldHandlers, 0, newHandlers, 0, ip);
+                System.arraycopy(oldHandlers, ip, newHandlers, ip + 1, len - ip);
             } else {
                 newHandlers = new Handler[] { handler };
             }
@@ -203,6 +222,9 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
     /** {@inheritDoc} */
     public void removeHandler(Handler handler) throws SecurityException {
         LogContext.checkAccess();
+        if (handler == null) {
+            return;
+        }
         boolean ok;
         do {
             final Handler[] oldHandlers = handlers;
@@ -217,20 +239,20 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
                     return;
                 }
             } else {
-                boolean found = false;
-                newHandlers = new Handler[len - 1];
-                for (int i = 0, j = 0; i < oldHandlers.length; i++) {
-                    Handler oldHandler = oldHandlers[i];
-                    if (handler != oldHandler) {
-                        newHandlers[j++] = oldHandler;
-                    } else {
-                        found = true;
+                Arrays.binarySearch(oldHandlers, handler, IHC_COMPARATOR);
+                int idx = -1;
+                for (int i = 0; i < len; i++) {
+                    if (oldHandlers[i] == handler) {
+                        idx = i;
+                        break;
                     }
                 }
-                if (! found) {
+                if (idx == -1) {
                     return;
                 }
-                System.arraycopy(oldHandlers, 0, newHandlers, 0, len);
+                newHandlers = new Handler[len - 1];
+                System.arraycopy(oldHandlers, 0, newHandlers, 0, idx);
+                System.arraycopy(oldHandlers, idx + 1, newHandlers, idx, len - idx - 1);
             }
             ok = handlersUpdater.compareAndSet(this, oldHandlers, newHandlers);
         } while (! ok);
@@ -243,13 +265,14 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
     }
 
     /**
-     * A convenience method to quickly clear all handlers.
+     * A convenience method to atomically get and clear all handlers.
      *
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
-    public void clearHandlers() throws SecurityException {
+    public Handler[] clearHandlers() throws SecurityException {
         LogContext.checkAccess();
-        handlersUpdater.set(this, null);
+        final Handler[] handlers = handlersUpdater.getAndSet(this, null);
+        return handlers == null ? EMPTY_HANDLERS : handlers;
     }
 
     /** {@inheritDoc} */
