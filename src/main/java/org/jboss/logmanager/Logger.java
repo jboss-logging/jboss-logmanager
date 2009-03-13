@@ -239,20 +239,13 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
                     return;
                 }
             } else {
-                Arrays.binarySearch(oldHandlers, handler, IHC_COMPARATOR);
-                int idx = -1;
-                for (int i = 0; i < len; i++) {
-                    if (oldHandlers[i] == handler) {
-                        idx = i;
-                        break;
-                    }
-                }
-                if (idx == -1) {
+                final int pos = Arrays.binarySearch(oldHandlers, handler, IHC_COMPARATOR);
+                if (pos < 0) {
                     return;
                 }
                 newHandlers = new Handler[len - 1];
-                System.arraycopy(oldHandlers, 0, newHandlers, 0, idx);
-                System.arraycopy(oldHandlers, idx + 1, newHandlers, idx, len - idx - 1);
+                System.arraycopy(oldHandlers, 0, newHandlers, 0, pos);
+                System.arraycopy(oldHandlers, pos + 1, newHandlers, pos, len - pos - 1);
             }
             ok = handlersUpdater.compareAndSet(this, oldHandlers, newHandlers);
         } while (! ok);
