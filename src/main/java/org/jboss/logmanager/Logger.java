@@ -204,11 +204,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
                 final int len = oldHandlers.length;
                 newHandlers = new Handler[len + 1];
                 final int pos = Arrays.binarySearch(oldHandlers, handler, IHC_COMPARATOR);
-                if (pos >= 0) {
-                    // already in there!
-                    return;
-                }
-                final int ip = -pos - 1;
+                final int ip = pos < 0 ? -pos - 1 : pos;
                 newHandlers[ip] = handler;
                 System.arraycopy(oldHandlers, 0, newHandlers, 0, ip);
                 System.arraycopy(oldHandlers, ip, newHandlers, ip + 1, len - ip);

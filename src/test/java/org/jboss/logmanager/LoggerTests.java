@@ -59,6 +59,21 @@ public final class LoggerTests {
         assertTrue("Handler 3 missing", f3);
     }
 
+    public void testHandlerAdd2() {
+        final NullHandler h1 = new NullHandler();
+        final Logger logger = Logger.getLogger("testHandlerAdd2");
+        logger.addHandler(h1);
+        logger.addHandler(h1);
+        logger.addHandler(h1);
+        boolean f1 = false;
+        final Handler[] handlers = logger.getHandlers();
+        for (Handler handler : handlers) {
+            if (handler == h1) f1 = true;
+        }
+        assertTrue("Handler 1 missing", f1);
+        assertEquals("Extra handlers missing", 3, handlers.length);
+    }
+
     public void testHandlerRemove() {
         final NullHandler h1 = new NullHandler();
         final NullHandler h2 = new NullHandler();
