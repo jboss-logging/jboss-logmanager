@@ -229,16 +229,10 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         do {
             final Handler[] oldHandlers = handlers;
             final Handler[] newHandlers;
-            final int len = oldHandlers.length;
-            if (len == 0) {
+            if (oldHandlers == null) {
                 return;
-            } else if (len == 1) {
-                if (oldHandlers[0] == handler) {
-                    newHandlers = null;
-                } else {
-                    return;
-                }
             } else {
+                final int len = oldHandlers.length;
                 final int pos = Arrays.binarySearch(oldHandlers, handler, IHC_COMPARATOR);
                 if (pos < 0) {
                     return;

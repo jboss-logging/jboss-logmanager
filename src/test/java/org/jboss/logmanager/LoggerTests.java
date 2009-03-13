@@ -81,6 +81,14 @@ public final class LoggerTests {
         assertTrue("Handler 3 missing", f3);
     }
 
+    public void testHandlerRemove2() {
+        final NullHandler h1 = new NullHandler();
+        final Logger logger = Logger.getLogger("testHandlerRemove2");
+        logger.removeHandler(h1);
+        final Handler[] handlers = logger.getHandlers();
+        assertEquals(0, handlers.length);
+    }
+
     public void testHandlerClear() {
         final NullHandler h1 = new NullHandler();
         final NullHandler h2 = new NullHandler();
