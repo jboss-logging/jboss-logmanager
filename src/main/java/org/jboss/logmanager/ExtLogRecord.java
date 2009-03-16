@@ -23,8 +23,11 @@
 package org.jboss.logmanager;
 
 import java.util.Map;
+import java.util.ResourceBundle;
+import java.util.MissingResourceException;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
+import java.text.MessageFormat;
 
 import java.util.logging.LogRecord;
 
@@ -79,10 +82,12 @@ public class ExtLogRecord extends LogRecord {
 
     private Map<String, String> mdcCopy;
     private int sourceLineNumber = -1;
+    private String formattedMessage;
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
         copyMdc();
         calculateCaller();
+        getFormattedMessage();
         oos.defaultWriteObject();
     }
 
@@ -202,5 +207,28 @@ public class ExtLogRecord extends LogRecord {
     public void setSourceMethodName(final String sourceMethodName) {
         calculateCaller = false;
         super.setSourceMethodName(sourceMethodName);
+    }
+
+    public String getFormattedMessage() {
+        if (formattedMessage == null) {
+            formattedMessage = formatRecord();
+        }
+        return formattedMessage;
+    }
+
+    private String formatRecord() {
+        final ResourceBundle bundle = getResourceBundle();
+        String msg = getMessage();
+        if (bundle != null) {
+            try {
+                msg = bundle.getString(msg);
+            } catch (MissingResourceException ex) {
+                // ignore
+            }
+        }
+        final Object[] parameters = getParameters();
+        return parameters != null &&
+                parameters.length > 0 &&
+                msg.indexOf('{') >= 0 ? MessageFormat.format(msg, parameters) : msg;
     }
 }
