@@ -26,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.Comparator;
 import java.util.Arrays;
+import java.util.ResourceBundle;
 
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -293,8 +294,20 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
      */
     private void doLog(final LogRecord record) {
         final ExtLogRecord extRecord = (record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME);
-        // todo - resource bundle
         extRecord.setLoggerName(getName());
+        String bundleName = null;
+        ResourceBundle bundle = null;
+        for (Logger current = this; current != null; current = current.getParent()) {
+            bundleName = current.getResourceBundleName();
+            if (bundleName != null) {
+                bundle = current.getResourceBundle();
+                break;
+            }
+        }
+        if (bundleName != null && bundle != null) {
+            extRecord.setResourceBundleName(bundleName);
+            extRecord.setResourceBundle(bundle);
+        }
         final Filter filter = this.filter;
         try {
             if (filter != null && ! filter.isLoggable(extRecord)) {
