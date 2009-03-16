@@ -90,12 +90,13 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
      * @param name the fully-qualified name of this node
      */
     Logger(final LoggerNode loggerNode, final String name) {
-        // Logger.getLogger(*) will set up the resource bundle for us, how kind
+        // Don't set up the bundle in the parent...
         super(name, null);
         // We maintain our own level
         super.setLevel(Level.ALL);
         this.loggerNode = loggerNode;
     }
+
     // Filter mgmt
 
     /** {@inheritDoc} */
