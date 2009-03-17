@@ -26,32 +26,23 @@ import java.util.logging.Logger;
 import java.util.logging.Level;
 
 /**
- * A writer which sends its data to a logger.
+ * A writer which writes to the current logging context's standard error logger.
  */
-public final class LoggingWriter extends AbstractLoggingWriter {
-
-    @SuppressWarnings({ "NonConstantLogger" })
-    private final Logger log;
-    private final Level level;
+public final class SystemErrLoggingWriter extends AbstractLoggingWriter {
 
     /**
      * Construct a new instance.
-     *
-     * @param category the log category to use
-     * @param level the level at which to log messages
      */
-    public LoggingWriter(final String category, final Level level) {
-        this.level = level;
-        log = Logger.getLogger(category);
+    public SystemErrLoggingWriter() {
     }
 
     /** {@inheritDoc} */
     protected Logger getLogger() {
-        return log;
+        return LogContext.getLogContext().getStderrLogger();
     }
 
     /** {@inheritDoc} */
     protected Level getLevel() {
-        return level;
+        return Level.WARNING;
     }
 }

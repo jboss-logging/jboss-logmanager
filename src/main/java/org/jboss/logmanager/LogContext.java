@@ -41,7 +41,13 @@ public final class LogContext {
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggerNode rootLogger = new LoggerNode(this);
 
+    /**
+     * This lock is taken any time a change is made which affects multiple nodes in the hierarchy.
+     */
     final Lock treeLock = new ReentrantLock(false);
+
+    private volatile Logger stdoutLogger;
+    private volatile Logger stderrLogger;
 
     LogContext() {
     }
@@ -114,5 +120,41 @@ public final class LogContext {
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
         }
+    }
+
+    /**
+     * Get the logger for standard output.
+     *
+     * @return the current logger, or {@code null} if none is configured
+     */
+    public Logger getStdoutLogger() {
+        return stdoutLogger;
+    }
+
+    /**
+     * Set the logger for standard output, or null to suppress for this context.
+     *
+     * @param stdoutLogger the new logger
+     */
+    public void setStdoutLogger(final Logger stdoutLogger) {
+        this.stdoutLogger = stdoutLogger;
+    }
+
+    /**
+     * Get the logger for standard error.
+     *
+     * @return the current logger, or {@code null} if none is configured
+     */
+    public Logger getStderrLogger() {
+        return stderrLogger;
+    }
+
+    /**
+     * Set the logger for standard error, or null to suppress for this context.
+     *
+     * @param stderrLogger the new logger
+     */
+    public void setStderrLogger(final Logger stderrLogger) {
+        this.stderrLogger = stderrLogger;
     }
 }
