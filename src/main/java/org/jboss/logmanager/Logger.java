@@ -302,6 +302,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
     private static final int FINER_INT = Level.FINER.intValue();
     private static final int FINEST_INT = Level.FINEST.intValue();
 
+    private static final int ALT_FATAL_INT = org.jboss.logmanager.Level.FATAL.intValue();
     private static final int ALT_ERROR_INT = org.jboss.logmanager.Level.ERROR.intValue();
     private static final int ALT_WARN_INT = org.jboss.logmanager.Level.WARN.intValue();
     private static final int ALT_INFO_INT = org.jboss.logmanager.Level.INFO.intValue();
@@ -1069,4 +1070,50 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    public boolean isFatalEnabled() {
+        return ALT_FATAL_INT < effectiveLevel;
+    }
+
+    public void fatal(final String msg) {
+        if (ALT_FATAL_INT < effectiveLevel) {
+            return;
+        }
+        doLog(new ExtLogRecord(org.jboss.logmanager.Level.FATAL, msg, LOGGER_CLASS_NAME));
+    }
+
+    public void fatal(final String format, final Object arg) {
+        if (ALT_FATAL_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.FATAL, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg });
+        doLog(rec);
+    }
+
+    public void fatal(final String format, final Object arg1, final Object arg2) {
+        if (ALT_FATAL_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.FATAL, format, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { arg1, arg2 });
+        doLog(rec);
+    }
+
+    public void fatal(final String format, final Object[] argArray) {
+        if (ALT_FATAL_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.FATAL, format, LOGGER_CLASS_NAME);
+        rec.setParameters(argArray);
+        doLog(rec);
+    }
+
+    public void fatal(final String msg, final Throwable t) {
+        if (ALT_FATAL_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.FATAL, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(t);
+        doLog(rec);
+    }
 }

@@ -59,6 +59,10 @@ public final class NDC {
         ndc.get().trimTo(size);
     }
 
+    public static int getDepth() {
+        return ndc.get().depth();
+    }
+
     public static String get() {
         final Stack<String> stack = ndc.get();
         if (stack.isEmpty()) {
