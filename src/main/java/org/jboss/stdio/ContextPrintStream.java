@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
+package org.jboss.stdio;
 
 import java.io.OutputStream;
 import java.io.PrintStream;
@@ -64,12 +64,8 @@ public final class ContextPrintStream extends PrintStream {
         return ((ContextPrintStream)System.err).swapDelegate(newSystemOut);
     }
 
-    public static void initSystemStreams(final PrintStream defaultSystemOut, final PrintStream defaultSystemErr) {
-        System.setOut(new ContextPrintStream(defaultSystemOut));
-        System.setErr(new ContextPrintStream(defaultSystemErr));
-    }
-
     public void close() {
+        delegateHolder.get().close();
     }
 
     public void flush() {
@@ -77,7 +73,7 @@ public final class ContextPrintStream extends PrintStream {
     }
 
     public boolean checkError() {
-        return false;
+        return delegateHolder.get().checkError();
     }
 
     public void write(final int b) {
@@ -196,9 +192,9 @@ public final class ContextPrintStream extends PrintStream {
         delegateHolder.get().write(b);
     }
 
-    public void setError() {
+    protected void setError() {
     }
 
-    public void clearError() {
+    protected void clearError() {
     }
 }
