@@ -94,7 +94,7 @@ class LoggerNode {
      * @param name the name
      * @return the corresponding logger node
      */
-    LoggerNode getOrCreate(String name) {
+    LoggerNode getOrCreate(final String name) {
         if (name == null || name.length() == 0) {
             return this;
         } else {
@@ -117,6 +117,30 @@ class LoggerNode {
     }
 
     /**
+     * Get a relative logger, if it exists.
+     *
+     * @param name the name
+     * @return the corresponding logger
+     */
+    LoggerNode getIfExists(final String name) {
+        if (name == null || name.length() == 0) {
+            return this;
+        } else {
+            int i = name.indexOf('.');
+            final String nextName = i == -1 ? name : name.substring(0, i);
+            LoggerNode nextNode = children.get(nextName);
+            if (nextNode == null) {
+                return null;
+            }
+            if (i == -1) {
+                return nextNode;
+            } else {
+                return nextNode.getIfExists(name.substring(i + 1));
+            }
+        }
+    }
+
+    /**
      * Get or create a logger instance for this node.
      *
      * @return a logger instance
@@ -130,6 +154,17 @@ class LoggerNode {
                 instance.setLevel(null);
             }
             return instance;
+        }
+    }
+
+    /**
+     * Get a logger instance for this node.
+     *
+     * @return a logger instance
+     */
+    Logger getLogger() {
+        synchronized(this) {
+            return loggerRef == null ? null : loggerRef.get();
         }
     }
 

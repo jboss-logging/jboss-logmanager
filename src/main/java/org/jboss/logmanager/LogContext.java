@@ -78,6 +78,18 @@ public final class LogContext {
     }
 
     /**
+     * Get a logger with the given name from this logging context if it already exists.  If no logger of the given
+     * name currently exists, {@code null} is returned.
+     *
+     * @param name the logger name
+     * @return the logger instance, or {@code null} if none exists with the given name
+     */
+    public Logger getLoggerIfExists(String name) {
+        final LoggerNode node = rootLogger.getIfExists(name);
+        return node == null ? null : node.getLogger();
+    }
+
+    /**
      * Get the system log context.
      *
      * @return the system log context
