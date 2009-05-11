@@ -25,6 +25,8 @@ package org.jboss.logmanager;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Lock;
+import java.io.ObjectStreamException;
+import java.io.Serializable;
 import org.slf4j.Marker;
 import org.slf4j.spi.LocationAwareLogger;
 
@@ -36,7 +38,9 @@ import java.util.logging.LogRecord;
 /**
  * An actual logger instance.  This is the end-user interface into the logging system.
  */
-public class Logger extends java.util.logging.Logger implements LocationAwareLogger {
+public class Logger extends java.util.logging.Logger implements LocationAwareLogger, Serializable {
+
+    private static final long serialVersionUID = 5093333069125075416L;
 
     /**
      * The named logger tree node.
@@ -90,6 +94,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         super.setLevel(Level.ALL);
         this.loggerNode = loggerNode;
         handlersUpdater.clear(this);
+    }
+
+    // Serialization
+
+    private Object writeReplace() throws ObjectStreamException {
+        return new LoggerMarker(getName());
     }
 
     // Filter mgmt
