@@ -7,7 +7,7 @@
     <groupId>org.jboss.logmanager</groupId>
     <artifactId>jboss-logmanager</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.0.GA</version>
+    <version>1.0.1-SNAPSHOT</version>
     <dependencies/>
     <build>
         <plugins>
@@ -47,9 +47,9 @@
                         <artifactId>apiviz</artifactId>
                         <version>1.2.5.GA</version>
                     </docletArtifact>
-                    <doctitle><![CDATA[JBoss LogManager 1.0.0.GA]]></doctitle>
-                    <header><![CDATA[JBoss LogManager 1.0.0.GA]]></header>
-                    <footer><![CDATA[JBoss LogManager 1.0.0.GA]]></footer>
+                    <doctitle><![CDATA[JBoss LogManager 1.0.1-SNAPSHOT]]></doctitle>
+                    <header><![CDATA[JBoss LogManager 1.0.1-SNAPSHOT]]></header>
+                    <footer><![CDATA[JBoss LogManager 1.0.1-SNAPSHOT]]></footer>
                     <bottom><![CDATA[<i>Copyright &#169; 2009 JBoss, a division of Red Hat, Inc.</i>]]></bottom>
                     <links>
                         <link>http://java.sun.com/j2se/1.5.0/docs/api/</link>
