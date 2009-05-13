@@ -51,6 +51,7 @@ public class ExtLogRecord extends LogRecord {
         this.loggerClassName = loggerClassName;
         ndc = NDC.get();
         setUnknownCaller();
+        threadName = Thread.currentThread().getName();
     }
 
     /**
@@ -82,7 +83,9 @@ public class ExtLogRecord extends LogRecord {
 
     private Map<String, String> mdcCopy;
     private int sourceLineNumber = -1;
+    private String sourceFileName;
     private String formattedMessage;
+    private String threadName;
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
         copyMdc();
@@ -146,6 +149,7 @@ public class ExtLogRecord extends LogRecord {
                 setSourceClassName(className);
                 setSourceMethodName(element.getMethodName());
                 setSourceLineNumber(element.getLineNumber());
+                setSourceFileName(element.getFileName());
                 return;
             } else {
                 found = loggerClassName.equals(className);
@@ -158,12 +162,13 @@ public class ExtLogRecord extends LogRecord {
         setSourceClassName("<unknown>");
         setSourceMethodName("<unknown>");
         setSourceLineNumber(-1);
+        setSourceFileName("<unknown>");
     }
 
     /**
      * Get the source line number for this log record.
      * <p/>
-     * Note that this sourceLineNumber is not verified and may be spoofed. This information may either have been
+     * Note that this line number is not verified and may be spoofed. This information may either have been
      * provided as part of the logging call, or it may have been inferred automatically by the logging framework. In the
      * latter case, the information may only be approximate and may in fact describe an earlier call on the stack frame.
      * May be -1 if no information could be obtained.
@@ -183,6 +188,31 @@ public class ExtLogRecord extends LogRecord {
     public void setSourceLineNumber(final int sourceLineNumber) {
         calculateCaller = false;
         this.sourceLineNumber = sourceLineNumber;
+    }
+
+    /**
+     * Get the source file name for this log record.
+     * <p/>
+     * Note that this file name is not verified and may be spoofed. This information may either have been
+     * provided as part of the logging call, or it may have been inferred automatically by the logging framework. In the
+     * latter case, the information may only be approximate and may in fact describe an earlier call on the stack frame.
+     * May be {@code null} if no information could be obtained.
+     *
+     * @return the source file name
+     */
+    public String getSourceFileName() {
+        calculateCaller();
+        return sourceFileName;
+    }
+
+    /**
+     * Set the source file name for this log record.
+     *
+     * @param sourceFileName the source file name
+     */
+    public void setSourceFileName(final String sourceFileName) {
+        calculateCaller = false;
+        this.sourceFileName = sourceFileName;
     }
 
     /** {@inheritDoc} */
@@ -230,5 +260,23 @@ public class ExtLogRecord extends LogRecord {
         return parameters != null &&
                 parameters.length > 0 &&
                 msg.indexOf('{') >= 0 ? MessageFormat.format(msg, parameters) : msg;
+    }
+
+    /**
+     * Get the thread name of this logging event.
+     *
+     * @return the thread name
+     */
+    public String getThreadName() {
+        return threadName;
+    }
+
+    /**
+     * Set the thread name of this logging event.
+     *
+     * @param threadName the thread name
+     */
+    public void setThreadName(final String threadName) {
+        this.threadName = threadName;
     }
 }
