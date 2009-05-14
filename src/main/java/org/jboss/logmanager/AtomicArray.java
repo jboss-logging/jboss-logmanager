@@ -27,6 +27,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
+import java.util.logging.Handler;
+
 /**
  * Utility for snapshot/copy-on-write arrays.  To use these methods, two things are required: an immutable array
  * stored on a volatile field, and an instance of
@@ -98,6 +100,13 @@ final class AtomicArray<T, V> {
         return updater.getAndSet(instance, value);
     }
 
+    @SuppressWarnings({ "unchecked" })
+    private static <V> V[] copyOf(final Class<V> componentType, V[] old, int newLen) {
+        final V[] target = newInstance(componentType, newLen);
+        System.arraycopy(old, 0, target, 0, Math.min(old.length, newLen));
+        return target;
+    }
+
     /**
      * Atomically replace the array with a new array which is one element longer, and which includes the given value.
      *
@@ -109,7 +118,7 @@ final class AtomicArray<T, V> {
         for (;;) {
             final V[] oldVal = updater.get(instance);
             final int oldLen = oldVal.length;
-            final V[] newVal = Arrays.copyOf(oldVal, oldLen + 1);
+            final V[] newVal = copyOf(componentType, oldVal, oldLen + 1);
             newVal[oldLen] = value;
             if (updater.compareAndSet(instance, oldVal, newVal)) {
                 return;
@@ -144,7 +153,7 @@ final class AtomicArray<T, V> {
                     }
                 }
             }
-            final V[] newVal = Arrays.copyOf(oldVal, oldLen + 1);
+            final V[] newVal = copyOf(componentType, oldVal, oldLen + 1);
             newVal[oldLen] = value;
             if (updater.compareAndSet(instance, oldVal, newVal)) {
                 return true;
@@ -360,6 +369,10 @@ final class AtomicArray<T, V> {
 
     @SuppressWarnings({ "unchecked" })
     private static <V> V[] newInstance(Class<V> componentType, int length) {
-        return (V[]) Array.newInstance(componentType, length);
+        if (componentType == Handler.class) {
+            return (V[]) new Handler[length];
+        } else {
+            return (V[]) Array.newInstance(componentType, length);
+        }
     }
 }
