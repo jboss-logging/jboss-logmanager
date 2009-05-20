@@ -23,10 +23,18 @@
 package org.jboss.stdio;
 
 import java.io.InputStream;
-import java.io.IOException;
 
+/**
+ * An input stream that is always in an EOF condition.
+ */
 public final class NullInputStream extends InputStream {
-    public int read() throws IOException {
+
+    /**
+     * Read a byte.  Always returns EOF.
+     *
+     * @return -1 always
+     */
+    public int read() {
         return -1;
     }
 }

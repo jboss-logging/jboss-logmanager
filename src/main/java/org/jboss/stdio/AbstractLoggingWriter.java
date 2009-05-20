@@ -20,7 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
+package org.jboss.stdio;
 
 import java.io.Writer;
 import java.io.IOException;

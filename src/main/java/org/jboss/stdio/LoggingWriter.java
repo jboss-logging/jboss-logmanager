@@ -20,10 +20,10 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
+package org.jboss.stdio;
 
-import java.util.logging.Logger;
 import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * A writer which sends its data to a logger.
@@ -43,6 +43,17 @@ public final class LoggingWriter extends AbstractLoggingWriter {
     public LoggingWriter(final String category, final Level level) {
         this.level = level;
         log = Logger.getLogger(category);
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param log the logger to use
+     * @param level the level at which to log messages
+     */
+    public LoggingWriter(final Logger log, final Level level) {
+        this.log = log;
+        this.level = level;
     }
 
     /** {@inheritDoc} */
