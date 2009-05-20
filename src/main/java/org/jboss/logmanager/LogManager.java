@@ -24,7 +24,6 @@ package org.jboss.logmanager;
 
 import java.beans.PropertyChangeListener;
 import java.io.InputStream;
-import java.io.PrintStream;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -269,13 +268,5 @@ public final class LogManager extends java.util.logging.LogManager {
      */
     public Logger getLogger(String name) {
         return LogContext.getLogContext().getLogger(name);
-    }
-
-    public static void installSystemOut(String name, java.util.logging.Level level) {
-        System.setOut(new PrintStream(new WriterOutputStream(new LoggingWriter(name, level))));
-    }
-
-    public static void installSystemErr(String name, java.util.logging.Level level) {
-        System.setErr(new PrintStream(new WriterOutputStream(new LoggingWriter(name, level))));
     }
 }
