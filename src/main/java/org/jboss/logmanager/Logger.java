@@ -269,8 +269,16 @@ public final class Logger extends java.util.logging.Logger implements LocationAw
      * @param record the log record
      */
     private void doLog(final LogRecord record) {
-        final ExtLogRecord extRecord = (record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME);
-        extRecord.setLoggerName(getName());
+        doLog((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
+    }
+
+    /**
+     * Do the logging with no level checks (they've already been done).
+     *
+     * @param record the log record
+     */
+    private void doLog(final ExtLogRecord record) {
+        record.setLoggerName(getName());
         String bundleName = null;
         ResourceBundle bundle = null;
         for (Logger current = this; current != null; current = current.getParent()) {
@@ -281,12 +289,12 @@ public final class Logger extends java.util.logging.Logger implements LocationAw
             }
         }
         if (bundleName != null && bundle != null) {
-            extRecord.setResourceBundleName(bundleName);
-            extRecord.setResourceBundle(bundle);
+            record.setResourceBundleName(bundleName);
+            record.setResourceBundle(bundle);
         }
         final Filter filter = this.filter;
         try {
-            if (filter != null && ! filter.isLoggable(extRecord)) {
+            if (filter != null && ! filter.isLoggable(record)) {
                 return;
             }
         } catch (VirtualMachineError e) {
@@ -299,7 +307,7 @@ public final class Logger extends java.util.logging.Logger implements LocationAw
             final Handler[] handlers = current.handlers;
             if (handlers != null) {
                 for (Handler handler : handlers) try {
-                    handler.publish(extRecord);
+                    handler.publish(record);
                 } catch (VirtualMachineError e) {
                     throw e;
                 } catch (Throwable t) {
