@@ -25,7 +25,8 @@ package org.jboss.logmanager;
 import java.util.Arrays;
 
 /**
- *
+ * Nested diagnostic context.  This is basically a thread-local stack that holds a string which can be included
+ * in a log message.
  */
 public final class NDC {
 
@@ -33,6 +34,12 @@ public final class NDC {
 
     private static final Holder ndc = new Holder();
 
+    /**
+     * Push a value on to the NDC stack, returning the new stack depth which should later be used to restore the stack.
+     *
+     * @param context the new value
+     * @return the new stack depth
+     */
     public static int push(String context) {
         final Stack<String> stack = ndc.get();
         try {
@@ -42,6 +49,11 @@ public final class NDC {
         }
     }
 
+    /**
+     * Pop the topmost value from the NDC stack and return it.
+     *
+     * @return the old topmost value
+     */
     public static String pop() {
         final Stack<String> stack = ndc.get();
         if (stack.isEmpty()) {
@@ -51,18 +63,37 @@ public final class NDC {
         }
     }
 
+    /**
+     * Clear the thread's NDC stack.
+     */
     public static void clear() {
         ndc.get().trimTo(0);
     }
 
+    /**
+     * Trim the thread NDC stack down to no larger than the given size.  Used to restore the stack to the depth returned
+     * by a {@code push()}.
+     *
+     * @param size the new size
+     */
     public static void trimTo(int size) {
         ndc.get().trimTo(size);
     }
 
+    /**
+     * Get the current NDC stack depth.
+     *
+     * @return the stack depth
+     */
     public static int getDepth() {
         return ndc.get().depth();
     }
 
+    /**
+     * Get the current NDC value.
+     *
+     * @return the current NDC value, or {@code ""} if there is none
+     */
     public static String get() {
         final Stack<String> stack = ndc.get();
         if (stack.isEmpty()) {

@@ -26,7 +26,7 @@ import java.util.Map;
 import java.util.HashMap;
 
 /**
- *
+ * Mapped diagnostic context.  This is a thread-local map used to hold loggable information.
  */
 public final class MDC {
 
@@ -34,10 +34,23 @@ public final class MDC {
 
     private static final Holder mdc = new Holder();
 
+    /**
+     * Get the value for a key, or {@code null} if there is no mapping.
+     *
+     * @param key the key
+     * @return the value
+     */
     public static String get(String key) {
         return mdc.get().get(key);
     }
 
+    /**
+     * Set the value of a key, returning the old value (if any) or {@code null} if there was none.
+     *
+     * @param key the key
+     * @param value the new value
+     * @return the old value or {@code null} if there was none
+     */
     public static String put(String key, String value) {
         if (key == null) {
             throw new NullPointerException("key is null");
@@ -48,14 +61,28 @@ public final class MDC {
         return mdc.get().put(key, value);
     }
 
+    /**
+     * Remove a key.
+     *
+     * @param key the key
+     * @return the old value or {@code null} if there was none
+     */
     public static String remove(String key) {
         return mdc.get().remove(key);
     }
 
+    /**
+     * Get a copy of the MDC map.  This is a relatively expensive operation.
+     *
+     * @return a copy of the map
+     */
     public static Map<String, String> copy() {
         return new HashMap<String, String>(mdc.get());
     }
 
+    /**
+     * Clear the current MDC map.
+     */
     public static void clear() {
         mdc.get().clear();
     }
