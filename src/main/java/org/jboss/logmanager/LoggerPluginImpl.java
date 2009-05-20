@@ -32,6 +32,8 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
 
     private Logger logger;
 
+    private static final String FQCN = org.jboss.logging.Logger.class.getName();
+
     public void init(final String name) {
         logger = Logger.getLogger(name);
     }
@@ -41,11 +43,11 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
     }
 
     public void trace(final Object message) {
-        logger.trace(String.valueOf(message));
+        logger.log(FQCN, Level.TRACE, String.valueOf(message), null);
     }
 
     public void trace(final Object message, final Throwable t) {
-        logger.trace(String.valueOf(message), t);
+        logger.log(FQCN, Level.TRACE, String.valueOf(message), t);
     }
 
     @Deprecated
@@ -54,11 +56,11 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
     }
 
     public void debug(final Object message) {
-        logger.debug(String.valueOf(message));
+        logger.log(FQCN, Level.DEBUG, String.valueOf(message), null);
     }
 
     public void debug(final Object message, final Throwable t) {
-        logger.debug(String.valueOf(message), t);
+        logger.log(FQCN, Level.DEBUG, String.valueOf(message), t);
     }
 
     @Deprecated
@@ -67,35 +69,35 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
     }
 
     public void info(final Object message) {
-        logger.info(String.valueOf(message));
+        logger.log(FQCN, Level.INFO, String.valueOf(message), null);
     }
 
     public void info(final Object message, final Throwable t) {
-        logger.info(String.valueOf(message), t);
+        logger.log(FQCN, Level.INFO, String.valueOf(message), t);
     }
 
     public void warn(final Object message) {
-        logger.warn(String.valueOf(message));
+        logger.log(FQCN, Level.WARN, String.valueOf(message), null);
     }
 
     public void warn(final Object message, final Throwable t) {
-        logger.warn(String.valueOf(message), t);
+        logger.log(FQCN, Level.WARN, String.valueOf(message), t);
     }
 
     public void error(final Object message) {
-        logger.error(String.valueOf(message));
+        logger.log(FQCN, Level.ERROR, String.valueOf(message), null);
     }
 
     public void error(final Object message, final Throwable t) {
-        logger.error(String.valueOf(message), t);
+        logger.log(FQCN, Level.ERROR, String.valueOf(message), t);
     }
 
     public void fatal(final Object message) {
-        logger.fatal(String.valueOf(message));
+        logger.log(FQCN, Level.FATAL, String.valueOf(message), null);
     }
 
     public void fatal(final Object message, final Throwable t) {
-        logger.fatal(String.valueOf(message), t);
+        logger.log(FQCN, Level.FATAL, String.valueOf(message), t);
     }
 
     public NDCProvider getNDCProvider() {
