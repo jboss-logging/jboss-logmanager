@@ -46,9 +46,6 @@ public final class LogContext {
      */
     final Lock treeLock = new ReentrantLock(false);
 
-    private volatile Logger stdoutLogger;
-    private volatile Logger stderrLogger;
-
     LogContext() {
     }
 
@@ -120,6 +117,9 @@ public final class LogContext {
      * @param newSelector the new selector.
      */
     public static void setLogContextSelector(LogContextSelector newSelector) {
+        if (newSelector == null) {
+            throw new NullPointerException("newSelector is null");
+        }
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SET_CONTEXT_SELECTOR_PERMISSION);
@@ -132,41 +132,5 @@ public final class LogContext {
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
         }
-    }
-
-    /**
-     * Get the logger for standard output.
-     *
-     * @return the current logger, or {@code null} if none is configured
-     */
-    public Logger getStdoutLogger() {
-        return stdoutLogger;
-    }
-
-    /**
-     * Set the logger for standard output, or null to suppress for this context.
-     *
-     * @param stdoutLogger the new logger
-     */
-    public void setStdoutLogger(final Logger stdoutLogger) {
-        this.stdoutLogger = stdoutLogger;
-    }
-
-    /**
-     * Get the logger for standard error.
-     *
-     * @return the current logger, or {@code null} if none is configured
-     */
-    public Logger getStderrLogger() {
-        return stderrLogger;
-    }
-
-    /**
-     * Set the logger for standard error, or null to suppress for this context.
-     *
-     * @param stderrLogger the new logger
-     */
-    public void setStderrLogger(final Logger stderrLogger) {
-        this.stderrLogger = stderrLogger;
     }
 }
