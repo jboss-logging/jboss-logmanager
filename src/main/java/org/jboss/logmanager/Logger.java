@@ -39,7 +39,7 @@ import java.util.logging.LogRecord;
  * An actual logger instance.  This is the end-user interface into the logging system.
  */
 @SuppressWarnings({ "SerializableClassWithUnconstructableAncestor" })
-public class Logger extends java.util.logging.Logger implements LocationAwareLogger, Serializable {
+public final class Logger extends java.util.logging.Logger implements LocationAwareLogger, Serializable {
 
     private static final long serialVersionUID = 5093333069125075416L;
 

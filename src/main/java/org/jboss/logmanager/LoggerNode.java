@@ -30,7 +30,7 @@ import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.STRO
 /**
  * A node in the tree of logger names.  Maintains weak references to children and a strong reference to its parent.
  */
-class LoggerNode {
+final class LoggerNode {
 
     /**
      * The log manager.

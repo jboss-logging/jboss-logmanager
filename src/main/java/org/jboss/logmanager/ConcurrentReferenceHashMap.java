@@ -124,7 +124,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @param <K> the type of keys maintained by this map
  * @param <V> the type of mapped values
  */
-class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
+final class ConcurrentReferenceHashMap<K, V> extends AbstractMap<K, V>
         implements java.util.concurrent.ConcurrentMap<K, V>, Serializable {
     private static final long serialVersionUID = 7249069246763182397L;
 
