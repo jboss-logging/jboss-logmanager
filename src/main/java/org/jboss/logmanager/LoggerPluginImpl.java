@@ -50,6 +50,10 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
         logger.log(FQCN, Level.TRACE, String.valueOf(message), t);
     }
 
+    public void trace(final String loggerFcqn, final Object message, final Throwable t) {
+        logger.log(loggerFcqn, Level.TRACE, String.valueOf(message), t);
+    }
+
     @Deprecated
     public boolean isDebugEnabled() {
         return logger.isDebugEnabled();
@@ -61,6 +65,10 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
 
     public void debug(final Object message, final Throwable t) {
         logger.log(FQCN, Level.DEBUG, String.valueOf(message), t);
+    }
+
+    public void debug(final String loggerFcqn, final Object message, final Throwable t) {
+        logger.log(loggerFcqn, Level.DEBUG, String.valueOf(message), t);
     }
 
     @Deprecated
@@ -76,12 +84,20 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
         logger.log(FQCN, Level.INFO, String.valueOf(message), t);
     }
 
+    public void info(final String loggerFcqn, final Object message, final Throwable t) {
+        logger.log(loggerFcqn, Level.INFO, String.valueOf(message), t);
+    }
+
     public void warn(final Object message) {
         logger.log(FQCN, Level.WARN, String.valueOf(message), null);
     }
 
     public void warn(final Object message, final Throwable t) {
         logger.log(FQCN, Level.WARN, String.valueOf(message), t);
+    }
+
+    public void warn(final String loggerFcqn, final Object message, final Throwable t) {
+        logger.log(loggerFcqn, Level.WARN, String.valueOf(message), t);
     }
 
     public void error(final Object message) {
@@ -92,12 +108,20 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
         logger.log(FQCN, Level.ERROR, String.valueOf(message), t);
     }
 
+    public void error(final String loggerFcqn, final Object message, final Throwable t) {
+        logger.log(loggerFcqn, Level.ERROR, String.valueOf(message), t);
+    }
+
     public void fatal(final Object message) {
         logger.log(FQCN, Level.FATAL, String.valueOf(message), null);
     }
 
     public void fatal(final Object message, final Throwable t) {
         logger.log(FQCN, Level.FATAL, String.valueOf(message), t);
+    }
+
+    public void fatal(final String loggerFcqn, final Object message, final Throwable t) {
+        logger.log(loggerFcqn, Level.FATAL, String.valueOf(message), t);
     }
 
     public NDCProvider getNDCProvider() {
