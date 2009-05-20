@@ -38,6 +38,7 @@ import java.util.logging.LogRecord;
 /**
  * An actual logger instance.  This is the end-user interface into the logging system.
  */
+@SuppressWarnings({ "SerializableClassWithUnconstructableAncestor" })
 public class Logger extends java.util.logging.Logger implements LocationAwareLogger, Serializable {
 
     private static final long serialVersionUID = 5093333069125075416L;
@@ -175,6 +176,15 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
             effectiveLevel = newLevel;
             loggerNode.updateChildEffectiveLevel(newLevel);
         }
+    }
+
+    /**
+     * Get the effective numerical log level, inherited from the parent.
+     *
+     * @return the effective level
+     */
+    public int getEffectiveLevel() {
+        return effectiveLevel;
     }
 
     /** {@inheritDoc} */
@@ -328,6 +338,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(record);
     }
 
+    /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod) {
         if (FINER_INT < effectiveLevel) {
             return;
@@ -338,6 +349,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod, final Object param1) {
         if (FINER_INT < effectiveLevel) {
             return;
@@ -349,6 +361,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod, final Object[] params) {
         if (FINER_INT < effectiveLevel) {
             return;
@@ -364,6 +377,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void exiting(final String sourceClass, final String sourceMethod) {
         if (FINER_INT < effectiveLevel) {
             return;
@@ -374,6 +388,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void exiting(final String sourceClass, final String sourceMethod, final Object result) {
         if (FINER_INT < effectiveLevel) {
             return;
@@ -385,6 +400,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void throwing(final String sourceClass, final String sourceMethod, final Throwable thrown) {
         if (FINER_INT < effectiveLevel) {
             return;
@@ -396,6 +412,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void severe(final String msg) {
         if (SEVERE_INT < effectiveLevel) {
             return;
@@ -403,6 +420,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(Level.SEVERE, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void warning(final String msg) {
         if (WARNING_INT < effectiveLevel) {
             return;
@@ -410,6 +428,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(Level.WARNING, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void info(final String msg) {
         if (INFO_INT < effectiveLevel) {
             return;
@@ -417,6 +436,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(Level.INFO, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void config(final String msg) {
         if (CONFIG_INT < effectiveLevel) {
             return;
@@ -424,6 +444,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(Level.CONFIG, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void fine(final String msg) {
         if (FINE_INT < effectiveLevel) {
             return;
@@ -431,6 +452,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(Level.FINE, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void finer(final String msg) {
         if (FINER_INT < effectiveLevel) {
             return;
@@ -438,6 +460,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(Level.FINER, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void finest(final String msg) {
         if (FINEST_INT < effectiveLevel) {
             return;
@@ -445,6 +468,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(Level.FINEST, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void log(final Level level, final String msg) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -453,6 +477,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(level, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Object param1) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -463,6 +488,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Object[] params) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -473,6 +499,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Throwable thrown) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -483,6 +510,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -494,6 +522,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object param1) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -506,6 +535,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object[] params) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -518,6 +548,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Throwable thrown) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -530,6 +561,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -542,6 +574,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object param1) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -555,6 +588,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object[] params) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -568,6 +602,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Throwable thrown) {
         final int effectiveLevel = this.effectiveLevel;
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
@@ -597,8 +632,28 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         }
     }
 
+    // alternate SPI hook
+
+    /**
+     * SPI interface method to log a message at a given level.
+     *
+     * @param fqcn the fully qualified class name of the first logger class
+     * @param level the level to log at
+     * @param message the message
+     * @param t the throwable, if any
+     */
+    public void log(final String fqcn, final Level level, final String message, final Throwable t) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() >= effectiveLevel && effectiveLevel != OFF_INT) {
+            final ExtLogRecord rec = new ExtLogRecord(level, message, fqcn);
+            rec.setThrown(t);
+            doLog(rec);
+        }
+    }
+
     // slf4j implementation
 
+    /** {@inheritDoc} */
     public void log(final Marker marker, final String fqcn, final int levelVal, final String message, final Throwable t) {
         // ignore marker
         final Level level;
@@ -615,10 +670,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isTraceEnabled() {
         return ALT_TRACE_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void trace(final String msg) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -626,6 +683,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.TRACE, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void trace(final String format, final Object arg) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -635,6 +693,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void trace(final String format, final Object arg1, final Object arg2) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -644,6 +703,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void trace(final String format, final Object[] argArray) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -653,6 +713,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void trace(final String msg, final Throwable t) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -662,10 +723,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isTraceEnabled(final Marker marker) {
         return ALT_TRACE_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void trace(final Marker marker, final String msg) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -673,6 +736,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.TRACE, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void trace(final Marker marker, final String format, final Object arg) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -682,6 +746,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void trace(final Marker marker, final String format, final Object arg1, final Object arg2) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -691,6 +756,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void trace(final Marker marker, final String format, final Object[] argArray) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -700,6 +766,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void trace(final Marker marker, final String msg, final Throwable t) {
         if (ALT_TRACE_INT < effectiveLevel) {
             return;
@@ -709,10 +776,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isDebugEnabled() {
         return ALT_DEBUG_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void debug(final String msg) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -720,6 +789,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void debug(final String format, final Object arg) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -729,6 +799,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void debug(final String format, final Object arg1, final Object arg2) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -738,6 +809,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void debug(final String format, final Object[] argArray) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -747,6 +819,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void debug(final String msg, final Throwable t) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -756,10 +829,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isDebugEnabled(final Marker marker) {
         return ALT_DEBUG_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void debug(final Marker marker, final String msg) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -767,6 +842,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void debug(final Marker marker, final String format, final Object arg) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -776,6 +852,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void debug(final Marker marker, final String format, final Object arg1, final Object arg2) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -785,6 +862,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void debug(final Marker marker, final String format, final Object[] argArray) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -794,6 +872,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void debug(final Marker marker, final String msg, final Throwable t) {
         if (ALT_DEBUG_INT < effectiveLevel) {
             return;
@@ -803,12 +882,14 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isInfoEnabled() {
         return ALT_INFO_INT < effectiveLevel;
     }
 
     // info(String) is defined above, and happens to be compatible
 
+    /** {@inheritDoc} */
     public void info(final String format, final Object arg) {
         if (ALT_INFO_INT < effectiveLevel) {
             return;
@@ -818,6 +899,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void info(final String format, final Object arg1, final Object arg2) {
         if (ALT_INFO_INT < effectiveLevel) {
             return;
@@ -827,6 +909,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void info(final String format, final Object[] argArray) {
         if (ALT_INFO_INT < effectiveLevel) {
             return;
@@ -836,6 +919,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void info(final String msg, final Throwable t) {
         if (ALT_INFO_INT < effectiveLevel) {
             return;
@@ -845,10 +929,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isInfoEnabled(final Marker marker) {
         return ALT_INFO_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void info(final Marker marker, final String msg) {
         if (ALT_INFO_INT < effectiveLevel) {
             return;
@@ -856,6 +942,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void info(final Marker marker, final String format, final Object arg) {
         if (ALT_INFO_INT < effectiveLevel) {
             return;
@@ -865,6 +952,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void info(final Marker marker, final String format, final Object arg1, final Object arg2) {
         if (ALT_INFO_INT < effectiveLevel) {
             return;
@@ -874,6 +962,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void info(final Marker marker, final String format, final Object[] argArray) {
         if (ALT_INFO_INT < effectiveLevel) {
             return;
@@ -883,6 +972,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void info(final Marker marker, final String msg, final Throwable t) {
         if (ALT_INFO_INT < effectiveLevel) {
             return;
@@ -892,10 +982,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isWarnEnabled() {
         return ALT_WARN_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void warn(final String msg) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -903,6 +995,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.WARN, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void warn(final String format, final Object arg) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -912,6 +1005,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void warn(final String format, final Object arg1, final Object arg2) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -921,6 +1015,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void warn(final String format, final Object[] argArray) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -930,6 +1025,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void warn(final String msg, final Throwable t) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -939,10 +1035,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isWarnEnabled(final Marker marker) {
         return ALT_WARN_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void warn(final Marker marker, final String msg) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -950,6 +1048,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.WARN, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void warn(final Marker marker, final String format, final Object arg) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -959,6 +1058,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void warn(final Marker marker, final String format, final Object arg1, final Object arg2) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -968,6 +1068,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void warn(final Marker marker, final String format, final Object[] argArray) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -977,6 +1078,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void warn(final Marker marker, final String msg, final Throwable t) {
         if (ALT_WARN_INT < effectiveLevel) {
             return;
@@ -986,10 +1088,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isErrorEnabled() {
         return ALT_ERROR_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void error(final String msg) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -997,6 +1101,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.ERROR, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void error(final String format, final Object arg) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -1006,6 +1111,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void error(final String format, final Object arg1, final Object arg2) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -1015,6 +1121,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void error(final String format, final Object[] argArray) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -1024,6 +1131,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void error(final String msg, final Throwable t) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -1033,10 +1141,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isErrorEnabled(final Marker marker) {
         return ALT_ERROR_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void error(final Marker marker, final String msg) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -1044,6 +1154,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.ERROR, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void error(final Marker marker, final String format, final Object arg) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -1053,6 +1164,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void error(final Marker marker, final String format, final Object arg1, final Object arg2) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -1062,6 +1174,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void error(final Marker marker, final String format, final Object[] argArray) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -1071,6 +1184,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void error(final Marker marker, final String msg, final Throwable t) {
         if (ALT_ERROR_INT < effectiveLevel) {
             return;
@@ -1080,10 +1194,12 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public boolean isFatalEnabled() {
         return ALT_FATAL_INT < effectiveLevel;
     }
 
+    /** {@inheritDoc} */
     public void fatal(final String msg) {
         if (ALT_FATAL_INT < effectiveLevel) {
             return;
@@ -1091,6 +1207,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(new ExtLogRecord(org.jboss.logmanager.Level.FATAL, msg, LOGGER_CLASS_NAME));
     }
 
+    /** {@inheritDoc} */
     public void fatal(final String format, final Object arg) {
         if (ALT_FATAL_INT < effectiveLevel) {
             return;
@@ -1100,6 +1217,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void fatal(final String format, final Object arg1, final Object arg2) {
         if (ALT_FATAL_INT < effectiveLevel) {
             return;
@@ -1109,6 +1227,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void fatal(final String format, final Object[] argArray) {
         if (ALT_FATAL_INT < effectiveLevel) {
             return;
@@ -1118,6 +1237,7 @@ public class Logger extends java.util.logging.Logger implements LocationAwareLog
         doLog(rec);
     }
 
+    /** {@inheritDoc} */
     public void fatal(final String msg, final Throwable t) {
         if (ALT_FATAL_INT < effectiveLevel) {
             return;
