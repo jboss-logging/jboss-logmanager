@@ -20,29 +20,12 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
-
-import java.util.logging.Logger;
-import java.util.logging.Level;
+package org.jboss.stdio;
 
 /**
- * A writer which writes to the current logging context's standard error logger.
+ * A mechanism for determining what the current standard I/O context is.  All I/O to {@link System#in}, {@link System#out},
+ * and {@link System#err} are handled by the current standard I/O context
  */
-public final class SystemErrLoggingWriter extends AbstractLoggingWriter {
-
-    /**
-     * Construct a new instance.
-     */
-    public SystemErrLoggingWriter() {
-    }
-
-    /** {@inheritDoc} */
-    protected Logger getLogger() {
-        return LogContext.getLogContext().getStderrLogger();
-    }
-
-    /** {@inheritDoc} */
-    protected Level getLevel() {
-        return Level.WARNING;
-    }
+public interface StdioContextSelector {
+    StdioContext getStdioContext();
 }
