@@ -22,41 +22,35 @@
 
 package org.jboss.logmanager;
 
-import org.jboss.logging.NDCProvider;
+import java.io.Serializable;
+import java.io.ObjectStreamException;
 
-final class NDCProviderImpl implements NDCProvider {
+/**
+ * A marker class for loggers.  After read, the {@link #readResolve()} method will return a logger with the given name.
+ */
+public final class SerializedLogger implements Serializable {
 
-    public void clear() {
-        NDC.clear();
+    private static final long serialVersionUID = 8266206989821750874L;
+
+    private final String name;
+
+    /**
+     * Construct an instance.
+     *
+     * @param name the logger name
+     */
+    public SerializedLogger(final String name) {
+        this.name = name;
     }
 
-    public String get() {
-        return NDC.get();
-    }
-
-    public int getDepth() {
-        return NDC.getDepth();
-    }
-
-    public String pop() {
-        return NDC.pop();
-    }
-
-    public String peek() {
-        return NDC.get();
-    }
-
-    public void push(final String message) {
-        NDC.push(message);
-    }
-
-    public void setMaxDepth(final int maxDepth) {
-        NDC.trimTo(maxDepth);
-    }
-
-    private static final NDCProvider instance = new NDCProviderImpl();
-
-    public static NDCProvider getInstance() {
-        return instance;
+    /**
+     * Get the actual logger for this marker.
+     *
+     * @return the logger
+     * @throws ObjectStreamException (never)
+     * @see <a href="http://java.sun.com/javase/6/docs/platform/serialization/spec/input.html#5903">Serialization spec, 3.7</a>
+     */
+    public Object readResolve() throws ObjectStreamException {
+        return Logger.getLogger(name);
     }
 }

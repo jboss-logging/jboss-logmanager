@@ -20,41 +20,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
+package org.slf4j.impl;
 
-import java.util.Map;
-import org.slf4j.spi.MDCAdapter;
+import org.slf4j.ILoggerFactory;
+import org.slf4j.Logger;
+import org.jboss.logmanager.LogContext;
 
-public final class Slf4jMDCAdapter implements MDCAdapter {
+public final class Slf4jLoggerFactory implements ILoggerFactory {
 
-    public void put(final String key, final String val) {
-        MDC.put(key, val);
-    }
-
-    public String get(final String key) {
-        return MDC.get(key);
-    }
-
-    public void remove(final String key) {
-        MDC.remove(key);
-    }
-
-    public void clear() {
-        MDC.clear();
-    }
-
-    public Map getCopyOfContextMap() {
-        return MDC.copy();
-    }
-
-    public void setContextMap(final Map contextMap) {
-        MDC.clear();
-        for (Map.Entry<?, ?> entry : ((Map<?, ?>) contextMap).entrySet()) {
-            final Object key = entry.getKey();
-            final Object value = entry.getValue();
-            if (key != null && value != null) {
-                MDC.put(key.toString(), value.toString());
-            }
-        }
+    public Logger getLogger(final String name) {
+        return LogContext.getLogContext().getLogger(name);
     }
 }

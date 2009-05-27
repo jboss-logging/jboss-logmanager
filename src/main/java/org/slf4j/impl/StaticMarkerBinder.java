@@ -20,43 +20,26 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
+package org.slf4j.impl;
 
-import org.jboss.logging.NDCProvider;
+import org.slf4j.spi.MarkerFactoryBinder;
+import org.slf4j.IMarkerFactory;
+import org.slf4j.helpers.BasicMarkerFactory;
 
-final class NDCProviderImpl implements NDCProvider {
+public final class StaticMarkerBinder implements MarkerFactoryBinder {
 
-    public void clear() {
-        NDC.clear();
+    public static final StaticMarkerBinder SINGLETON = new StaticMarkerBinder();
+
+    private final IMarkerFactory markerFactory = new BasicMarkerFactory();
+
+    private StaticMarkerBinder() {
     }
 
-    public String get() {
-        return NDC.get();
+    public IMarkerFactory getMarkerFactory() {
+        return markerFactory;
     }
 
-    public int getDepth() {
-        return NDC.getDepth();
-    }
-
-    public String pop() {
-        return NDC.pop();
-    }
-
-    public String peek() {
-        return NDC.get();
-    }
-
-    public void push(final String message) {
-        NDC.push(message);
-    }
-
-    public void setMaxDepth(final int maxDepth) {
-        NDC.trimTo(maxDepth);
-    }
-
-    private static final NDCProvider instance = new NDCProviderImpl();
-
-    public static NDCProvider getInstance() {
-        return instance;
+    public String getMarkerFactoryClassStr() {
+        return BasicMarkerFactory.class.getName();
     }
 }

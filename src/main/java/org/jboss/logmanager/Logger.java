@@ -100,7 +100,7 @@ public final class Logger extends java.util.logging.Logger implements LocationAw
     // Serialization
 
     private Object writeReplace() throws ObjectStreamException {
-        return new LoggerMarker(getName());
+        return new SerializedLogger(getName());
     }
 
     // Filter mgmt

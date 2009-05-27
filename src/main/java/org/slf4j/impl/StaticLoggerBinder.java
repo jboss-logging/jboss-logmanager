@@ -20,14 +20,19 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
+package org.slf4j.impl;
 
+import org.slf4j.spi.LoggerFactoryBinder;
 import org.slf4j.ILoggerFactory;
-import org.slf4j.Logger;
+import org.slf4j.impl.Slf4jLoggerFactory;
 
-public final class Slf4jLoggerFactory implements ILoggerFactory {
+public final class StaticLoggerBinder implements LoggerFactoryBinder {
 
-    public Logger getLogger(final String name) {
-        return LogContext.getLogContext().getLogger(name);
+    public ILoggerFactory getLoggerFactory() {
+        return new Slf4jLoggerFactory();
+    }
+
+    public String getLoggerFactoryClassStr() {
+        return Slf4jLoggerFactory.class.getName();
     }
 }

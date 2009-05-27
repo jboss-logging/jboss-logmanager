@@ -20,43 +20,23 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
+package org.slf4j.impl;
 
-import org.jboss.logging.NDCProvider;
+import org.slf4j.spi.MDCAdapter;
+import org.slf4j.impl.Slf4jMDCAdapter;
 
-final class NDCProviderImpl implements NDCProvider {
+public final class StaticMDCBinder {
 
-    public void clear() {
-        NDC.clear();
+    public static final StaticMDCBinder SINGLETON = new StaticMDCBinder();
+
+    private StaticMDCBinder() {
     }
 
-    public String get() {
-        return NDC.get();
+    public MDCAdapter getMDCA() {
+        return new Slf4jMDCAdapter();
     }
 
-    public int getDepth() {
-        return NDC.getDepth();
-    }
-
-    public String pop() {
-        return NDC.pop();
-    }
-
-    public String peek() {
-        return NDC.get();
-    }
-
-    public void push(final String message) {
-        NDC.push(message);
-    }
-
-    public void setMaxDepth(final int maxDepth) {
-        NDC.trimTo(maxDepth);
-    }
-
-    private static final NDCProvider instance = new NDCProviderImpl();
-
-    public static NDCProvider getInstance() {
-        return instance;
+    public String getMDCAdapterClassStr() {
+        return Slf4jMDCAdapter.class.getName();
     }
 }

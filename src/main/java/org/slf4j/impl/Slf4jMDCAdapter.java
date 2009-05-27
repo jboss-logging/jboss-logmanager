@@ -20,37 +20,42 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
+package org.slf4j.impl;
 
-import java.io.Serializable;
-import java.io.ObjectStreamException;
+import java.util.Map;
+import org.slf4j.spi.MDCAdapter;
+import org.jboss.logmanager.MDC;
 
-/**
- * A marker class for loggers.  After read, the {@link #readResolve()} method will return a logger with the given name.
- */
-public final class LoggerMarker implements Serializable {
+public final class Slf4jMDCAdapter implements MDCAdapter {
 
-    private static final long serialVersionUID = 8266206989821750874L;
-
-    private final String name;
-
-    /**
-     * Construct an instance.
-     *
-     * @param name the logger name
-     */
-    public LoggerMarker(final String name) {
-        this.name = name;
+    public void put(final String key, final String val) {
+        MDC.put(key, val);
     }
 
-    /**
-     * Get the actual logger for this marker.
-     *
-     * @return the logger
-     * @throws ObjectStreamException (never)
-     * @see <a href="http://java.sun.com/javase/6/docs/platform/serialization/spec/input.html#5903">Serialization spec, 3.7</a>
-     */
-    public Object readResolve() throws ObjectStreamException {
-        return Logger.getLogger(name);
+    public String get(final String key) {
+        return MDC.get(key);
+    }
+
+    public void remove(final String key) {
+        MDC.remove(key);
+    }
+
+    public void clear() {
+        MDC.clear();
+    }
+
+    public Map getCopyOfContextMap() {
+        return MDC.copy();
+    }
+
+    public void setContextMap(final Map contextMap) {
+        MDC.clear();
+        for (Map.Entry<?, ?> entry : ((Map<?, ?>) contextMap).entrySet()) {
+            final Object key = entry.getKey();
+            final Object value = entry.getValue();
+            if (key != null && value != null) {
+                MDC.put(key.toString(), value.toString());
+            }
+        }
     }
 }

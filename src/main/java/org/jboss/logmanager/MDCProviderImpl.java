@@ -25,7 +25,7 @@ package org.jboss.logmanager;
 import java.util.Map;
 import org.jboss.logging.MDCProvider;
 
-public final class MDCProviderImpl implements MDCProvider {
+final class MDCProviderImpl implements MDCProvider {
 
     public void put(final String key, final Object value) {
         MDC.put(key, String.valueOf(value));
