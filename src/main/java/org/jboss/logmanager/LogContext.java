@@ -22,10 +22,11 @@
 
 package org.jboss.logmanager;
 
+import java.security.Permission;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import java.security.Permission;
 
+import java.util.logging.LoggingMXBean;
 import java.util.logging.LoggingPermission;
 
 /**
@@ -40,6 +41,8 @@ public final class LogContext {
 
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggerNode rootLogger = new LoggerNode(this);
+    @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
+    private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
 
     /**
      * This lock is taken any time a change is made which affects multiple nodes in the hierarchy.
@@ -87,6 +90,15 @@ public final class LogContext {
     }
 
     /**
+     * Get the {@code LoggingMXBean} associated with this log context.
+     *
+     * @return the {@code LoggingMXBean} instance
+     */
+    public LoggingMXBean getMxBean() {
+        return mxBean;
+    }
+
+    /**
      * Get the system log context.
      *
      * @return the system log context
@@ -95,11 +107,16 @@ public final class LogContext {
         return SYSTEM_CONTEXT;
     }
 
-    private static volatile LogContextSelector logContextSelector = new LogContextSelector() {
+    /**
+     * The default log context selector, which always returns the system log context.
+     */
+    public static final LogContextSelector DEFAULT_LOG_CONTEXT_SELECTOR = new LogContextSelector() {
         public LogContext getLogContext() {
             return SYSTEM_CONTEXT;
         }
     };
+
+    private static volatile LogContextSelector logContextSelector = DEFAULT_LOG_CONTEXT_SELECTOR;
 
     /**
      * Get the currently active log context.
@@ -132,5 +149,9 @@ public final class LogContext {
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
         }
+    }
+
+    LoggerNode getRootLoggerNode() {
+        return rootLogger;
     }
 }

@@ -23,9 +23,10 @@
 package org.jboss.logmanager;
 
 import java.lang.ref.WeakReference;
+import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.WEAK;
 import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.STRONG;
+import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.WEAK;
 
 /**
  * A node in the tree of logger names.  Maintains weak references to children and a strong reference to its parent.
@@ -166,6 +167,15 @@ final class LoggerNode {
         synchronized(this) {
             return loggerRef == null ? null : loggerRef.get();
         }
+    }
+
+    /**
+     * Get the children of this logger.
+     *
+     * @return the children
+     */
+    Collection<LoggerNode> getChildren() {
+        return children.values();
     }
 
     /**

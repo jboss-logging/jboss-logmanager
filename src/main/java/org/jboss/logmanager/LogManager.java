@@ -74,6 +74,18 @@ public final class LogManager extends java.util.logging.LogManager {
                 } catch (Exception e) {
                     // ignore; just skip it
                 }
+                /* Next hack: Replace the crappy MXBean on the system logmanager, if it's there.
+                 */
+                final Class<java.util.logging.LogManager> lmc = java.util.logging.LogManager.class;
+                try {
+                    synchronized (lmc) {
+                        final Field loggingMXBean = lmc.getDeclaredField("loggingMXBean");
+                        loggingMXBean.setAccessible(true);
+                        loggingMXBean.set(null, LogContext.getSystemLogContext().getMxBean());
+                    }
+                } catch (Exception e) {
+                    // ignore; just skip it
+                }
                 return null;
             }
         });
