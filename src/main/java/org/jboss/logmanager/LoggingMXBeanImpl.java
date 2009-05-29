@@ -63,7 +63,7 @@ final class LoggingMXBeanImpl implements LoggingMXBean {
         if (logger == null) {
             throw new IllegalArgumentException("logger \"" + loggerName + "\" does not exist");
         }
-        logger.setLevel(levelName == null ? null : Level.parse(levelName));
+        logger.setLevel(levelName == null ? null : context.getLevelForName(levelName));
     }
 
     public String getParentLoggerName(final String loggerName) {

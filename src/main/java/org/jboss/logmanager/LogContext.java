@@ -22,10 +22,15 @@
 
 package org.jboss.logmanager;
 
+import java.lang.ref.WeakReference;
 import java.security.Permission;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+import java.util.logging.Level;
 import java.util.logging.LoggingMXBean;
 import java.util.logging.LoggingPermission;
 
@@ -43,6 +48,36 @@ public final class LogContext {
     private final LoggerNode rootLogger = new LoggerNode(this);
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
+
+    private static final HashMap<String, LevelRef> INITIAL_LEVEL_MAP;
+
+    private static void addStrong(Map<String, LevelRef> map, Level level) {
+        map.put(level.getName().toUpperCase(), new StrongLevelRef(level));
+    }
+
+    static {
+        final HashMap<String, LevelRef> map = new HashMap<String, LevelRef>();
+        addStrong(map, Level.OFF);
+        addStrong(map, Level.ALL);
+        addStrong(map, Level.SEVERE);
+        addStrong(map, Level.WARNING);
+        addStrong(map, Level.CONFIG);
+        addStrong(map, Level.INFO);
+        addStrong(map, Level.FINE);
+        addStrong(map, Level.FINER);
+        addStrong(map, Level.FINEST);
+
+        addStrong(map, org.jboss.logmanager.Level.FATAL);
+        addStrong(map, org.jboss.logmanager.Level.ERROR);
+        addStrong(map, org.jboss.logmanager.Level.WARN);
+        addStrong(map, org.jboss.logmanager.Level.INFO);
+        addStrong(map, org.jboss.logmanager.Level.DEBUG);
+        addStrong(map, org.jboss.logmanager.Level.TRACE);
+
+        INITIAL_LEVEL_MAP = map;
+    }
+
+    private final AtomicReference<Map<String, LevelRef>> levelMapReference = new AtomicReference<Map<String, LevelRef>>(INITIAL_LEVEL_MAP);
 
     /**
      * This lock is taken any time a change is made which affects multiple nodes in the hierarchy.
@@ -94,8 +129,89 @@ public final class LogContext {
      *
      * @return the {@code LoggingMXBean} instance
      */
-    public LoggingMXBean getMxBean() {
+    public LoggingMXBean getLoggingMXBean() {
         return mxBean;
+    }
+
+    /**
+     * Get the level for a name.
+     *
+     * @param name the name
+     * @return the level
+     * @throws IllegalArgumentException if the name is not known
+     */
+    public Level getLevelForName(String name) throws IllegalArgumentException {
+        final LogContext.LevelRef levelRef = levelMapReference.get().get(name);
+        if (levelRef != null) {
+            final Level level = levelRef.get();
+            if (level != null) {
+                return level;
+            }
+        }
+        throw new IllegalArgumentException("Unknown level \"" + name + "\"");
+    }
+
+    /**
+     * Register a level instance with this log context.  The level can then be looked up by name.  Only a weak
+     * reference to the level instance will be kept.  Any previous level registration for the given level's name
+     * will be overwritten.
+     *
+     * @param level the level to register
+     */
+    public void registerLevel(Level level) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(CONTROL_PERMISSION);
+        }
+        for (;;) {
+            final Map<String, LevelRef> oldLevelMap = levelMapReference.get();
+            final Map<String, LevelRef> newLevelMap = new HashMap<String, LevelRef>(oldLevelMap.size());
+            for (Map.Entry<String, LevelRef> entry : oldLevelMap.entrySet()) {
+                final String name = entry.getKey();
+                final LogContext.LevelRef levelRef = entry.getValue();
+                if (levelRef.get() != null) {
+                    newLevelMap.put(name, levelRef);
+                }
+            }
+            newLevelMap.put(level.getName(), new WeakLevelRef(level));
+            if (levelMapReference.compareAndSet(oldLevelMap, newLevelMap)) {
+                return;
+            }
+        }
+    }
+
+    /**
+     * Unregister a previously registered level.  Log levels that are not registered may still be used, they just will
+     * not be findable by name.
+     *
+     * @param level the level to unregister
+     */
+    public void unregisterLevel(Level level) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(CONTROL_PERMISSION);
+        }
+        for (;;) {
+            final Map<String, LevelRef> oldLevelMap = levelMapReference.get();
+            final LevelRef oldRef = oldLevelMap.get(level.getName());
+            if (oldRef != null || oldRef.get() != level) {
+                // not registered, or the registration expired naturally
+                return;
+            }
+            final Map<String, LevelRef> newLevelMap = new HashMap<String, LevelRef>(oldLevelMap.size());
+            for (Map.Entry<String, LevelRef> entry : oldLevelMap.entrySet()) {
+                final String name = entry.getKey();
+                final LevelRef levelRef = entry.getValue();
+                final Level oldLevel = levelRef.get();
+                if (oldLevel != null && oldLevel != level) {
+                    newLevelMap.put(name, levelRef);
+                }
+            }
+            newLevelMap.put(level.getName(), new WeakLevelRef(level));
+            if (levelMapReference.compareAndSet(oldLevelMap, newLevelMap)) {
+                return;
+            }
+        }
     }
 
     /**
@@ -153,5 +269,27 @@ public final class LogContext {
 
     LoggerNode getRootLoggerNode() {
         return rootLogger;
+    }
+
+    private interface LevelRef {
+        Level get();
+    }
+
+    private static final class WeakLevelRef extends WeakReference<Level> implements LevelRef {
+        private WeakLevelRef(final Level level) {
+            super(level);
+        }
+    }
+
+    private static final class StrongLevelRef implements LevelRef {
+        private final Level level;
+
+        private StrongLevelRef(final Level level) {
+            this.level = level;
+        }
+
+        public Level get() {
+            return level;
+        }
     }
 }

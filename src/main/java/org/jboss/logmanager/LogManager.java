@@ -81,7 +81,7 @@ public final class LogManager extends java.util.logging.LogManager {
                     synchronized (lmc) {
                         final Field loggingMXBean = lmc.getDeclaredField("loggingMXBean");
                         loggingMXBean.setAccessible(true);
-                        loggingMXBean.set(null, LogContext.getSystemLogContext().getMxBean());
+                        loggingMXBean.set(null, LogContext.getSystemLogContext().getLoggingMXBean());
                     }
                 } catch (Exception e) {
                     // ignore; just skip it
