@@ -63,6 +63,6 @@ public final class RegexFilter implements Filter {
      * @return {@code true} if the log record is loggable
      */
     public boolean isLoggable(final LogRecord record) {
-        return pattern.matcher(record.getMessage()).matches() != exclude;
+        return pattern.matcher(record.getMessage()).find() != exclude;
     }
 }
