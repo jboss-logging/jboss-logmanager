@@ -371,6 +371,8 @@ final class AtomicArray<T, V> {
     private static <V> V[] newInstance(Class<V> componentType, int length) {
         if (componentType == Handler.class) {
             return (V[]) new Handler[length];
+        } else if (componentType == Object.class) {
+            return (V[]) new Object[length];
         } else {
             return (V[]) Array.newInstance(componentType, length);
         }

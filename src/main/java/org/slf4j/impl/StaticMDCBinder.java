@@ -23,7 +23,6 @@
 package org.slf4j.impl;
 
 import org.slf4j.spi.MDCAdapter;
-import org.slf4j.impl.Slf4jMDCAdapter;
 
 public final class StaticMDCBinder {
 

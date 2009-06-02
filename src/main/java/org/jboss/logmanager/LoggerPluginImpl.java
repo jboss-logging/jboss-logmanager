@@ -39,7 +39,7 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
     }
 
     public boolean isTraceEnabled() {
-        return logger.isTraceEnabled();
+        return logger.isLoggable(Level.TRACE);
     }
 
     public void trace(final Object message) {
@@ -56,7 +56,7 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
 
     @Deprecated
     public boolean isDebugEnabled() {
-        return logger.isDebugEnabled();
+        return logger.isLoggable(Level.DEBUG);
     }
 
     public void debug(final Object message) {
@@ -73,7 +73,7 @@ public final class LoggerPluginImpl implements LoggerPlugin, NDCSupport, MDCSupp
 
     @Deprecated
     public boolean isInfoEnabled() {
-        return logger.isInfoEnabled();
+        return logger.isLoggable(Level.INFO);
     }
 
     public void info(final Object message) {

@@ -77,7 +77,7 @@ public final class LogService {
             if (handler != null) handler.flush();
         } catch (Throwable t) {
             // todo - might this loop somehow?
-            log.error("Error flushing a log handler", t);
+            log.log(Level.ERROR, "Error flushing a log handler", t);
         }
     }
 
@@ -86,7 +86,7 @@ public final class LogService {
             if (handler != null) handler.close();
         } catch (Throwable t) {
             // todo - might this loop somehow?
-            log.error("Error closing a log handler", t);
+            log.log(Level.ERROR, "Error closing a log handler", t);
         }
     }
 

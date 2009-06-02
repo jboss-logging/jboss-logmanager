@@ -25,10 +25,11 @@ package org.slf4j.impl;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.jboss.logmanager.LogContext;
+import org.jboss.logmanager.Slf4jLogger;
 
 public final class Slf4jLoggerFactory implements ILoggerFactory {
 
     public Logger getLogger(final String name) {
-        return LogContext.getLogContext().getLogger(name);
+        return new Slf4jLogger(LogContext.getLogContext().getLogger(name));
     }
 }
