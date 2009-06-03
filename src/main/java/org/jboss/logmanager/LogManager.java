@@ -28,11 +28,11 @@ import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Enumeration;
-import java.util.NoSuchElementException;
 import java.util.Iterator;
 import java.util.ListIterator;
-import java.util.Collection;
+import java.util.NoSuchElementException;
 
 /**
  * Simplified log manager.  Designed to work around the (many) design flaws of the JDK platform log manager.

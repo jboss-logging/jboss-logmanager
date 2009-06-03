@@ -22,8 +22,8 @@
 
 package org.jboss.logmanager;
 
-import java.util.Map;
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Mapped diagnostic context.  This is a thread-local map used to hold loggable information.

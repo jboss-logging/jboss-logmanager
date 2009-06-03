@@ -22,8 +22,8 @@
 
 package org.jboss.logmanager.filters;
 
-import java.util.regex.Pattern;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import java.util.logging.Filter;
 import java.util.logging.LogRecord;

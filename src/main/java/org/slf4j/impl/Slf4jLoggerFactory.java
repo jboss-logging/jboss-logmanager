@@ -25,7 +25,6 @@ package org.slf4j.impl;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 import org.jboss.logmanager.LogContext;
-import org.slf4j.impl.Slf4jLogger;
 
 public final class Slf4jLoggerFactory implements ILoggerFactory {
 

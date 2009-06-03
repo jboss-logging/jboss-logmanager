@@ -22,12 +22,12 @@
 
 package org.jboss.logmanager;
 
-import java.util.Map;
-import java.util.ResourceBundle;
-import java.util.MissingResourceException;
-import java.io.ObjectOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.text.MessageFormat;
+import java.util.Map;
+import java.util.MissingResourceException;
+import java.util.ResourceBundle;
 
 import java.util.logging.LogRecord;
 

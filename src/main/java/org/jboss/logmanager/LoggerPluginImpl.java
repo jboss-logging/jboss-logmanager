@@ -23,10 +23,10 @@
 package org.jboss.logmanager;
 
 import org.jboss.logging.LoggerPlugin;
-import org.jboss.logging.NDCSupport;
+import org.jboss.logging.MDCProvider;
 import org.jboss.logging.MDCSupport;
 import org.jboss.logging.NDCProvider;
-import org.jboss.logging.MDCProvider;
+import org.jboss.logging.NDCSupport;
 
 /**
  * The JBoss Common Logging plugin implementation.
