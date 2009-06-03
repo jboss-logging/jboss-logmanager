@@ -50,6 +50,12 @@
             <version>2.1.0.GA</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+            <version>1.2.15</version>
+            <optional>true</optional>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
