@@ -20,17 +20,15 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager;
+package org.slf4j.impl;
 
 import org.slf4j.Marker;
 import org.slf4j.helpers.MarkerIgnoringBase;
 import org.slf4j.spi.LocationAwareLogger;
+import org.jboss.logmanager.Logger;
+import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.Level;
 
-import static org.jboss.logmanager.Logger.ALT_TRACE_INT;
-import static org.jboss.logmanager.Logger.ALT_DEBUG_INT;
-import static org.jboss.logmanager.Logger.ALT_INFO_INT;
-import static org.jboss.logmanager.Logger.ALT_WARN_INT;
-import static org.jboss.logmanager.Logger.ALT_ERROR_INT;
 import java.io.Serializable;
 import java.io.ObjectStreamException;
 
@@ -38,6 +36,12 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
     private final Logger logger;
     private static final String LOGGER_CLASS_NAME = Slf4jLogger.class.getName();
     private static final long serialVersionUID = -8422185592693034532L;
+
+    private static final int ALT_ERROR_INT = org.jboss.logmanager.Level.ERROR.intValue();
+    private static final int ALT_WARN_INT = org.jboss.logmanager.Level.WARN.intValue();
+    private static final int ALT_INFO_INT = org.jboss.logmanager.Level.INFO.intValue();
+    private static final int ALT_DEBUG_INT = org.jboss.logmanager.Level.DEBUG.intValue();
+    private static final int ALT_TRACE_INT = org.jboss.logmanager.Level.TRACE.intValue();
 
     public Slf4jLogger(final Logger logger) {
         this.logger = logger;
@@ -61,7 +65,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(level, message, fqcn);
         rec.setThrown(t);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -74,7 +78,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         if (ALT_TRACE_INT < logger.getEffectiveLevel()) {
             return;
         }
-        logger.doLog(new ExtLogRecord(org.jboss.logmanager.Level.TRACE, msg, LOGGER_CLASS_NAME));
+        logger.logRaw(new ExtLogRecord(org.jboss.logmanager.Level.TRACE, msg, LOGGER_CLASS_NAME));
     }
 
     /** {@inheritDoc} */
@@ -84,7 +88,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -94,7 +98,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg1, arg2 });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -104,7 +108,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, format, LOGGER_CLASS_NAME);
         rec.setParameters(argArray);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -114,7 +118,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.TRACE, msg, LOGGER_CLASS_NAME);
         rec.setThrown(t);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -127,7 +131,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         if (ALT_DEBUG_INT < logger.getEffectiveLevel()) {
             return;
         }
-        logger.doLog(new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, msg, LOGGER_CLASS_NAME));
+        logger.logRaw(new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, msg, LOGGER_CLASS_NAME));
     }
 
     /** {@inheritDoc} */
@@ -137,7 +141,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -147,7 +151,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg1, arg2 });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -157,7 +161,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, format, LOGGER_CLASS_NAME);
         rec.setParameters(argArray);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -167,7 +171,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.DEBUG, msg, LOGGER_CLASS_NAME);
         rec.setThrown(t);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -180,7 +184,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         if (ALT_INFO_INT < logger.getEffectiveLevel()) {
             return;
         }
-        logger.doLog(new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, LOGGER_CLASS_NAME));
+        logger.logRaw(new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, LOGGER_CLASS_NAME));
     }
 
     /** {@inheritDoc} */
@@ -190,7 +194,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -200,7 +204,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg1, arg2 });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -210,7 +214,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, format, LOGGER_CLASS_NAME);
         rec.setParameters(argArray);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -220,7 +224,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, LOGGER_CLASS_NAME);
         rec.setThrown(t);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -233,7 +237,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         if (ALT_WARN_INT < logger.getEffectiveLevel()) {
             return;
         }
-        logger.doLog(new ExtLogRecord(org.jboss.logmanager.Level.WARN, msg, LOGGER_CLASS_NAME));
+        logger.logRaw(new ExtLogRecord(org.jboss.logmanager.Level.WARN, msg, LOGGER_CLASS_NAME));
     }
 
     /** {@inheritDoc} */
@@ -243,7 +247,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -253,7 +257,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg1, arg2 });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -263,7 +267,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, format, LOGGER_CLASS_NAME);
         rec.setParameters(argArray);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -273,7 +277,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.WARN, msg, LOGGER_CLASS_NAME);
         rec.setThrown(t);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -286,7 +290,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         if (ALT_ERROR_INT < logger.getEffectiveLevel()) {
             return;
         }
-        logger.doLog(new ExtLogRecord(org.jboss.logmanager.Level.ERROR, msg, LOGGER_CLASS_NAME));
+        logger.logRaw(new ExtLogRecord(org.jboss.logmanager.Level.ERROR, msg, LOGGER_CLASS_NAME));
     }
 
     /** {@inheritDoc} */
@@ -296,7 +300,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -306,7 +310,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, format, LOGGER_CLASS_NAME);
         rec.setParameters(new Object[] { arg1, arg2 });
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -316,7 +320,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, format, LOGGER_CLASS_NAME);
         rec.setParameters(argArray);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */
@@ -326,7 +330,7 @@ public final class Slf4jLogger extends MarkerIgnoringBase implements Serializabl
         }
         final ExtLogRecord rec = new ExtLogRecord(org.jboss.logmanager.Level.ERROR, msg, LOGGER_CLASS_NAME);
         rec.setThrown(t);
-        logger.doLog(rec);
+        logger.logRaw(rec);
     }
 
     /** {@inheritDoc} */

@@ -261,21 +261,344 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     // Logger
 
+    private static final int OFF_INT = Level.OFF.intValue();
+
+    private static final int SEVERE_INT = Level.SEVERE.intValue();
+    private static final int WARNING_INT = Level.WARNING.intValue();
+    private static final int INFO_INT = Level.INFO.intValue();
+    private static final int CONFIG_INT = Level.CONFIG.intValue();
+    private static final int FINE_INT = Level.FINE.intValue();
+    private static final int FINER_INT = Level.FINER.intValue();
+    private static final int FINEST_INT = Level.FINEST.intValue();
+
+    /** {@inheritDoc} */
+    public void log(LogRecord record) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (record.getLevel().intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        logRaw(record);
+    }
+
+    /** {@inheritDoc} */
+    public void entering(final String sourceClass, final String sourceMethod) {
+        if (FINER_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY", LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void entering(final String sourceClass, final String sourceMethod, final Object param1) {
+        if (FINER_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY {0}", LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        rec.setParameters(new Object[] { param1 });
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void entering(final String sourceClass, final String sourceMethod, final Object[] params) {
+        if (FINER_INT < effectiveLevel) {
+            return;
+        }
+        final StringBuilder builder = new StringBuilder("ENTRY");
+        for (int i = 0; i < params.length; i++) {
+            builder.append(" {").append(i).append('}');
+        }
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, builder.toString(), LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        if (params != null) rec.setParameters(params);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void exiting(final String sourceClass, final String sourceMethod) {
+        if (FINER_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN", LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void exiting(final String sourceClass, final String sourceMethod, final Object result) {
+        if (FINER_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN {0}", LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        rec.setParameters(new Object[] { result });
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void throwing(final String sourceClass, final String sourceMethod, final Throwable thrown) {
+        if (FINER_INT < effectiveLevel) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "THROW", LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        rec.setThrown(thrown);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void severe(final String msg) {
+        if (SEVERE_INT < effectiveLevel) {
+            return;
+        }
+        logRaw(new ExtLogRecord(Level.SEVERE, msg, LOGGER_CLASS_NAME));
+    }
+
+    /** {@inheritDoc} */
+    public void warning(final String msg) {
+        if (WARNING_INT < effectiveLevel) {
+            return;
+        }
+        logRaw(new ExtLogRecord(Level.WARNING, msg, LOGGER_CLASS_NAME));
+    }
+
+    /** {@inheritDoc} */
+    public void info(final String msg) {
+        if (INFO_INT < effectiveLevel) {
+            return;
+        }
+        logRaw(new ExtLogRecord(Level.INFO, msg, LOGGER_CLASS_NAME));
+    }
+
+    /** {@inheritDoc} */
+    public void config(final String msg) {
+        if (CONFIG_INT < effectiveLevel) {
+            return;
+        }
+        logRaw(new ExtLogRecord(Level.CONFIG, msg, LOGGER_CLASS_NAME));
+    }
+
+    /** {@inheritDoc} */
+    public void fine(final String msg) {
+        if (FINE_INT < effectiveLevel) {
+            return;
+        }
+        logRaw(new ExtLogRecord(Level.FINE, msg, LOGGER_CLASS_NAME));
+    }
+
+    /** {@inheritDoc} */
+    public void finer(final String msg) {
+        if (FINER_INT < effectiveLevel) {
+            return;
+        }
+        logRaw(new ExtLogRecord(Level.FINER, msg, LOGGER_CLASS_NAME));
+    }
+
+    /** {@inheritDoc} */
+    public void finest(final String msg) {
+        if (FINEST_INT < effectiveLevel) {
+            return;
+        }
+        logRaw(new ExtLogRecord(Level.FINEST, msg, LOGGER_CLASS_NAME));
+    }
+
+    /** {@inheritDoc} */
+    public void log(final Level level, final String msg) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        logRaw(new ExtLogRecord(level, msg, LOGGER_CLASS_NAME));
+    }
+
+    /** {@inheritDoc} */
+    public void log(final Level level, final String msg, final Object param1) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setParameters(new Object[] { param1 });
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void log(final Level level, final String msg, final Object[] params) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        if (params != null) rec.setParameters(params);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void log(final Level level, final String msg, final Throwable thrown) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setThrown(thrown);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object param1) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        rec.setParameters(new Object[] { param1 });
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object[] params) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        if (params != null) rec.setParameters(params);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Throwable thrown) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        rec.setThrown(thrown);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        rec.setResourceBundleName(bundleName);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object param1) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        rec.setResourceBundleName(bundleName);
+        rec.setParameters(new Object[] { param1 });
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object[] params) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        rec.setResourceBundleName(bundleName);
+        if (params != null) rec.setParameters(params);
+        logRaw(rec);
+    }
+
+    /** {@inheritDoc} */
+    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Throwable thrown) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        rec.setSourceClassName(sourceClass);
+        rec.setSourceMethodName(sourceMethod);
+        rec.setResourceBundleName(bundleName);
+        rec.setThrown(thrown);
+        logRaw(rec);
+    }
+
+    // GC
+
     /**
-     * Do the logging with no level checks (they've already been done).
-     *
-     * @param record the log record
+     * Perform finalization actions.  This amounts to clearing out the loglevel so that all children are updated
+     * with the parent's effective loglevel.  As such, a lock is acquired from this method which might cause delays in
+     * garbage collection.
      */
-    void doLog(final LogRecord record) {
-        doLog((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
+    protected void finalize() throws Throwable {
+        try {
+            // clear out level so that it spams out to all children
+            setLevel(null);
+        } finally {
+            super.finalize();
+        }
+    }
+
+    // alternate SPI hooks
+
+    /**
+     * SPI interface method to log a message at a given level.
+     *
+     * @param fqcn the fully qualified class name of the first logger class
+     * @param level the level to log at
+     * @param message the message
+     * @param t the throwable, if any
+     */
+    public void log(final String fqcn, final Level level, final String message, final Throwable t) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level.intValue() >= effectiveLevel && effectiveLevel != OFF_INT) {
+            final ExtLogRecord rec = new ExtLogRecord(level, message, fqcn);
+            rec.setThrown(t);
+            logRaw(rec);
+        }
     }
 
     /**
      * Do the logging with no level checks (they've already been done).
      *
-     * @param record the log record
+     * @param record the extended log record
      */
-    private void doLog(final ExtLogRecord record) {
+    public void logRaw(final ExtLogRecord record) {
         record.setLoggerName(getName());
         String bundleName = null;
         ResourceBundle bundle = null;
@@ -318,342 +641,13 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         }
     }
 
-    private static final int OFF_INT = Level.OFF.intValue();
-
-    private static final int SEVERE_INT = Level.SEVERE.intValue();
-    private static final int WARNING_INT = Level.WARNING.intValue();
-    private static final int INFO_INT = Level.INFO.intValue();
-    private static final int CONFIG_INT = Level.CONFIG.intValue();
-    private static final int FINE_INT = Level.FINE.intValue();
-    private static final int FINER_INT = Level.FINER.intValue();
-    private static final int FINEST_INT = Level.FINEST.intValue();
-
-    static final int ALT_FATAL_INT = org.jboss.logmanager.Level.FATAL.intValue();
-    static final int ALT_ERROR_INT = org.jboss.logmanager.Level.ERROR.intValue();
-    static final int ALT_WARN_INT = org.jboss.logmanager.Level.WARN.intValue();
-    static final int ALT_INFO_INT = org.jboss.logmanager.Level.INFO.intValue();
-    static final int ALT_DEBUG_INT = org.jboss.logmanager.Level.DEBUG.intValue();
-    static final int ALT_TRACE_INT = org.jboss.logmanager.Level.TRACE.intValue();
-
-    /** {@inheritDoc} */
-    public void log(LogRecord record) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (record.getLevel().intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        doLog(record);
-    }
-
-    /** {@inheritDoc} */
-    public void entering(final String sourceClass, final String sourceMethod) {
-        if (FINER_INT < effectiveLevel) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY", LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void entering(final String sourceClass, final String sourceMethod, final Object param1) {
-        if (FINER_INT < effectiveLevel) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY {0}", LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setParameters(new Object[] { param1 });
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void entering(final String sourceClass, final String sourceMethod, final Object[] params) {
-        if (FINER_INT < effectiveLevel) {
-            return;
-        }
-        final StringBuilder builder = new StringBuilder("ENTRY");
-        for (int i = 0; i < params.length; i++) {
-            builder.append(" {").append(i).append('}');
-        }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, builder.toString(), LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        if (params != null) rec.setParameters(params);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void exiting(final String sourceClass, final String sourceMethod) {
-        if (FINER_INT < effectiveLevel) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN", LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void exiting(final String sourceClass, final String sourceMethod, final Object result) {
-        if (FINER_INT < effectiveLevel) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN {0}", LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setParameters(new Object[] { result });
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void throwing(final String sourceClass, final String sourceMethod, final Throwable thrown) {
-        if (FINER_INT < effectiveLevel) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "THROW", LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setThrown(thrown);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void severe(final String msg) {
-        if (SEVERE_INT < effectiveLevel) {
-            return;
-        }
-        doLog(new ExtLogRecord(Level.SEVERE, msg, LOGGER_CLASS_NAME));
-    }
-
-    /** {@inheritDoc} */
-    public void warning(final String msg) {
-        if (WARNING_INT < effectiveLevel) {
-            return;
-        }
-        doLog(new ExtLogRecord(Level.WARNING, msg, LOGGER_CLASS_NAME));
-    }
-
-    /** {@inheritDoc} */
-    public void info(final String msg) {
-        if (INFO_INT < effectiveLevel) {
-            return;
-        }
-        doLog(new ExtLogRecord(Level.INFO, msg, LOGGER_CLASS_NAME));
-    }
-
-    /** {@inheritDoc} */
-    public void config(final String msg) {
-        if (CONFIG_INT < effectiveLevel) {
-            return;
-        }
-        doLog(new ExtLogRecord(Level.CONFIG, msg, LOGGER_CLASS_NAME));
-    }
-
-    /** {@inheritDoc} */
-    public void fine(final String msg) {
-        if (FINE_INT < effectiveLevel) {
-            return;
-        }
-        doLog(new ExtLogRecord(Level.FINE, msg, LOGGER_CLASS_NAME));
-    }
-
-    /** {@inheritDoc} */
-    public void finer(final String msg) {
-        if (FINER_INT < effectiveLevel) {
-            return;
-        }
-        doLog(new ExtLogRecord(Level.FINER, msg, LOGGER_CLASS_NAME));
-    }
-
-    /** {@inheritDoc} */
-    public void finest(final String msg) {
-        if (FINEST_INT < effectiveLevel) {
-            return;
-        }
-        doLog(new ExtLogRecord(Level.FINEST, msg, LOGGER_CLASS_NAME));
-    }
-
-    /** {@inheritDoc} */
-    public void log(final Level level, final String msg) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        doLog(new ExtLogRecord(level, msg, LOGGER_CLASS_NAME));
-    }
-
-    /** {@inheritDoc} */
-    public void log(final Level level, final String msg, final Object param1) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setParameters(new Object[] { param1 });
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void log(final Level level, final String msg, final Object[] params) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        if (params != null) rec.setParameters(params);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void log(final Level level, final String msg, final Throwable thrown) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setThrown(thrown);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object param1) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setParameters(new Object[] { param1 });
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object[] params) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        if (params != null) rec.setParameters(params);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Throwable thrown) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setThrown(thrown);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setResourceBundleName(bundleName);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object param1) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setResourceBundleName(bundleName);
-        rec.setParameters(new Object[] { param1 });
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object[] params) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setResourceBundleName(bundleName);
-        if (params != null) rec.setParameters(params);
-        doLog(rec);
-    }
-
-    /** {@inheritDoc} */
-    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Throwable thrown) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
-            return;
-        }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setResourceBundleName(bundleName);
-        rec.setThrown(thrown);
-        doLog(rec);
-    }
-
-    // GC
-
     /**
-     * Perform finalization actions.  This amounts to clearing out the loglevel so that all children are updated
-     * with the parent's effective loglevel.  As such, a lock is acquired from this method which might cause delays in
-     * garbage collection.
-     */
-    protected void finalize() throws Throwable {
-        try {
-            // clear out level so that it spams out to all children
-            setLevel(null);
-        } finally {
-            super.finalize();
-        }
-    }
-
-    // alternate SPI hook
-
-    /**
-     * SPI interface method to log a message at a given level.
+     * Do the logging with no level checks (they've already been done).  Creates an extended log record if the
+     * provided record is not one.
      *
-     * @param fqcn the fully qualified class name of the first logger class
-     * @param level the level to log at
-     * @param message the message
-     * @param t the throwable, if any
+     * @param record the log record
      */
-    public void log(final String fqcn, final Level level, final String message, final Throwable t) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() >= effectiveLevel && effectiveLevel != OFF_INT) {
-            final ExtLogRecord rec = new ExtLogRecord(level, message, fqcn);
-            rec.setThrown(t);
-            doLog(rec);
-        }
+    public void logRaw(final LogRecord record) {
+        logRaw((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
     }
 }

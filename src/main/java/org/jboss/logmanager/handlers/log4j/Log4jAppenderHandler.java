@@ -25,16 +25,15 @@ package org.jboss.logmanager.handlers.log4j;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.LogManager;
+import org.jboss.logmanager.handlers.ExtHandler;
 
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
 import org.apache.log4j.Appender;
 import org.apache.log4j.spi.LoggingEvent;
 
 /**
  * A handler which delegates to a log4j appender.
  */
-public final class Log4jAppenderHandler extends Handler {
+public final class Log4jAppenderHandler extends ExtHandler {
     private volatile Appender appender = null;
 
     private static final AtomicReferenceFieldUpdater<Log4jAppenderHandler, Appender> appenderUpdater = AtomicReferenceFieldUpdater.newUpdater(Log4jAppenderHandler.class, Appender.class, "appender");
@@ -53,13 +52,12 @@ public final class Log4jAppenderHandler extends Handler {
      *
      * @param record the log record to publish
      */
-    public void publish(final LogRecord record) {
+    public void publish(final ExtLogRecord record) {
         final Appender appender = this.appender;
         if (appender == null) {
             throw new IllegalStateException("Appender is closed");
         }
-        final ExtLogRecord extRec = (record instanceof ExtLogRecord) ? (ExtLogRecord)record : new ExtLogRecord(record, java.util.logging.Logger.class.getName());
-        final LoggingEvent event = new ConvertedLoggingEvent(extRec);
+        final LoggingEvent event = new ConvertedLoggingEvent(record);
         appender.doAppend(event);
     }
 
