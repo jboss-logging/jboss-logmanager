@@ -22,35 +22,47 @@
 
 package org.jboss.logmanager.handlers;
 
-import org.jboss.logmanager.ExtLogRecord;
-
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
-
 import java.io.Flushable;
 
+import java.util.logging.Handler;
+
 /**
- * An extended logger handler.  Use this class as a base class for log handlers which require {@code ExtLogRecord}
- * instances.
+ * Handler utility methods.
  */
-public abstract class ExtHandler extends Handler implements Flushable {
+public final class Handlers {
 
-    private static final String LOGGER_CLASS_NAME = org.jboss.logmanager.Logger.class.getName();
-
-    /** {@inheritDoc} */
-    public final void publish(final LogRecord record) {
-        publish((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
+    private Handlers() {
     }
 
     /**
-     * Publish an {@code ExtLogRecord}.
-     * <p/>
-     * The logging request was made initially to a Logger object, which initialized the LogRecord and forwarded it here.
-     * <p/>
-     * The {@code ExtHandler} is responsible for formatting the message, when and if necessary. The formatting should
-     * include localization.
+     * Create a wrapper that exposes the handler's close and flush methods via the I/O API.
      *
-     * @param record the log record to publish
+     * @param handler the logging handler
+     * @return the wrapper
      */
-    public abstract void publish(final ExtLogRecord record);
+    public static Flushable wrap(final Handler handler) {
+        return handler instanceof Flushable ? (Flushable) handler : new Flushable() {
+            public void close() {
+                handler.close();
+            }
+
+            public void flush() {
+                handler.flush();
+            }
+        };
+    }
+
+    /**
+     * Create a {@code Runnable} task that flushes a handler.
+     *
+     * @param handler the handler
+     * @return a flushing task
+     */
+    public static Runnable flusher(final Handler handler) {
+        return new Runnable() {
+            public void run() {
+                handler.flush();
+            }
+        };
+    }
 }
