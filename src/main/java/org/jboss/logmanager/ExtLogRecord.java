@@ -88,10 +88,18 @@ public class ExtLogRecord extends LogRecord {
     private String threadName;
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
+        copyAll();
+        oos.defaultWriteObject();
+    }
+
+    /**
+     * Copy all fields and prepare this object to be passed to another thread or to be serialized.  Calling this method
+     * more than once has no additional effect and will not incur extra copies.
+     */
+    public void copyAll() {
         copyMdc();
         calculateCaller();
         getFormattedMessage();
-        oos.defaultWriteObject();
     }
 
     /**
