@@ -40,6 +40,21 @@ public class ExtLogRecord extends LogRecord {
     private static final long serialVersionUID = -9174374711278052369L;
 
     /**
+     * The format style to use.
+     */
+    public enum FormatStyle {
+
+        /**
+         * Format the message using the {@link java.text.MessageFormat} parameter style.
+         */
+        MESSAGE_FORMAT,
+        /**
+         * Format the message using the {@link java.util.Formatter} (also known as {@code printf()}) parameter style.
+         */
+        PRINTF,
+    }
+
+    /**
      * Construct a new instance.  Grabs the current NDC immediately.  MDC is deferred.
      *
      * @param level a logging level value
@@ -48,6 +63,23 @@ public class ExtLogRecord extends LogRecord {
      */
     public ExtLogRecord(final java.util.logging.Level level, final String msg, final String loggerClassName) {
         super(level, msg);
+        this.loggerClassName = loggerClassName;
+        ndc = NDC.get();
+        setUnknownCaller();
+        threadName = Thread.currentThread().getName();
+    }
+
+    /**
+     * Construct a new instance.  Grabs the current NDC immediately.  MDC is deferred.
+     *
+     * @param level a logging level value
+     * @param msg the raw non-localized logging message (may be null)
+     * @param formatStyle the parameter format style to use
+     * @param loggerClassName the name of the logger class
+     */
+    public ExtLogRecord(final java.util.logging.Level level, final String msg, final FormatStyle formatStyle, final String loggerClassName) {
+        super(level, msg);
+        this.formatStyle = formatStyle == null ? FormatStyle.MESSAGE_FORMAT : formatStyle;
         this.loggerClassName = loggerClassName;
         ndc = NDC.get();
         setUnknownCaller();
@@ -81,6 +113,7 @@ public class ExtLogRecord extends LogRecord {
     private transient final String loggerClassName;
     private transient boolean calculateCaller = true;
 
+    private FormatStyle formatStyle = FormatStyle.MESSAGE_FORMAT;
     private Map<String, String> mdcCopy;
     private int sourceLineNumber = -1;
     private String sourceFileName;
@@ -247,6 +280,11 @@ public class ExtLogRecord extends LogRecord {
         super.setSourceMethodName(sourceMethodName);
     }
 
+    /**
+     * Get the fully formatted log record, with resources resolved and parameters applied.
+     *
+     * @return the formatted log record
+     */
     public String getFormattedMessage() {
         if (formattedMessage == null) {
             formattedMessage = formatRecord();
@@ -265,9 +303,19 @@ public class ExtLogRecord extends LogRecord {
             }
         }
         final Object[] parameters = getParameters();
-        return parameters != null &&
-                parameters.length > 0 &&
-                msg.indexOf('{') >= 0 ? MessageFormat.format(msg, parameters) : msg;
+        if (parameters == null || parameters.length == 0) {
+            return msg;
+        }
+        switch (formatStyle) {
+            case PRINTF: {
+                return String.format(msg, parameters);
+            }
+            case MESSAGE_FORMAT: {
+                return msg.indexOf('{') >= 0 ? MessageFormat.format(msg, parameters) : msg;
+            }
+        }
+        // should be unreachable
+        return msg;
     }
 
     /**
@@ -286,5 +334,58 @@ public class ExtLogRecord extends LogRecord {
      */
     public void setThreadName(final String threadName) {
         this.threadName = threadName;
+    }
+
+    /**
+     * Set the raw message.  Any cached formatted message is discarded.  The parameter format is set to be
+     * {@link java.text.MessageFormat}-style.
+     *
+     * @param message the new raw message
+     */
+    public void setMessage(final String message) {
+        setMessage(message, FormatStyle.MESSAGE_FORMAT);
+    }
+
+    /**
+     * Set the raw message.  Any cached formatted message is discarded.  The parameter format is set according to the
+     * given argument.
+     *
+     * @param message the new raw message
+     * @param formatStyle the format style to use
+     */
+    public void setMessage(final String message, final FormatStyle formatStyle) {
+        this.formatStyle = formatStyle == null ? FormatStyle.MESSAGE_FORMAT : formatStyle;
+        formattedMessage = null;
+        super.setMessage(message);
+    }
+
+    /**
+     * Set the parameters to the log message.  Any cached formatted message is discarded.
+     *
+     * @param parameters the log message parameters. (may be null)
+     */
+    public void setParameters(final Object[] parameters) {
+        formattedMessage = null;
+        super.setParameters(parameters);
+    }
+
+    /**
+     * Set the localization resource bundle.  Any cached formatted message is discarded.
+     *
+     * @param bundle localization bundle (may be null)
+     */
+    public void setResourceBundle(final ResourceBundle bundle) {
+        formattedMessage = null;
+        super.setResourceBundle(bundle);
+    }
+
+    /**
+     * Set the localization resource bundle name.  Any cached formatted message is discarded.
+     *
+     * @param name localization bundle name (may be null)
+     */
+    public void setResourceBundleName(final String name) {
+        formattedMessage = null;
+        super.setResourceBundleName(name);
     }
 }
