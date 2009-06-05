@@ -49,7 +49,7 @@ final class LoggerNode {
     /**
      * A weak reference to the logger instance.  Protected by {@code this}.
      */
-    private WeakReference<Logger> loggerRef = null;
+    private LoggerRef loggerRef = null;
 
     /**
      * The map of names to child nodes.  The child node references are weak.
@@ -151,7 +151,7 @@ final class LoggerNode {
             Logger instance = loggerRef == null ? null : loggerRef.get();
             if (instance == null) {
                 instance = new Logger(this, fullName);
-                loggerRef = new WeakReference<Logger>(instance);
+                loggerRef = fullName.length() == 0 ? new StrongLoggerRef(instance) : new WeakLoggerRef(instance);
                 instance.setLevel(null);
             }
             return instance;
@@ -217,7 +217,7 @@ final class LoggerNode {
         for (LoggerNode node : children.values()) {
             if (node != null) {
                 synchronized (node) {
-                    final WeakReference<Logger> loggerRef = node.loggerRef;
+                    final LoggerRef loggerRef = node.loggerRef;
                     if (loggerRef != null) {
                         final Logger instance = loggerRef.get();
                         if (instance != null) {
@@ -226,6 +226,28 @@ final class LoggerNode {
                     }
                 }
             }
+        }
+    }
+
+    private interface LoggerRef {
+        Logger get();
+    }
+
+    private static final class WeakLoggerRef extends WeakReference<Logger> implements LoggerRef {
+        private WeakLoggerRef(Logger referent) {
+            super(referent);
+        }
+    }
+
+    private static final class StrongLoggerRef implements LoggerRef {
+        private final Logger logger;
+
+        private StrongLoggerRef(final Logger logger) {
+            this.logger = logger;
+        }
+
+        public Logger get() {
+            return logger;
         }
     }
 }
