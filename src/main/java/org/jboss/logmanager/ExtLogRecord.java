@@ -62,11 +62,7 @@ public class ExtLogRecord extends LogRecord {
      * @param loggerClassName the name of the logger class
      */
     public ExtLogRecord(final java.util.logging.Level level, final String msg, final String loggerClassName) {
-        super(level, msg);
-        this.loggerClassName = loggerClassName;
-        ndc = NDC.get();
-        setUnknownCaller();
-        threadName = Thread.currentThread().getName();
+        this(level, msg, FormatStyle.MESSAGE_FORMAT, loggerClassName);
     }
 
     /**
@@ -82,7 +78,6 @@ public class ExtLogRecord extends LogRecord {
         this.formatStyle = formatStyle == null ? FormatStyle.MESSAGE_FORMAT : formatStyle;
         this.loggerClassName = loggerClassName;
         ndc = NDC.get();
-        setUnknownCaller();
         threadName = Thread.currentThread().getName();
     }
 
@@ -186,12 +181,14 @@ public class ExtLogRecord extends LogRecord {
         boolean found = false;
         for (StackTraceElement element : stack) {
             final String className = element.getClassName();
-            if (found && ! loggerClassName.equals(className)) {
-                setSourceClassName(className);
-                setSourceMethodName(element.getMethodName());
-                setSourceLineNumber(element.getLineNumber());
-                setSourceFileName(element.getFileName());
-                return;
+            if (found) {
+                if (! loggerClassName.equals(className)) {
+                    setSourceClassName(className);
+                    setSourceMethodName(element.getMethodName());
+                    setSourceLineNumber(element.getLineNumber());
+                    setSourceFileName(element.getFileName());
+                    return;
+                }
             } else {
                 found = loggerClassName.equals(className);
             }
