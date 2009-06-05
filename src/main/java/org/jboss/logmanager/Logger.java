@@ -582,15 +582,31 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @param fqcn the fully qualified class name of the first logger class
      * @param level the level to log at
      * @param message the message
+     * @param style the message format style
+     * @param params the log parameters
+     * @param t the throwable, if any
+     */
+    public void log(final String fqcn, final Level level, final String message, final ExtLogRecord.FormatStyle style, final Object[] params, final Throwable t) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level == null || fqcn == null || message == null || level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, message, style, fqcn);
+        rec.setParameters(params);
+        rec.setThrown(t);
+        logRaw(rec);
+    }
+
+    /**
+     * SPI interface method to log a message at a given level.
+     *
+     * @param fqcn the fully qualified class name of the first logger class
+     * @param level the level to log at
+     * @param message the message
      * @param t the throwable, if any
      */
     public void log(final String fqcn, final Level level, final String message, final Throwable t) {
-        final int effectiveLevel = this.effectiveLevel;
-        if (level.intValue() >= effectiveLevel && effectiveLevel != OFF_INT) {
-            final ExtLogRecord rec = new ExtLogRecord(level, message, fqcn);
-            rec.setThrown(t);
-            logRaw(rec);
-        }
+        log(fqcn, level, message, ExtLogRecord.FormatStyle.MESSAGE_FORMAT, null, t);
     }
 
     /**
