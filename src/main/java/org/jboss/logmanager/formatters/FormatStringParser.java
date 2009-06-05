@@ -36,11 +36,11 @@ public final class FormatStringParser {
      */
     private static final Pattern pattern = Pattern.compile(
                 // greedily match all non-format characters
-                "([^%]+)" +
+                "([^%]++)" +
                 // match a format string...
                 "|(?:%" +
                     // optional minimum width plus justify flag
-                    "((-)?\\d+)?" +
+                    "(?:(-)?(\\d+))?" +
                     // optional maximum width
                     "(?:\\.(\\d+))?" +
                     // the actual format character
@@ -69,8 +69,8 @@ public final class FormatStringParser {
             if (otherText != null) {
                 stepList.add(Formatters.textFormatStep(otherText));
             } else {
-                final String minWidthString = matcher.group(2);
-                final String hypen = matcher.group(3);
+                final String hypen = matcher.group(2);
+                final String minWidthString = matcher.group(3);
                 final String maxWidthString = matcher.group(4);
                 final String formatCharString = matcher.group(5);
                 final String argument = matcher.group(6);
