@@ -104,7 +104,6 @@ public final class Formatters {
             final int maximumWidth = this.maximumWidth;
             if (len > maximumWidth) {
                 builder.append(subject.substring(len - maximumWidth));
-                return;
             } else if (len < minimumWidth) {
                 if (leftJustify) {
                     builder.append(subject);
@@ -120,6 +119,8 @@ public final class Formatters {
                     }
                     builder.append(subject);
                 }
+            } else {
+                builder.append(subject);
             }
         }
 
