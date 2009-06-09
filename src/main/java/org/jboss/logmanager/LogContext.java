@@ -49,35 +49,44 @@ public final class LogContext {
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
 
-    private static final HashMap<String, LevelRef> INITIAL_LEVEL_MAP;
+    /**
+     * This lazy holder class is required to prevent a problem due to a LogContext instance being constructed
+     * before the class init is complete.
+     */
+    private static final class LazyHolder {
+        private static final HashMap<String, LevelRef> INITIAL_LEVEL_MAP;
 
-    private static void addStrong(Map<String, LevelRef> map, Level level) {
-        map.put(level.getName().toUpperCase(), new StrongLevelRef(level));
+        private LazyHolder() {
+        }
+
+        private static void addStrong(Map<String, LevelRef> map, Level level) {
+            map.put(level.getName().toUpperCase(), new StrongLevelRef(level));
+        }
+
+        static {
+            final HashMap<String, LevelRef> map = new HashMap<String, LevelRef>();
+            addStrong(map, Level.OFF);
+            addStrong(map, Level.ALL);
+            addStrong(map, Level.SEVERE);
+            addStrong(map, Level.WARNING);
+            addStrong(map, Level.CONFIG);
+            addStrong(map, Level.INFO);
+            addStrong(map, Level.FINE);
+            addStrong(map, Level.FINER);
+            addStrong(map, Level.FINEST);
+
+            addStrong(map, org.jboss.logmanager.Level.FATAL);
+            addStrong(map, org.jboss.logmanager.Level.ERROR);
+            addStrong(map, org.jboss.logmanager.Level.WARN);
+            addStrong(map, org.jboss.logmanager.Level.INFO);
+            addStrong(map, org.jboss.logmanager.Level.DEBUG);
+            addStrong(map, org.jboss.logmanager.Level.TRACE);
+
+            INITIAL_LEVEL_MAP = map;
+        }
     }
 
-    static {
-        final HashMap<String, LevelRef> map = new HashMap<String, LevelRef>();
-        addStrong(map, Level.OFF);
-        addStrong(map, Level.ALL);
-        addStrong(map, Level.SEVERE);
-        addStrong(map, Level.WARNING);
-        addStrong(map, Level.CONFIG);
-        addStrong(map, Level.INFO);
-        addStrong(map, Level.FINE);
-        addStrong(map, Level.FINER);
-        addStrong(map, Level.FINEST);
-
-        addStrong(map, org.jboss.logmanager.Level.FATAL);
-        addStrong(map, org.jboss.logmanager.Level.ERROR);
-        addStrong(map, org.jboss.logmanager.Level.WARN);
-        addStrong(map, org.jboss.logmanager.Level.INFO);
-        addStrong(map, org.jboss.logmanager.Level.DEBUG);
-        addStrong(map, org.jboss.logmanager.Level.TRACE);
-
-        INITIAL_LEVEL_MAP = map;
-    }
-
-    private final AtomicReference<Map<String, LevelRef>> levelMapReference = new AtomicReference<Map<String, LevelRef>>(INITIAL_LEVEL_MAP);
+    private final AtomicReference<Map<String, LevelRef>> levelMapReference;
 
     /**
      * This lock is taken any time a change is made which affects multiple nodes in the hierarchy.
@@ -85,6 +94,7 @@ public final class LogContext {
     final Lock treeLock = new ReentrantLock(false);
 
     LogContext() {
+        levelMapReference = new AtomicReference<Map<String, LevelRef>>(LazyHolder.INITIAL_LEVEL_MAP);
     }
 
     /**
@@ -141,11 +151,14 @@ public final class LogContext {
      * @throws IllegalArgumentException if the name is not known
      */
     public Level getLevelForName(String name) throws IllegalArgumentException {
-        final LogContext.LevelRef levelRef = levelMapReference.get().get(name);
-        if (levelRef != null) {
-            final Level level = levelRef.get();
-            if (level != null) {
-                return level;
+        if (name != null) {
+            final Map<String, LevelRef> map = levelMapReference.get();
+            final LogContext.LevelRef levelRef = map.get(name);
+            if (levelRef != null) {
+                final Level level = levelRef.get();
+                if (level != null) {
+                    return level;
+                }
             }
         }
         throw new IllegalArgumentException("Unknown level \"" + name + "\"");

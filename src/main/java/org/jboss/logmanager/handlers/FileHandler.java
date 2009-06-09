@@ -22,28 +22,42 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.io.OutputStream;
-
-import java.util.logging.Formatter;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
 
 /**
- * A console handler which writes to {@code System.out} by default.
+ * A simple file handler.
  */
-public class ConsoleHandler extends OutputStreamHandler {
-    private static final OutputStream out = System.out;
+public class FileHandler extends OutputStreamHandler {
 
     /**
-     * Construct a new instance.
+     * Construct a new instance with no formatter and no output file.
      */
-    public ConsoleHandler() {
+    public FileHandler() {
     }
 
     /**
-     * Construct a new instance.
+     * Set the output file.
      *
-     * @param formatter the formatter to use
+     * @param file the file
+     * @throws FileNotFoundException if an error occurs opening the file
      */
-    public ConsoleHandler(final Formatter formatter) {
-        super(out, formatter);
+    public void setFile(File file) throws FileNotFoundException {
+        final File parentFile = file.getParentFile();
+        if (parentFile != null) {
+            parentFile.mkdirs();
+        }
+        setOutputStream(new FileOutputStream(file, false));
+    }
+
+    /**
+     * Set the output file.
+     *
+     * @param fileName the file name
+     * @throws FileNotFoundException if an error occurs opening the file
+     */
+    public void setFileName(String fileName) throws FileNotFoundException {
+        setFile(new File(fileName));
     }
 }

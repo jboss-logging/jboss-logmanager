@@ -23,6 +23,7 @@
 package org.jboss.logmanager.handlers;
 
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.formatters.Formatters;
 import java.io.OutputStream;
 import java.io.Writer;
 import java.io.OutputStreamWriter;
@@ -42,10 +43,17 @@ import java.util.logging.LoggingPermission;
  */
 public class OutputStreamHandler extends ExtHandler {
 
-    private volatile boolean autoflush = false;
+    private volatile boolean autoFlush = false;
     private final Object outputLock = new Object();
     private OutputStream outputStream;
     private Writer writer;
+
+    /**
+     * Construct a new instance with no formatter.
+     */
+    public OutputStreamHandler() {
+        setFormatter(Formatters.nullFormatter());
+    }
 
     /**
      * Construct a new instance.
@@ -72,19 +80,19 @@ public class OutputStreamHandler extends ExtHandler {
      *
      * @return {@code true} if autoflush is enabled
      */
-    public boolean isAutoflush() {
-        return autoflush;
+    public boolean isAutoFlush() {
+        return autoFlush;
     }
 
     /**
      * Change the autoflush status.
      *
-     * @param autoflush {@code true} to enable autoflush, {@code false} to disable it
+     * @param autoFlush {@code true} to enable autoflush, {@code false} to disable it
      * @throws SecurityException if you do not have sufficient permission to invoke this operation
      */
-    public void setAutoflush(final boolean autoflush) throws SecurityException {
+    public void setAutoFlush(final boolean autoFlush) throws SecurityException {
         checkControl();
-        this.autoflush = autoflush;
+        this.autoFlush = autoFlush;
     }
 
     /**
@@ -167,7 +175,7 @@ public class OutputStreamHandler extends ExtHandler {
                 reportError("Error writing log message", ex, ErrorManager.WRITE_FAILURE);
                 return;
             }
-            if (autoflush) flush();
+            if (autoFlush) flush();
         }
     }
 

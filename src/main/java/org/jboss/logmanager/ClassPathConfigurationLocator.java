@@ -20,30 +20,23 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager;
 
-import java.io.OutputStream;
-
-import java.util.logging.Formatter;
+import java.io.InputStream;
+import java.io.IOException;
 
 /**
- * A console handler which writes to {@code System.out} by default.
+ * A configuration locator which looks for a {@code logging.properties} file in the class path.
  */
-public class ConsoleHandler extends OutputStreamHandler {
-    private static final OutputStream out = System.out;
+public final class ClassPathConfigurationLocator implements ConfigurationLocator {
 
-    /**
-     * Construct a new instance.
-     */
-    public ConsoleHandler() {
-    }
-
-    /**
-     * Construct a new instance.
-     *
-     * @param formatter the formatter to use
-     */
-    public ConsoleHandler(final Formatter formatter) {
-        super(out, formatter);
+    /** {@inheritDoc} */
+    public InputStream findConfiguration() throws IOException {
+        final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+        if (tccl != null) try {
+            return tccl.getResourceAsStream("logging.properties");
+        } catch (Exception e) {
+        }
+        return getClass().getResourceAsStream("logging.properties");
     }
 }

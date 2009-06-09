@@ -28,9 +28,11 @@ import static java.lang.Math.max;
 /**
  * A formatter which formats a record in a series of steps.
  */
-public final class MultistepFormatter extends ExtFormatter {
-    private final FormatStep[] steps;
-    private final int builderLength;
+public class MultistepFormatter extends ExtFormatter {
+    private volatile FormatStep[] steps;
+    private volatile int builderLength;
+
+    private static final FormatStep[] EMPTY_STEPS = new FormatStep[0];
 
     /**
      * Construct a new instance.
@@ -38,12 +40,42 @@ public final class MultistepFormatter extends ExtFormatter {
      * @param steps the steps to execute to format the record
      */
     public MultistepFormatter(final FormatStep[] steps) {
-        this.steps = steps;
+        this.steps = steps.clone();
+        calculateBuilderLength();
+    }
+
+    private void calculateBuilderLength() {
         int builderLength = 0;
         for (FormatStep step : steps) {
             builderLength += step.estimateLength();
         }
         this.builderLength = max(32, builderLength);
+    }
+
+    /**
+     * Construct a new instance.
+     */
+    public MultistepFormatter() {
+        steps = EMPTY_STEPS;
+    }
+
+    /**
+     * Get a copy of the format steps.
+     *
+     * @return a copy of the format steps
+     */
+    public FormatStep[] getSteps() {
+        return steps.clone();
+    }
+
+    /**
+     * Assign new format steps.
+     *
+     * @param steps the new format steps
+     */
+    public void setSteps(final FormatStep[] steps) {
+        this.steps = steps == null || steps.length == 0 ? EMPTY_STEPS : steps.clone();
+        calculateBuilderLength();
     }
 
     /** {@inheritDoc} */

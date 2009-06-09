@@ -77,7 +77,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @return the logger
      */
     public static Logger getLogger(final String name) {
-        return LogContext.getLogContext().getLogger(name);
+        // call through j.u.l.Logger so that primordial configuration is set up
+        return (Logger) java.util.logging.Logger.getLogger(name);
     }
 
     /**

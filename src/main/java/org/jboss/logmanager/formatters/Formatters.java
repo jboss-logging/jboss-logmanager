@@ -25,6 +25,8 @@ package org.jboss.logmanager.formatters;
 import org.jboss.logmanager.ExtLogRecord;
 
 import java.util.logging.Level;
+import java.util.logging.Formatter;
+import java.util.logging.LogRecord;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -39,6 +41,21 @@ import static java.lang.Math.max;
 public final class Formatters {
 
     private Formatters() {
+    }
+
+    private static final Formatter NULL_FORMATTER = new Formatter() {
+        public String format(final LogRecord record) {
+            return "";
+        }
+    };
+
+    /**
+     * Get the null formatter, which outputs nothing.
+     *
+     * @return the null formatter
+     */
+    public static Formatter nullFormatter() {
+        return NULL_FORMATTER;
     }
 
     /**

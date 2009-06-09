@@ -20,30 +20,47 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager.handlers;
-
-import java.io.OutputStream;
-
-import java.util.logging.Formatter;
+package org.jboss.logmanager.formatters;
 
 /**
- * A console handler which writes to {@code System.out} by default.
+ * A formatter which uses a text pattern to format messages.
  */
-public class ConsoleHandler extends OutputStreamHandler {
-    private static final OutputStream out = System.out;
+public class PatternFormatter extends MultistepFormatter {
+
+    private volatile String pattern;
 
     /**
      * Construct a new instance.
      */
-    public ConsoleHandler() {
+    public PatternFormatter() {
     }
 
     /**
      * Construct a new instance.
      *
-     * @param formatter the formatter to use
+     * @param pattern the initial pattern
      */
-    public ConsoleHandler(final Formatter formatter) {
-        super(out, formatter);
+    public PatternFormatter(String pattern) {
+        super(FormatStringParser.getSteps(pattern));
+        this.pattern = pattern;
+    }
+
+    /**
+     * Get the current format pattern.
+     *
+     * @return the pattern
+     */
+    public String getPattern() {
+        return pattern;
+    }
+
+    /**
+     * Set the format pattern.
+     *
+     * @param pattern the pattern
+     */
+    public void setPattern(final String pattern) {
+        setSteps(FormatStringParser.getSteps(pattern));
+        this.pattern = pattern;
     }
 }

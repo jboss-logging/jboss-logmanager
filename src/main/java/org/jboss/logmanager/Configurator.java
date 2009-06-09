@@ -20,30 +20,21 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager;
 
-import java.io.OutputStream;
-
-import java.util.logging.Formatter;
+import java.io.IOException;
+import java.io.InputStream;
 
 /**
- * A console handler which writes to {@code System.out} by default.
+ * A configurator for a log manager or context.
  */
-public class ConsoleHandler extends OutputStreamHandler {
-    private static final OutputStream out = System.out;
+public interface Configurator {
 
     /**
-     * Construct a new instance.
-     */
-    public ConsoleHandler() {
-    }
-
-    /**
-     * Construct a new instance.
+     * Configure the logmanager.
      *
-     * @param formatter the formatter to use
+     * @param inputStream the input stream to read
+     * @throws IOException if an error occurs
      */
-    public ConsoleHandler(final Formatter formatter) {
-        super(out, formatter);
-    }
+    void configure(InputStream inputStream) throws IOException;
 }

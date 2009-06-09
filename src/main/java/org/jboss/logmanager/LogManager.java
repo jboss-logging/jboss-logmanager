@@ -24,6 +24,7 @@ package org.jboss.logmanager;
 
 import java.beans.PropertyChangeListener;
 import java.io.InputStream;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -33,6 +34,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.net.URL;
 
 /**
  * Simplified log manager.  Designed to work around the (many) design flaws of the JDK platform log manager.
@@ -194,19 +196,50 @@ public final class LogManager extends java.util.logging.LogManager {
     // Configuration
 
     /**
-     * Do nothing.  Does not support non-programmatic configuraiton.
+     * Configure the log manager.  An implementation of {@link ConfigurationLocator} is created by constructing an
+     * instance of the class name specified in the {@code org.jboss.logmanager.configurationLocator} system property.
      */
-    public void readConfiguration() {
+    public void readConfiguration() throws IOException, SecurityException {
+        checkAccess();
+        final String confLocClassName = System.getProperty("org.jboss.logmanager.configurationLocator", "org.jboss.logmanager.ClassPathConfigurationLocator");
+        final ConfigurationLocator locator = construct(ConfigurationLocator.class, confLocClassName);
+        final InputStream configuration = locator.findConfiguration();
+        if (configuration != null) {
+            readConfiguration(configuration);
+        }
         return;
     }
 
     /**
-     * Do nothing.  Does not support non-programmatic configuraiton.
+     * Configure the log manager.
      *
-     * @param ins ignored
+     * @param inputStream the input stream from which the logmanager should be configured
      */
-    public void readConfiguration(InputStream ins) {
+    public void readConfiguration(InputStream inputStream) throws IOException, SecurityException {
+        checkAccess();
+        final String confClassName = System.getProperty("org.jboss.logmanager.configurator", "org.jboss.logmanager.PropertyConfigurator");
+        final Configurator configurator = construct(Configurator.class, confClassName);
+        configurator.configure(inputStream);
         return;
+    }
+
+    static <T> T construct(Class<? extends T> type, String className) throws IOException {
+        try {
+            Class<?> clazz = null;
+            try {
+                final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+                if (tccl != null) {
+                    clazz = Class.forName(className, true, tccl);
+                }
+            } catch (ClassNotFoundException e) {
+            }
+            if (clazz == null) clazz = Class.forName(className, true, LogManager.class.getClassLoader());
+            return type.cast(clazz.getConstructor().newInstance());
+        } catch (Exception e) {
+            final IOException ioe = new IOException("Unable to load configuration class " + className);
+            ioe.initCause(e);
+            throw ioe;
+        }
     }
 
     /**
