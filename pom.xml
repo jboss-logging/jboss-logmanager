@@ -119,9 +119,9 @@
                         <artifactId>apiviz</artifactId>
                         <version>1.2.5.GA</version>
                     </docletArtifact>
-                    <doctitle><![CDATA[JBoss LogManager 1.1.0.CR1]]></doctitle>
-                    <header><![CDATA[JBoss LogManager 1.1.0.CR1]]></header>
-                    <footer><![CDATA[JBoss LogManager 1.1.0.CR1]]></footer>
+                    <doctitle><![CDATA[JBoss LogManager 1.1.0.CR2]]></doctitle>
+                    <header><![CDATA[JBoss LogManager 1.1.0.CR2]]></header>
+                    <footer><![CDATA[JBoss LogManager 1.1.0.CR2]]></footer>
                     <bottom><![CDATA[<i>Copyright &#169; 2009 JBoss, a division of Red Hat, Inc.</i>]]></bottom>
                     <links>
                         <link>http://java.sun.com/j2se/1.5.0/docs/api/</link>
@@ -134,7 +134,7 @@
         <repository>
             <id>repository.jboss.org</id>
             <name>JBoss Maven2 Repository</name>
-            <url>${repository.url}</url>
+            <url>http://repository.jboss.org/maven2</url>
         </repository>
     </distributionManagement>
 </project>
