@@ -34,6 +34,7 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.net.URL;
 
 /**
@@ -195,12 +196,17 @@ public final class LogManager extends java.util.logging.LogManager {
 
     // Configuration
 
+    private final AtomicBoolean configured = new AtomicBoolean();
+
     /**
-     * Configure the log manager.  An implementation of {@link ConfigurationLocator} is created by constructing an
+     * Configure the log manager one time.  An implementation of {@link ConfigurationLocator} is created by constructing an
      * instance of the class name specified in the {@code org.jboss.logmanager.configurationLocator} system property.
      */
     public void readConfiguration() throws IOException, SecurityException {
         checkAccess();
+        if (configured.getAndSet(true)) {
+            return;
+        }
         final String confLocClassName = System.getProperty("org.jboss.logmanager.configurationLocator", "org.jboss.logmanager.ClassPathConfigurationLocator");
         final ConfigurationLocator locator = construct(ConfigurationLocator.class, confLocClassName);
         final InputStream configuration = locator.findConfiguration();
@@ -219,7 +225,11 @@ public final class LogManager extends java.util.logging.LogManager {
         checkAccess();
         final String confClassName = System.getProperty("org.jboss.logmanager.configurator", "org.jboss.logmanager.PropertyConfigurator");
         final Configurator configurator = construct(Configurator.class, confClassName);
-        configurator.configure(inputStream);
+        try {
+            configurator.configure(inputStream);
+        } catch (Throwable t) {
+            t.printStackTrace();
+        }
         return;
     }
 

@@ -32,6 +32,8 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import org.jboss.util.StringPropertyReplacer;
@@ -77,9 +79,14 @@ public final class PropertyConfigurator implements Configurator {
     private void configure(final Properties properties) throws IOException {
         // Start with the list of loggers to configure.  The root logger is always on the list.
         final List<String> loggerNames = getStringCsvList(properties, "loggers", "");
+        final Set<String> done = new HashSet<String>();
 
         // Now, for each logger name, configure any filters, handlers, etc.
         for (String loggerName : loggerNames) {
+            if (! done.add(loggerName)) {
+                // duplicate
+                continue;
+            }
             final Logger logger = LogContext.getSystemLogContext().getLogger(loggerName);
 
             // Get logger level

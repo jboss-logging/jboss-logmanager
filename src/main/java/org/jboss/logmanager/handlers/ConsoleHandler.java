@@ -26,6 +26,8 @@ import java.io.OutputStream;
 
 import java.util.logging.Formatter;
 
+import org.jboss.logmanager.formatters.Formatters;
+
 /**
  * A console handler which writes to {@code System.out} by default.
  */
@@ -36,6 +38,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      * Construct a new instance.
      */
     public ConsoleHandler() {
+        super(out, Formatters.nullFormatter());
     }
 
     /**
