@@ -94,12 +94,6 @@ public class ExtLogRecord extends LogRecord {
         setResourceBundle(original.getResourceBundle());
         setResourceBundleName(original.getResourceBundleName());
         setSequenceNumber(original.getSequenceNumber());
-        // todo - find a way to not infer caller info if not already inferred?
-        final String originalSourceClassName = original.getSourceClassName();
-        if (originalSourceClassName != null) setSourceClassName(originalSourceClassName);
-        final String originalSourceMethodName = original.getSourceMethodName();
-        if (originalSourceMethodName != null) setSourceMethodName(originalSourceMethodName);
-        // todo sourceLineNumber
         setThreadID(original.getThreadID());
         setThrown(original.getThrown());
     }
