@@ -207,7 +207,7 @@ public final class LogManager extends java.util.logging.LogManager {
         if (configured.getAndSet(true)) {
             return;
         }
-        final String confLocClassName = System.getProperty("org.jboss.logmanager.configurationLocator", "org.jboss.logmanager.ClassPathConfigurationLocator");
+        final String confLocClassName = System.getProperty("org.jboss.logmanager.configurationLocator", DefaultConfigurationLocator.class.getName());
         final ConfigurationLocator locator = construct(ConfigurationLocator.class, confLocClassName);
         final InputStream configuration = locator.findConfiguration();
         if (configuration != null) {
@@ -223,7 +223,7 @@ public final class LogManager extends java.util.logging.LogManager {
      */
     public void readConfiguration(InputStream inputStream) throws IOException, SecurityException {
         checkAccess();
-        final String confClassName = System.getProperty("org.jboss.logmanager.configurator", "org.jboss.logmanager.PropertyConfigurator");
+        final String confClassName = System.getProperty("org.jboss.logmanager.configurator", PropertyConfigurator.class.getName());
         final Configurator configurator = construct(Configurator.class, confClassName);
         try {
             configurator.configure(inputStream);

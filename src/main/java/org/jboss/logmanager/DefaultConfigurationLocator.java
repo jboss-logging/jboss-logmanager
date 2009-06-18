@@ -24,14 +24,22 @@ package org.jboss.logmanager;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.net.URL;
 
 /**
- * A configuration locator which looks for a {@code logging.properties} file in the class path.
+ * A configuration locator which looks for a {@code logging.properties} file in the class path, allowing the location
+ * to be overridden via a URL specified in the {@code logging.configuration} system property.
  */
-public final class ClassPathConfigurationLocator implements ConfigurationLocator {
+public final class DefaultConfigurationLocator implements ConfigurationLocator {
 
     /** {@inheritDoc} */
     public InputStream findConfiguration() throws IOException {
+        final String propLoc = System.getProperty("logging.configuration");
+        if (propLoc != null) try {
+            return new URL(propLoc).openStream();
+        } catch (IOException e) {
+            System.err.printf("Unable to read the logging configuration from '%s' (%s)\n", propLoc, e);
+        }
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         if (tccl != null) try {
             return tccl.getResourceAsStream("logging.properties");
