@@ -25,6 +25,7 @@ package org.jboss.logmanager;
 import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.WEAK;
 
@@ -47,9 +48,14 @@ final class LoggerNode {
     private final String fullName;
 
     /**
-     * A weak reference to the logger instance.  Protected by {@code this}.
+     * A weak reference to the logger instance.  Only update using {@link #loggerRefUpdater}.
      */
-    private LoggerRef loggerRef = null;
+    private volatile LoggerRef loggerRef = null;
+
+    /**
+     * The atomic updater for {@link #loggerRef}.
+     */
+    private static final AtomicReferenceFieldUpdater<LoggerNode, LoggerRef> loggerRefUpdater = AtomicReferenceFieldUpdater.newUpdater(LoggerNode.class, LoggerRef.class, "loggerRef");
 
     /**
      * The map of names to child nodes.  The child node references are weak.
@@ -147,14 +153,20 @@ final class LoggerNode {
      * @return a logger instance
      */
     Logger getOrCreateLogger() {
-        synchronized(this) {
-            Logger instance = loggerRef == null ? null : loggerRef.get();
-            if (instance == null) {
-                instance = new Logger(this, fullName);
-                loggerRef = fullName.length() == 0 ? new StrongLoggerRef(instance) : new WeakLoggerRef(instance);
-                instance.setLevel(null);
+        final String fullName = this.fullName;
+        final LoggerNode parent = this.parent;
+        for (;;) {
+            LoggerRef loggerRef = this.loggerRef;
+            if (loggerRef != null) {
+                final Logger logger = loggerRef.get();
+                if (logger != null) {
+                    return logger;
+                }
             }
-            return instance;
+            final Logger logger = new Logger(this, fullName);
+            if (loggerRefUpdater.compareAndSet(this, null, parent == null ? new StrongLoggerRef(logger) : new WeakLoggerRef(logger))) {
+                return logger;
+            }
         }
     }
 
@@ -187,7 +199,7 @@ final class LoggerNode {
         LoggerNode node = parent;
         while (node != null) {
             synchronized(node) {
-                final Logger instance = node.loggerRef == null ? null : node.loggerRef.get();
+                final Logger instance = node.getLogger();
                 if (instance != null) {
                     return instance;
                 }
@@ -217,12 +229,9 @@ final class LoggerNode {
         for (LoggerNode node : children.values()) {
             if (node != null) {
                 synchronized (node) {
-                    final LoggerRef loggerRef = node.loggerRef;
-                    if (loggerRef != null) {
-                        final Logger instance = loggerRef.get();
-                        if (instance != null) {
-                            instance.setEffectiveLevel(newLevel);
-                        }
+                    final Logger instance = node.getLogger();
+                    if (instance != null) {
+                        instance.setEffectiveLevel(newLevel);
                     }
                 }
             }
