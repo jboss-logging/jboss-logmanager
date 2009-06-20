@@ -35,7 +35,6 @@ import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.net.URL;
 
 /**
  * Simplified log manager.  Designed to work around the (many) design flaws of the JDK platform log manager.
