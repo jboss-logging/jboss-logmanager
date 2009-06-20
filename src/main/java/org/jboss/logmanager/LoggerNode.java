@@ -176,9 +176,8 @@ final class LoggerNode {
      * @return a logger instance
      */
     Logger getLogger() {
-        synchronized(this) {
-            return loggerRef == null ? null : loggerRef.get();
-        }
+        final LoggerRef loggerRef = this.loggerRef;
+        return loggerRef == null ? null : loggerRef.get();
     }
 
     /**
