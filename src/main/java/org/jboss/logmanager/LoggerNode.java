@@ -91,7 +91,6 @@ final class LoggerNode {
         } else {
             fullName = parent.fullName + "." + nodeName;
         }
-        parent.children.put(nodeName, this);
         this.context = context;
     }
 
@@ -197,13 +196,11 @@ final class LoggerNode {
     Logger getParentLogger() {
         LoggerNode node = parent;
         while (node != null) {
-            synchronized(node) {
-                final Logger instance = node.getLogger();
-                if (instance != null) {
-                    return instance;
-                }
-                node = node.parent;
+            final Logger instance = node.getLogger();
+            if (instance != null) {
+                return instance;
             }
+            node = node.parent;
         }
         return null;
     }
@@ -219,7 +216,7 @@ final class LoggerNode {
 
     /**
      * Recursively update the effective log level of all log instances on all children.  The recursion depth will be proportionate to the
-     * log node nesting depth so stack use should not be an issue.  Must only be called while the logmanager's level
+     * log node nesting depth so stack use should not be an issue.  Must only be called while the log context's level
      * change lock is held.
      *
      * @param newLevel the new effective level
@@ -227,11 +224,9 @@ final class LoggerNode {
     void updateChildEffectiveLevel(int newLevel) {
         for (LoggerNode node : children.values()) {
             if (node != null) {
-                synchronized (node) {
-                    final Logger instance = node.getLogger();
-                    if (instance != null) {
-                        instance.setEffectiveLevel(newLevel);
-                    }
+                final Logger instance = node.getLogger();
+                if (instance != null) {
+                    instance.setEffectiveLevel(newLevel);
                 }
             }
         }
