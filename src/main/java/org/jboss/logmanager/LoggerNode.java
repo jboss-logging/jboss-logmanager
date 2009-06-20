@@ -156,7 +156,7 @@ final class LoggerNode {
         final String fullName = this.fullName;
         final LoggerNode parent = this.parent;
         for (;;) {
-            LoggerRef loggerRef = this.loggerRef;
+            final LoggerRef loggerRef = this.loggerRef;
             if (loggerRef != null) {
                 final Logger logger = loggerRef.get();
                 if (logger != null) {
@@ -164,7 +164,7 @@ final class LoggerNode {
                 }
             }
             final Logger logger = new Logger(this, fullName);
-            if (loggerRefUpdater.compareAndSet(this, null, parent == null ? new StrongLoggerRef(logger) : new WeakLoggerRef(logger))) {
+            if (loggerRefUpdater.compareAndSet(this, loggerRef, parent == null ? new StrongLoggerRef(logger) : new WeakLoggerRef(logger))) {
                 return logger;
             }
         }
