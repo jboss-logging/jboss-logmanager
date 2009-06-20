@@ -164,6 +164,8 @@ final class LoggerNode {
             }
             final Logger logger = new Logger(this, fullName);
             if (loggerRefUpdater.compareAndSet(this, loggerRef, parent == null ? new StrongLoggerRef(logger) : new WeakLoggerRef(logger))) {
+                // initialize the effective level
+                logger.setLevel(null);
                 return logger;
             }
         }
