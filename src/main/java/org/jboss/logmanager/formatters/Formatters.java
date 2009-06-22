@@ -125,11 +125,12 @@ public final class Formatters {
                 renderRaw(builder, record);
                 final int newLen = builder.length();
                 // if we exceeded the max width, chop it off
-                final int overflow = (newLen - oldLen) - maximumWidth;
+                final int writtenLen = newLen - oldLen;
+                final int overflow = writtenLen - maximumWidth;
                 if (overflow > 0) {
                     builder.setLength(newLen - overflow);
                 } else {
-                    final int spaces = minimumWidth - (newLen - oldLen);
+                    final int spaces = minimumWidth - writtenLen;
                     for (int i = 0; i < spaces; i ++) {
                         builder.append(' ');
                     }
@@ -153,6 +154,8 @@ public final class Formatters {
         }
 
         public int estimateLength() {
+            final int maximumWidth = this.maximumWidth;
+            final int minimumWidth = this.minimumWidth;
             if (maximumWidth != 0) {
                 return min(maximumWidth, minimumWidth * 3);
             } else {
@@ -227,9 +230,12 @@ public final class Formatters {
         return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 final SimpleDateFormat dateFormat = dateFormatMaster;
+                final String formatted;
+                final Date date = new Date(record.getMillis());
                 synchronized (dateFormat) {
-                    builder.append(dateFormat.format(new Date(record.getMillis())));
+                    formatted = dateFormat.format(date);
                 }
+                builder.append(formatted);
             }
         };
     }
