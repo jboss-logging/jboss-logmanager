@@ -26,6 +26,8 @@ import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.STRONG;
 import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.WEAK;
 
@@ -162,12 +164,25 @@ final class LoggerNode {
                     return logger;
                 }
             }
-            final Logger logger = new Logger(this, fullName);
+            final Logger logger = createLogger(fullName);
             if (loggerRefUpdater.compareAndSet(this, loggerRef, parent == null ? new StrongLoggerRef(logger) : new WeakLoggerRef(logger))) {
                 // initialize the effective level
                 logger.setLevel(null);
                 return logger;
             }
+        }
+    }
+
+    private Logger createLogger(final String fullName) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
+                public Logger run() {
+                    return new Logger(LoggerNode.this, fullName);
+                }
+            });
+        } else {
+            return new Logger(this, fullName);
         }
     }
 
