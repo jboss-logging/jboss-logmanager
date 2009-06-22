@@ -166,8 +166,6 @@ final class LoggerNode {
             }
             final Logger logger = createLogger(fullName);
             if (loggerRefUpdater.compareAndSet(this, loggerRef, parent == null ? new StrongLoggerRef(logger) : new WeakLoggerRef(logger))) {
-                // initialize the effective level
-                logger.setLevel(null);
                 return logger;
             }
         }
@@ -178,11 +176,17 @@ final class LoggerNode {
         if (sm != null) {
             return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
                 public Logger run() {
-                    return new Logger(LoggerNode.this, fullName);
+                    final Logger logger = new Logger(LoggerNode.this, fullName);
+                    // initialize the effective level
+                    logger.setLevel(null);
+                    return logger;
                 }
             });
         } else {
-            return new Logger(this, fullName);
+            final Logger logger = new Logger(this, fullName);
+            // initialize the effective level
+            logger.setLevel(null);
+            return logger;
         }
     }
 
