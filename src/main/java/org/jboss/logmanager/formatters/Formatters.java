@@ -34,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import static java.lang.Math.min;
 import static java.lang.Math.max;
+import java.io.PrintWriter;
 
 /**
  * Formatter utility methods.
@@ -305,6 +306,11 @@ public final class Formatters {
         return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getFormattedMessage());
+                final Throwable t = record.getThrown();
+                if (t != null) {
+                    builder.append(": ");
+                    t.printStackTrace(new PrintWriter(new StringBuilderWriter(builder)));
+                }
             }
         };
     }
