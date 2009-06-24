@@ -26,8 +26,10 @@ import org.jboss.logmanager.ExtLogRecord;
 
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
+import java.util.logging.LoggingPermission;
 
 import java.io.Flushable;
+import java.security.Permission;
 
 /**
  * An extended logger handler.  Use this class as a base class for log handlers which require {@code ExtLogRecord}
@@ -36,6 +38,7 @@ import java.io.Flushable;
 public abstract class ExtHandler extends Handler implements Flushable {
 
     private static final String LOGGER_CLASS_NAME = org.jboss.logmanager.Logger.class.getName();
+    private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
 
     /** {@inheritDoc} */
     public final void publish(final LogRecord record) {
@@ -53,4 +56,16 @@ public abstract class ExtHandler extends Handler implements Flushable {
      * @param record the log record to publish
      */
     public abstract void publish(final ExtLogRecord record);
+
+    /**
+     * Check access.
+     *
+     * @throws SecurityException if a security manager is installed and the caller does not have the {@code "control" LoggingPermission}
+     */
+    protected void checkAccess() throws SecurityException {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(CONTROL_PERMISSION);
+        }
+    }
 }

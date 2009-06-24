@@ -115,6 +115,16 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
+     * Disable caller calculation for this record.  If the caller has already been calculated, leave it; otherwise
+     * set the caller to {@code "unknown"}.
+     */
+    public void disableCallerCalculation() {
+        if (calculateCaller) {
+            setUnknownCaller();
+        }
+    }
+
+    /**
      * Copy all fields and prepare this object to be passed to another thread or to be serialized.  Calling this method
      * more than once has no additional effect and will not incur extra copies.
      */
