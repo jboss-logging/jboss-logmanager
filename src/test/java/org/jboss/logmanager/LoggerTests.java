@@ -28,6 +28,8 @@ import static org.testng.AssertJUnit.*;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 @Test
 public final class LoggerTests {
     static {
@@ -124,6 +126,38 @@ public final class LoggerTests {
         assertFalse("Handler 1 wasn't removed", f1);
         assertFalse("Handler 2 wasn't removed", f2);
         assertFalse("Handler 3 wasn't removed", f3);
+    }
+
+    public void testHandlerRun() {
+        final AtomicBoolean ran = new AtomicBoolean();
+        final Handler handler = new CheckingHandler(ran);
+        final Logger logger = Logger.getLogger("testHandlerRun");
+        logger.setUseParentHandlers(false);
+        logger.addHandler(handler);
+        logger.setLevel(Level.INFO);
+        handler.setLevel(Level.INFO);
+        logger.info("This is a test.");
+        assertTrue("Handler wasn't run", ran.get());
+    }
+
+    private static final class CheckingHandler extends Handler {
+        private final AtomicBoolean ran;
+
+        public CheckingHandler(final AtomicBoolean ran) {
+            this.ran = ran;
+        }
+
+        public void publish(final LogRecord record) {
+            if (isLoggable(record)) {
+                ran.set(true);
+            }
+        }
+
+        public void flush() {
+        }
+
+        public void close() throws SecurityException {
+        }
     }
 
     private static final class NullHandler extends Handler {

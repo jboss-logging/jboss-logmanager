@@ -42,8 +42,8 @@ public final class LevelRangeFilter implements Filter {
     public LevelRangeFilter(final Level min, final Level max) {
         this.min = min.intValue();
         this.max = max.intValue();
-        if (this.max > this.min) {
-            throw new IllegalArgumentException("Max level cannot be greater than min level");
+        if (this.max < this.min) {
+            throw new IllegalArgumentException("Max level cannot be less than min level");
         }
     }
 

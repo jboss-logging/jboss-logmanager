@@ -29,7 +29,8 @@ import java.util.logging.LogRecord;
 
 /**
  * A filter consisting of several filters in a chain.  If any filter finds the log message to be unloggable,
- * the message will not be logged and subsequent filters will not be checked.
+ * the message will not be logged and subsequent filters will not be checked.  If there are no nested filters,
+ * this instance always returns {@code true}.
  */
 public final class AllFilter implements Filter {
     private final Filter[] filters;

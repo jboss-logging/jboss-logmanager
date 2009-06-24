@@ -40,7 +40,7 @@ public final class AcceptAllFilter implements Filter {
      * @return {@code true}
      */
     public boolean isLoggable(final LogRecord record) {
-        return false;
+        return true;
     }
 
     /**

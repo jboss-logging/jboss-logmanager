@@ -29,7 +29,8 @@ import java.util.logging.LogRecord;
 
 /**
  * A filter consisting of several filters in a chain.  If any filter finds the log message to be loggable,
- * the message will be logged and subsequent filters will not be checked.
+ * the message will be logged and subsequent filters will not be checked.  If there are no nested filters, this
+ * instance always returns {@code false}.
  */
 public final class AnyFilter implements Filter {
     private final Filter[] filters;
