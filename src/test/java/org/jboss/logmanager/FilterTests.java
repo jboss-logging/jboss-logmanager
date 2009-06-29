@@ -30,8 +30,7 @@ import org.jboss.logmanager.filters.AllFilter;
 import org.jboss.logmanager.filters.AnyFilter;
 import org.jboss.logmanager.filters.InvertFilter;
 import org.jboss.logmanager.filters.LevelChangingFilter;
-import org.jboss.logmanager.filters.LevelExcludingFilter;
-import org.jboss.logmanager.filters.LevelIncludingFilter;
+import org.jboss.logmanager.filters.LevelFilter;
 import org.jboss.logmanager.filters.LevelRangeFilter;
 import org.jboss.logmanager.filters.RegexFilter;
 import org.jboss.logmanager.filters.SubstituteFilter;
@@ -272,22 +271,8 @@ public final class FilterTests {
         assertFalse("Handler was run", ran.get());
     }
 
-    public void testLevelExcludingFilter0() {
-        final Filter filter = new LevelExcludingFilter(Level.INFO);
-        final AtomicBoolean ran = new AtomicBoolean();
-        final Handler handler = new CheckingHandler(ran);
-        final Logger logger = Logger.getLogger("filterTest");
-        logger.setUseParentHandlers(false);
-        logger.addHandler(handler);
-        logger.setLevel(Level.INFO);
-        logger.setFilter(filter);
-        handler.setLevel(Level.INFO);
-        logger.info("This is a test.");
-        assertFalse("Handler was run", ran.get());
-    }
-
-    public void testLevelExcludingFilter1() {
-        final Filter filter = new LevelExcludingFilter(Level.WARNING);
+    public void testLevelFilter0() {
+        final Filter filter = new LevelFilter(Level.INFO);
         final AtomicBoolean ran = new AtomicBoolean();
         final Handler handler = new CheckingHandler(ran);
         final Logger logger = Logger.getLogger("filterTest");
@@ -300,22 +285,8 @@ public final class FilterTests {
         assertTrue("Handler wasn't run", ran.get());
     }
 
-    public void testLevelIncludingFilter0() {
-        final Filter filter = new LevelIncludingFilter(Level.INFO);
-        final AtomicBoolean ran = new AtomicBoolean();
-        final Handler handler = new CheckingHandler(ran);
-        final Logger logger = Logger.getLogger("filterTest");
-        logger.setUseParentHandlers(false);
-        logger.addHandler(handler);
-        logger.setLevel(Level.INFO);
-        logger.setFilter(filter);
-        handler.setLevel(Level.INFO);
-        logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
-    }
-
-    public void testLevelIncludingFilter1() {
-        final Filter filter = new LevelIncludingFilter(Level.WARNING);
+    public void testLevelFilter1() {
+        final Filter filter = new LevelFilter(Level.WARNING);
         final AtomicBoolean ran = new AtomicBoolean();
         final Handler handler = new CheckingHandler(ran);
         final Logger logger = Logger.getLogger("filterTest");
@@ -357,7 +328,21 @@ public final class FilterTests {
     }
 
     public void testRegexFilter0() {
-        final Filter filter = new RegexFilter("test", true);
+        final Filter filter = new RegexFilter("test");
+        final AtomicBoolean ran = new AtomicBoolean();
+        final Handler handler = new CheckingHandler(ran);
+        final Logger logger = Logger.getLogger("filterTest");
+        logger.setUseParentHandlers(false);
+        logger.addHandler(handler);
+        logger.setLevel(Level.INFO);
+        logger.setFilter(filter);
+        handler.setLevel(Level.INFO);
+        logger.info("This is a test.");
+        assertTrue("Handler wasn't run", ran.get());
+    }
+
+    public void testRegexFilter1() {
+        final Filter filter = new RegexFilter("pest");
         final AtomicBoolean ran = new AtomicBoolean();
         final Handler handler = new CheckingHandler(ran);
         final Logger logger = Logger.getLogger("filterTest");
@@ -368,20 +353,6 @@ public final class FilterTests {
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
         assertFalse("Handler was run", ran.get());
-    }
-
-    public void testRegexFilter1() {
-        final Filter filter = new RegexFilter("test", true);
-        final AtomicBoolean ran = new AtomicBoolean();
-        final Handler handler = new CheckingHandler(ran);
-        final Logger logger = Logger.getLogger("filterTest");
-        logger.setUseParentHandlers(false);
-        logger.addHandler(handler);
-        logger.setLevel(Level.INFO);
-        logger.setFilter(filter);
-        handler.setLevel(Level.INFO);
-        logger.info("This is the best.");
-        assertTrue("Handler wasn't run", ran.get());
     }
 
     public void testSubstitueFilter0() {

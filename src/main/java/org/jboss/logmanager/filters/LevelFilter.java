@@ -34,34 +34,34 @@ import java.util.logging.LogRecord;
 /**
  * A filter which excludes messages of a certain level or levels
  */
-public final class LevelExcludingFilter implements Filter {
-    private final Set<Level> excludedLevels;
+public final class LevelFilter implements Filter {
+    private final Set<Level> includedLevels;
 
     /**
      * Construct a new instance.
      *
-     * @param excludedLevel the level to exclude
+     * @param includedLevel the level to include
      */
-    public LevelExcludingFilter(final Level excludedLevel) {
-        excludedLevels = Collections.singleton(excludedLevel);
+    public LevelFilter(final Level includedLevel) {
+        includedLevels = Collections.singleton(includedLevel);
     }
 
     /**
      * Construct a new instance.
      *
-     * @param excludedLevels the levels to exclude
+     * @param includedLevels the levels to exclude
      */
-    public LevelExcludingFilter(final Collection<Level> excludedLevels) {
-        this.excludedLevels = new HashSet<Level>(excludedLevels);
+    public LevelFilter(final Collection<Level> includedLevels) {
+        this.includedLevels = new HashSet<Level>(includedLevels);
     }
 
     /**
      * Determine whether the message is loggable.
      *
      * @param record the log record
-     * @return {@code true} if the level is not in the exclusion list
+     * @return {@code true} if the level is in the inclusion list
      */
     public boolean isLoggable(final LogRecord record) {
-        return ! excludedLevels.contains(record.getLevel());
+        return includedLevels.contains(record.getLevel());
     }
 }

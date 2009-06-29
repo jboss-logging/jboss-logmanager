@@ -33,27 +33,23 @@ import java.util.logging.LogRecord;
  */
 public final class RegexFilter implements Filter {
     private final Pattern pattern;
-    private final boolean exclude;
 
     /**
      * Create a new instance.
      *
      * @param pattern the pattern to match
-     * @param exclude {@code true} if matching records should be excluded, {@code false} if matching records should be included
      */
-    public RegexFilter(final Pattern pattern, final boolean exclude) {
+    public RegexFilter(final Pattern pattern) {
         this.pattern = pattern;
-        this.exclude = exclude;
     }
 
     /**
      * Create a new instance.
      *
      * @param patternString the pattern string to match
-     * @param exclude {@code true} if matching records should be excluded, {@code false} if matching records should be included
      */
-    public RegexFilter(final String patternString, final boolean exclude) {
-        this(Pattern.compile(patternString), exclude);
+    public RegexFilter(final String patternString) {
+        this(Pattern.compile(patternString));
     }
 
     /**
@@ -63,6 +59,6 @@ public final class RegexFilter implements Filter {
      * @return {@code true} if the log record is loggable
      */
     public boolean isLoggable(final LogRecord record) {
-        return pattern.matcher(record.getMessage()).find() != exclude;
+        return pattern.matcher(record.getMessage()).find();
     }
 }
