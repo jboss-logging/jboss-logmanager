@@ -300,7 +300,7 @@ public final class FilterTests {
     }
 
     public void testLevelRangeFilter0() {
-        final Filter filter = new LevelRangeFilter(Level.DEBUG, Level.WARN);
+        final Filter filter = new LevelRangeFilter(Level.DEBUG, true, Level.WARN, true);
         final AtomicBoolean ran = new AtomicBoolean();
         final Handler handler = new CheckingHandler(ran);
         final Logger logger = Logger.getLogger("filterTest");
@@ -314,7 +314,7 @@ public final class FilterTests {
     }
 
     public void testLevelRangeFilter1() {
-        final Filter filter = new LevelRangeFilter(Level.DEBUG, Level.WARN);
+        final Filter filter = new LevelRangeFilter(Level.DEBUG, true, Level.WARN, true);
         final AtomicBoolean ran = new AtomicBoolean();
         final Handler handler = new CheckingHandler(ran);
         final Logger logger = Logger.getLogger("filterTest");
@@ -324,6 +324,48 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.severe("This is a test.");
+        assertFalse("Handler was run", ran.get());
+    }
+
+    public void testLevelRangeFilter2() {
+        final Filter filter = new LevelRangeFilter(Level.DEBUG, true, Level.WARN, true);
+        final AtomicBoolean ran = new AtomicBoolean();
+        final Handler handler = new CheckingHandler(ran);
+        final Logger logger = Logger.getLogger("filterTest");
+        logger.setUseParentHandlers(false);
+        logger.addHandler(handler);
+        logger.setLevel(Level.DEBUG);
+        logger.setFilter(filter);
+        handler.setLevel(Level.DEBUG);
+        logger.log(Level.DEBUG, "This is a test.");
+        assertTrue("Handler wasn't run", ran.get());
+    }
+
+    public void testLevelRangeFilter3() {
+        final Filter filter = new LevelRangeFilter(Level.DEBUG, false, Level.WARN, true);
+        final AtomicBoolean ran = new AtomicBoolean();
+        final Handler handler = new CheckingHandler(ran);
+        final Logger logger = Logger.getLogger("filterTest");
+        logger.setUseParentHandlers(false);
+        logger.addHandler(handler);
+        logger.setLevel(Level.DEBUG);
+        logger.setFilter(filter);
+        handler.setLevel(Level.DEBUG);
+        logger.log(Level.DEBUG, "This is a test.");
+        assertFalse("Handler was run", ran.get());
+    }
+
+    public void testLevelRangeFilter4() {
+        final Filter filter = new LevelRangeFilter(Level.DEBUG, true, Level.WARN, false);
+        final AtomicBoolean ran = new AtomicBoolean();
+        final Handler handler = new CheckingHandler(ran);
+        final Logger logger = Logger.getLogger("filterTest");
+        logger.setUseParentHandlers(false);
+        logger.addHandler(handler);
+        logger.setLevel(Level.INFO);
+        logger.setFilter(filter);
+        handler.setLevel(Level.INFO);
+        logger.warning("This is a test.");
         assertFalse("Handler was run", ran.get());
     }
 
