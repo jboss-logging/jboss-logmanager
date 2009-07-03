@@ -34,6 +34,7 @@ import java.util.logging.Formatter;
 public class FileHandler extends OutputStreamHandler {
 
     private File file;
+    private boolean append;
 
     /**
      * Construct a new instance with no formatter and no output file.
@@ -63,6 +64,17 @@ public class FileHandler extends OutputStreamHandler {
     }
 
     /**
+     * Specify whether to append to the target file.
+     *
+     * @param append {@code true} to append, {@code false} to overwrite
+     */
+    public void setAppend(final boolean append) {
+        synchronized (outputLock) {
+            this.append = append;
+        }
+    }
+
+    /**
      * Set the output file.
      *
      * @param file the file
@@ -78,7 +90,7 @@ public class FileHandler extends OutputStreamHandler {
                 parentFile.mkdirs();
             }
             boolean ok = false;
-            final FileOutputStream fos = new FileOutputStream(file, false);
+            final FileOutputStream fos = new FileOutputStream(file, append);
             try {
                 setOutputStream(fos);
                 this.file = file;
