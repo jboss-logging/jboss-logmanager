@@ -26,15 +26,40 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
 
+import java.util.logging.Formatter;
+
 /**
  * A simple file handler.
  */
 public class FileHandler extends OutputStreamHandler {
 
+    private File file;
+
     /**
      * Construct a new instance with no formatter and no output file.
      */
     public FileHandler() {
+    }
+
+    /**
+     * Construct a new instance with the given formatter and no output file.
+     *
+     * @param formatter the formatter
+     */
+    public FileHandler(final Formatter formatter) {
+        super(formatter);
+    }
+
+    /**
+     * Construct a new instance with the given formatter and output file.
+     *
+     * @param formatter the formatter
+     * @param file the file
+     * @throws FileNotFoundException if the file could not be found on open
+     */
+    public FileHandler(final Formatter formatter, final File file) throws FileNotFoundException {
+        super(formatter);
+        setFile(file);
     }
 
     /**
@@ -44,15 +69,40 @@ public class FileHandler extends OutputStreamHandler {
      * @throws FileNotFoundException if an error occurs opening the file
      */
     public void setFile(File file) throws FileNotFoundException {
-        final File parentFile = file.getParentFile();
-        if (parentFile != null) {
-            parentFile.mkdirs();
+        synchronized (outputLock) {
+            if (file == null) {
+                setOutputStream(null);
+            }
+            final File parentFile = file.getParentFile();
+            if (parentFile != null) {
+                parentFile.mkdirs();
+            }
+            boolean ok = false;
+            final FileOutputStream fos = new FileOutputStream(file, false);
+            try {
+                setOutputStream(fos);
+                this.file = file;
+            } finally {
+                if (! ok) {
+                    safeClose(fos);
+                }
+            }
         }
-        setOutputStream(new FileOutputStream(file, false));
     }
 
     /**
-     * Set the output file.
+     * Get the current output file.
+     *
+     * @return the file
+     */
+    public File getFile() {
+        synchronized (outputLock) {
+            return file;
+        }
+    }
+
+    /**
+     * Set the output file by name.
      *
      * @param fileName the file name
      * @throws FileNotFoundException if an error occurs opening the file

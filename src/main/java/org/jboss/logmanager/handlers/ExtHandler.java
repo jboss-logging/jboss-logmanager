@@ -62,7 +62,7 @@ public abstract class ExtHandler extends Handler implements Flushable {
      *
      * @throws SecurityException if a security manager is installed and the caller does not have the {@code "control" LoggingPermission}
      */
-    protected void checkAccess() throws SecurityException {
+    protected static void checkAccess() throws SecurityException {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);

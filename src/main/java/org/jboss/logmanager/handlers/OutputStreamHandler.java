@@ -22,31 +22,22 @@
 
 package org.jboss.logmanager.handlers;
 
-import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.formatters.Formatters;
 import java.io.OutputStream;
-import java.io.Writer;
 import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
-import java.io.IOException;
-import java.io.Closeable;
-import java.io.Flushable;
-import java.security.Permission;
+import java.io.Writer;
 
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
-import java.util.logging.LoggingPermission;
 
 /**
- * An output stream handler that supports autoflush and extended log records.  No records will be logged until an
- * output stream is configured.
+ * An output stream handler which supports any {@code OutputStream}, using the specified encoding.  If no encoding is
+ * specified, the platform default is used.
  */
-public class OutputStreamHandler extends ExtHandler {
+public class OutputStreamHandler extends WriterHandler {
 
-    private volatile boolean autoFlush = false;
-    private final Object outputLock = new Object();
     private OutputStream outputStream;
-    private Writer writer;
 
     /**
      * Construct a new instance with no formatter.
@@ -76,173 +67,50 @@ public class OutputStreamHandler extends ExtHandler {
     }
 
     /**
-     * Determine whether autoflush is currently enabled.
-     *
-     * @return {@code true} if autoflush is enabled
-     */
-    public boolean isAutoFlush() {
-        return autoFlush;
-    }
-
-    /**
-     * Change the autoflush status.
-     *
-     * @param autoFlush {@code true} to enable autoflush, {@code false} to disable it
-     * @throws SecurityException if you do not have sufficient permission to invoke this operation
-     */
-    public void setAutoFlush(final boolean autoFlush) throws SecurityException {
-        checkControl();
-        this.autoFlush = autoFlush;
-    }
-
-    /**
      * Set the target encoding.
      *
      * @param encoding the new encoding
      * @throws SecurityException if you do not have sufficient permission to invoke this operation
-     * @throws UnsupportedEncodingException if the specified encoding is not supported
+     * @throws java.io.UnsupportedEncodingException if the specified encoding is not supported
      */
     public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
-        checkControl();
+        // superclass checks access
         super.setEncoding(encoding);
         synchronized (outputLock) {
-            final Writer writer = this.writer;
-            if (writer == null) {
-                return;
-            }
-            closeWriter();
-            this.writer = encoding == null ? new OutputStreamWriter(outputStream) : new OutputStreamWriter(outputStream, encoding);
+            final OutputStream outputStream = this.outputStream;
+            updateWriter(outputStream, encoding);
+        }
+    }
+
+    /** {@inheritDoc}  Setting a writer will replace any target output stream. */
+    public void setWriter(final Writer writer) {
+        synchronized (outputLock) {
+            super.setWriter(writer);
+            outputStream = null;
         }
     }
 
     /**
      * Set the output stream to write to.
      *
-     * @param newOutputStream the new output stream or {@code null} for none
+     * @param outputStream the new output stream or {@code null} for none
      */
-    public void setOutputStream(final OutputStream newOutputStream) {
-        checkControl();
-        if (newOutputStream == null) {
-            closeStream();
-            return;
-        }
-        final Writer newWriter;
+    public void setOutputStream(final OutputStream outputStream) {
+        checkAccess();
         try {
-            final String encoding = getEncoding();
-            newWriter = encoding == null ? new OutputStreamWriter(newOutputStream) : new OutputStreamWriter(newOutputStream, encoding);
+            synchronized (outputLock) {
+                this.outputStream = outputStream;
+                updateWriter(outputStream, getEncoding());
+            }
         } catch (UnsupportedEncodingException e) {
             throw new IllegalArgumentException("The specified encoding is invalid");
         } catch (Exception e) {
-            reportError("Error opeing output stream", e, ErrorManager.OPEN_FAILURE);
+            reportError("Error opening output stream", e, ErrorManager.OPEN_FAILURE);
             return;
         }
-        synchronized (outputLock) {
-            closeStream();
-            outputStream = newOutputStream;
-            writer = newWriter;
-            try {
-                writer.write(getFormatter().getHead(this));
-            } catch (Exception e) {
-                reportError("Error writing section header", e, ErrorManager.WRITE_FAILURE);
-            }
-        }
     }
 
-    /**
-     * Publish a log record.
-     *
-     * @param record the log record to publish
-     */
-    public void publish(final ExtLogRecord record) {
-        if (isLoggable(record)) {
-            final String formatted;
-            final Formatter formatter = getFormatter();
-            try {
-                formatted = formatter.format(record);
-            } catch (Exception ex) {
-                reportError("Formatting error", ex, ErrorManager.FORMAT_FAILURE);
-                return;
-            }
-            try {
-                synchronized (outputLock) {
-                    final Writer writer = this.writer;
-                    if (writer == null) {
-                        return;
-                    }
-                    writer.write(formatted);
-                }
-            } catch (Exception ex) {
-                reportError("Error writing log message", ex, ErrorManager.WRITE_FAILURE);
-                return;
-            }
-            if (autoFlush) flush();
-        }
+    private void updateWriter(final OutputStream newOutputStream, final String encoding) throws UnsupportedEncodingException {
+        setWriter(newOutputStream == null ? null : encoding == null ? new OutputStreamWriter(newOutputStream) : new OutputStreamWriter(newOutputStream, encoding));
     }
-
-    /**
-     * Flush this logger.
-     */
-    public void flush() {
-        synchronized (outputLock) {
-            safeFlush(writer);
-        }
-    }
-
-    private void safeClose(Closeable c) {
-        try {
-            if (c != null) c.close();
-        } catch (Exception e) {
-            reportError("Error closing resource", e, ErrorManager.CLOSE_FAILURE);
-        }
-    }
-
-    private void safeFlush(Flushable f) {
-        try {
-            if (f != null) f.flush();
-        } catch (IOException e) {
-            reportError("Error on flush", e, ErrorManager.FLUSH_FAILURE);
-        }
-    }
-
-    private void closeWriter() {
-        safeFlush(writer);
-        writer = null;
-    }
-
-    private void closeStream() {
-        synchronized (outputLock) {
-            final Writer writer = this.writer;
-            if (writer == null) {
-                return;
-            }
-            try {
-                writer.write(getFormatter().getTail(this));
-            } catch (Exception ex) {
-                reportError("Error writing section tail", ex, ErrorManager.WRITE_FAILURE);
-            }
-            safeFlush(writer);
-            safeClose(writer);
-            this.writer = null;
-            outputStream = null;
-        }
-    }
-
-    /**
-     * Close this logger.
-     *
-     * @throws SecurityException if you do not have sufficient permission to invoke this operation
-     */
-    public void close() throws SecurityException {
-        checkControl();
-        closeStream();
-    }
-
-    private static void checkControl() throws SecurityException {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(CONTROL_PERMISSION);
-        }
-    }
-
-    private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
 }

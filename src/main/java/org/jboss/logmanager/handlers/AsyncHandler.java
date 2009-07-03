@@ -31,7 +31,11 @@ import java.util.Queue;
 import java.util.logging.Handler;
 import java.util.logging.ErrorManager;
 
-public final class AsyncHandler extends ExtHandler {
+/**
+ * An asycnhronous log handler which is used to write to a handler or group of handlers which are "slow" or introduce
+ * some degree of latency.
+ */
+public class AsyncHandler extends ExtHandler {
 
     private final CopyOnWriteArrayList<Handler> handlers = new CopyOnWriteArrayList<Handler>();
     private final ThreadFactory threadFactory;
@@ -43,23 +47,47 @@ public final class AsyncHandler extends ExtHandler {
 
     private static final int DEFAULT_QUEUE_LENGTH = 512;
 
+    /**
+     * Construct a new instance.
+     *
+     * @param queueLength the queue length
+     * @param threadFactory the thread factory to use to construct the handler thread
+     */
     public AsyncHandler(final int queueLength, final ThreadFactory threadFactory) {
         recordQueue = new ArrayQueue<ExtLogRecord>(queueLength);
         this.threadFactory = threadFactory;
     }
 
+    /**
+     * Construct a new instance.
+     *
+     * @param threadFactory the thread factory to use to construct the handler thread
+     */
     public AsyncHandler(final ThreadFactory threadFactory) {
         this(DEFAULT_QUEUE_LENGTH, threadFactory);
     }
 
+    /**
+     * Construct a new instance.
+     *
+     * @param queueLength the queue length
+     */
     public AsyncHandler(final int queueLength) {
         this(queueLength, Executors.defaultThreadFactory());
     }
 
+    /**
+     * Construct a new instance.
+     */
     public AsyncHandler() {
         this(DEFAULT_QUEUE_LENGTH);
     }
 
+    /**
+     * Add a sub-handler to publish events to.
+     *
+     * @param handler the sub-handler
+     */
     public void addHandler(final Handler handler) {
         checkAccess();
         synchronized (recordQueue) {
@@ -70,6 +98,11 @@ public final class AsyncHandler extends ExtHandler {
         }
     }
 
+    /**
+     * Remove a sub-handler.
+     *
+     * @param handler the sub-handler
+     */
     public void removeHandler(final Handler handler) {
         checkAccess();
         synchronized (recordQueue) {
@@ -79,6 +112,7 @@ public final class AsyncHandler extends ExtHandler {
         }
     }
 
+    /** {@inheritDoc} */
     public void publish(final ExtLogRecord record) {
         final Queue<ExtLogRecord> recordQueue = this.recordQueue;
         boolean intr = Thread.interrupted();
@@ -115,12 +149,14 @@ public final class AsyncHandler extends ExtHandler {
         }
     }
 
+    /** {@inheritDoc} */
     public void flush() {
         for (Handler handler : handlers) {
             handler.flush();
         }
     }
 
+    /** {@inheritDoc} */
     public void close() throws SecurityException {
         checkAccess();
         closed = true;
