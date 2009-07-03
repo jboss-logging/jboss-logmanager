@@ -31,6 +31,7 @@ import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.ExtHandler;
 
 /**
  * A handler which writes to any {@code Writer}.

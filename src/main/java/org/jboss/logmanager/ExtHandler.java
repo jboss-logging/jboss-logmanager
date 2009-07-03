@@ -20,9 +20,7 @@
  * 02110-1301 USA, or see the FSF site: http://www.fsf.org.
  */
 
-package org.jboss.logmanager.handlers;
-
-import org.jboss.logmanager.ExtLogRecord;
+package org.jboss.logmanager;
 
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
@@ -30,6 +28,7 @@ import java.util.logging.LoggingPermission;
 
 import java.io.Flushable;
 import java.security.Permission;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
 /**
  * An extended logger handler.  Use this class as a base class for log handlers which require {@code ExtLogRecord}
@@ -39,6 +38,18 @@ public abstract class ExtHandler extends Handler implements Flushable {
 
     private static final String LOGGER_CLASS_NAME = org.jboss.logmanager.Logger.class.getName();
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
+
+    /**
+     * The sub-handlers for this handler.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
+     * instance should not be modified (treat as immutable).
+     */
+    @SuppressWarnings({ "UnusedDeclaration" })
+    protected volatile Handler[] handlers;
+
+    /**
+     * The atomic updater for the {@link #handlers} field.
+     */
+    protected static final AtomicArray<ExtHandler, Handler> handlersUpdater = AtomicArray.create(AtomicReferenceFieldUpdater.newUpdater(ExtHandler.class, Handler[].class, "handlers"), Handler.class);
 
     /** {@inheritDoc} */
     public final void publish(final LogRecord record) {
@@ -56,6 +67,56 @@ public abstract class ExtHandler extends Handler implements Flushable {
      * @param record the log record to publish
      */
     public abstract void publish(final ExtLogRecord record);
+
+    /**
+     * Add a sub-handler to this handler.  Some handler types do not utilize sub-handlers.
+     *
+     * @param handler the handler to add
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public void addHandler(Handler handler) throws SecurityException {
+        LogContext.checkAccess();
+        if (handler == null) {
+            throw new NullPointerException("handler is null");
+        }
+        handlersUpdater.add(this, handler);
+    }
+
+    /**
+     * Remove a sub-handler from this handler.  Some handler types do not utilize sub-handlers.
+     *
+     * @param handler the handler to remove
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public void removeHandler(Handler handler) throws SecurityException {
+        LogContext.checkAccess();
+        if (handler == null) {
+            return;
+        }
+        handlersUpdater.remove(this, handler, true);
+    }
+
+    /**
+     * Get a copy of the sub-handlers array.  Since the returned value is a copy, it may be freely modified.
+     *
+     * @return a copy of the sub-handlers array
+     */
+    public Handler[] getHandlers() {
+        final Handler[] handlers = this.handlers;
+        return handlers.length > 0 ? handlers.clone() : handlers;
+    }
+
+    /**
+     * A convenience method to atomically get and clear all handlers.
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public Handler[] clearHandlers() throws SecurityException {
+        LogContext.checkAccess();
+        final Handler[] handlers = this.handlers;
+        handlersUpdater.clear(this);
+        return handlers.length > 0 ? handlers.clone() : handlers;
+    }
 
     /**
      * Check access.

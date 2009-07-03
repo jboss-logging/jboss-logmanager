@@ -23,6 +23,7 @@
 package org.jboss.logmanager.formatters;
 
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.ExtFormatter;
 import static java.lang.Math.max;
 
 /**

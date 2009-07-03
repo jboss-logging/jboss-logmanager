@@ -23,7 +23,7 @@
 package org.jboss.logmanager.handlers;
 
 import org.jboss.logmanager.ExtLogRecord;
-import java.util.concurrent.CopyOnWriteArrayList;
+import org.jboss.logmanager.ExtHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.Executors;
 import java.util.Queue;
@@ -37,7 +37,6 @@ import java.util.logging.ErrorManager;
  */
 public class AsyncHandler extends ExtHandler {
 
-    private final CopyOnWriteArrayList<Handler> handlers = new CopyOnWriteArrayList<Handler>();
     private final ThreadFactory threadFactory;
     private final Queue<ExtLogRecord> recordQueue;
     private final AsyncThread asyncThread = new AsyncThread();
@@ -81,35 +80,6 @@ public class AsyncHandler extends ExtHandler {
      */
     public AsyncHandler() {
         this(DEFAULT_QUEUE_LENGTH);
-    }
-
-    /**
-     * Add a sub-handler to publish events to.
-     *
-     * @param handler the sub-handler
-     */
-    public void addHandler(final Handler handler) {
-        checkAccess();
-        synchronized (recordQueue) {
-            if (closed) {
-                throw new IllegalStateException("Handler is closed");
-            }
-            handlers.add(handler);
-        }
-    }
-
-    /**
-     * Remove a sub-handler.
-     *
-     * @param handler the sub-handler
-     */
-    public void removeHandler(final Handler handler) {
-        checkAccess();
-        synchronized (recordQueue) {
-            if (! closed) {
-                handlers.remove(handler);
-            }
-        }
     }
 
     /** {@inheritDoc} */
@@ -161,7 +131,7 @@ public class AsyncHandler extends ExtHandler {
         checkAccess();
         closed = true;
         asyncThread.interrupt();
-        handlers.clear();
+        clearHandlers();
     }
 
     private final class AsyncThread implements Runnable {
@@ -177,7 +147,7 @@ public class AsyncHandler extends ExtHandler {
         public void run() {
             thread = Thread.currentThread();
             final Queue<ExtLogRecord> recordQueue = AsyncHandler.this.recordQueue;
-            final CopyOnWriteArrayList<Handler> handlers = AsyncHandler.this.handlers;
+            final Handler[] handlers = AsyncHandler.this.handlers;
 
             boolean intr = false;
             try {

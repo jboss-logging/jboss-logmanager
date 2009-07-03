@@ -22,88 +22,35 @@
 
 package org.jboss.logmanager.handlers;
 
+import org.jboss.logmanager.ExtHandler;
+import org.jboss.logmanager.ExtLogRecord;
+
 import java.util.logging.Handler;
-import java.util.logging.LogRecord;
-import java.util.logging.Formatter;
-import java.util.logging.Filter;
-import java.util.logging.ErrorManager;
-import java.util.logging.Level;
 
 /**
- * A handler which wraps another handler, forcing a flush after each successful message publication.
+ * A handler which wraps other handlers, forcing a flush after each successful message publication.
  */
-public class AutoFlushingHandler extends Handler {
-    private final Handler delegate;
+public class AutoFlushingHandler extends ExtHandler {
 
     /**
      * Construct a new instance.
-     *
-     * @param delegate the handler to delegate to
      */
-    public AutoFlushingHandler(final Handler delegate) {
-        this.delegate = delegate;
+    public AutoFlushingHandler() {
     }
 
     /** {@inheritDoc} */
-    public void publish(final LogRecord record) {
-        final Handler delegate = this.delegate;
-        delegate.publish(record);
-        delegate.flush();
-    }
-
-    /**
-     * Not supported.
-     *
-     * @param newFormatter ignored
-     * @throws UnsupportedOperationException always
-     */
-    public void setFormatter(final Formatter newFormatter) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Not supported.
-     *
-     * @param encoding ignored
-     * @throws UnsupportedOperationException always
-     */
-    public void setEncoding(final String encoding) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Not supported.
-     *
-     * @param newFilter ignored
-     * @throws UnsupportedOperationException always
-     */
-    public void setFilter(final Filter newFilter) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Not supported.
-     *
-     * @param em ignored
-     * @throws UnsupportedOperationException always
-     */
-    public void setErrorManager(final ErrorManager em) throws UnsupportedOperationException{
-        throw new UnsupportedOperationException();
-    }
-
-    /**
-     * Not supported.
-     *
-     * @param newLevel ignored
-     * @throws UnsupportedOperationException always
-     */
-    public void setLevel(final Level newLevel) throws UnsupportedOperationException {
-        throw new UnsupportedOperationException();
+    public void publish(final ExtLogRecord record) {
+        for (Handler handler : handlers) {
+            handler.publish(record);
+            handler.flush();
+        }
     }
 
     /** {@inheritDoc} */
     public void flush() {
-        delegate.flush();
+        for (Handler handler : handlers) {
+            handler.flush();
+        }
     }
 
     /** {@inheritDoc}  This implementation does nothing. */
