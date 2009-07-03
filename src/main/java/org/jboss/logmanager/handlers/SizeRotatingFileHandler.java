@@ -49,6 +49,25 @@ public class SizeRotatingFileHandler extends FileHandler {
         }
     }
 
+    /**
+     * Set the rotation size, in bytes.
+     *
+     * @param rotateSize the number of bytes before the log is rotated
+     */
+    public void setRotateSize(final long rotateSize) {
+        this.rotateSize = rotateSize;
+    }
+
+    /**
+     * Set the maximum backup index (the number of log files to keep around).
+     *
+     * @param maxBackupIndex the maximum backup index
+     */
+    public void setMaxBackupIndex(final int maxBackupIndex) {
+        this.maxBackupIndex = maxBackupIndex;
+    }
+
+    /** {@inheritDoc} */
     protected void preWrite(final ExtLogRecord record) {
         final int maxBackupIndex = this.maxBackupIndex;
         if (currentSize > rotateSize && maxBackupIndex > 0) {
