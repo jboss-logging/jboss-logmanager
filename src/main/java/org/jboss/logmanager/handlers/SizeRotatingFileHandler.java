@@ -55,7 +55,10 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param rotateSize the number of bytes before the log is rotated
      */
     public void setRotateSize(final long rotateSize) {
-        this.rotateSize = rotateSize;
+        checkAccess();
+        synchronized (outputLock) {
+            this.rotateSize = rotateSize;
+        }
     }
 
     /**
@@ -64,7 +67,10 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param maxBackupIndex the maximum backup index
      */
     public void setMaxBackupIndex(final int maxBackupIndex) {
-        this.maxBackupIndex = maxBackupIndex;
+        checkAccess();
+        synchronized (outputLock) {
+            this.maxBackupIndex = maxBackupIndex;
+        }
     }
 
     /** {@inheritDoc} */
@@ -73,6 +79,10 @@ public class SizeRotatingFileHandler extends FileHandler {
         if (currentSize > rotateSize && maxBackupIndex > 0) {
             try {
                 final File file = getFile();
+                if (file == null) {
+                    // no file is set; a direct output stream or writer was specified
+                    return;
+                }
                 // close the old file.
                 setFile(null);
                 // rotate.  First, drop the max file (if any), then move each file to the next higher slot.

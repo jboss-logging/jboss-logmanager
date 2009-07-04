@@ -38,6 +38,7 @@ public abstract class ExtHandler extends Handler implements Flushable {
 
     private static final String LOGGER_CLASS_NAME = org.jboss.logmanager.Logger.class.getName();
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
+    private volatile boolean autoflush;
 
     /**
      * The sub-handlers for this handler.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
@@ -54,6 +55,7 @@ public abstract class ExtHandler extends Handler implements Flushable {
     /** {@inheritDoc} */
     public final void publish(final LogRecord record) {
         publish((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
+        if (autoflush) flush();
     }
 
     /**
@@ -75,7 +77,7 @@ public abstract class ExtHandler extends Handler implements Flushable {
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public void addHandler(Handler handler) throws SecurityException {
-        LogContext.checkAccess();
+        checkAccess();
         if (handler == null) {
             throw new NullPointerException("handler is null");
         }
@@ -89,7 +91,7 @@ public abstract class ExtHandler extends Handler implements Flushable {
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public void removeHandler(Handler handler) throws SecurityException {
-        LogContext.checkAccess();
+        checkAccess();
         if (handler == null) {
             return;
         }
@@ -112,10 +114,30 @@ public abstract class ExtHandler extends Handler implements Flushable {
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public Handler[] clearHandlers() throws SecurityException {
-        LogContext.checkAccess();
+        checkAccess();
         final Handler[] handlers = this.handlers;
         handlersUpdater.clear(this);
         return handlers.length > 0 ? handlers.clone() : handlers;
+    }
+
+    /**
+     * Determine if this handler will auto-flush.
+     *
+     * @return {@code true} if auto-flush is enabled
+     */
+    public boolean isAutoflush() {
+        return autoflush;
+    }
+
+    /**
+     * Change the autoflush setting for this handler.
+     *
+     * @param autoflush {@code true} to automatically flush after each write; false otherwise
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public void setAutoflush(final boolean autoflush) throws SecurityException {
+        checkAccess();
+        this.autoflush = autoflush;
     }
 
     /**
