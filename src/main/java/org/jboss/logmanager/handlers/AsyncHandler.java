@@ -40,6 +40,7 @@ public class AsyncHandler extends ExtHandler {
     private final ThreadFactory threadFactory;
     private final Queue<ExtLogRecord> recordQueue;
     private final AsyncThread asyncThread = new AsyncThread();
+    private volatile OverflowAction overflowAction = OverflowAction.BLOCK;
 
     private boolean closed;
     private boolean taskRunning;
@@ -82,6 +83,28 @@ public class AsyncHandler extends ExtHandler {
         this(DEFAULT_QUEUE_LENGTH);
     }
 
+    /**
+     * Get the overflow action.
+     *
+     * @return the overflow action
+     */
+    public OverflowAction getOverflowAction() {
+        return overflowAction;
+    }
+
+    /**
+     * Set the overflow action.
+     *
+     * @param overflowAction the overflow action
+     */
+    public void setOverflowAction(final OverflowAction overflowAction) {
+        if (overflowAction == null) {
+            throw new NullPointerException("overflowAction is null");
+        }
+        checkAccess();
+        this.overflowAction = overflowAction;
+    }
+
     /** {@inheritDoc} */
     public void publish(final ExtLogRecord record) {
         final Queue<ExtLogRecord> recordQueue = this.recordQueue;
@@ -96,6 +119,9 @@ public class AsyncHandler extends ExtHandler {
                 startTaskIfNotRunning();
                 while (! recordQueue.offer(record)) {
                     try {
+                        if (overflowAction == OverflowAction.DISCARD) {
+                            return;
+                        }
                         recordQueue.wait();
                     } catch (InterruptedException e) {
                         intr = true;
@@ -187,5 +213,10 @@ public class AsyncHandler extends ExtHandler {
                 }
             }
         }
+    }
+
+    public enum OverflowAction {
+        BLOCK,
+        DISCARD,
     }
 }
