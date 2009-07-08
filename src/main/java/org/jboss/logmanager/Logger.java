@@ -25,6 +25,9 @@ package org.jboss.logmanager;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ResourceBundle;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Lock;
 
@@ -64,9 +67,19 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     private volatile Filter filter;
 
     /**
+     * The attachments map.
+     */
+    private volatile Map<Object, Object> attachments;
+
+    /**
      * The atomic updater for the {@link #handlers} field.
      */
     private static final AtomicArray<Logger, Handler> handlersUpdater = AtomicArray.create(AtomicReferenceFieldUpdater.newUpdater(Logger.class, Handler[].class, "handlers"), Handler.class);
+
+    /**
+     * The atomic updater for the {@link #attachments} field.
+     */
+    private static final AtomicReferenceFieldUpdater<Logger, Map> attachmentsUpdater = AtomicReferenceFieldUpdater.newUpdater(Logger.class, Map.class, "attachments");
 
     private static final String LOGGER_CLASS_NAME = Logger.class.getName();
 
@@ -206,6 +219,92 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     public boolean isLoggable(Level level) {
         final int effectiveLevel = this.effectiveLevel;
         return level.intValue() >= effectiveLevel && effectiveLevel != OFF_INT;
+    }
+
+    // Attachment mgmt
+
+    /**
+     * Get the attachment value for a given key, or {@code null} if there is no such attachment.
+     *
+     * @param key the key
+     * @return the attachment, or {@code null} if there is none for this key
+     */
+    public Object getAttachment(Object key) {
+        if (key == null) {
+            throw new NullPointerException("key is null");
+        }
+        final Map<Object, Object> attachments = this.attachments;
+        return attachments == null ? null : attachments.get(key);
+    }
+
+    /**
+     * Attach an object to this logger under a given key, if such an attachment does not already exist.
+     * A strong reference is maintained to the key and value for as long as this logger exists.
+     *
+     * @param key the attachment key
+     * @param value the attachment value
+     * @return the current attachment, if there is one, or {@code null} if the value was successfully attached
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public Object attachIfAbsent(Object key, Object value) throws SecurityException {
+        LogContext.checkAccess();
+        if (key == null) {
+            throw new NullPointerException("key is null");
+        }
+        if (value == null) {
+            throw new NullPointerException("value is null");
+        }
+        Map<Object, Object> oldAttachments;
+        Map<Object, Object> newAttachments;
+        do {
+            oldAttachments = attachments;
+            if (oldAttachments == null) {
+                newAttachments = new IdentityHashMap<Object, Object>();
+            } else {
+                if (oldAttachments.containsKey(key)) {
+                    return oldAttachments.get(key);
+                }
+                newAttachments = new IdentityHashMap<Object, Object>(oldAttachments);
+            }
+            newAttachments.put(key, value);
+        } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
+        return null;
+    }
+
+    /**
+     * Remove an attachment.
+     *
+     * @param key the attachment key
+     * @return the old value, or {@code null} if there was none
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public Object detach(Object key) throws SecurityException {
+        LogContext.checkAccess();
+        if (key == null) {
+            throw new NullPointerException("key is null");
+        }
+        Map<Object, Object> oldAttachments;
+        Map<Object, Object> newAttachments;
+        Object result;
+        do {
+            oldAttachments = attachments;
+            if (oldAttachments == null) {
+                return null;
+            } else {
+                if (! oldAttachments.containsKey(key)) {
+                    return null;
+                }
+                if (oldAttachments.size() == 1) {
+                    // special case - the new map is empty
+                    newAttachments = null;
+                    result = oldAttachments.get(key);
+                } else {
+                    newAttachments = new IdentityHashMap<Object, Object>(oldAttachments);
+                    result = newAttachments.remove(key);
+                }
+            }
+        } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
+        return result;
     }
 
     // Handler mgmt
