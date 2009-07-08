@@ -165,6 +165,17 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
+     * Set the log level by name.  Uses the parent logging context's name registry; otherwise behaves
+     * identically to {@link #setLevel(Level)}.
+     *
+     * @param newLevelName the name of the level to set
+     * @throws SecurityException if a security manager exists and if the caller does not have LoggingPermission("control")
+     */
+    public void setLevelName(String newLevelName) throws SecurityException {
+        setLevel(loggerNode.getContext().getLevelForName(newLevelName));
+    }
+
+    /**
      * Update the effective level if it is inherited from a parent.  Must only be called while the logmanager's level
      * change lock is held.
      *

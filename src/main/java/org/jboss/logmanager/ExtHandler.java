@@ -109,8 +109,9 @@ public abstract class ExtHandler extends Handler implements Flushable {
     }
 
     /**
-     * A convenience method to atomically get and clear all handlers.
+     * A convenience method to atomically get and clear all sub-handlers.
      *
+     * @return the old sub-handler array
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public Handler[] clearHandlers() throws SecurityException {
@@ -118,6 +119,23 @@ public abstract class ExtHandler extends Handler implements Flushable {
         final Handler[] handlers = this.handlers;
         handlersUpdater.clear(this);
         return handlers.length > 0 ? handlers.clone() : handlers;
+    }
+
+    /**
+     * A convenience method to atomically get and replace the sub-handler array.
+     *
+     * @param newHandlers the new sub-handlers
+     * @return the old sub-handler array
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public Handler[] setHandlers(final Handler[] newHandlers) throws SecurityException {
+        if (newHandlers.length == 0) {
+            return clearHandlers();
+        } else {
+            checkAccess();
+            final Handler[] handlers = handlersUpdater.getAndSet(this, newHandlers);
+            return handlers.length > 0 ? handlers.clone() : handlers;
+        }
     }
 
     /**
