@@ -103,4 +103,13 @@ public class ConsoleHandler extends OutputStreamHandler {
     public void setTarget(Target target) {
         setOutputStream(targets.get(target));
     }
+
+    /** {@inheritDoc} */
+    public void setOutputStream(final OutputStream outputStream) {
+        if (outputStream instanceof UncloseableOutputStream) {
+            super.setOutputStream(outputStream);
+        } else {
+            super.setOutputStream(new UncloseableOutputStream(outputStream));
+        }
+    }
 }
