@@ -248,6 +248,8 @@ final class LoggerNode {
                 final Logger instance = node.getLogger();
                 if (instance != null) {
                     instance.setEffectiveLevel(newLevel);
+                } else {
+                    node.updateChildEffectiveLevel(newLevel);
                 }
             }
         }
