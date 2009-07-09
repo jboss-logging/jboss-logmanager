@@ -32,17 +32,14 @@ import java.util.logging.LogRecord;
  */
 public final class LevelChangingFilter implements Filter {
 
-    private final Filter matchFilter;
     private final Level newLevel;
 
     /**
      * Construct a new instance.
      *
-     * @param matchFilter the filter which is checked to see whether the level should be changed
      * @param newLevel the level to change to
      */
-    public LevelChangingFilter(final Filter matchFilter, final Level newLevel) {
-        this.matchFilter = matchFilter;
+    public LevelChangingFilter(final Level newLevel) {
         this.newLevel = newLevel;
     }
 
@@ -53,9 +50,7 @@ public final class LevelChangingFilter implements Filter {
      * @return {@code true} always
      */
     public boolean isLoggable(final LogRecord record) {
-        if (matchFilter.isLoggable(record)) {
-            record.setLevel(newLevel);
-        }
+        record.setLevel(newLevel);
         return true;
     }
 }

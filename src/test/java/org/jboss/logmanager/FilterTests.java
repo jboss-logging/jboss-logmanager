@@ -244,7 +244,7 @@ public final class FilterTests {
     }
 
     public void testLevelChangingFilter0() {
-        final Filter filter = new LevelChangingFilter(AcceptAllFilter.getInstance(), Level.INFO);
+        final Filter filter = new LevelChangingFilter(Level.INFO);
         final AtomicBoolean ran = new AtomicBoolean();
         final Handler handler = new CheckingHandler(ran);
         final Logger logger = Logger.getLogger("filterTest");
@@ -258,7 +258,7 @@ public final class FilterTests {
     }
 
     public void testLevelChangingFilter1() {
-        final Filter filter = new LevelChangingFilter(DenyAllFilter.getInstance(), Level.INFO);
+        final Filter filter = new LevelChangingFilter(Level.INFO);
         final AtomicBoolean ran = new AtomicBoolean();
         final Handler handler = new CheckingHandler(ran);
         final Logger logger = Logger.getLogger("filterTest");
