@@ -270,8 +270,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
                     return (V) oldAttachments.get(key);
                 }
                 newAttachments = new HashMap<AttachmentKey, Object>(oldAttachments);
+                newAttachments.put(key, value);
             }
-            newAttachments.put(key, value);
         } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
         return null;
     }
@@ -299,10 +299,11 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             if (result == null) {
                 return null;
             }
-            if (oldAttachments.size() == 1) {
+            final int size = oldAttachments.size();
+            if (size == 1) {
                 // special case - the new map is empty
                 newAttachments = Collections.emptyMap();
-            } else if (oldAttachments.size() == 2) {
+            } else if (size == 2) {
                 // special case - the new map is a singleton
                 final Iterator<Map.Entry<AttachmentKey,Object>> it = oldAttachments.entrySet().iterator();
                 // find the entry that we are not removing
