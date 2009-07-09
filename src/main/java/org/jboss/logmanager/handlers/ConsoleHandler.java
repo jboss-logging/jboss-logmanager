@@ -106,7 +106,7 @@ public class ConsoleHandler extends OutputStreamHandler {
 
     /** {@inheritDoc} */
     public void setOutputStream(final OutputStream outputStream) {
-        if (outputStream instanceof UncloseableOutputStream) {
+        if (outputStream == null || outputStream instanceof UncloseableOutputStream) {
             super.setOutputStream(outputStream);
         } else {
             super.setOutputStream(new UncloseableOutputStream(outputStream));
