@@ -226,7 +226,7 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep dateFormatStep(final String formatString, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
-        final SimpleDateFormat dateFormatMaster = new SimpleDateFormat(formatString);
+        final SimpleDateFormat dateFormatMaster = new SimpleDateFormat(formatString == null ? "yyyy-MM-dd HH:mm:ss,SSS" : formatString);
         return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 final SimpleDateFormat dateFormat = dateFormatMaster;

@@ -39,8 +39,8 @@ public class PeriodicRotatingFileHandler extends FileHandler {
 
     private SimpleDateFormat format;
     private String nextSuffix;
-    private Period period;
-    private long nextRollover;
+    private Period period = Period.NEVER;
+    private long nextRollover = Long.MAX_VALUE;
 
     /** {@inheritDoc}  This implementation checks to see if the scheduled rollover time has yet occurred. */
     protected void preWrite(final ExtLogRecord record) {
