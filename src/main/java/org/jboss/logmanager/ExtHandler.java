@@ -38,7 +38,7 @@ public abstract class ExtHandler extends Handler implements Flushable {
 
     private static final String LOGGER_CLASS_NAME = org.jboss.logmanager.Logger.class.getName();
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
-    private volatile boolean autoflush;
+    private volatile boolean autoFlush;
 
     /**
      * The sub-handlers for this handler.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
@@ -55,7 +55,7 @@ public abstract class ExtHandler extends Handler implements Flushable {
     /** {@inheritDoc} */
     public final void publish(final LogRecord record) {
         publish((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
-        if (autoflush) flush();
+        if (autoFlush) flush();
     }
 
     /**
@@ -143,19 +143,19 @@ public abstract class ExtHandler extends Handler implements Flushable {
      *
      * @return {@code true} if auto-flush is enabled
      */
-    public boolean isAutoflush() {
-        return autoflush;
+    public boolean isAutoFlush() {
+        return autoFlush;
     }
 
     /**
      * Change the autoflush setting for this handler.
      *
-     * @param autoflush {@code true} to automatically flush after each write; false otherwise
+     * @param autoFlush {@code true} to automatically flush after each write; false otherwise
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
-    public void setAutoflush(final boolean autoflush) throws SecurityException {
+    public void setAutoFlush(final boolean autoFlush) throws SecurityException {
         checkAccess();
-        this.autoflush = autoflush;
+        this.autoFlush = autoFlush;
     }
 
     /**
