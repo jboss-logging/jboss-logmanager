@@ -257,20 +257,6 @@ public final class FilterTests {
         assertTrue("Handler wasn't run", ran.get());
     }
 
-    public void testLevelChangingFilter1() {
-        final Filter filter = new LevelChangingFilter(Level.INFO);
-        final AtomicBoolean ran = new AtomicBoolean();
-        final Handler handler = new CheckingHandler(ran);
-        final Logger logger = Logger.getLogger("filterTest");
-        logger.setUseParentHandlers(false);
-        logger.addHandler(handler);
-        logger.setLevel(Level.FINEST);
-        logger.setFilter(filter);
-        handler.setLevel(Level.INFO);
-        logger.finest("This is a test.");
-        assertFalse("Handler was run", ran.get());
-    }
-
     public void testLevelFilter0() {
         final Filter filter = new LevelFilter(Level.INFO);
         final AtomicBoolean ran = new AtomicBoolean();
