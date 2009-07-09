@@ -27,7 +27,8 @@ import java.io.Serializable;
 import java.util.ResourceBundle;
 import java.util.Map;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
+import java.util.Collections;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Lock;
 
@@ -69,7 +70,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /**
      * The attachments map.
      */
-    private volatile Map<Object, Object> attachments;
+    private volatile Map<AttachmentKey, Object> attachments = Collections.emptyMap();
 
     /**
      * The atomic updater for the {@link #handlers} field.
@@ -227,14 +228,16 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * Get the attachment value for a given key, or {@code null} if there is no such attachment.
      *
      * @param key the key
+     * @param <V> the attachment value type
      * @return the attachment, or {@code null} if there is none for this key
      */
-    public Object getAttachment(Object key) {
+    @SuppressWarnings({ "unchecked" })
+    public <V> V getAttachment(AttachmentKey<V> key) {
         if (key == null) {
             throw new NullPointerException("key is null");
         }
-        final Map<Object, Object> attachments = this.attachments;
-        return attachments == null ? null : attachments.get(key);
+        final Map<AttachmentKey, Object> attachments = this.attachments;
+        return (V) attachments.get(key);
     }
 
     /**
@@ -242,11 +245,13 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * A strong reference is maintained to the key and value for as long as this logger exists.
      *
      * @param key the attachment key
+     * @param <V> the attachment value type
      * @param value the attachment value
      * @return the current attachment, if there is one, or {@code null} if the value was successfully attached
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
-    public Object attachIfAbsent(Object key, Object value) throws SecurityException {
+    @SuppressWarnings({ "unchecked" })
+    public <V> V attachIfAbsent(AttachmentKey<V> key, V value) throws SecurityException {
         LogContext.checkAccess();
         if (key == null) {
             throw new NullPointerException("key is null");
@@ -254,17 +259,17 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (value == null) {
             throw new NullPointerException("value is null");
         }
-        Map<Object, Object> oldAttachments;
-        Map<Object, Object> newAttachments;
+        Map<AttachmentKey, Object> oldAttachments;
+        Map<AttachmentKey, Object> newAttachments;
         do {
             oldAttachments = attachments;
-            if (oldAttachments == null) {
-                newAttachments = new IdentityHashMap<Object, Object>();
+            if (oldAttachments.isEmpty()) {
+                newAttachments = Collections.<AttachmentKey, Object>singletonMap(key, value);
             } else {
                 if (oldAttachments.containsKey(key)) {
-                    return oldAttachments.get(key);
+                    return (V) oldAttachments.get(key);
                 }
-                newAttachments = new IdentityHashMap<Object, Object>(oldAttachments);
+                newAttachments = new HashMap<AttachmentKey, Object>(oldAttachments);
             }
             newAttachments.put(key, value);
         } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
@@ -275,33 +280,40 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * Remove an attachment.
      *
      * @param key the attachment key
+     * @param <V> the attachment value type
      * @return the old value, or {@code null} if there was none
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
-    public Object detach(Object key) throws SecurityException {
+    @SuppressWarnings({ "unchecked" })
+    public <V> V detach(AttachmentKey<V> key) throws SecurityException {
         LogContext.checkAccess();
         if (key == null) {
             throw new NullPointerException("key is null");
         }
-        Map<Object, Object> oldAttachments;
-        Map<Object, Object> newAttachments;
-        Object result;
+        Map<AttachmentKey, Object> oldAttachments;
+        Map<AttachmentKey, Object> newAttachments;
+        V result;
         do {
             oldAttachments = attachments;
-            if (oldAttachments == null) {
+            result = (V) oldAttachments.get(key);
+            if (result == null) {
                 return null;
+            }
+            if (oldAttachments.size() == 1) {
+                // special case - the new map is empty
+                newAttachments = Collections.emptyMap();
+            } else if (oldAttachments.size() == 2) {
+                // special case - the new map is a singleton
+                final Iterator<Map.Entry<AttachmentKey,Object>> it = oldAttachments.entrySet().iterator();
+                // find the entry that we are not removing
+                Map.Entry<AttachmentKey, Object> entry = it.next();
+                if (entry.getKey() == key) {
+                    // must be the next one
+                    entry = it.next();
+                }
+                newAttachments = Collections.singletonMap(entry.getKey(), entry.getValue());
             } else {
-                if (! oldAttachments.containsKey(key)) {
-                    return null;
-                }
-                if (oldAttachments.size() == 1) {
-                    // special case - the new map is empty
-                    newAttachments = null;
-                    result = oldAttachments.get(key);
-                } else {
-                    newAttachments = new IdentityHashMap<Object, Object>(oldAttachments);
-                    result = newAttachments.remove(key);
-                }
+                newAttachments = new HashMap<AttachmentKey, Object>(oldAttachments);
             }
         } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
         return result;
@@ -776,5 +788,13 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     public void logRaw(final LogRecord record) {
         logRaw((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
+    }
+
+    /**
+     * An attachment key instance.
+     *
+     * @param <V> the attachment value type
+     */
+    public static final class AttachmentKey<V> {
     }
 }
