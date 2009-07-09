@@ -398,7 +398,7 @@ public final class FilterTests {
     }
 
     public void testSubstitueFilter0() {
-        final Filter filter = new SubstituteFilter(AcceptAllFilter.getInstance(), Pattern.compile("test"), "lunch", true);
+        final Filter filter = new SubstituteFilter(Pattern.compile("test"), "lunch", true);
         final AtomicReference<String> result = new AtomicReference<String>();
         final Handler handler = new MessageCheckingHandler(result);
         final Logger logger = Logger.getLogger("filterTest");
@@ -412,7 +412,7 @@ public final class FilterTests {
     }
 
     public void testSubstitueFilter1() {
-        final Filter filter = new SubstituteFilter(AcceptAllFilter.getInstance(), Pattern.compile("test"), "lunch", false);
+        final Filter filter = new SubstituteFilter(Pattern.compile("test"), "lunch", false);
         final AtomicReference<String> result = new AtomicReference<String>();
         final Handler handler = new MessageCheckingHandler(result);
         final Logger logger = Logger.getLogger("filterTest");
@@ -426,7 +426,7 @@ public final class FilterTests {
     }
 
     public void testSubstitueFilter2() {
-        final Filter filter = new SubstituteFilter(AcceptAllFilter.getInstance(), Pattern.compile("t(es)t"), "lunch$1", true);
+        final Filter filter = new SubstituteFilter(Pattern.compile("t(es)t"), "lunch$1", true);
         final AtomicReference<String> result = new AtomicReference<String>();
         final Handler handler = new MessageCheckingHandler(result);
         final Logger logger = Logger.getLogger("filterTest");

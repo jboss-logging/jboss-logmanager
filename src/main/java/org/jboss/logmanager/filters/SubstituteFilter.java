@@ -32,7 +32,7 @@ import java.util.logging.LogRecord;
  * A filter which applies a text substitution on the message if the nested filter matches.
  */
 public final class SubstituteFilter implements Filter {
-    private final Filter matchFilter;
+
     private final Pattern pattern;
     private final String replacement;
     private final boolean replaceAll;
@@ -40,14 +40,11 @@ public final class SubstituteFilter implements Filter {
     /**
      * Construct a new instance.
      *
-     * @param matchFilter the filter to check
      * @param pattern the pattern to match
      * @param replacement the string replacement
      * @param replaceAll {@code true} if all occurrances should be replaced; {@code false} if only the first occurrance
-     *      should be replaced
      */
-    public SubstituteFilter(final Filter matchFilter, final Pattern pattern, final String replacement, final boolean replaceAll) {
-        this.matchFilter = matchFilter;
+    public SubstituteFilter(final Pattern pattern, final String replacement, final boolean replaceAll) {
         this.pattern = pattern;
         this.replacement = replacement;
         this.replaceAll = replaceAll;
@@ -60,13 +57,11 @@ public final class SubstituteFilter implements Filter {
      * @return {@code true} always
      */
     public boolean isLoggable(final LogRecord record) {
-        if (matchFilter.isLoggable(record)) {
-            final Matcher matcher = pattern.matcher(record.getMessage());
-            if (replaceAll) {
-                record.setMessage(matcher.replaceAll(replacement));
-            } else {
-                record.setMessage(matcher.replaceFirst(replacement));
-            }
+        final Matcher matcher = pattern.matcher(record.getMessage());
+        if (replaceAll) {
+            record.setMessage(matcher.replaceAll(replacement));
+        } else {
+            record.setMessage(matcher.replaceFirst(replacement));
         }
         return true;
     }
