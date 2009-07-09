@@ -54,8 +54,10 @@ public abstract class ExtHandler extends Handler implements Flushable {
 
     /** {@inheritDoc} */
     public final void publish(final LogRecord record) {
-        publish((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
-        if (autoFlush) flush();
+        if (record != null && isLoggable(record)) {
+            final ExtLogRecord extRecord = (record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME);
+            doPublish(extRecord);
+        }
     }
 
     /**
@@ -68,7 +70,22 @@ public abstract class ExtHandler extends Handler implements Flushable {
      *
      * @param record the log record to publish
      */
-    public abstract void publish(final ExtLogRecord record);
+    public final void publish(final ExtLogRecord record) {
+        if (record != null && isLoggable(record)) {
+            doPublish(record);
+        }
+    }
+
+    /**
+     * Do the actual work of publication; the record will have been filtered already.  The default implementation
+     * does nothing except to flush if the {@code autoFlush} property is set to {@code true}; if this behavior is to be
+     * preserved in a subclass then this method should be called after the record is physically written.
+     *
+     * @param record the log record to publish
+     */
+    protected void doPublish(final ExtLogRecord record) {
+        if (autoFlush) flush();
+    }
 
     /**
      * Add a sub-handler to this handler.  Some handler types do not utilize sub-handlers.

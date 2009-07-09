@@ -31,8 +31,7 @@ import org.jboss.logmanager.ExtLogRecord;
 public final class NullHandler extends ExtHandler {
 
     /** {@inheritDoc} */
-    public void publish(final ExtLogRecord record) {
-        isLoggable(record);
+    protected void doPublish(final ExtLogRecord record) {
     }
 
     /** {@inheritDoc} */

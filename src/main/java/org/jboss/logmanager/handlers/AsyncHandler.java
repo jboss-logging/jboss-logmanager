@@ -106,7 +106,7 @@ public class AsyncHandler extends ExtHandler {
     }
 
     /** {@inheritDoc} */
-    public void publish(final ExtLogRecord record) {
+    protected void doPublish(final ExtLogRecord record) {
         final Queue<ExtLogRecord> recordQueue = this.recordQueue;
         boolean intr = Thread.interrupted();
         // prepare record to move to another thread

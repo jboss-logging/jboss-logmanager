@@ -92,7 +92,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @param formatter the formatter to use
      */
     public ConsoleHandler(final Target target, final Formatter formatter) {
-        super(targets.get(target), formatter);
+        super(wrap(targets.get(target)), formatter);
     }
 
     /**
@@ -104,12 +104,16 @@ public class ConsoleHandler extends OutputStreamHandler {
         setOutputStream(targets.get(target));
     }
 
+    private static OutputStream wrap(final OutputStream outputStream) {
+        return outputStream == null ?
+                null :
+                outputStream instanceof UncloseableOutputStream ?
+                        outputStream :
+                        new UncloseableOutputStream(outputStream);
+    }
+
     /** {@inheritDoc} */
     public void setOutputStream(final OutputStream outputStream) {
-        if (outputStream == null || outputStream instanceof UncloseableOutputStream) {
-            super.setOutputStream(outputStream);
-        } else {
-            super.setOutputStream(new UncloseableOutputStream(outputStream));
-        }
+        super.setOutputStream(wrap(outputStream));
     }
 }

@@ -41,34 +41,34 @@ public class WriterHandler extends ExtHandler {
     protected final Object outputLock = new Object();
     private Writer writer;
 
-    /**
-     * Publish a log record.
-     *
-     * @param record the log record to publish
-     */
-    public void publish(final ExtLogRecord record) {
-        if (isLoggable(record)) {
-            final String formatted;
-            final Formatter formatter = getFormatter();
-            try {
-                formatted = formatter.format(record);
-            } catch (Exception ex) {
-                reportError("Formatting error", ex, ErrorManager.FORMAT_FAILURE);
-                return;
-            }
-            try {
-                synchronized (outputLock) {
-                    final Writer writer = this.writer;
-                    if (writer == null) {
-                        return;
-                    }
-                    preWrite(record);
-                    writer.write(formatted);
+    /** {@inheritDoc} */
+    protected void doPublish(final ExtLogRecord record) {
+        final String formatted;
+        final Formatter formatter = getFormatter();
+        try {
+            formatted = formatter.format(record);
+        } catch (Exception ex) {
+            reportError("Formatting error", ex, ErrorManager.FORMAT_FAILURE);
+            return;
+        }
+        if (formatted.length() == 0) {
+            // nothing to write; don't bother
+            return;
+        }
+        try {
+            synchronized (outputLock) {
+                final Writer writer = this.writer;
+                if (writer == null) {
+                    return;
                 }
-            } catch (Exception ex) {
-                reportError("Error writing log message", ex, ErrorManager.WRITE_FAILURE);
-                return;
+                preWrite(record);
+                writer.write(formatted);
+                // only flush if something was written
+                super.doPublish(record);
             }
+        } catch (Exception ex) {
+            reportError("Error writing log message", ex, ErrorManager.WRITE_FAILURE);
+            return;
         }
     }
 

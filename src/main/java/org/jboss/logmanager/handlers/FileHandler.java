@@ -84,6 +84,7 @@ public class FileHandler extends OutputStreamHandler {
         synchronized (outputLock) {
             if (file == null) {
                 setOutputStream(null);
+                return;
             }
             final File parentFile = file.getParentFile();
             if (parentFile != null) {
@@ -94,6 +95,7 @@ public class FileHandler extends OutputStreamHandler {
             try {
                 setOutputStream(fos);
                 this.file = file;
+                ok = true;
             } finally {
                 if (! ok) {
                     safeClose(fos);
