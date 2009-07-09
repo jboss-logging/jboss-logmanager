@@ -61,6 +61,7 @@ public final class PropertyConfigurator implements Configurator {
     private Map<String, Filter> configuredFilters;
     private Map<String, Formatter> configuredFormatters;
     private Map<String, ErrorManager> configuredErrorManagers;
+    private Map<String, Logger> configuredLoggers;
 
     /** {@inheritDoc} */
     public void configure(final InputStream inputStream) throws IOException {
@@ -68,6 +69,7 @@ public final class PropertyConfigurator implements Configurator {
         configuredFilters = new HashMap<String, Filter>();
         configuredFormatters = new HashMap<String, Formatter>();
         configuredErrorManagers = new HashMap<String, ErrorManager>();
+        configuredLoggers = new HashMap<String, Logger>();
         final Properties properties = new Properties();
         try {
             properties.load(inputStream);
@@ -90,6 +92,7 @@ public final class PropertyConfigurator implements Configurator {
                 continue;
             }
             final Logger logger = LogContext.getSystemLogContext().getLogger(loggerName);
+            configuredLoggers.put(loggerName, logger);
 
             // Get logger level
             final String levelName = getStringProperty(properties, getKey("logger", loggerName, "level"));

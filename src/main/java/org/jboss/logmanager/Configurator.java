@@ -37,4 +37,10 @@ public interface Configurator {
      * @throws IOException if an error occurs
      */
     void configure(InputStream inputStream) throws IOException;
+
+    /**
+     * The attachment key of the chosen configurator, used to maintain a strong ref to any
+     * configured properties.
+     */
+    Logger.AttachmentKey<Configurator> ATTACHMENT_KEY = new Logger.AttachmentKey<Configurator>();
 }

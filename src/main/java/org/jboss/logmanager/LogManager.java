@@ -226,6 +226,7 @@ public final class LogManager extends java.util.logging.LogManager {
         final Configurator configurator = construct(Configurator.class, confClassName);
         try {
             configurator.configure(inputStream);
+            LogContext.getSystemLogContext().getLogger("").attach(Configurator.ATTACHMENT_KEY, configurator);
         } catch (Throwable t) {
             t.printStackTrace();
         }

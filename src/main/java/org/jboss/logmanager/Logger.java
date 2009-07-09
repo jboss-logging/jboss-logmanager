@@ -241,12 +241,47 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
+     * Attach an object to this logger under a given key.
+     * A strong reference is maintained to the key and value for as long as this logger exists.
+     *
+     * @param key the attachment key
+     * @param value the attachment value
+     * @param <V> the attachment value type
+     * @return the old attachment, if there was one
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    @SuppressWarnings({ "unchecked" })
+    public <V> V attach(AttachmentKey<V> key, V value) throws SecurityException {
+        LogContext.checkAccess();
+        if (key == null) {
+            throw new NullPointerException("key is null");
+        }
+        if (value == null) {
+            throw new NullPointerException("value is null");
+        }
+        Map<AttachmentKey, Object> oldAttachments;
+        Map<AttachmentKey, Object> newAttachments;
+        V old;
+        do {
+            oldAttachments = attachments;
+            if (oldAttachments.isEmpty() || oldAttachments.size() == 1 && oldAttachments.containsKey(key)) {
+                old = (V) oldAttachments.get(key);
+                newAttachments = Collections.<AttachmentKey, Object>singletonMap(key, value);
+            } else {
+                newAttachments = new HashMap<AttachmentKey, Object>(oldAttachments);
+                old = (V) newAttachments.put(key, value);
+            }
+        } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
+        return old;
+    }
+
+    /**
      * Attach an object to this logger under a given key, if such an attachment does not already exist.
      * A strong reference is maintained to the key and value for as long as this logger exists.
      *
      * @param key the attachment key
-     * @param <V> the attachment value type
      * @param value the attachment value
+     * @param <V> the attachment value type
      * @return the current attachment, if there is one, or {@code null} if the value was successfully attached
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
@@ -797,5 +832,9 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @param <V> the attachment value type
      */
     public static final class AttachmentKey<V> {
+    }
+
+    public String toString() {
+        return "Logger '" + getName() + "' in context " + loggerNode.getContext();
     }
 }
