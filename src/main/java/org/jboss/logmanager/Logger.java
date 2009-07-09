@@ -148,8 +148,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * log level reflects an older effective level than the actual level).
      */
     public void setLevel(Level newLevel) throws SecurityException {
-        final LogContext context = loggerNode.getContext();
         LogContext.checkAccess();
+        final LogContext context = loggerNode.getContext();
         final Lock lock = context.treeLock;
         lock.lock();
         try {
@@ -831,6 +831,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      *
      * @param <V> the attachment value type
      */
+    @SuppressWarnings({ "UnusedDeclaration" })
     public static final class AttachmentKey<V> {
     }
 
