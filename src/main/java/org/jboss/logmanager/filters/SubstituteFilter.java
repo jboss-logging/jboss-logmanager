@@ -51,6 +51,17 @@ public final class SubstituteFilter implements Filter {
     }
 
     /**
+     * Construct a new instance.
+     *
+     * @param patternString the pattern to match
+     * @param replacement the string replacement
+     * @param replaceAll {@code true} if all occurrances should be replaced; {@code false} if only the first occurrance
+     */
+    public SubstituteFilter(final String patternString, final String replacement, final boolean replaceAll) {
+        this(Pattern.compile(patternString), replacement, replaceAll);
+    }
+
+    /**
      * Apply the filter to the given log record.
      *
      * @param record the log record to inspect and modify
