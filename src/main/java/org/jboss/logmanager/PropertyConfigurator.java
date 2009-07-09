@@ -49,6 +49,8 @@ import java.util.logging.ErrorManager;
  */
 public final class PropertyConfigurator implements Configurator {
 
+    private static final String[] EMPTY_STRINGS = new String[0];
+
     /**
      * Construct an instance.
      */
@@ -340,7 +342,10 @@ public final class PropertyConfigurator implements Configurator {
     }
 
     private static String[] getStringCsvArray(final Properties properties, final String key) {
-        final String value = properties.getProperty(key, "");
+        final String value = properties.getProperty(key, "").trim();
+        if (value.length() == 0) {
+            return EMPTY_STRINGS;
+        }
         final String realValue = StringPropertyReplacer.replaceProperties(value);
         return realValue.split("\\s*,\\s*");
     }
