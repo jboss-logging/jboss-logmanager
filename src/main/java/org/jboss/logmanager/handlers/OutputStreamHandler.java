@@ -67,6 +67,17 @@ public class OutputStreamHandler extends WriterHandler {
     }
 
     /**
+     * Get the target encoding.
+     *
+     * @return the target encoding, or {@code null} if the platform default is being used
+     */
+    public String getEncoding() {
+        synchronized (outputLock) {
+            return super.getEncoding();
+        }
+    }
+
+    /**
      * Set the target encoding.
      *
      * @param encoding the new encoding
@@ -75,8 +86,8 @@ public class OutputStreamHandler extends WriterHandler {
      */
     public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
         // superclass checks access
-        super.setEncoding(encoding);
         synchronized (outputLock) {
+            super.setEncoding(encoding);
             final OutputStream outputStream = this.outputStream;
             updateWriter(outputStream, encoding);
         }
