@@ -52,6 +52,13 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
         this.defaultSelector = defaultSelector;
     }
 
+    /**
+     * Construct a new instance.  If no matching log context is found, the system context is used.
+     */
+    public ClassLoaderLogContextSelector() {
+        this(LogContext.DEFAULT_LOG_CONTEXT_SELECTOR);
+    }
+
     private static final class Gateway extends SecurityManager {
         protected Class[] getClassContext() {
             return super.getClassContext();
