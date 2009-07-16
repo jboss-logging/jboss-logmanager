@@ -100,6 +100,28 @@ public class FileHandler extends OutputStreamHandler {
     }
 
     /**
+     * Construct a new instance with the given output file.
+     *
+     * @param fileName the file name
+     * @throws FileNotFoundException if the file could not be found on open
+     */
+    public FileHandler(final String fileName) throws FileNotFoundException {
+        setFileName(fileName);
+    }
+
+    /**
+     * Construct a new instance with the given output file and append setting.
+     *
+     * @param fileName the file name
+     * @param append {@code true} to append, {@code false} to overwrite
+     * @throws FileNotFoundException if the file could not be found on open
+     */
+    public FileHandler(final String fileName, final boolean append) throws FileNotFoundException {
+        this.append = append;
+        setFileName(fileName);
+    }
+
+    /**
      * Specify whether to append to the target file.
      *
      * @param append {@code true} to append, {@code false} to overwrite

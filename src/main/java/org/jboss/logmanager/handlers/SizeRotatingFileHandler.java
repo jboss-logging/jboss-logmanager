@@ -66,6 +66,29 @@ public class SizeRotatingFileHandler extends FileHandler {
     }
 
     /**
+     * Construct a new instance with the given output file.
+     *
+     * @param fileName the file name
+     *
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public SizeRotatingFileHandler(final String fileName) throws FileNotFoundException {
+        super(fileName);
+    }
+
+    /**
+     * Construct a new instance with the given output file and append setting.
+     *
+     * @param fileName the file name
+     * @param append {@code true} to append, {@code false} to overwrite
+     *
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public SizeRotatingFileHandler(final String fileName, final boolean append) throws FileNotFoundException {
+        super(fileName, append);
+    }
+
+    /**
      * Construct a new instance with no formatter and no output file.
      */
     public SizeRotatingFileHandler(final long rotateSize, final int maxBackupIndex) {
