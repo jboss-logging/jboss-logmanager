@@ -36,6 +36,70 @@ public class SizeRotatingFileHandler extends FileHandler {
     private long currentSize;
     private int maxBackupIndex = 1;
 
+    /**
+     * Construct a new instance with no formatter and no output file.
+     */
+    public SizeRotatingFileHandler() {
+    }
+
+    /**
+     * Construct a new instance with the given output file.
+     *
+     * @param file the file
+     *
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public SizeRotatingFileHandler(final File file) throws FileNotFoundException {
+        super(file);
+    }
+
+    /**
+     * Construct a new instance with the given output file and append setting.
+     *
+     * @param file the file
+     * @param append {@code true} to append, {@code false} to overwrite
+     *
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public SizeRotatingFileHandler(final File file, final boolean append) throws FileNotFoundException {
+        super(file, append);
+    }
+
+    /**
+     * Construct a new instance with no formatter and no output file.
+     */
+    public SizeRotatingFileHandler(final long rotateSize, final int maxBackupIndex) {
+        this.rotateSize = rotateSize;
+        this.maxBackupIndex = maxBackupIndex;
+    }
+
+    /**
+     * Construct a new instance with the given output file.
+     *
+     * @param file the file
+     *
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public SizeRotatingFileHandler(final File file, final long rotateSize, final int maxBackupIndex) throws FileNotFoundException {
+        super(file);
+        this.rotateSize = rotateSize;
+        this.maxBackupIndex = maxBackupIndex;
+    }
+
+    /**
+     * Construct a new instance with the given output file and append setting.
+     *
+     * @param file the file
+     * @param append {@code true} to append, {@code false} to overwrite
+     *
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public SizeRotatingFileHandler(final File file, final boolean append, final long rotateSize, final int maxBackupIndex) throws FileNotFoundException {
+        super(file, append);
+        this.rotateSize = rotateSize;
+        this.maxBackupIndex = maxBackupIndex;
+    }
+
     /** {@inheritDoc} */
     public void setOutputStream(final OutputStream outputStream) {
         super.setOutputStream(outputStream == null ? null : new CountingOutputStream(outputStream));

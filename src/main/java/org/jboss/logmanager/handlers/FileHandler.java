@@ -64,6 +64,42 @@ public class FileHandler extends OutputStreamHandler {
     }
 
     /**
+     * Construct a new instance with the given formatter, output file, and append setting.
+     *
+     * @param formatter the formatter
+     * @param file the file
+     * @param append {@code true} to append, {@code false} to overwrite
+     * @throws FileNotFoundException if the file could not be found on open
+     */
+    public FileHandler(final Formatter formatter, final File file, final boolean append) throws FileNotFoundException {
+        super(formatter);
+        this.append = append;
+        setFile(file);
+    }
+
+    /**
+     * Construct a new instance with the given output file.
+     *
+     * @param file the file
+     * @throws FileNotFoundException if the file could not be found on open
+     */
+    public FileHandler(final File file) throws FileNotFoundException {
+        setFile(file);
+    }
+
+    /**
+     * Construct a new instance with the given output file and append setting.
+     *
+     * @param file the file
+     * @param append {@code true} to append, {@code false} to overwrite
+     * @throws FileNotFoundException if the file could not be found on open
+     */
+    public FileHandler(final File file, final boolean append) throws FileNotFoundException {
+        this.append = append;
+        setFile(file);
+    }
+
+    /**
      * Specify whether to append to the target file.
      *
      * @param append {@code true} to append, {@code false} to overwrite

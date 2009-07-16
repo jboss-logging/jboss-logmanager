@@ -42,6 +42,38 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     private Period period = Period.NEVER;
     private long nextRollover = Long.MAX_VALUE;
 
+    /**
+     * Construct a new instance with no formatter and no output file.
+     */
+    public PeriodicRotatingFileHandler() {
+    }
+
+    /**
+     * Construct a new instance with the given output file.
+     *
+     * @param file the file
+     * @param suffix the format suffix to use
+     *
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public PeriodicRotatingFileHandler(final File file, final String suffix) throws FileNotFoundException {
+        super(file);
+        setSuffix(suffix);
+    }
+
+    /**
+     * Construct a new instance with the given output file and append setting.
+     *
+     * @param file the file
+     * @param suffix the format suffix to use
+     * @param append {@code true} to append, {@code false} to overwrite
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public PeriodicRotatingFileHandler(final File file, final String suffix, final boolean append) throws FileNotFoundException {
+        super(file, append);
+        setSuffix(suffix);
+    }
+
     /** {@inheritDoc}  This implementation checks to see if the scheduled rollover time has yet occurred. */
     protected void preWrite(final ExtLogRecord record) {
         final long recordMillis = record.getMillis();
