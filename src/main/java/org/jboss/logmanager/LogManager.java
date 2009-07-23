@@ -212,7 +212,6 @@ public final class LogManager extends java.util.logging.LogManager {
         if (configuration != null) {
             readConfiguration(configuration);
         }
-        return;
     }
 
     /**
@@ -230,7 +229,6 @@ public final class LogManager extends java.util.logging.LogManager {
         } catch (Throwable t) {
             t.printStackTrace();
         }
-        return;
     }
 
     static <T> T construct(Class<? extends T> type, String className) throws IOException {
@@ -241,7 +239,7 @@ public final class LogManager extends java.util.logging.LogManager {
                 if (tccl != null) {
                     clazz = Class.forName(className, true, tccl);
                 }
-            } catch (ClassNotFoundException e) {
+            } catch (ClassNotFoundException ignore) {
             }
             if (clazz == null) clazz = Class.forName(className, true, LogManager.class.getClassLoader());
             return type.cast(clazz.getConstructor().newInstance());
