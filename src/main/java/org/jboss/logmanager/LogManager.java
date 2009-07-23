@@ -23,8 +23,8 @@
 package org.jboss.logmanager;
 
 import java.beans.PropertyChangeListener;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -57,7 +58,7 @@ public final class LogManager extends java.util.logging.LogManager {
                     synchronized(lc) {
                         final Field knownField = lc.getDeclaredField("known");
                         knownField.setAccessible(true);
-                        final ArrayList<java.util.logging.Level> old = (ArrayList<java.util.logging.Level>) knownField.get(null);
+                        final List<java.util.logging.Level> old = (List<java.util.logging.Level>) knownField.get(null);
                         if (! (old instanceof ReadOnlyArrayList)) {
                             knownField.set(null, new ReadOnlyArrayList<java.util.logging.Level>(old));
                         }
