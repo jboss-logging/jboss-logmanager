@@ -222,6 +222,7 @@ public final class LogManager extends java.util.logging.LogManager {
      */
     public void readConfiguration(InputStream inputStream) throws IOException, SecurityException {
         checkAccess();
+        configured.set(true);
         final String confClassName = System.getProperty("org.jboss.logmanager.configurator", PropertyConfigurator.class.getName());
         final Configurator configurator = construct(Configurator.class, confClassName);
         try {
