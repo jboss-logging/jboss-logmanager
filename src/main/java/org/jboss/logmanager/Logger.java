@@ -91,8 +91,12 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @return the logger
      */
     public static Logger getLogger(final String name) {
-        // call through j.u.l.Logger so that primordial configuration is set up
-        return (Logger) java.util.logging.Logger.getLogger(name);
+        try {
+            // call through j.u.l.Logger so that primordial configuration is set up
+            return (Logger) java.util.logging.Logger.getLogger(name);
+        } catch (ClassCastException e) {
+            throw new IllegalStateException("The LogManager was not properly installed (you must set the \"java.util.logging.manager\" system property to \"" + LogManager.class.getName() + "\")");
+        }
     }
 
     /**
@@ -103,8 +107,12 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @return the logger
      */
     public static Logger getLogger(final String name, final String bundleName) {
-        // call through j.u.l.Logger so that primordial configuration is set up
-        return (Logger) java.util.logging.Logger.getLogger(name, bundleName);
+        try {
+            // call through j.u.l.Logger so that primordial configuration is set up
+            return (Logger) java.util.logging.Logger.getLogger(name, bundleName);
+        } catch (ClassCastException e) {
+            throw new IllegalStateException("The LogManager was not properly installed (you must set the \"java.util.logging.manager\" system property to \"" + LogManager.class.getName() + "\")");
+        }
     }
 
     /**
