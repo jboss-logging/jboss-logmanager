@@ -96,6 +96,18 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
+     * Static logger factory method which returns a JBoss LogManager logger.
+     *
+     * @param name the logger name
+     * @param bundleName the bundle name
+     * @return the logger
+     */
+    public static Logger getLogger(final String name, final String bundleName) {
+        // call through j.u.l.Logger so that primordial configuration is set up
+        return (Logger) java.util.logging.Logger.getLogger(name, bundleName);
+    }
+
+    /**
      * Construct a new instance of an actual logger.
      *
      * @param loggerNode the node in the named logger tree
@@ -734,6 +746,29 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     // alternate SPI hooks
+
+    /**
+     * SPI interface method to log a message at a given level, with a specific resource bundle.
+     *
+     * @param fqcn the fully qualified class name of the first logger class
+     * @param level the level to log at
+     * @param message the message
+     * @param bundleName the resource bundle name
+     * @param style the message format style
+     * @param params the log parameters
+     * @param t the throwable, if any
+     */
+    public void log(final String fqcn, final Level level, final String message, final String bundleName, final ExtLogRecord.FormatStyle style, final Object[] params, final Throwable t) {
+        final int effectiveLevel = this.effectiveLevel;
+        if (level == null || fqcn == null || message == null || level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+            return;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(level, message, style, fqcn);
+        rec.setResourceBundleName(bundleName);
+        rec.setParameters(params);
+        rec.setThrown(t);
+        logRaw(rec);
+    }
 
     /**
      * SPI interface method to log a message at a given level.
