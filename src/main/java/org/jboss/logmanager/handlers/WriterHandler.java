@@ -57,11 +57,14 @@ public class WriterHandler extends ExtHandler {
         }
         try {
             synchronized (outputLock) {
-                final Writer writer = this.writer;
                 if (writer == null) {
                     return;
                 }
                 preWrite(record);
+                final Writer writer = this.writer;
+                if (writer == null) {
+                    return;
+                }
                 writer.write(formatted);
                 // only flush if something was written
                 super.doPublish(record);
