@@ -106,6 +106,7 @@ public class ExtLogRecord extends LogRecord {
     private Map<String, String> mdcCopy;
     private int sourceLineNumber = -1;
     private String sourceFileName;
+    private String resourceKey;
     private String formattedMessage;
     private String threadName;
 
@@ -293,12 +294,26 @@ public class ExtLogRecord extends LogRecord {
         return formattedMessage;
     }
 
+    /**
+     * Get the resource key, if any.  If the log message is not localized, then the key is {@code null}.
+     *
+     * @return the resource key
+     */
+    public String getResourceKey() {
+        if (formattedMessage == null) {
+            formatRecord();
+        }
+        return resourceKey;
+    }
+
     private String formatRecord() {
         final ResourceBundle bundle = getResourceBundle();
         String msg = getMessage();
         if (bundle != null) {
             try {
-                msg = bundle.getString(msg);
+                String locMsg = bundle.getString(msg);
+                resourceKey = msg;
+                msg = locMsg;
             } catch (MissingResourceException ex) {
                 // ignore
             }

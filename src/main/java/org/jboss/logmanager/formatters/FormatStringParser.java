@@ -97,6 +97,10 @@ public final class FormatStringParser {
                         stepList.add(Formatters.fileNameFormatStep(leftJustify, minimumWidth, maximumWidth));
                         break;
                     }
+                    case 'k': {
+                        stepList.add(Formatters.resourceKeyFormatStep(leftJustify, minimumWidth, maximumWidth));
+                        break;
+                    }
                     case 'l': {
                         stepList.add(Formatters.locationInformationFormatStep(leftJustify, minimumWidth, maximumWidth));
                         break;

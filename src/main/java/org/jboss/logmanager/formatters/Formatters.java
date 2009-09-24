@@ -322,6 +322,23 @@ public final class Formatters {
     }
 
     /**
+     * Create a format step which emits the log message resource key (if any) with the given justification rules.
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @return the format step
+     */
+    public static FormatStep resourceKeyFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+        return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                final String key = record.getResourceKey();
+                if (key != null) builder.append(key);
+            }
+        };
+    }
+
+    /**
      * Create a format step which emits the source method name with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
