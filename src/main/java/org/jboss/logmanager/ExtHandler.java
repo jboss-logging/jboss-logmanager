@@ -26,15 +26,15 @@ import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.LoggingPermission;
 
-import java.io.Flushable;
 import java.security.Permission;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import org.jboss.logmanager.handlers.FlushableCloseable;
 
 /**
  * An extended logger handler.  Use this class as a base class for log handlers which require {@code ExtLogRecord}
  * instances.
  */
-public abstract class ExtHandler extends Handler implements Flushable {
+public abstract class ExtHandler extends Handler implements FlushableCloseable {
 
     private static final String LOGGER_CLASS_NAME = org.jboss.logmanager.Logger.class.getName();
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);

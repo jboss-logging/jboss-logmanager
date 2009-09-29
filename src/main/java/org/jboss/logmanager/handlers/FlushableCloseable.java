@@ -22,45 +22,10 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.util.logging.Handler;
+import java.io.Flushable;
+import java.io.Closeable;
 
 /**
- * Handler utility methods.
+ * A resource which is flushable and closeable.
  */
-public final class Handlers {
-
-    private Handlers() {
-    }
-
-    /**
-     * Create a wrapper that exposes the handler's close and flush methods via the I/O API.
-     *
-     * @param handler the logging handler
-     * @return the wrapper
-     */
-    public static FlushableCloseable wrap(final Handler handler) {
-        return handler instanceof FlushableCloseable ? (FlushableCloseable) handler : new FlushableCloseable() {
-            public void close() {
-                handler.close();
-            }
-
-            public void flush() {
-                handler.flush();
-            }
-        };
-    }
-
-    /**
-     * Create a {@code Runnable} task that flushes a handler.
-     *
-     * @param handler the handler
-     * @return a flushing task
-     */
-    public static Runnable flusher(final Handler handler) {
-        return new Runnable() {
-            public void run() {
-                handler.flush();
-            }
-        };
-    }
-}
+public interface FlushableCloseable extends Flushable, Closeable {}
