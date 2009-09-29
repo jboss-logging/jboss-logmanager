@@ -132,7 +132,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     // Serialization
 
-    private Object writeReplace() throws ObjectStreamException {
+    protected final Object writeReplace() throws ObjectStreamException {
         return new SerializedLogger(getName());
     }
 
