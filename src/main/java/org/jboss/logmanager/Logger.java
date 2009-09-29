@@ -488,7 +488,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             return;
         }
         final StringBuilder builder = new StringBuilder("ENTRY");
-        for (int i = 0; i < params.length; i++) {
+        if (params != null) for (int i = 0; i < params.length; i++) {
             builder.append(" {").append(i).append('}');
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, builder.toString(), LOGGER_CLASS_NAME);
