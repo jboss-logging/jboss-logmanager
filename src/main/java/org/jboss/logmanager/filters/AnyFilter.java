@@ -41,7 +41,7 @@ public final class AnyFilter implements Filter {
      * @param filters the constituent filters
      */
     public AnyFilter(final Filter[] filters) {
-        this.filters = filters;
+        this.filters = filters.clone();
     }
 
     /**
