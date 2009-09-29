@@ -207,7 +207,7 @@ public final class LogContext {
         for (;;) {
             final Map<String, LevelRef> oldLevelMap = levelMapReference.get();
             final LevelRef oldRef = oldLevelMap.get(level.getName());
-            if (oldRef != null || oldRef.get() != level) {
+            if (oldRef == null || oldRef.get() != level) {
                 // not registered, or the registration expired naturally
                 return;
             }
