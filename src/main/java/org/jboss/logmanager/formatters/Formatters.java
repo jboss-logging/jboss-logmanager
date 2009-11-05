@@ -32,6 +32,7 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 import static java.lang.Math.min;
 import static java.lang.Math.max;
 import java.io.PrintWriter;
@@ -219,17 +220,19 @@ public final class Formatters {
     /**
      * Create a format step which emits the date of the log record with the given justificaiton rules.
      *
+     * @param timeZone the time zone to format to
      * @param formatString the date format string
      * @param leftJustify {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep dateFormatStep(final String formatString, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep dateFormatStep(final TimeZone timeZone, final String formatString, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
         final SimpleDateFormat dateFormatMaster = new SimpleDateFormat(formatString == null ? "yyyy-MM-dd HH:mm:ss,SSS" : formatString);
         return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 final SimpleDateFormat dateFormat = dateFormatMaster;
+                dateFormat.setTimeZone(timeZone);
                 final String formatted;
                 final Date date = new Date(record.getMillis());
                 synchronized (dateFormat) {
@@ -238,6 +241,19 @@ public final class Formatters {
                 builder.append(formatted);
             }
         };
+    }
+
+    /**
+     * Create a format step which emits the date of the log record with the given justificaiton rules.
+     *
+     * @param formatString the date format string
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @return the format step
+     */
+    public static FormatStep dateFormatStep(final String formatString, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+        return dateFormatStep(TimeZone.getDefault(), formatString, leftJustify, minimumWidth, maximumWidth);
     }
 
     /**

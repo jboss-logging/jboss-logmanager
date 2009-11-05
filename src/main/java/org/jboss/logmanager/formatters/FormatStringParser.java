@@ -25,6 +25,7 @@ package org.jboss.logmanager.formatters;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.ArrayList;
+import java.util.TimeZone;
 
 /**
  * A parser which can translate a log4j-style format string into a series of {@code FormatStep} instances.
@@ -64,6 +65,7 @@ public final class FormatStringParser {
         final long time = System.currentTimeMillis();
         final ArrayList<FormatStep> stepList = new ArrayList<FormatStep>();
         final Matcher matcher = pattern.matcher(formatString);
+        TimeZone timeZone = TimeZone.getDefault();
         while (matcher.find()) {
             final String otherText = matcher.group(1);
             if (otherText != null) {
@@ -90,7 +92,7 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'd': {
-                        stepList.add(Formatters.dateFormatStep(argument, leftJustify, minimumWidth, maximumWidth));
+                        stepList.add(Formatters.dateFormatStep(timeZone, argument, leftJustify, minimumWidth, maximumWidth));
                         break;
                     }
                     case 'F': {
@@ -131,6 +133,10 @@ public final class FormatStringParser {
                     }
                     case 'X': {
                         stepList.add(Formatters.mdcFormatStep(argument, leftJustify, minimumWidth, maximumWidth));
+                        break;
+                    }
+                    case 'z': {
+                        timeZone = TimeZone.getTimeZone(argument);
                         break;
                     }
                     case '%': {
