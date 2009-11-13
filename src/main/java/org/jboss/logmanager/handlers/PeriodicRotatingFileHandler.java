@@ -26,6 +26,7 @@ import org.jboss.logmanager.ExtLogRecord;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Calendar;
+import java.util.TimeZone;
 import java.io.File;
 import java.io.FileNotFoundException;
 
@@ -41,6 +42,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     private String nextSuffix;
     private Period period = Period.NEVER;
     private long nextRollover = Long.MAX_VALUE;
+    private TimeZone timeZone = TimeZone.getDefault();
 
     /**
      * Construct a new instance with no formatter and no output file.
@@ -115,6 +117,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      */
     public void setSuffix(String suffix) throws IllegalArgumentException {
         final SimpleDateFormat format = new SimpleDateFormat(suffix);
+        format.setTimeZone(timeZone);
         final int len = suffix.length();
         Period period = Period.NEVER;
         for (int i = 0; i < len; i ++) {
@@ -166,7 +169,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             return;
         }
         nextSuffix = format.format(new Date(fromTime));
-        final Calendar calendar = Calendar.getInstance();
+        final Calendar calendar = Calendar.getInstance(timeZone);
         calendar.setTimeInMillis(fromTime);
         final Period period = this.period;
         // clear out less-significant fields
@@ -215,6 +218,27 @@ public class PeriodicRotatingFileHandler extends FileHandler {
                 break;
         }
         nextRollover = calendar.getTimeInMillis();
+    }
+
+    /**
+     * Get the configured time zone for this handler.
+     *
+     * @return the configured time zone
+     */
+    public TimeZone getTimeZone() {
+        return timeZone;
+    }
+
+    /**
+     * Set the configured time zone for this handler.
+     *
+     * @param timeZone the configured time zone
+     */
+    public void setTimeZone(final TimeZone timeZone) {
+        if (timeZone == null) {
+            throw new NullPointerException("timeZone is null");
+        }
+        this.timeZone = timeZone;
     }
 
     private static <T extends Comparable<? super T>> T min(T a, T b) {
