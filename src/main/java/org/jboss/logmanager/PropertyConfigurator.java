@@ -34,8 +34,10 @@ import java.util.Iterator;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.TimeZone;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.nio.charset.Charset;
 import org.jboss.util.StringPropertyReplacer;
 
 import java.util.logging.Filter;
@@ -198,6 +200,10 @@ public final class PropertyConfigurator implements Configurator {
             argument = Double.valueOf(propValue);
         } else if (paramType == char.class || paramType == Character.class) {
             argument = Character.valueOf(propValue.length() > 0 ? propValue.charAt(0) : 0);
+        } else if (paramType == TimeZone.class) {
+            argument = TimeZone.getTimeZone(propValue);
+        } else if (paramType == Charset.class) {
+            argument = Charset.forName(propValue);
         } else {
             // ???
             throw new IllegalArgumentException("Unknown paramter type for property " + propertyName + " on " + objClass);

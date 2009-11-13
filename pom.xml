@@ -42,7 +42,7 @@
             <groupId>org.jboss</groupId>
             <artifactId>jboss-common-core</artifactId>
             <version>2.2.14.GA</version>
-            <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
     </dependencies>
     <build>
