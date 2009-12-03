@@ -25,6 +25,7 @@ package org.jboss.logmanager;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.Closeable;
+import java.io.File;
 import java.util.Properties;
 import java.util.List;
 import java.util.ArrayList;
@@ -38,7 +39,6 @@ import java.util.TimeZone;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
-import org.jboss.util.StringPropertyReplacer;
 
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -347,7 +347,7 @@ public final class PropertyConfigurator implements Configurator {
 
     private static String getStringProperty(final Properties properties, final String key) {
         final String val = properties.getProperty(key);
-        return val == null ? null : StringPropertyReplacer.replaceProperties(val);
+        return val == null ? null : replaceProperties(val);
     }
 
     private static String[] getStringCsvArray(final Properties properties, final String key) {
@@ -355,7 +355,7 @@ public final class PropertyConfigurator implements Configurator {
         if (value.length() == 0) {
             return EMPTY_STRINGS;
         }
-        final String realValue = StringPropertyReplacer.replaceProperties(value);
+        final String realValue = replaceProperties(value);
         return realValue.split("\\s*,\\s*");
     }
 
@@ -377,5 +377,131 @@ public final class PropertyConfigurator implements Configurator {
         } catch (Exception e) {
             // can't do anything about it
         }
+    }
+
+    private static final int INITIAL = 0;
+    private static final int GOT_DOLLAR = 1;
+    private static final int GOT_OPEN_BRACE = 2;
+    private static final int RESOLVED = 3;
+    private static final int DEFAULT = 4;
+
+    /**
+     * Replace properties of the form:
+     * <code>${<i>&lt;name&gt;[</i>,<i>&lt;name2&gt;[</i>,<i>&lt;name3&gt;...]][</i>:<i>&lt;default&gt;]</i>}</code>
+     * @param value
+     * @return
+     */
+    private static String replaceProperties(String value) {
+        final StringBuilder builder = new StringBuilder();
+        final char[] chars = value.toCharArray();
+        final int len = chars.length;
+        int state = 0;
+        int start = -1;
+        int nameStart = -1;
+        for (int i = 0; i < len; i ++) {
+            char ch = chars[i];
+            switch (state) {
+                case INITIAL: {
+                    switch (ch) {
+                        case '$': {
+                            state = GOT_DOLLAR;
+                            continue;
+                        }
+                        default: {
+                            builder.append(ch);
+                            continue;
+                        }
+                    }
+                    // not reachable
+                }
+                case GOT_DOLLAR: {
+                    switch (ch) {
+                        case '$': {
+                            builder.append(ch);
+                            state = INITIAL;
+                            continue;
+                        }
+                        case '{': {
+                            start = i + 1;
+                            nameStart = start;
+                            state = GOT_OPEN_BRACE;
+                            continue;
+                        }
+                        default: {
+                            // invalid; emit and resume
+                            builder.append('$').append(ch);
+                            state = INITIAL;
+                            continue;
+                        }
+                    }
+                    // not reachable
+                }
+                case GOT_OPEN_BRACE: {
+                    switch (ch) {
+                        case ':':
+                        case '}':
+                        case ',': {
+                            final String name = value.substring(nameStart, i).trim();
+                            if ("/".equals(name)) {
+                                builder.append(File.separator);
+                                state = ch == '}' ? INITIAL : RESOLVED;
+                                continue;
+                            } else if (":".equals(name)) {
+                                builder.append(File.pathSeparator);
+                                state = ch == '}' ? INITIAL : RESOLVED;
+                                continue;
+                            }
+                            final String val = System.getProperty(name);
+                            if (val != null) {
+                                builder.append(val);
+                                state = ch == '}' ? INITIAL : RESOLVED;
+                                continue;
+                            } else if (ch == ',') {
+                                nameStart = i + 1;
+                                continue;
+                            } else if (ch == ':') {
+                                start = i + 1;
+                                state = DEFAULT;
+                                continue;
+                            } else {
+                                builder.append(value.substring(start - 2, i + 1));
+                                state = INITIAL;
+                                continue;
+                            }
+                        }
+                        default: {
+                            continue;
+                        }
+                    }
+                    // not reachable
+                }
+                case RESOLVED: {
+                    if (ch == '}') {
+                        state = INITIAL;
+                    }
+                    continue;
+                }
+                case DEFAULT: {
+                    if (ch == '}') {
+                        state = INITIAL;
+                        builder.append(value.substring(start, i));
+                    }
+                    continue;
+                }
+                default: throw new IllegalStateException();
+            }
+        }
+        switch (state) {
+            case GOT_DOLLAR: {
+                builder.append('$');
+                break;
+            }
+            case DEFAULT:
+            case GOT_OPEN_BRACE: {
+                builder.append(value.substring(start - 2));
+                break;
+            }
+        }
+        return builder.toString();
     }
 }
