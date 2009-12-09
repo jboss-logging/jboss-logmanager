@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.Closeable;
 import java.io.File;
+import java.io.InputStreamReader;
 import java.util.Properties;
 import java.util.List;
 import java.util.ArrayList;
@@ -74,7 +75,7 @@ public final class PropertyConfigurator implements Configurator {
         configuredLoggers = new HashMap<String, Logger>();
         final Properties properties = new Properties();
         try {
-            properties.load(inputStream);
+            properties.load(new InputStreamReader(inputStream, "utf-8"));
             inputStream.close();
         } finally {
             safeClose(inputStream);
