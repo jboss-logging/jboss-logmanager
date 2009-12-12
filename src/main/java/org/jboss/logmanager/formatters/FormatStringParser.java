@@ -107,8 +107,16 @@ public final class FormatStringParser {
                         stepList.add(Formatters.locationInformationFormatStep(leftJustify, minimumWidth, maximumWidth));
                         break;
                     }
+                    case 'L': {
+                        stepList.add(Formatters.lineNumberFormatStep(leftJustify, minimumWidth, maximumWidth));
+                        break;
+                    }
                     case 'm': {
                         stepList.add(Formatters.messageFormatStep(leftJustify, minimumWidth, maximumWidth));
+                        break;
+                    }
+                    case 'M': {
+                        stepList.add(Formatters.methodNameFormatStep(leftJustify, minimumWidth, maximumWidth));
                         break;
                     }
                     case 'n': {
