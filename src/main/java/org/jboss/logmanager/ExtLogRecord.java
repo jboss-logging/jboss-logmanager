@@ -28,6 +28,9 @@ import java.text.MessageFormat;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
+import java.lang.reflect.Field;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 import java.util.logging.LogRecord;
 
@@ -74,10 +77,14 @@ public class ExtLogRecord extends LogRecord {
      * @param loggerClassName the name of the logger class
      */
     public ExtLogRecord(final java.util.logging.Level level, final String msg, final FormatStyle formatStyle, final String loggerClassName) {
+        this(level, msg, formatStyle, loggerClassName, NDC.get());
+    }
+
+    private ExtLogRecord(final java.util.logging.Level level, final String msg, final FormatStyle formatStyle, final String loggerClassName, final String ndc) {
         super(level, msg);
         this.formatStyle = formatStyle == null ? FormatStyle.MESSAGE_FORMAT : formatStyle;
         this.loggerClassName = loggerClassName;
-        ndc = NDC.get();
+        this.ndc = ndc;
         threadName = Thread.currentThread().getName();
     }
 
@@ -87,7 +94,7 @@ public class ExtLogRecord extends LogRecord {
      * @param original the record to copy
      */
     public ExtLogRecord(final LogRecord original, final String loggerClassName) {
-        this(original.getLevel(), original.getMessage(), loggerClassName);
+        this(original.getLevel(), original.getMessage(), FormatStyle.MESSAGE_FORMAT, loggerClassName, original instanceof ExtLogRecord ? ((ExtLogRecord)original).ndc : NDC.get());
         setLoggerName(original.getLoggerName());
         setMillis(original.getMillis());
         setParameters(original.getParameters());
@@ -96,11 +103,42 @@ public class ExtLogRecord extends LogRecord {
         setSequenceNumber(original.getSequenceNumber());
         setThreadID(original.getThreadID());
         setThrown(original.getThrown());
+        if (original instanceof ExtLogRecord) {
+            final ExtLogRecord extLogRecord = (ExtLogRecord) original;
+            if (! extLogRecord.calculateCaller) {
+                setSourceClassName(extLogRecord.getSourceClassName());
+                setSourceMethodName(extLogRecord.getSourceMethodName());
+                setSourceFileName(extLogRecord.sourceFileName);
+                setSourceLineNumber(extLogRecord.sourceLineNumber);
+                formatStyle = extLogRecord.formatStyle;
+                final Map<String, String> mdcCopy = extLogRecord.mdcCopy;
+                if (mdcCopy != null) {
+                    this.mdcCopy = mdcCopy;
+                }
+                threadName = extLogRecord.threadName;
+            }
+        } else {
+            try {
+                final String sourceClassName = (String) SOURCE_CLASS_NAME.get(original);
+                if (sourceClassName != null) {
+                    setSourceClassName(sourceClassName);
+                }
+                final String sourceMethodName = (String) SOURCE_METHOD_NAME.get(original);
+                if (sourceMethodName != null) {
+                    setSourceMethodName(sourceMethodName);
+                }
+            } catch (IllegalAccessException e) {
+                // ignore and recalculate caller
+            }
+        }
     }
 
     private final String ndc;
     private transient final String loggerClassName;
     private transient boolean calculateCaller = true;
+
+    private static final Field SOURCE_CLASS_NAME = getAccessibleField("sourceClassName");
+    private static final Field SOURCE_METHOD_NAME = getAccessibleField("sourceMethodName");
 
     private FormatStyle formatStyle = FormatStyle.MESSAGE_FORMAT;
     private Map<String, String> mdcCopy;
@@ -109,6 +147,21 @@ public class ExtLogRecord extends LogRecord {
     private String resourceKey;
     private String formattedMessage;
     private String threadName;
+
+    private static Field getAccessibleField(final String name) {
+        return AccessController.doPrivileged(new PrivilegedAction<Field>() {
+            public Field run() {
+                final Field field;
+                try {
+                    field = LogRecord.class.getDeclaredField(name);
+                } catch (NoSuchFieldException e) {
+                    throw new NoSuchFieldError(e.getMessage());
+                }
+                field.setAccessible(true);
+                return field;
+            }
+        });
+    }
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
         copyAll();
