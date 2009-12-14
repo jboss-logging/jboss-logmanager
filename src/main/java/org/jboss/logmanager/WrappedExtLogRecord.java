@@ -85,7 +85,11 @@ class WrappedExtLogRecord extends ExtLogRecord {
     }
 
     public String getSourceClassName() {
-        return orig.getSourceClassName();
+        final String sourceMethodName = orig.getSourceMethodName();
+        final String sourceClassName = orig.getSourceClassName();
+        super.setSourceMethodName(sourceMethodName);
+        super.setSourceClassName(sourceClassName);
+        return sourceClassName;
     }
 
     public void setSourceClassName(final String sourceClassName) {
@@ -94,7 +98,11 @@ class WrappedExtLogRecord extends ExtLogRecord {
     }
 
     public String getSourceMethodName() {
-        return orig.getSourceMethodName();
+        final String sourceMethodName = orig.getSourceMethodName();
+        final String sourceClassName = orig.getSourceClassName();
+        super.setSourceMethodName(sourceMethodName);
+        super.setSourceClassName(sourceClassName);
+        return sourceMethodName;
     }
 
     public void setSourceMethodName(final String sourceMethodName) {
