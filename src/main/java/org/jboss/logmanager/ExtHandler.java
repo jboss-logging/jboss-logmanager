@@ -36,7 +36,6 @@ import org.jboss.logmanager.handlers.FlushableCloseable;
  */
 public abstract class ExtHandler extends Handler implements FlushableCloseable {
 
-    private static final String LOGGER_CLASS_NAME = org.jboss.logmanager.Logger.class.getName();
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
     private volatile boolean autoFlush;
 
@@ -55,8 +54,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
     /** {@inheritDoc} */
     public final void publish(final LogRecord record) {
         if (record != null && isLoggable(record)) {
-            final ExtLogRecord extRecord = (record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME);
-            doPublish(extRecord);
+            doPublish(ExtLogRecord.wrap(record));
         }
     }
 

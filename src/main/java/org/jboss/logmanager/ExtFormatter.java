@@ -22,8 +22,6 @@
 
 package org.jboss.logmanager;
 
-import org.jboss.logmanager.ExtLogRecord;
-
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -32,11 +30,9 @@ import java.util.logging.LogRecord;
  */
 public abstract class ExtFormatter extends Formatter {
 
-    private static final String LOGGER_CLASS_NAME = org.jboss.logmanager.Logger.class.getName();
-
     /** {@inheritDoc} */
     public final String format(final LogRecord record) {
-        return format((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
+        return format(ExtLogRecord.wrap(record));
     }
 
     /**

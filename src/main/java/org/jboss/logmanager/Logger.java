@@ -866,7 +866,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @param record the log record
      */
     public void logRaw(final LogRecord record) {
-        logRaw((record instanceof ExtLogRecord) ? (ExtLogRecord) record : new ExtLogRecord(record, LOGGER_CLASS_NAME));
+        logRaw(ExtLogRecord.wrap(record));
     }
 
     /**
