@@ -32,7 +32,8 @@ class WrappedExtLogRecord extends ExtLogRecord {
     private static final long serialVersionUID = 980830752574061944L;
     private static final String LOGGER_CLASS_NAME = java.util.logging.Logger.class.getName();
 
-    private final LogRecord orig;
+    private transient final LogRecord orig;
+    private transient boolean resolved;
 
     WrappedExtLogRecord(final LogRecord orig) {
         super(orig.getLevel(), orig.getMessage(), LOGGER_CLASS_NAME);
@@ -85,29 +86,69 @@ class WrappedExtLogRecord extends ExtLogRecord {
     }
 
     public String getSourceClassName() {
-        final String sourceMethodName = orig.getSourceMethodName();
-        final String sourceClassName = orig.getSourceClassName();
-        super.setSourceMethodName(sourceMethodName);
-        super.setSourceClassName(sourceClassName);
-        return sourceClassName;
+        if (! resolved) {
+            resolve();
+        }
+        return super.getSourceClassName();
     }
 
     public void setSourceClassName(final String sourceClassName) {
+        resolved = true;
         super.setSourceClassName(sourceClassName);
         orig.setSourceClassName(sourceClassName);
     }
 
     public String getSourceMethodName() {
+        if (! resolved) {
+            resolve();
+        }
+        return super.getSourceMethodName();
+    }
+
+    public void setSourceMethodName(final String sourceMethodName) {
+        resolved = true;
+        super.setSourceMethodName(sourceMethodName);
+        orig.setSourceMethodName(sourceMethodName);
+    }
+
+    private void resolve() {
+        resolved = true;
         final String sourceMethodName = orig.getSourceMethodName();
         final String sourceClassName = orig.getSourceClassName();
         super.setSourceMethodName(sourceMethodName);
         super.setSourceClassName(sourceClassName);
-        return sourceMethodName;
+        final StackTraceElement[] st = new Throwable().getStackTrace();
+        for (StackTraceElement element : st) {
+            if (element.getClassName().equals(sourceClassName) && element.getMethodName().equals(sourceMethodName)) {
+                super.setSourceLineNumber(element.getLineNumber());
+                super.setSourceFileName(element.getFileName());
+                return;
+            }
+        }
     }
 
-    public void setSourceMethodName(final String sourceMethodName) {
-        super.setSourceMethodName(sourceMethodName);
-        orig.setSourceMethodName(sourceMethodName);
+    public int getSourceLineNumber() {
+        if (! resolved) {
+            resolve();
+        }
+        return super.getSourceLineNumber();
+    }
+
+    public void setSourceLineNumber(final int sourceLineNumber) {
+        resolved = true;
+        super.setSourceLineNumber(sourceLineNumber);
+    }
+
+    public String getSourceFileName() {
+        if (! resolved) {
+            resolve();
+        }
+        return super.getSourceFileName();
+    }
+
+    public void setSourceFileName(final String sourceFileName) {
+        resolved = true;
+        super.setSourceFileName(sourceFileName);
     }
 
     public String getMessage() {
