@@ -101,9 +101,7 @@ public class WriterHandler extends ExtHandler {
             writeHead(writer);
             this.writer = writer;
         }
-        if (oldWriter != null) {
-            safeClose(oldWriter);
-        }
+        safeClose(oldWriter);
     }
 
     private void writeHead(final Writer writer) {
