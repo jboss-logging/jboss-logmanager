@@ -128,7 +128,8 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'x': {
-                        stepList.add(Formatters.ndcFormatStep(leftJustify, minimumWidth, maximumWidth));
+                        final int count = argument == null ? 0 : Integer.parseInt(argument);
+                        stepList.add(Formatters.ndcFormatStep(leftJustify, minimumWidth, maximumWidth, count));
                         break;
                     }
                     case 'X': {

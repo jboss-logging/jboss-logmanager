@@ -36,6 +36,7 @@ import java.util.TimeZone;
 import static java.lang.Math.min;
 import static java.lang.Math.max;
 import java.io.PrintWriter;
+import org.jboss.logmanager.NDC;
 
 /**
  * Formatter utility methods.
@@ -456,12 +457,22 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep ndcFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
-        return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
-            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
-                final String value = record.getNdc();
-                if (value != null) {
-                    builder.append(value);
-                }
+        return ndcFormatStep(leftJustify, minimumWidth, maximumWidth, 0);
+    }
+
+    /**
+     * Create a format step which emits the NDC value of the log record.
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param count the limit to the number of segments to format
+     * @return the format step
+     */
+    public static FormatStep ndcFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final int count) {
+        return new SegmentedFormatStep(leftJustify, minimumWidth, maximumWidth, count) {
+            public String getSegmentedSubject(final ExtLogRecord record) {
+                return NDC.get();
             }
         };
     }
