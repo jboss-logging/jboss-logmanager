@@ -99,7 +99,7 @@ public final class NDC {
         if (stack.isEmpty()) {
             return "";
         } else {
-            return stack.top();
+            return stack.toString();
         }
     }
 
@@ -151,6 +151,18 @@ public final class NDC {
                 Arrays.fill(data, max, sp - 1, null);
                 this.sp = max;
             }
+        }
+
+        public String toString() {
+            final StringBuilder b = new StringBuilder();
+            final int sp = this.sp;
+            for (int i = 0; i < sp; i++) {
+                b.append(data[i]);
+                if (i < sp) {
+                    b.append('.');
+                }
+            }
+            return b.toString();
         }
     }
 }
