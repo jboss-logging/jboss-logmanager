@@ -28,8 +28,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.STRONG;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.WEAK;
 
 /**
  * A node in the tree of logger names.  Maintains weak references to children and a strong reference to its parent.
@@ -62,7 +60,7 @@ final class LoggerNode {
     /**
      * The map of names to child nodes.  The child node references are weak.
      */
-    private final ConcurrentMap<String, LoggerNode> children = new ConcurrentReferenceHashMap<String, LoggerNode>(8, STRONG, WEAK);
+    private final ConcurrentMap<String, LoggerNode> children = new CopyOnWriteWeakMap<String, LoggerNode>();
 
     /**
      * Construct a new root instance.
