@@ -29,6 +29,7 @@ import java.lang.reflect.Field;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -60,7 +61,21 @@ public final class LogManager extends java.util.logging.LogManager {
                         knownField.setAccessible(true);
                         final List<java.util.logging.Level> old = (List<java.util.logging.Level>) knownField.get(null);
                         if (! (old instanceof ReadOnlyArrayList)) {
-                            knownField.set(null, new ReadOnlyArrayList<java.util.logging.Level>(old));
+                            knownField.set(null, new ReadOnlyArrayList<java.util.logging.Level>(Arrays.asList(
+                                    Level.TRACE,
+                                    Level.DEBUG,
+                                    Level.INFO,
+                                    Level.WARN,
+                                    Level.ERROR,
+                                    Level.FATAL,
+                                    java.util.logging.Level.FINEST,
+                                    java.util.logging.Level.FINER,
+                                    java.util.logging.Level.FINE,
+                                    java.util.logging.Level.INFO,
+                                    java.util.logging.Level.CONFIG,
+                                    java.util.logging.Level.WARNING,
+                                    java.util.logging.Level.SEVERE
+                            )));
                         }
                     }
                 } catch (Exception e) {
