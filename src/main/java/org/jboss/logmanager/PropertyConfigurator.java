@@ -205,9 +205,11 @@ public final class PropertyConfigurator implements Configurator {
             argument = TimeZone.getTimeZone(propValue);
         } else if (paramType == Charset.class) {
             argument = Charset.forName(propValue);
+        } else if (Enum.class.isAssignableFrom(paramType)) {
+            argument = Enum.valueOf(paramType.asSubclass(Enum.class), propValue);
         } else {
             // ???
-            throw new IllegalArgumentException("Unknown paramter type for property " + propertyName + " on " + objClass);
+            throw new IllegalArgumentException("Unknown parameter type for property " + propertyName + " on " + objClass);
         }
         return argument;
     }
