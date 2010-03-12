@@ -26,6 +26,8 @@
 
     <modelVersion>4.0.0</modelVersion>
 
+    <name>JBoss Log Manager</name>
+    <description>An implementation of java.util.logging.LogManager</description>
     <groupId>org.jboss.logmanager</groupId>
     <artifactId>jboss-logmanager</artifactId>
     <packaging>jar</packaging>
