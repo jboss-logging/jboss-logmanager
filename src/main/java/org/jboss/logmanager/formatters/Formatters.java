@@ -22,6 +22,9 @@
 
 package org.jboss.logmanager.formatters;
 
+import java.net.URL;
+import java.util.HashMap;
+import java.util.Map;
 import org.jboss.logmanager.ExtLogRecord;
 
 import java.util.logging.Level;
@@ -333,6 +336,262 @@ public final class Formatters {
                 if (t != null) {
                     builder.append(": ");
                     t.printStackTrace(new PrintWriter(new StringBuilderWriter(builder)));
+                }
+            }
+        };
+    }
+
+    /**
+     * Create a format step which emits the formatted log message text (simple version, no exception traces) with the given justification rules.
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @return the format step
+     */
+    public static FormatStep simpleMessageFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+        return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                builder.append(record.getFormattedMessage());
+            }
+        };
+    }
+
+    private static final PrivilegedAction<ClassLoader> GET_TCCL_ACTION = new PrivilegedAction<ClassLoader>() {
+        public ClassLoader run() {
+            return Thread.currentThread().getContextClassLoader();
+        }
+    };
+
+    /**
+     * Create a format step which emits the stack trace of an exception with the given justification rules.
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param extended {@code true} if the stack trace should attempt to include extended JAR version information
+     * @return the format step
+     */
+    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final boolean extended) {
+        return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                final Throwable t = record.getThrown();
+                if (t != null) {
+                    builder.append(": ").append(t).append('\n');
+                    final StackTraceElement[] stackTrace = t.getStackTrace();
+                    final Map<String, String> cache = extended ? new HashMap<String, String>() : null;
+                    if (extended) {
+                        for (StackTraceElement element : stackTrace) {
+                            renderExtended(builder, element, cache);
+                        }
+                    } else {
+                        for (StackTraceElement element : stackTrace) {
+                            renderTrivial(builder, element);
+                        }
+                    }
+                    final Throwable cause = t.getCause();
+                    if (cause != null) {
+                        renderCause(builder, t, cause, cache, extended);
+                    }
+                }
+            }
+
+            private void renderTrivial(final StringBuilder builder, final StackTraceElement element) {
+                builder.append("\tat ").append(element).append('\n');
+            }
+
+            private void renderExtended(final StringBuilder builder, final StackTraceElement element, final Map<String, String> cache) {
+                builder.append("\tat ").append(element);
+                final String className = element.getClassName();
+                final String cached;
+                if ((cached = cache.get(className)) != null) {
+                    builder.append(cached).append('\n');
+                    return;
+                }
+                final int dotIdx = className.lastIndexOf('.');
+                if (dotIdx == -1) {
+                    return;
+                }
+                final String packageName = className.substring(0, dotIdx);
+
+                // try to guess the real Class object
+                final Class<?> exceptionClass = guessClass(className);
+
+                // now try to guess the real Package object
+                Package exceptionPackage = null;
+                if (exceptionClass != null) {
+                    exceptionPackage = exceptionClass.getPackage();
+                }
+                if (exceptionPackage == null) try {
+                    exceptionPackage = Package.getPackage(packageName);
+                } catch (Throwable t) {
+                    // ignore
+                }
+
+                // now try to extract the version from the Package
+                String packageVersion = null;
+                if (exceptionPackage != null) try {
+                    packageVersion = exceptionPackage.getImplementationVersion();
+                } catch (Throwable t) {
+                    // ignore
+                }
+
+                // now try to find the originating resource of the class
+                URL resource = null;
+                final SecurityManager sm = System.getSecurityManager();
+                final String classResourceName = className.replace('.', '/') + ".class";
+                if (exceptionClass != null) {
+                    try {
+                        resource = sm == null ?
+                                exceptionClass.getProtectionDomain().getCodeSource().getLocation() :
+                                AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                                    public URL run() {
+                                        return exceptionClass.getProtectionDomain().getCodeSource().getLocation();
+                                    }
+                                });
+                    } catch (Throwable t) {
+                        // ignore
+                    }
+                    if (resource == null) try {
+                        resource = sm == null ?
+                                exceptionClass.getClassLoader().getResource(classResourceName) :
+                                AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                                    public URL run() {
+                                        return exceptionClass.getClassLoader().getResource(classResourceName);
+                                    }
+                                });
+                    } catch (Throwable t) {
+                        // ignore
+                    }
+                }
+
+                // now try to extract the JAR name from the resource URL
+                String jarName = null;
+                if (resource != null) {
+                    final String path = resource.getPath();
+                    final String protocol = resource.getProtocol();
+                    if ("jar".equals(protocol)) {
+                        // the last path segment before "!/" should be the JAR name
+                        final int sepIdx = path.lastIndexOf("!/");
+                        if (sepIdx != -1) {
+                            // hit!
+                            final String firstPart = path.substring(0, sepIdx);
+                            // now find the last file separator before the JAR separator
+                            final int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
+                            if (lsIdx != -1) {
+                                jarName = firstPart.substring(lsIdx + 1);
+                            } else {
+                                jarName = firstPart;
+                            }
+                        }
+                    } else if ("module".equals(protocol)) {
+                        jarName = resource.getFile();
+                    }
+                    if (jarName == null) {
+                        // OK, that would have been too easy.  Next let's just grab the last piece before the class name
+                        int endIdx = path.lastIndexOf(classResourceName);
+                        if (endIdx != -1) {
+                            do {
+                                endIdx--;
+                            } while (path.charAt(endIdx) == '/' || path.charAt(endIdx) == '\\');
+                            final String firstPart = path.substring(0, endIdx);
+                            final int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
+                            if (lsIdx != -1) {
+                                jarName = firstPart.substring(lsIdx + 1);
+                            } else {
+                                jarName = firstPart;
+                            }
+                        }
+                    }
+                    if (jarName == null) {
+                        // OK, just use the last segment
+                        final int endIdx = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+                        if (endIdx != -1) {
+                            jarName = path.substring(endIdx + 1);
+                        } else {
+                            jarName = path;
+                        }
+                    }
+                }
+
+                // finally, render the mess
+                boolean started = false;
+                final StringBuilder tagBuilder = new StringBuilder();
+                if (jarName != null) {
+                    started = true;
+                    tagBuilder.append(" [").append(jarName).append(':');
+                }
+                if (packageVersion != null) {
+                    if (! started) {
+                        tagBuilder.append(" [:");
+                        started = true;
+                    }
+                    tagBuilder.append(packageVersion);
+                }
+                if (started) {
+                    tagBuilder.append(']');
+                    final String tag = tagBuilder.toString();
+                    cache.put(className, tag);
+                    builder.append(tag);
+                } else {
+                    cache.put(className, "");
+                }
+                builder.append('\n');
+            }
+
+            private Class<?> guessClass(final String name) {
+                final SecurityManager sm = System.getSecurityManager();
+                try {
+                    try {
+                        final ClassLoader tccl = sm != null ? AccessController.doPrivileged(GET_TCCL_ACTION) : GET_TCCL_ACTION.run();
+                        if (tccl != null) return Class.forName(name, false, tccl);
+                    } catch (ClassNotFoundException e) {
+                        // ok, try something else...
+                    }
+                    try {
+                        return Class.forName(name);
+                    } catch (ClassNotFoundException e) {
+                        // ok, try something else...
+                    }
+                    return Class.forName(name, false, null);
+                } catch (Throwable t) {
+                    return null;
+                }
+            }
+
+            private void renderCause(final StringBuilder builder, final Throwable t, final Throwable cause, final Map<String, String> cache, final boolean extended) {
+
+                final StackTraceElement[] causeStack = cause.getStackTrace();
+                final StackTraceElement[] currentStack = t.getStackTrace();
+
+                int m = causeStack.length - 1;
+                int n = currentStack.length - 1;
+
+                // Walk the stacks backwards from the end, until we find an element that is different
+                while (m >= 0 && n >= 0 && causeStack[m].equals(currentStack[n])) {
+                    m--; n--;
+                }
+                int framesInCommon = causeStack.length - 1 - m;
+
+                builder.append("Caused by: ").append(cause).append('\n');
+
+                if (extended) {
+                    for (int i=0; i <= m; i++) {
+                        renderExtended(builder, causeStack[i], cache);
+                    }
+                } else {
+                    for (int i=0; i <= m; i++) {
+                        renderTrivial(builder, causeStack[i]);
+                    }
+                }
+                if (framesInCommon != 0) {
+                    builder.append("\t... ").append(framesInCommon).append(" more").append('\n');
+                }
+
+                // Recurse if we have a cause
+                final Throwable ourCause = cause.getCause();
+                if (ourCause != null) {
+                    renderCause(builder, cause, ourCause, cache, extended);
                 }
             }
         };
