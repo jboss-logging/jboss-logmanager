@@ -485,7 +485,7 @@ public final class Formatters {
                             }
                         }
                     } else if ("module".equals(protocol)) {
-                        jarName = resource.getFile();
+                        jarName = resource.getPath();
                     }
                     if (jarName == null) {
                         // OK, that would have been too easy.  Next let's just grab the last piece before the class name
