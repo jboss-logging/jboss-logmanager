@@ -42,7 +42,8 @@ public final class DefaultConfigurationLocator implements ConfigurationLocator {
         }
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         if (tccl != null) try {
-            return tccl.getResourceAsStream("logging.properties");
+            final InputStream stream = tccl.getResourceAsStream("logging.properties");
+            if (stream != null) return stream;
         } catch (Exception e) {
         }
         return getClass().getResourceAsStream("logging.properties");
