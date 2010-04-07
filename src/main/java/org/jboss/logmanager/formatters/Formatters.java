@@ -430,10 +430,17 @@ public final class Formatters {
 
                 // now try to extract the version from the Package
                 String packageVersion = null;
-                if (exceptionPackage != null) try {
-                    packageVersion = exceptionPackage.getImplementationVersion();
-                } catch (Throwable t) {
-                    // ignore
+                if (exceptionPackage != null) {
+                    try {
+                        packageVersion = exceptionPackage.getImplementationVersion();
+                    } catch (Throwable t) {
+                        // ignore
+                    }
+                    if (packageVersion == null) try {
+                        packageVersion = exceptionPackage.getSpecificationVersion();
+                    } catch (Throwable t) {
+                        // ignore
+                    }
                 }
 
                 // now try to find the originating resource of the class
