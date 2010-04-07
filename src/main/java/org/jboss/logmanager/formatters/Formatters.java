@@ -519,6 +519,9 @@ public final class Formatters {
                             jarName = path;
                         }
                     }
+                    if (jarName == null && exceptionClass != null && exceptionClass.getClassLoader() == null) {
+                        jarName = "(bootstrap)";
+                    }
                 }
 
                 // finally, render the mess
