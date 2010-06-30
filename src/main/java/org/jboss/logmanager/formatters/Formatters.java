@@ -500,7 +500,7 @@ public final class Formatters {
                         if (endIdx != -1) {
                             do {
                                 endIdx--;
-                            } while (path.charAt(endIdx) == '/' || path.charAt(endIdx) == '\\');
+                            } while (path.charAt(endIdx) == '/' || path.charAt(endIdx) == '\\' || path.charAt(endIdx) == '?');
                             final String firstPart = path.substring(0, endIdx);
                             final int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
                             if (lsIdx != -1) {
