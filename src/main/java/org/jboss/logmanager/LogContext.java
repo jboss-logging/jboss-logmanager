@@ -123,6 +123,20 @@ public final class LogContext {
     }
 
     /**
+     * Get a logger attachment for a logger name, if it exists.
+     *
+     * @param loggerName the logger name
+     * @param key the attachment key
+     * @param <V> the attachment value type
+     * @return the attachment or {@code null} if the logger or the attachment does not exist
+     */
+    public <V> V getAttachment(String loggerName, Logger.AttachmentKey<V> key) {
+        final LoggerNode node = rootLogger.getIfExists(loggerName);
+        if (node == null) return null;
+        return node.getAttachment(key);
+    }
+
+    /**
      * Get the {@code LoggingMXBean} associated with this log context.
      *
      * @return the {@code LoggingMXBean} instance
