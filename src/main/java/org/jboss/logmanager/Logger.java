@@ -876,6 +876,12 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     @SuppressWarnings({ "UnusedDeclaration" })
     public static final class AttachmentKey<V> {
+
+        /**
+         * Construct a new instance.
+         */
+        public AttachmentKey() {
+        }
     }
 
     public String toString() {
