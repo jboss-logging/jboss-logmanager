@@ -36,12 +36,9 @@ final class LoggingMXBeanImpl implements LoggingMXBean {
     }
 
     private void getAllNames(List<String> names, LoggerNode node) {
-        final Logger logger = node.getLogger();
-        if (logger != null) {
-            names.add(logger.getName());
-        }
+        names.add(node.getFullName());
         for (LoggerNode loggerNode : node.getChildren()) {
-            getAllNames(names, loggerNode);
+            if (loggerNode != null) getAllNames(names, loggerNode);
         }
     }
 
@@ -53,25 +50,25 @@ final class LoggingMXBeanImpl implements LoggingMXBean {
     }
 
     public String getLoggerLevel(final String loggerName) {
-        final Logger logger = context.getLoggerIfExists(loggerName);
-        final Level level = logger == null ? null : logger.getLevel();
+        final LoggerNode loggerNode = context.getRootLoggerNode().getIfExists(loggerName);
+        final Level level = loggerNode == null ? null : loggerNode.getLevel();
         return level == null ? "" : level.getName();
     }
 
     public void setLoggerLevel(final String loggerName, final String levelName) {
-        final Logger logger = context.getLoggerIfExists(loggerName);
-        if (logger == null) {
+        final LoggerNode loggerNode = context.getRootLoggerNode().getIfExists(loggerName);
+        if (loggerNode == null) {
             throw new IllegalArgumentException("logger \"" + loggerName + "\" does not exist");
         }
-        logger.setLevel(levelName == null ? null : context.getLevelForName(levelName));
+        loggerNode.setLevel(levelName == null ? null : context.getLevelForName(levelName));
     }
 
     public String getParentLoggerName(final String loggerName) {
-        final Logger logger = context.getLoggerIfExists(loggerName);
-        if (logger == null) {
-            return null;
+        final int dotIdx = loggerName.lastIndexOf('.');
+        if (dotIdx == -1) {
+            return "";
+        } else {
+            return loggerName.substring(0, dotIdx);
         }
-        final Logger parent = logger.getParent();
-        return parent == null ? "" : parent.getName();
     }
 }

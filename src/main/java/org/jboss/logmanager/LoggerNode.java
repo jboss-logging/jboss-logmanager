@@ -22,12 +22,20 @@
 
 package org.jboss.logmanager;
 
-import java.lang.ref.WeakReference;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.Lock;
+
+import java.util.logging.Filter;
+import java.util.logging.Handler;
+import java.util.logging.Level;
 
 /**
  * A node in the tree of logger names.  Maintains weak references to children and a strong reference to its parent.
@@ -48,19 +56,52 @@ final class LoggerNode {
     private final String fullName;
 
     /**
-     * A weak reference to the logger instance.  Only update using {@link #loggerRefUpdater}.
-     */
-    private volatile LoggerRef loggerRef = null;
-
-    /**
-     * The atomic updater for {@link #loggerRef}.
-     */
-    private static final AtomicReferenceFieldUpdater<LoggerNode, LoggerRef> loggerRefUpdater = AtomicReferenceFieldUpdater.newUpdater(LoggerNode.class, LoggerRef.class, "loggerRef");
-
-    /**
      * The map of names to child nodes.  The child node references are weak.
      */
     private final ConcurrentMap<String, LoggerNode> children = new CopyOnWriteWeakMap<String, LoggerNode>();
+
+    /**
+     * The handlers for this logger.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
+     * instance should not be modified (treat as immutable).
+     */
+    @SuppressWarnings({ "UnusedDeclaration" })
+    private volatile Handler[] handlers;
+
+    /**
+     * Flag to specify whether parent handlers are used.
+     */
+    private volatile boolean useParentHandlers = true;
+
+    /**
+     * The filter for this logger instance.
+     */
+    private volatile Filter filter;
+
+    /**
+     * The attachments map.
+     */
+    private volatile Map<Logger.AttachmentKey, Object> attachments = Collections.emptyMap();
+
+    /**
+     * The atomic updater for the {@link #handlers} field.
+     */
+    private static final AtomicArray<LoggerNode, Handler> handlersUpdater = AtomicArray.create(AtomicReferenceFieldUpdater.newUpdater(LoggerNode.class, Handler[].class, "handlers"), Handler.class);
+
+    /**
+     * The atomic updater for the {@link #attachments} field.
+     */
+    private static final AtomicReferenceFieldUpdater<LoggerNode, Map> attachmentsUpdater = AtomicReferenceFieldUpdater.newUpdater(LoggerNode.class, Map.class, "attachments");
+
+    /**
+     * The actual level.  May only be modified when the context's level change lock is held; in addition, changing
+     * this field must be followed immediately by recursively updating the effective loglevel of the child tree.
+     */
+    private volatile java.util.logging.Level level;
+    /**
+     * The effective level.  May only be modified when the context's level change lock is held; in addition, changing
+     * this field must be followed immediately by recursively updating the effective loglevel of the child tree.
+     */
+    private volatile int effectiveLevel = Logger.INFO_INT;
 
     /**
      * Construct a new root instance.
@@ -70,6 +111,7 @@ final class LoggerNode {
     LoggerNode(final LogContext context) {
         parent = null;
         fullName = "";
+        handlersUpdater.clear(this);
         this.context = context;
     }
 
@@ -86,6 +128,7 @@ final class LoggerNode {
             throw new IllegalArgumentException("nodeName is empty, or just whitespace");
         }
         this.parent = parent;
+        handlersUpdater.clear(this);
         if (parent.parent == null) {
             fullName = nodeName;
         } else {
@@ -146,30 +189,7 @@ final class LoggerNode {
         }
     }
 
-    /**
-     * Get or create a logger instance for this node.
-     *
-     * @return a logger instance
-     */
-    Logger getOrCreateLogger() {
-        final String fullName = this.fullName;
-        final LoggerNode parent = this.parent;
-        for (;;) {
-            final LoggerRef loggerRef = this.loggerRef;
-            if (loggerRef != null) {
-                final Logger logger = loggerRef.get();
-                if (logger != null) {
-                    return logger;
-                }
-            }
-            final Logger logger = createLogger(fullName);
-            if (loggerRefUpdater.compareAndSet(this, loggerRef, parent == null ? new StrongLoggerRef(logger) : new WeakLoggerRef(logger))) {
-                return logger;
-            }
-        }
-    }
-
-    private Logger createLogger(final String fullName) {
+    Logger createLogger() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
@@ -189,39 +209,12 @@ final class LoggerNode {
     }
 
     /**
-     * Get a logger instance for this node.
-     *
-     * @return a logger instance
-     */
-    Logger getLogger() {
-        final LoggerRef loggerRef = this.loggerRef;
-        return loggerRef == null ? null : loggerRef.get();
-    }
-
-    /**
      * Get the children of this logger.
      *
      * @return the children
      */
     Collection<LoggerNode> getChildren() {
         return children.values();
-    }
-
-    /**
-     * Return the logger instance of the parent logger node, or {@code null} if this is the root logger node.
-     *
-     * @return the parent logger instance, or {@code null} for none
-     */
-    Logger getParentLogger() {
-        LoggerNode node = parent;
-        while (node != null) {
-            final Logger instance = node.getLogger();
-            if (instance != null) {
-                return instance;
-            }
-            node = node.parent;
-        }
-        return null;
     }
 
     /**
@@ -234,44 +227,211 @@ final class LoggerNode {
     }
 
     /**
-     * Recursively update the effective log level of all log instances on all children.  The recursion depth will be proportionate to the
-     * log node nesting depth so stack use should not be an issue.  Must only be called while the log context's level
+     * Update the effective level if it is inherited from a parent.  Must only be called while the logmanager's level
      * change lock is held.
      *
      * @param newLevel the new effective level
      */
-    void updateChildEffectiveLevel(int newLevel) {
-        for (LoggerNode node : children.values()) {
-            if (node != null) {
-                final Logger instance = node.getLogger();
-                if (instance != null) {
-                    instance.setEffectiveLevel(newLevel);
-                } else {
-                    node.updateChildEffectiveLevel(newLevel);
+    void setEffectiveLevel(int newLevel) {
+        if (level == null) {
+            effectiveLevel = newLevel;
+            for (LoggerNode node : children.values()) {
+                if (node != null) {
+                    node.setEffectiveLevel(newLevel);
                 }
             }
         }
     }
 
-    private interface LoggerRef {
-        Logger get();
+    void setFilter(final Filter filter) {
+        this.filter = filter;
     }
 
-    private static final class WeakLoggerRef extends WeakReference<Logger> implements LoggerRef {
-        private WeakLoggerRef(Logger referent) {
-            super(referent);
+    Filter getFilter() {
+        return filter;
+    }
+
+    int getEffectiveLevel() {
+        return effectiveLevel;
+    }
+
+    Handler[] getHandlers() {
+        return handlers;
+    }
+
+    Handler[] clearHandlers() {
+        final Handler[] handlers = this.handlers;
+        handlersUpdater.clear(this);
+        return handlers.length > 0 ? handlers.clone() : handlers;
+    }
+
+    void removeHandler(final Handler handler) {
+        handlersUpdater.remove(this, handler, true);
+    }
+
+    void addHandler(final Handler handler) {
+        handlersUpdater.add(this, handler);
+    }
+
+    boolean getUseParentHandlers() {
+        return useParentHandlers;
+    }
+
+    void setUseParentHandlers(final boolean useParentHandlers) {
+        this.useParentHandlers = useParentHandlers;
+    }
+
+    void publish(final ExtLogRecord record) {
+        for (Handler handler : handlers) try {
+            handler.publish(record);
+        } catch (VirtualMachineError e) {
+            throw e;
+        } catch (Throwable t) {
+            // todo - error handler
+        }
+        if (useParentHandlers) {
+            final LoggerNode parent = this.parent;
+            if (parent != null) parent.publish(record);
         }
     }
 
-    private static final class StrongLoggerRef implements LoggerRef {
-        private final Logger logger;
-
-        private StrongLoggerRef(final Logger logger) {
-            this.logger = logger;
+    void setLevel(final Level newLevel) {
+        final LogContext context = this.context;
+        final Lock lock = context.treeLock;
+        lock.lock();
+        try {
+            final int oldEffectiveLevel = effectiveLevel;
+            final int newEffectiveLevel;
+            if (newLevel != null) {
+                level = newLevel;
+                newEffectiveLevel = newLevel.intValue();
+            } else {
+                final LoggerNode parent = this.parent;
+                if (parent == null) {
+                    level = Level.INFO;
+                    newEffectiveLevel = Logger.INFO_INT;
+                } else {
+                    level = null;
+                    newEffectiveLevel = parent.effectiveLevel;
+                }
+            }
+            effectiveLevel = newEffectiveLevel;
+            if (oldEffectiveLevel != newEffectiveLevel) {
+                // our level changed, recurse down to children
+                for (LoggerNode node : children.values()) {
+                    if (node != null) {
+                        node.setEffectiveLevel(newEffectiveLevel);
+                    }
+                }
+            }
+        } finally {
+            lock.unlock();
         }
 
-        public Logger get() {
-            return logger;
+    }
+
+    Level getLevel() {
+        return level;
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    <V> V getAttachment(final Logger.AttachmentKey<V> key) {
+        if (key == null) {
+            throw new NullPointerException("key is null");
         }
+        final Map<Logger.AttachmentKey, Object> attachments = this.attachments;
+        return (V) attachments.get(key);
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    <V> V attach(final Logger.AttachmentKey<V> key, final V value) {
+        if (key == null) {
+            throw new NullPointerException("key is null");
+        }
+        if (value == null) {
+            throw new NullPointerException("value is null");
+        }
+        Map<Logger.AttachmentKey, Object> oldAttachments;
+        Map<Logger.AttachmentKey, Object> newAttachments;
+        V old;
+        do {
+            oldAttachments = attachments;
+            if (oldAttachments.isEmpty() || oldAttachments.size() == 1 && oldAttachments.containsKey(key)) {
+                old = (V) oldAttachments.get(key);
+                newAttachments = Collections.<Logger.AttachmentKey, Object>singletonMap(key, value);
+            } else {
+                newAttachments = new HashMap<Logger.AttachmentKey, Object>(oldAttachments);
+                old = (V) newAttachments.put(key, value);
+            }
+        } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
+        return old;
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    <V> V attachIfAbsent(final Logger.AttachmentKey<V> key, final V value) {
+        if (key == null) {
+            throw new NullPointerException("key is null");
+        }
+        if (value == null) {
+            throw new NullPointerException("value is null");
+        }
+        Map<Logger.AttachmentKey, Object> oldAttachments;
+        Map<Logger.AttachmentKey, Object> newAttachments;
+        do {
+            oldAttachments = attachments;
+            if (oldAttachments.isEmpty()) {
+                newAttachments = Collections.<Logger.AttachmentKey, Object>singletonMap(key, value);
+            } else {
+                if (oldAttachments.containsKey(key)) {
+                    return (V) oldAttachments.get(key);
+                }
+                newAttachments = new HashMap<Logger.AttachmentKey, Object>(oldAttachments);
+                newAttachments.put(key, value);
+            }
+        } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
+        return null;
+    }
+
+    @SuppressWarnings({ "unchecked" })
+    public <V> V detach(final Logger.AttachmentKey<V> key) {
+        if (key == null) {
+            throw new NullPointerException("key is null");
+        }
+        Map<Logger.AttachmentKey, Object> oldAttachments;
+        Map<Logger.AttachmentKey, Object> newAttachments;
+        V result;
+        do {
+            oldAttachments = attachments;
+            result = (V) oldAttachments.get(key);
+            if (result == null) {
+                return null;
+            }
+            final int size = oldAttachments.size();
+            if (size == 1) {
+                // special case - the new map is empty
+                newAttachments = Collections.emptyMap();
+            } else if (size == 2) {
+                // special case - the new map is a singleton
+                final Iterator<Map.Entry<Logger.AttachmentKey,Object>> it = oldAttachments.entrySet().iterator();
+                // find the entry that we are not removing
+                Map.Entry<Logger.AttachmentKey, Object> entry = it.next();
+                if (entry.getKey() == key) {
+                    // must be the next one
+                    entry = it.next();
+                }
+                newAttachments = Collections.singletonMap(entry.getKey(), entry.getValue());
+            } else {
+                newAttachments = new HashMap<Logger.AttachmentKey, Object>(oldAttachments);
+            }
+        } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
+        return result;
+    }
+
+    String getFullName() {
+        return fullName;
+    }
+
+    LoggerNode getParent() {
+        return parent;
     }
 }

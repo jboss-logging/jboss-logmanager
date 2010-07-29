@@ -25,12 +25,6 @@ package org.jboss.logmanager;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.ResourceBundle;
-import java.util.Map;
-import java.util.HashMap;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.Lock;
 
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -49,38 +43,6 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * The named logger tree node.
      */
     private final LoggerNode loggerNode;
-
-    /**
-     * The handlers for this logger.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
-     * instance should not be modified (treat as immutable).
-     */
-    @SuppressWarnings({ "UnusedDeclaration" })
-    private volatile Handler[] handlers;
-
-    /**
-     * Flag to specify whether parent handlers are used.
-     */
-    private volatile boolean useParentHandlers = true;
-
-    /**
-     * The filter for this logger instance.
-     */
-    private volatile Filter filter;
-
-    /**
-     * The attachments map.
-     */
-    private volatile Map<AttachmentKey, Object> attachments = Collections.emptyMap();
-
-    /**
-     * The atomic updater for the {@link #handlers} field.
-     */
-    private static final AtomicArray<Logger, Handler> handlersUpdater = AtomicArray.create(AtomicReferenceFieldUpdater.newUpdater(Logger.class, Handler[].class, "handlers"), Handler.class);
-
-    /**
-     * The atomic updater for the {@link #attachments} field.
-     */
-    private static final AtomicReferenceFieldUpdater<Logger, Map> attachmentsUpdater = AtomicReferenceFieldUpdater.newUpdater(Logger.class, Map.class, "attachments");
 
     private static final String LOGGER_CLASS_NAME = Logger.class.getName();
 
@@ -127,7 +89,6 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         // We maintain our own level
         super.setLevel(Level.ALL);
         this.loggerNode = loggerNode;
-        handlersUpdater.clear(this);
     }
 
     // Serialization
@@ -141,26 +102,15 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void setFilter(Filter filter) throws SecurityException {
         LogContext.checkAccess();
-        this.filter = filter;
+        loggerNode.setFilter(filter);
     }
 
     /** {@inheritDoc} */
     public Filter getFilter() {
-        return filter;
+        return loggerNode.getFilter();
     }
 
     // Level mgmt
-
-    /**
-     * The actual level.  May only be modified when the logmanager's level change lock is held; in addition, changing
-     * this field must be followed immediately by recursively updating the effective loglevel of the child tree.
-     */
-    private volatile Level level;
-    /**
-     * The effective level.  May only be modified when the logmanager's level change lock is held; in addition, changing
-     * this field must be followed immediately by recursively updating the effective loglevel of the child tree.
-     */
-    private volatile int effectiveLevel = INFO_INT;
 
     /**
      * {@inheritDoc}  This implementation grabs a lock, so that only one thread may update the log level of any
@@ -169,33 +119,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     public void setLevel(Level newLevel) throws SecurityException {
         LogContext.checkAccess();
-        final LogContext context = loggerNode.getContext();
-        final Lock lock = context.treeLock;
-        lock.lock();
-        try {
-            final int oldEffectiveLevel = effectiveLevel;
-            final int newEffectiveLevel;
-            if (newLevel != null) {
-                level = newLevel;
-                newEffectiveLevel = newLevel.intValue();
-            } else {
-                final Logger parent = (Logger) getParent();
-                if (parent == null) {
-                    level = Level.INFO;
-                    newEffectiveLevel = INFO_INT;
-                } else {
-                    level = null;
-                    newEffectiveLevel = parent.effectiveLevel;
-                }
-            }
-            effectiveLevel = newEffectiveLevel;
-            if (oldEffectiveLevel != newEffectiveLevel) {
-                // our level changed, recurse down to children
-                loggerNode.updateChildEffectiveLevel(newEffectiveLevel);
-            }
-        } finally {
-            lock.unlock();
-        }
+        loggerNode.setLevel(newLevel);
     }
 
     /**
@@ -210,35 +134,22 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
-     * Update the effective level if it is inherited from a parent.  Must only be called while the logmanager's level
-     * change lock is held.
-     *
-     * @param newLevel the new effective level
-     */
-    void setEffectiveLevel(int newLevel) {
-        if (level == null) {
-            effectiveLevel = newLevel;
-            loggerNode.updateChildEffectiveLevel(newLevel);
-        }
-    }
-
-    /**
      * Get the effective numerical log level, inherited from the parent.
      *
      * @return the effective level
      */
     public int getEffectiveLevel() {
-        return effectiveLevel;
+        return loggerNode.getEffectiveLevel();
     }
 
     /** {@inheritDoc} */
     public Level getLevel() {
-        return level;
+        return loggerNode.getLevel();
     }
 
     /** {@inheritDoc} */
     public boolean isLoggable(Level level) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         return level.intValue() >= effectiveLevel && effectiveLevel != OFF_INT;
     }
 
@@ -253,11 +164,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     @SuppressWarnings({ "unchecked" })
     public <V> V getAttachment(AttachmentKey<V> key) {
-        if (key == null) {
-            throw new NullPointerException("key is null");
-        }
-        final Map<AttachmentKey, Object> attachments = this.attachments;
-        return (V) attachments.get(key);
+        return loggerNode.getAttachment(key);
     }
 
     /**
@@ -270,29 +177,9 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @return the old attachment, if there was one
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
-    @SuppressWarnings({ "unchecked" })
     public <V> V attach(AttachmentKey<V> key, V value) throws SecurityException {
         LogContext.checkAccess();
-        if (key == null) {
-            throw new NullPointerException("key is null");
-        }
-        if (value == null) {
-            throw new NullPointerException("value is null");
-        }
-        Map<AttachmentKey, Object> oldAttachments;
-        Map<AttachmentKey, Object> newAttachments;
-        V old;
-        do {
-            oldAttachments = attachments;
-            if (oldAttachments.isEmpty() || oldAttachments.size() == 1 && oldAttachments.containsKey(key)) {
-                old = (V) oldAttachments.get(key);
-                newAttachments = Collections.<AttachmentKey, Object>singletonMap(key, value);
-            } else {
-                newAttachments = new HashMap<AttachmentKey, Object>(oldAttachments);
-                old = (V) newAttachments.put(key, value);
-            }
-        } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
-        return old;
+        return loggerNode.attach(key, value);
     }
 
     /**
@@ -308,27 +195,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     @SuppressWarnings({ "unchecked" })
     public <V> V attachIfAbsent(AttachmentKey<V> key, V value) throws SecurityException {
         LogContext.checkAccess();
-        if (key == null) {
-            throw new NullPointerException("key is null");
-        }
-        if (value == null) {
-            throw new NullPointerException("value is null");
-        }
-        Map<AttachmentKey, Object> oldAttachments;
-        Map<AttachmentKey, Object> newAttachments;
-        do {
-            oldAttachments = attachments;
-            if (oldAttachments.isEmpty()) {
-                newAttachments = Collections.<AttachmentKey, Object>singletonMap(key, value);
-            } else {
-                if (oldAttachments.containsKey(key)) {
-                    return (V) oldAttachments.get(key);
-                }
-                newAttachments = new HashMap<AttachmentKey, Object>(oldAttachments);
-                newAttachments.put(key, value);
-            }
-        } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
-        return null;
+        return loggerNode.attachIfAbsent(key, value);
     }
 
     /**
@@ -342,37 +209,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     @SuppressWarnings({ "unchecked" })
     public <V> V detach(AttachmentKey<V> key) throws SecurityException {
         LogContext.checkAccess();
-        if (key == null) {
-            throw new NullPointerException("key is null");
-        }
-        Map<AttachmentKey, Object> oldAttachments;
-        Map<AttachmentKey, Object> newAttachments;
-        V result;
-        do {
-            oldAttachments = attachments;
-            result = (V) oldAttachments.get(key);
-            if (result == null) {
-                return null;
-            }
-            final int size = oldAttachments.size();
-            if (size == 1) {
-                // special case - the new map is empty
-                newAttachments = Collections.emptyMap();
-            } else if (size == 2) {
-                // special case - the new map is a singleton
-                final Iterator<Map.Entry<AttachmentKey,Object>> it = oldAttachments.entrySet().iterator();
-                // find the entry that we are not removing
-                Map.Entry<AttachmentKey, Object> entry = it.next();
-                if (entry.getKey() == key) {
-                    // must be the next one
-                    entry = it.next();
-                }
-                newAttachments = Collections.singletonMap(entry.getKey(), entry.getValue());
-            } else {
-                newAttachments = new HashMap<AttachmentKey, Object>(oldAttachments);
-            }
-        } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
-        return result;
+        return loggerNode.detach(key);
     }
 
     // Handler mgmt
@@ -383,7 +220,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (handler == null) {
             throw new NullPointerException("handler is null");
         }
-        handlersUpdater.add(this, handler);
+        loggerNode.addHandler(handler);
     }
 
     /** {@inheritDoc} */
@@ -392,12 +229,12 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (handler == null) {
             return;
         }
-        handlersUpdater.remove(this, handler, true);
+        loggerNode.removeHandler(handler);
     }
 
     /** {@inheritDoc} */
     public Handler[] getHandlers() {
-        final Handler[] handlers = this.handlers;
+        final Handler[] handlers = loggerNode.getHandlers();
         return handlers.length > 0 ? handlers.clone() : handlers;
     }
 
@@ -408,26 +245,25 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     public Handler[] clearHandlers() throws SecurityException {
         LogContext.checkAccess();
-        final Handler[] handlers = this.handlers;
-        handlersUpdater.clear(this);
-        return handlers.length > 0 ? handlers.clone() : handlers;
+        return loggerNode.clearHandlers();
     }
 
     /** {@inheritDoc} */
     public void setUseParentHandlers(boolean useParentHandlers) {
-        this.useParentHandlers = useParentHandlers;
+        loggerNode.setUseParentHandlers(useParentHandlers);
     }
 
     /** {@inheritDoc} */
     public boolean getUseParentHandlers() {
-        return useParentHandlers;
+        return loggerNode.getUseParentHandlers();
     }
 
     // Parent/child
 
     /** {@inheritDoc} */
     public Logger getParent() {
-        return loggerNode.getParentLogger();
+        final LoggerNode parentNode = loggerNode.getParent();
+        return parentNode == null ? null : parentNode.createLogger();
     }
 
     /**
@@ -440,19 +276,19 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     // Logger
 
-    private static final int OFF_INT = Level.OFF.intValue();
+    static final int OFF_INT = Level.OFF.intValue();
 
-    private static final int SEVERE_INT = Level.SEVERE.intValue();
-    private static final int WARNING_INT = Level.WARNING.intValue();
-    private static final int INFO_INT = Level.INFO.intValue();
-    private static final int CONFIG_INT = Level.CONFIG.intValue();
-    private static final int FINE_INT = Level.FINE.intValue();
-    private static final int FINER_INT = Level.FINER.intValue();
-    private static final int FINEST_INT = Level.FINEST.intValue();
+    static final int SEVERE_INT = Level.SEVERE.intValue();
+    static final int WARNING_INT = Level.WARNING.intValue();
+    static final int INFO_INT = Level.INFO.intValue();
+    static final int CONFIG_INT = Level.CONFIG.intValue();
+    static final int FINE_INT = Level.FINE.intValue();
+    static final int FINER_INT = Level.FINER.intValue();
+    static final int FINEST_INT = Level.FINEST.intValue();
 
     /** {@inheritDoc} */
     public void log(LogRecord record) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (record.getLevel().intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -461,7 +297,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod) {
-        if (FINER_INT < effectiveLevel) {
+        if (FINER_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY", LOGGER_CLASS_NAME);
@@ -472,7 +308,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod, final Object param1) {
-        if (FINER_INT < effectiveLevel) {
+        if (FINER_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY {0}", LOGGER_CLASS_NAME);
@@ -484,7 +320,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod, final Object[] params) {
-        if (FINER_INT < effectiveLevel) {
+        if (FINER_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         final StringBuilder builder = new StringBuilder("ENTRY");
@@ -500,7 +336,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void exiting(final String sourceClass, final String sourceMethod) {
-        if (FINER_INT < effectiveLevel) {
+        if (FINER_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN", LOGGER_CLASS_NAME);
@@ -511,7 +347,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void exiting(final String sourceClass, final String sourceMethod, final Object result) {
-        if (FINER_INT < effectiveLevel) {
+        if (FINER_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN {0}", LOGGER_CLASS_NAME);
@@ -523,7 +359,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void throwing(final String sourceClass, final String sourceMethod, final Throwable thrown) {
-        if (FINER_INT < effectiveLevel) {
+        if (FINER_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "THROW", LOGGER_CLASS_NAME);
@@ -535,7 +371,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void severe(final String msg) {
-        if (SEVERE_INT < effectiveLevel) {
+        if (SEVERE_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.SEVERE, msg, LOGGER_CLASS_NAME));
@@ -543,7 +379,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void warning(final String msg) {
-        if (WARNING_INT < effectiveLevel) {
+        if (WARNING_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.WARNING, msg, LOGGER_CLASS_NAME));
@@ -551,7 +387,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void info(final String msg) {
-        if (INFO_INT < effectiveLevel) {
+        if (INFO_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.INFO, msg, LOGGER_CLASS_NAME));
@@ -559,7 +395,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void config(final String msg) {
-        if (CONFIG_INT < effectiveLevel) {
+        if (CONFIG_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.CONFIG, msg, LOGGER_CLASS_NAME));
@@ -567,7 +403,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void fine(final String msg) {
-        if (FINE_INT < effectiveLevel) {
+        if (FINE_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.FINE, msg, LOGGER_CLASS_NAME));
@@ -575,7 +411,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void finer(final String msg) {
-        if (FINER_INT < effectiveLevel) {
+        if (FINER_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.FINER, msg, LOGGER_CLASS_NAME));
@@ -583,7 +419,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void finest(final String msg) {
-        if (FINEST_INT < effectiveLevel) {
+        if (FINEST_INT < loggerNode.getEffectiveLevel()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.FINEST, msg, LOGGER_CLASS_NAME));
@@ -591,7 +427,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void log(final Level level, final String msg) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -600,7 +436,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Object param1) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -611,7 +447,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Object[] params) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -622,7 +458,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Throwable thrown) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -633,7 +469,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -645,7 +481,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object param1) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -658,7 +494,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object[] params) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -671,7 +507,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Throwable thrown) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -684,7 +520,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -697,7 +533,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object param1) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -711,7 +547,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object[] params) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -725,7 +561,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Throwable thrown) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -767,7 +603,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @param t the throwable, if any
      */
     public void log(final String fqcn, final Level level, final String message, final String bundleName, final ExtLogRecord.FormatStyle style, final Object[] params, final Throwable t) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level == null || fqcn == null || message == null || level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -789,7 +625,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @param t the throwable, if any
      */
     public void log(final String fqcn, final Level level, final String message, final ExtLogRecord.FormatStyle style, final Object[] params, final Throwable t) {
-        final int effectiveLevel = this.effectiveLevel;
+        final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (level == null || fqcn == null || message == null || level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
@@ -831,7 +667,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             record.setResourceBundleName(bundleName);
             record.setResourceBundle(bundle);
         }
-        final Filter filter = this.filter;
+        final Filter filter = loggerNode.getFilter();
         try {
             if (filter != null && ! filter.isLoggable(record)) {
                 return;
@@ -842,21 +678,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             // todo - error handler
             // treat an errored filter as "pass" (I guess?)
         }
-        for (Logger current = this; current != null; current = current.getParent()) {
-            final Handler[] handlers = current.handlers;
-            if (handlers != null) {
-                for (Handler handler : handlers) try {
-                    handler.publish(record);
-                } catch (VirtualMachineError e) {
-                    throw e;
-                } catch (Throwable t) {
-                    // todo - error handler
-                }
-            }
-            if (! current.useParentHandlers) {
-                break;
-            }
-        }
+        loggerNode.publish(record);
     }
 
     /**

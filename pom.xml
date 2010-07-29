@@ -33,6 +33,12 @@
     <packaging>jar</packaging>
     <version>1.2.0.CR4-SNAPSHOT</version>
 
+    <parent>
+        <groupId>org.jboss</groupId>
+        <artifactId>jboss-parent</artifactId>
+        <version>5</version>
+    </parent>
+
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
@@ -50,26 +56,10 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.0.2</version>
-                <configuration>
-                    <source>1.5</source>
-                    <target>1.5</target>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
-                <version>2.1.1</version>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -81,30 +71,12 @@
             </plugin>
             <plugin>
                 <artifactId>maven-enforcer-plugin</artifactId>
-                <version>1.0-beta-1</version>
-                <executions>
-                    <execution>
-                        <id>enforce-maven-environment</id>
-                        <goals>
-                            <goal>enforce</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <rules>
-                        <requireJavaVersion>
-                            <version>1.6.0</version>
-                        </requireJavaVersion>
-                    </rules>
-                </configuration>
             </plugin>
         </plugins>
-        <finalName>jboss-logmanager</finalName>
     </build>
     <reporting>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <version>2.6.1</version>
                 <configuration>
@@ -125,11 +97,4 @@
             </plugin>
         </plugins>
     </reporting>
-    <distributionManagement>
-        <repository>
-            <id>repository.jboss.org</id>
-            <name>JBoss Maven2 Repository</name>
-            <url>http://repository.jboss.org/maven2</url>
-        </repository>
-    </distributionManagement>
 </project>
