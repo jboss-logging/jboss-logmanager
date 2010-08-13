@@ -573,22 +573,6 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         logRaw(rec);
     }
 
-    // GC
-
-    /**
-     * Perform finalization actions.  This amounts to clearing out the loglevel so that all children are updated
-     * with the parent's effective loglevel.  As such, a lock is acquired from this method which might cause delays in
-     * garbage collection.
-     */
-    protected void finalize() throws Throwable {
-        try {
-            // clear out level so that it spams out to all children
-            setLevel(null);
-        } finally {
-            super.finalize();
-        }
-    }
-
     // alternate SPI hooks
 
     /**
