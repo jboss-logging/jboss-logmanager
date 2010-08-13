@@ -656,13 +656,16 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         record.setLoggerName(getName());
         String bundleName = null;
         ResourceBundle bundle = null;
-        for (Logger current = this; current != null; current = current.getParent()) {
-            bundleName = current.getResourceBundleName();
-            if (bundleName != null) {
-                bundle = current.getResourceBundle();
-                break;
-            }
-        }
+        // todo: new parents never have resource bundles; this could cause an issue
+        bundleName = getResourceBundleName();
+        bundle = getResourceBundle();
+//        for (Logger current = this; current != null; current = current.getParent()) {
+//            bundleName = current.getResourceBundleName();
+//            if (bundleName != null) {
+//                bundle = current.getResourceBundle();
+//                break;
+//            }
+//        }
         if (bundleName != null && bundle != null) {
             record.setResourceBundleName(bundleName);
             record.setResourceBundle(bundle);

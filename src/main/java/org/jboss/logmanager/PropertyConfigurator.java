@@ -27,6 +27,7 @@ import java.io.InputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.Properties;
 import java.util.List;
 import java.util.ArrayList;
@@ -53,6 +54,8 @@ import java.util.logging.ErrorManager;
 public final class PropertyConfigurator implements Configurator {
 
     private static final String[] EMPTY_STRINGS = new String[0];
+
+    private boolean reportErrors;
 
     /**
      * Construct an instance.
@@ -87,6 +90,7 @@ public final class PropertyConfigurator implements Configurator {
         // Start with the list of loggers to configure.  The root logger is always on the list.
         final List<String> loggerNames = getStringCsvList(properties, "loggers", "");
         final Set<String> done = new HashSet<String>();
+        reportErrors = Boolean.parseBoolean(properties.getProperty("reportErrors", "true"));
 
         // Now, for each logger name, configure any filters, handlers, etc.
         for (String loggerName : loggerNames) {
@@ -100,19 +104,31 @@ public final class PropertyConfigurator implements Configurator {
             // Get logger level
             final String levelName = getStringProperty(properties, getKey("logger", loggerName, "level"));
             if (levelName != null) {
-                logger.setLevel(LogContext.getSystemLogContext().getLevelForName(levelName));
+                try {
+                    logger.setLevel(LogContext.getSystemLogContext().getLevelForName(levelName));
+                } catch (IllegalArgumentException e) {
+                    System.err.printf("Failed to set level %s on %s: %s\n", levelName, logger, e.getMessage());
+                }
             }
 
             // Get logger filter
             final String filterName = getStringProperty(properties, getKey("logger", loggerName, "filter"));
             if (filterName != null) {
-                logger.setFilter(configureFilter(properties, filterName));
+                try {
+                    logger.setFilter(configureFilter(properties, filterName));
+                } catch (IllegalArgumentException e) {
+                    System.err.printf("Failed to configure filter %s on %s: %s\n", filterName, logger, e.getMessage());
+                }
             }
 
             // Get logger handlers
             final List<String> handlerNames = getStringCsvList(properties, getKey("logger", loggerName, "handlers"));
             for (String handlerName : handlerNames) {
-                logger.addHandler(configureHandler(properties, handlerName));
+                try {
+                    logger.addHandler(configureHandler(properties, handlerName));
+                } catch (IllegalArgumentException e) {
+                    System.err.printf("Failed to configure handler %s on %s: %s\n", handlerName, logger, e.getMessage());
+                }
             }
 
             // Get logger properties
@@ -156,13 +172,24 @@ public final class PropertyConfigurator implements Configurator {
                     final Object argument;
                     final Method method = setters.get(propertyName);
                     if (method == null) {
-                        throw new IllegalArgumentException("Declared property " + propertyName + " wasn't found on " + objClass);
+                        if (reportErrors) {
+                            System.err.printf("Declared property %s wasn't found on %s\n", propertyName, objClass);
+                        }
+                        continue;
                     }
-                    argument = getArgument(properties, method, propertyName, propValue);
+                    try {
+                        argument = getArgument(properties, method, propertyName, propValue);
+                    } catch (IllegalArgumentException e) {
+                        System.err.printf("Failed to interpret parameter type for %s: %s\n", object, e.getMessage());
+                        continue;
+                    }
                     try {
                         method.invoke(object, argument);
                     } catch (Exception e) {
-                        throw new IllegalArgumentException("Unable to set property " + propertyName + " on " + objClass, e);
+                        if (reportErrors) {
+                            System.err.printf("Unable to set property %s on %s: ", propertyName, objClass);
+                            e.printStackTrace(System.err);
+                        }
                     }
                 }
             } while (it.hasNext());
@@ -205,10 +232,9 @@ public final class PropertyConfigurator implements Configurator {
             argument = TimeZone.getTimeZone(propValue);
         } else if (paramType == Charset.class) {
             argument = Charset.forName(propValue);
-        } else if (Enum.class.isAssignableFrom(paramType)) {
+        } else if (paramType.isEnum()) {
             argument = Enum.valueOf(paramType.asSubclass(Enum.class), propValue);
         } else {
-            // ???
             throw new IllegalArgumentException("Unknown parameter type for property " + propertyName + " on " + objClass);
         }
         return argument;
@@ -235,31 +261,51 @@ public final class PropertyConfigurator implements Configurator {
         // Get handler level
         final String levelName = getStringProperty(properties, getKey("handler", handlerName, "level"));
         if (levelName != null) {
-            handler.setLevel(LogContext.getSystemLogContext().getLevelForName(levelName));
+            try {
+                handler.setLevel(LogContext.getSystemLogContext().getLevelForName(levelName));
+            } catch (IllegalArgumentException e) {
+                System.err.printf("Failed to set level %s on %s: %s\n", levelName, handler, e.getMessage());
+            }
         }
 
         // Get handler encoding
         final String encodingName = getStringProperty(properties, getKey("handler", handlerName, "encoding"));
         if (encodingName != null) {
-            handler.setEncoding(encodingName);
+            try {
+                handler.setEncoding(encodingName);
+            } catch (UnsupportedEncodingException e) {
+                System.err.printf("Failed to set encoding %s on %s: %s\n", encodingName, handler, e.getMessage());
+            }
         }
 
         // Get error handler
         final String errorManagerName = getStringProperty(properties, getKey("handler", handlerName, "errorManager"));
         if (errorManagerName != null) {
-            handler.setErrorManager(configureErrorManager(properties, errorManagerName));
+            try {
+                handler.setErrorManager(configureErrorManager(properties, errorManagerName));
+            } catch (IllegalArgumentException e) {
+                System.err.printf("Failed to set error manager %s on %s: %s\n", errorManagerName, handler, e.getMessage());
+            }
         }
 
         // Get filter
         final String filterName = getStringProperty(properties, getKey("handler", handlerName, "filter"));
         if (filterName != null) {
-            handler.setFilter(configureFilter(properties, filterName));
+            try {
+                handler.setFilter(configureFilter(properties, filterName));
+            } catch (IllegalArgumentException e) {
+                System.err.printf("Failed to set filter %s on %s: %s\n", filterName, handler, e.getMessage());
+            }
         }
 
         // Get formatter
         final String formatterName = getStringProperty(properties, getKey("handler", handlerName, "formatter"));
         if (formatterName != null) {
-            handler.setFormatter(configureFormatter(properties, formatterName));
+            try {
+                handler.setFormatter(configureFormatter(properties, formatterName));
+            } catch (IllegalArgumentException e) {
+                System.err.printf("Failed to set formatter %s on %s: %s\n", filterName, handler, e.getMessage());
+            }
         }
 
         // Get properties

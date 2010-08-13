@@ -135,6 +135,7 @@ final class LoggerNode {
             fullName = parent.fullName + "." + nodeName;
         }
         this.context = context;
+        effectiveLevel = parent.effectiveLevel;
     }
 
     /**
@@ -195,15 +196,11 @@ final class LoggerNode {
             return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
                 public Logger run() {
                     final Logger logger = new Logger(LoggerNode.this, fullName);
-                    // initialize the effective level
-                    logger.setLevel(null);
                     return logger;
                 }
             });
         } else {
             final Logger logger = new Logger(this, fullName);
-            // initialize the effective level
-            logger.setLevel(null);
             return logger;
         }
     }
