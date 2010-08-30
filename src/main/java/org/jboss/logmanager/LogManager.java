@@ -68,13 +68,15 @@ public final class LogManager extends java.util.logging.LogManager {
                                     Level.WARN,
                                     Level.ERROR,
                                     Level.FATAL,
+                                    java.util.logging.Level.ALL,
                                     java.util.logging.Level.FINEST,
                                     java.util.logging.Level.FINER,
                                     java.util.logging.Level.FINE,
                                     java.util.logging.Level.INFO,
                                     java.util.logging.Level.CONFIG,
                                     java.util.logging.Level.WARNING,
-                                    java.util.logging.Level.SEVERE
+                                    java.util.logging.Level.SEVERE,
+                                    java.util.logging.Level.OFF
                             )));
                         }
                     }
