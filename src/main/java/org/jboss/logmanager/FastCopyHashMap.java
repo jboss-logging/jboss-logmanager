@@ -467,7 +467,7 @@ class FastCopyHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clon
       System.out.println(" Size:            " + size);
       System.out.println(" Real Size:       " + total);
       System.out.println(" Optimal:         " + optimal + " (" + (float) optimal * 100 / total + "%)");
-      System.out.println(" Average Distnce: " + ((float) totalSkew / (total - optimal)));
+      System.out.println(" Average Distance:" + ((float) totalSkew / (total - optimal)));
       System.out.println(" Max Distance:    " + maxSkew);
    }
 
@@ -563,7 +563,7 @@ class FastCopyHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clon
       }
    }
 
-   private abstract class FasyCopyHashMapIterator<E> implements Iterator<E>
+   private abstract class FastCopyHashMapIterator<E> implements Iterator<E>
    {
       private int next = 0;
       private int expectedCount = modCount;
@@ -673,7 +673,7 @@ class FastCopyHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clon
    }
 
 
-   private class KeyIterator extends FasyCopyHashMapIterator<K>
+   private class KeyIterator extends FastCopyHashMapIterator<K>
    {
       public K next()
       {
@@ -681,7 +681,7 @@ class FastCopyHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clon
       }
    }
 
-   private class ValueIterator extends FasyCopyHashMapIterator<V>
+   private class ValueIterator extends FastCopyHashMapIterator<V>
    {
       public V next()
       {
@@ -689,7 +689,7 @@ class FastCopyHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clon
       }
    }
 
-   private class EntryIterator extends FasyCopyHashMapIterator<Map.Entry<K, V>>
+   private class EntryIterator extends FastCopyHashMapIterator<Map.Entry<K, V>>
    {
       private class WriteThroughEntry extends SimpleEntry<K, V>
       {
