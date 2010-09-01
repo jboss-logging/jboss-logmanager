@@ -129,10 +129,10 @@ public class ExtLogRecord extends LogRecord {
         }
     }
 
-    private final String ndc;
     private transient final String loggerClassName;
     private transient boolean calculateCaller = true;
 
+    private String ndc;
     private FormatStyle formatStyle = FormatStyle.MESSAGE_FORMAT;
     private Map<String, String> mdcCopy;
     private int sourceLineNumber = -1;
@@ -188,12 +188,33 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
+     * Change an MDC value on this record.  If the MDC has not yet been copied, this method will copy it.
+     *
+     * @param key the key to set
+     * @param value the value to set it to
+     * @return the old value, if any
+     */
+    public String putMdc(String key, String value) {
+        copyMdc();
+        return mdcCopy.put(key, value);
+    }
+
+    /**
      * Get the NDC for this log record.
      *
      * @return the NDC
      */
     public String getNdc() {
         return ndc;
+    }
+
+    /**
+     * Change the NDC for this log record.
+     *
+     * @param value the new NDC value
+     */
+    public void setNdc(String value) {
+        ndc = value;
     }
 
     /**

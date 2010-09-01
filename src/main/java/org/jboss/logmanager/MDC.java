@@ -22,7 +22,6 @@
 
 package org.jboss.logmanager;
 
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -77,7 +76,7 @@ public final class MDC {
      * @return a copy of the map
      */
     public static Map<String, String> copy() {
-        return new HashMap<String, String>(mdc.get());
+        return mdc.get().clone();
     }
 
     /**
@@ -87,14 +86,14 @@ public final class MDC {
         mdc.get().clear();
     }
 
-    private static final class Holder extends InheritableThreadLocal<Map<String, String>> {
+    private static final class Holder extends InheritableThreadLocal<FastCopyHashMap<String, String>> {
 
-        protected Map<String, String> childValue(final Map<String, String> parentValue) {
-            return new HashMap<String, String>(parentValue);
+        protected FastCopyHashMap<String, String> childValue(final Map<String, String> parentValue) {
+            return new FastCopyHashMap<String, String>(parentValue);
         }
 
-        protected Map<String, String> initialValue() {
-            return new HashMap<String, String>();
+        protected FastCopyHashMap<String, String> initialValue() {
+            return new FastCopyHashMap<String, String>();
         }
     }
 }
