@@ -524,11 +524,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setResourceBundleName(bundleName);
-        logRaw(rec);
+        super.logrb(level, sourceClass, sourceMethod, bundleName, msg);
     }
 
     /** {@inheritDoc} */
@@ -537,12 +533,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setResourceBundleName(bundleName);
-        rec.setParameters(new Object[] { param1 });
-        logRaw(rec);
+        super.logrb(level, sourceClass, sourceMethod, bundleName, msg, param1);
     }
 
     /** {@inheritDoc} */
@@ -551,12 +542,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setResourceBundleName(bundleName);
-        if (params != null) rec.setParameters(params);
-        logRaw(rec);
+        super.logrb(level, sourceClass, sourceMethod, bundleName, msg, params);
     }
 
     /** {@inheritDoc} */
@@ -565,12 +551,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        rec.setSourceClassName(sourceClass);
-        rec.setSourceMethodName(sourceMethod);
-        rec.setResourceBundleName(bundleName);
-        rec.setThrown(thrown);
-        logRaw(rec);
+        super.logrb(level, sourceClass, sourceMethod, bundleName, msg, thrown);
     }
 
     // alternate SPI hooks
