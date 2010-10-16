@@ -30,6 +30,15 @@
     <artifactId>jboss-logmanager</artifactId>
     <packaging>jar</packaging>
     <version>1.1.2.CR1-SNAPSHOT</version>
+
+    <name>JBoss Log Manager</name>
+
+    <parent>
+        <groupId>org.jboss</groupId>
+        <artifactId>jboss-parent</artifactId>
+        <version>6-beta-1</version>
+    </parent>
+
     <dependencies>
         <dependency>
             <groupId>org.testng</groupId>
@@ -42,25 +51,10 @@
     <build>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>2.0.2</version>
-                <configuration>
-                    <source>1.5</source>
-                    <target>1.5</target>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-sources</id>
-                        <phase>verify</phase>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -71,12 +65,10 @@
                 </configuration>
             </plugin>
         </plugins>
-        <finalName>jboss-logmanager</finalName>
     </build>
     <reporting>
         <plugins>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <doclet>net.gleamynode.apiviz.APIviz</doclet>
@@ -85,10 +77,10 @@
                         <artifactId>apiviz</artifactId>
                         <version>1.2.5.GA</version>
                     </docletArtifact>
-                    <doctitle><![CDATA[JBoss LogManager 1.1.1.GA]]></doctitle>
-                    <header><![CDATA[JBoss LogManager 1.1.1.GA]]></header>
-                    <footer><![CDATA[JBoss LogManager 1.1.1.GA]]></footer>
-                    <bottom><![CDATA[<i>Copyright &#169; 2009 JBoss, a division of Red Hat, Inc.</i>]]></bottom>
+                    <doctitle>JBoss LogManager ${project.version}</doctitle>
+                    <header>JBoss LogManager ${project.version}</header>
+                    <footer>JBoss LogManager ${project.version}</footer>
+                    <bottom><![CDATA[<i>Copyright &#169; 2010 JBoss, a division of Red Hat, Inc.</i>]]></bottom>
                     <links>
                         <link>http://java.sun.com/j2se/1.5.0/docs/api/</link>
                     </links>
@@ -96,11 +88,4 @@
             </plugin>
         </plugins>
     </reporting>
-    <distributionManagement>
-        <repository>
-            <id>repository.jboss.org</id>
-            <name>JBoss Maven2 Repository</name>
-            <url>http://repository.jboss.org/maven2</url>
-        </repository>
-    </distributionManagement>
 </project>
