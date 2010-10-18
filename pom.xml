@@ -29,7 +29,7 @@
     <groupId>org.jboss.logmanager</groupId>
     <artifactId>jboss-logmanager</artifactId>
     <packaging>jar</packaging>
-    <version>1.1.0.GA</version>
+    <version>1.1.0.SP1</version>
     <dependencies>
         <dependency>
             <groupId>org.testng</groupId>
