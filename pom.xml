@@ -31,7 +31,7 @@
     <groupId>org.jboss.logmanager</groupId>
     <artifactId>jboss-logmanager</artifactId>
     <packaging>jar</packaging>
-    <version>1.2.0.CR8-SNAPSHOT</version>
+    <version>1.2.0.CR8</version>
 
     <parent>
         <groupId>org.jboss</groupId>
