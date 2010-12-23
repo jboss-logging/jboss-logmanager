@@ -51,6 +51,13 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      */
     protected static final AtomicArray<ExtHandler, Handler> handlersUpdater = AtomicArray.create(AtomicReferenceFieldUpdater.newUpdater(ExtHandler.class, Handler[].class, "handlers"), Handler.class);
 
+    /**
+     * Construct a new instance.
+     */
+    protected ExtHandler() {
+        handlersUpdater.clear(this);
+    }
+
     /** {@inheritDoc} */
     public final void publish(final LogRecord record) {
         if (record != null && isLoggable(record)) {
@@ -144,6 +151,9 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public Handler[] setHandlers(final Handler[] newHandlers) throws SecurityException {
+        if (newHandlers == null) {
+            throw new IllegalArgumentException("newHandlers is null");
+        }
         if (newHandlers.length == 0) {
             return clearHandlers();
         } else {
