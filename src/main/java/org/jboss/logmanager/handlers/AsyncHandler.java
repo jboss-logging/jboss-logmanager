@@ -22,28 +22,31 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.ExtHandler;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.Executors;
-import java.util.Queue;
 
 import java.util.logging.Handler;
 import java.util.logging.ErrorManager;
 
 /**
- * An asycnhronous log handler which is used to write to a handler or group of handlers which are "slow" or introduce
+ * An asynchronous log handler which is used to write to a handler or group of handlers which are "slow" or introduce
  * some degree of latency.
  */
 public class AsyncHandler extends ExtHandler {
 
-    private final ThreadFactory threadFactory;
-    private final Queue<ExtLogRecord> recordQueue;
-    private final AsyncThread asyncThread = new AsyncThread();
+    private final BlockingQueue<ExtLogRecord> recordQueue;
+    private final Thread thread;
     private volatile OverflowAction overflowAction = OverflowAction.BLOCK;
 
-    private boolean closed;
-    private boolean taskRunning;
+    @SuppressWarnings("unused")
+    private volatile int state;
+
+    private static final AtomicIntegerFieldUpdater<AsyncHandler> stateUpdater = AtomicIntegerFieldUpdater.newUpdater(AsyncHandler.class, "state");
 
     private static final int DEFAULT_QUEUE_LENGTH = 512;
 
@@ -54,8 +57,12 @@ public class AsyncHandler extends ExtHandler {
      * @param threadFactory the thread factory to use to construct the handler thread
      */
     public AsyncHandler(final int queueLength, final ThreadFactory threadFactory) {
-        recordQueue = new ArrayQueue<ExtLogRecord>(queueLength);
-        this.threadFactory = threadFactory;
+        recordQueue = new ArrayBlockingQueue<ExtLogRecord>(queueLength);
+        thread = threadFactory.newThread(new AsyncTask());
+        if (thread == null) {
+            throw new IllegalArgumentException("Thread factory did not create a thread");
+        }
+        thread.setDaemon(true);
     }
 
     /**
@@ -107,110 +114,94 @@ public class AsyncHandler extends ExtHandler {
 
     /** {@inheritDoc} */
     protected void doPublish(final ExtLogRecord record) {
-        final Queue<ExtLogRecord> recordQueue = this.recordQueue;
-        boolean intr = Thread.interrupted();
+        switch (state) {
+            case 0: {
+                if (stateUpdater.compareAndSet(this, 0, 1)) {
+                    thread.start();
+                }
+            }
+            case 1: {
+                break;
+            }
+            default: {
+                return;
+            }
+        }
+        final BlockingQueue<ExtLogRecord> recordQueue = this.recordQueue;
         // prepare record to move to another thread
         record.copyAll();
-        try {
-            synchronized (recordQueue) {
-                if (closed) {
-                    return;
-                }
-                startTaskIfNotRunning();
-                while (! recordQueue.offer(record)) {
-                    try {
-                        if (overflowAction == OverflowAction.DISCARD) {
-                            return;
-                        }
-                        recordQueue.wait();
-                    } catch (InterruptedException e) {
-                        intr = true;
-                    }
-                    if (closed) {
-                        return;
-                    }
-                    startTaskIfNotRunning();
-                }
-                recordQueue.notify();
+        if (overflowAction == OverflowAction.DISCARD) {
+            recordQueue.offer(record);
+        } else {
+            try {
+                recordQueue.put(record);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return;
             }
-        } finally {
-            if (intr) Thread.currentThread().interrupt();
-        }
-    }
-
-    private void startTaskIfNotRunning() {
-        if (! taskRunning) {
-            taskRunning = true;
-            threadFactory.newThread(asyncThread).start();
         }
     }
 
     /** {@inheritDoc} */
     public void flush() {
         for (Handler handler : handlers) {
-            handler.flush();
+            if (handler != null) {
+                handler.flush();
+            }
         }
     }
 
     /** {@inheritDoc} */
     public void close() throws SecurityException {
         checkAccess();
-        closed = true;
-        asyncThread.interrupt();
-        clearHandlers();
+        if (stateUpdater.getAndSet(this, 2) != 2) {
+            thread.interrupt();
+        }
     }
 
-    private final class AsyncThread implements Runnable {
-        private volatile Thread thread;
-
-        void interrupt() {
-            final Thread thread = this.thread;
-            if (thread != null) {
-                thread.interrupt();
-            }
-        }
-
+    private final class AsyncTask implements Runnable {
         public void run() {
-            thread = Thread.currentThread();
-            final Queue<ExtLogRecord> recordQueue = AsyncHandler.this.recordQueue;
+            final BlockingQueue<ExtLogRecord> recordQueue = AsyncHandler.this.recordQueue;
             final Handler[] handlers = AsyncHandler.this.handlers;
 
             boolean intr = false;
             try {
                 for (;;) {
-                    ExtLogRecord rec;
-                    synchronized (recordQueue) {
-                        while ((rec = recordQueue.poll()) == null) {
-                            if (closed) {
+                    ExtLogRecord rec = null;
+                    try {
+                        if (state == 2) {
+                            rec = recordQueue.poll();
+                            if (rec == null) {
                                 return;
                             }
-                            try {
-                                recordQueue.wait();
-                            } catch (InterruptedException e) {
-                                intr = true;
-                            }
+                        } else {
+                            rec = recordQueue.take();
                         }
-                        recordQueue.notify();
+                    } catch (InterruptedException e) {
+                        intr = true;
+                        continue;
                     }
                     for (Handler handler : handlers) try {
-                        handler.publish(rec);
+                        if (handler != null) {
+                            handler.publish(rec);
+                        }
                     } catch (Exception e) {
-                        getErrorManager().error("Publication error", e, ErrorManager.WRITE_FAILURE);
-                    } catch (VirtualMachineError e) {
-                        throw e;
+                        final ErrorManager errorManager = getErrorManager();
+                        if (errorManager != null) {
+                            try {
+                                errorManager.error("Publication error", e, ErrorManager.WRITE_FAILURE);
+                            } catch (Throwable t) {
+                            }
+                        }
                     } catch (Throwable t) {
                         // ignore :-/
                     }
                 }
             } finally {
-                synchronized (recordQueue) {
-                    taskRunning = false;
-                    recordQueue.notify();
-                }
-                thread = null;
                 if (intr) {
                     Thread.currentThread().interrupt();
                 }
+                clearHandlers();
             }
         }
     }
