@@ -123,6 +123,17 @@ public final class LogContext {
     }
 
     /**
+     * Get a logger with the given name from this logging context, if a logger node exists at that location.
+     *
+     * @param name the logger name
+     * @return the logger instance, or {@code null} if no such logger node exists
+     */
+    public Logger getLoggerIfExists(String name) {
+        final LoggerNode node = rootLogger.getIfExists(name);
+        return node == null ? null : node.createLogger();
+    }
+
+    /**
      * Get a logger attachment for a logger name, if it exists.
      *
      * @param loggerName the logger name
