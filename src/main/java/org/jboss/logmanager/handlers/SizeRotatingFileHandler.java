@@ -174,8 +174,8 @@ public class SizeRotatingFileHandler extends FileHandler {
                 setFile(null);
                 // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
                 new File(file.getAbsolutePath() + "." + maxBackupIndex).delete();
-                for (int i = maxBackupIndex - 1; i > 1; i--) {
-                    new File(file.getAbsolutePath() + "." + i).renameTo(new File(file.getAbsolutePath() + "." + (i - 1)));
+                for (int i = maxBackupIndex - 1; i >= 1; i--) {
+                    new File(file.getAbsolutePath() + "." + i).renameTo(new File(file.getAbsolutePath() + "." + (i + 1)));
                 }
                 file.renameTo(new File(file.getAbsolutePath() + ".1"));
                 // start with new file.
