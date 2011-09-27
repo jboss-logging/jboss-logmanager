@@ -23,6 +23,8 @@
 package org.jboss.logmanager.formatters;
 
 import java.net.URL;
+import java.security.CodeSource;
+import java.security.ProtectionDomain;
 import java.util.HashMap;
 import java.util.Map;
 import org.jboss.logmanager.ExtLogRecord;
@@ -449,24 +451,42 @@ public final class Formatters {
                 final String classResourceName = className.replace('.', '/') + ".class";
                 if (exceptionClass != null) {
                     try {
-                        resource = sm == null ?
-                                exceptionClass.getProtectionDomain().getCodeSource().getLocation() :
-                                AccessController.doPrivileged(new PrivilegedAction<URL>() {
-                                    public URL run() {
-                                        return exceptionClass.getProtectionDomain().getCodeSource().getLocation();
+                        if (sm == null) {
+                            final ProtectionDomain protectionDomain = exceptionClass.getProtectionDomain();
+                            if (protectionDomain != null) {
+                                final CodeSource codeSource = protectionDomain.getCodeSource();
+                                if (codeSource != null) {
+                                    resource = codeSource.getLocation();
+                                }
+                            }
+                        } else {
+                            resource = AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                                public URL run() {
+                                    final ProtectionDomain protectionDomain = exceptionClass.getProtectionDomain();
+                                    if (protectionDomain != null) {
+                                        final CodeSource codeSource = protectionDomain.getCodeSource();
+                                        if (codeSource != null) {
+                                            return codeSource.getLocation();
+                                        }
                                     }
-                                });
+                                    return null;
+                                }
+                            });
+                        }
                     } catch (Throwable t) {
                         // ignore
                     }
                     if (resource == null) try {
-                        resource = sm == null ?
-                                exceptionClass.getClassLoader().getResource(classResourceName) :
-                                AccessController.doPrivileged(new PrivilegedAction<URL>() {
-                                    public URL run() {
-                                        return exceptionClass.getClassLoader().getResource(classResourceName);
-                                    }
-                                });
+                        final ClassLoader exceptionClassLoader = exceptionClass.getClassLoader();
+                        if (sm == null) {
+                            resource = exceptionClassLoader == null ? ClassLoader.getSystemResource(classResourceName) : exceptionClassLoader.getResource(classResourceName);
+                        } else {
+                            resource = AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                                public URL run() {
+                                    return exceptionClassLoader == null ? ClassLoader.getSystemResource(classResourceName) : exceptionClassLoader.getResource(classResourceName);
+                                }
+                            });
+                        }
                     } catch (Throwable t) {
                         // ignore
                     }
