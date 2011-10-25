@@ -43,7 +43,7 @@ import java.util.logging.Level;
 final class LoggerNode {
 
     /**
-     * The log manager.
+     * The log context.
      */
     private final LogContext context;
     /**
