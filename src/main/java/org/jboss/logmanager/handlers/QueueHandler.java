@@ -42,6 +42,24 @@ public class QueueHandler extends ExtHandler {
     private final Deque<ExtLogRecord> buffer = new ArrayDeque<ExtLogRecord>();
     private int limit = 10;
 
+    /**
+     * Construct a new instance with a default queue length.
+     */
+    public QueueHandler() {
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param limit the queue length to use
+     */
+    public QueueHandler(final int limit) {
+        if (limit < 1) {
+            throw badQueueLength();
+        }
+        this.limit = limit;
+    }
+
     protected void doPublish(final ExtLogRecord record) {
         record.copyAll();
         synchronized (buffer) {
@@ -50,6 +68,33 @@ public class QueueHandler extends ExtHandler {
             for (Handler handler : getHandlers()) {
                 handler.publish(record);
             }
+        }
+    }
+
+    /**
+     * Get the queue length limit.  This is the number of messages that will be saved before old messages roll off
+     * of the queue.
+     *
+     * @return the queue length limit
+     */
+    public int getLimit() {
+        synchronized (buffer) {
+            return limit;
+        }
+    }
+
+    /**
+     * Set the queue length limit.  This is the number of messages that will be saved before old messages roll off
+     * of the queue.
+     *
+     * @param limit the queue length limit
+     */
+    public void setLimit(final int limit) {
+        if (limit < 1) {
+            throw badQueueLength();
+        }
+        synchronized (buffer) {
+            this.limit = limit;
         }
     }
 
@@ -98,5 +143,9 @@ public class QueueHandler extends ExtHandler {
                 handler.publish(record);
             }
         }
+    }
+
+    private static IllegalArgumentException badQueueLength() {
+        return new IllegalArgumentException("Queue length must be at least 1");
     }
 }
