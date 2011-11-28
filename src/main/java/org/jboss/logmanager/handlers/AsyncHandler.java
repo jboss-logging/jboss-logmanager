@@ -143,19 +143,11 @@ public class AsyncHandler extends ExtHandler {
     }
 
     /** {@inheritDoc} */
-    public void flush() {
-        for (Handler handler : handlers) {
-            if (handler != null) {
-                handler.flush();
-            }
-        }
-    }
-
-    /** {@inheritDoc} */
     public void close() throws SecurityException {
         checkAccess();
         if (stateUpdater.getAndSet(this, 2) != 2) {
             thread.interrupt();
+            super.close();
         }
     }
 

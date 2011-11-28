@@ -23,22 +23,9 @@
 package org.jboss.logmanager.handlers;
 
 import org.jboss.logmanager.ExtHandler;
-import org.jboss.logmanager.ExtLogRecord;
 
 /**
  * A handler which performs no action other than to run any attached filter.
  */
 public final class NullHandler extends ExtHandler {
-
-    /** {@inheritDoc} */
-    protected void doPublish(final ExtLogRecord record) {
-    }
-
-    /** {@inheritDoc} */
-    public void flush() {
-    }
-
-    /** {@inheritDoc} */
-    public void close() throws SecurityException {
-    }
 }

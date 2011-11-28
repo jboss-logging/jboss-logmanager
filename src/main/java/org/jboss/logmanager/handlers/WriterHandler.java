@@ -132,6 +132,7 @@ public class WriterHandler extends ExtHandler {
         synchronized (outputLock) {
             safeFlush(writer);
         }
+        super.flush();
     }
 
     /**
@@ -142,6 +143,7 @@ public class WriterHandler extends ExtHandler {
     public void close() throws SecurityException {
         checkAccess();
         setWriter(null);
+        super.close();
     }
 
     /**
@@ -154,14 +156,14 @@ public class WriterHandler extends ExtHandler {
             if (c != null) c.close();
         } catch (Exception e) {
             reportError("Error closing resource", e, ErrorManager.CLOSE_FAILURE);
-        }
+        } catch (Throwable ignored) {}
     }
 
     private void safeFlush(Flushable f) {
         try {
             if (f != null) f.flush();
-        } catch (IOException e) {
+        } catch (Exception e) {
             reportError("Error on flush", e, ErrorManager.FLUSH_FAILURE);
-        }
+        } catch (Throwable ignored) {}
     }
 }

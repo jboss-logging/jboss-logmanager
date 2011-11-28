@@ -99,12 +99,4 @@ public class QueueHandler extends ExtHandler {
             }
         }
     }
-
-    public void flush() {
-        // no operation
-    }
-
-    public void close() throws SecurityException {
-        // no operation
-    }
 }

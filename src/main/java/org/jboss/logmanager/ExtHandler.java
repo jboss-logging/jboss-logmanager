@@ -22,6 +22,7 @@
 
 package org.jboss.logmanager;
 
+import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 import java.util.logging.LoggingPermission;
@@ -193,5 +194,28 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
         }
+    }
+
+    /**
+     * Flush all child handlers.
+     */
+    public void flush() {
+        for (Handler handler : handlers) try {
+            handler.flush();
+        } catch (Exception ex) {
+            reportError("Failed to flush child handler", ex, ErrorManager.FLUSH_FAILURE);
+        } catch (Throwable ignored) {}
+    }
+
+    /**
+     * Close all child handlers.
+     */
+    public void close() throws SecurityException {
+        checkAccess();
+        for (Handler handler : handlers) try {
+            handler.close();
+        } catch (Exception ex) {
+            reportError("Failed to close child handler", ex, ErrorManager.CLOSE_FAILURE);
+        } catch (Throwable ignored) {}
     }
 }
