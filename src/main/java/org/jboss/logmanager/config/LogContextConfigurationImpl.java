@@ -22,6 +22,7 @@
 
 package org.jboss.logmanager.config;
 
+import java.io.File;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -275,70 +276,77 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     ObjectProducer getValue(final Class<?> objClass, final String propertyName, final Class<?> paramType, final String valueString, final boolean immediate) {
+        final String replaced = replaceProperties(valueString);
+        if (valueString == null) {
+            if (paramType.isPrimitive()) {
+                throw new IllegalArgumentException(String.format("Cannot assign null value to primitive property \"%s\" of %s", propertyName, objClass));
+            }
+            return new SimpleObjectProducer(null);
+        }
         if (paramType == String.class) {
-            return new SimpleObjectProducer(valueString);
+            return new SimpleObjectProducer(replaced);
         } else if (paramType == Handler.class) {
-            if (! handlers.containsKey(valueString) || immediate && ! handlerRefs.containsKey(valueString)) {
-                throw new IllegalArgumentException(String.format("No handler named \"%s\" is defined", valueString));
+            if (! handlers.containsKey(replaced) || immediate && ! handlerRefs.containsKey(replaced)) {
+                throw new IllegalArgumentException(String.format("No handler named \"%s\" is defined", replaced));
             }
             if (immediate) {
-                return new SimpleObjectProducer(handlerRefs.get(valueString));
+                return new SimpleObjectProducer(handlerRefs.get(replaced));
             } else {
-                return new RefProducer(valueString, handlerRefs);
+                return new RefProducer(replaced, handlerRefs);
             }
         } else if (paramType == Filter.class) {
-            if (! filters.containsKey(valueString) || immediate && ! filterRefs.containsKey(valueString)) {
-                throw new IllegalArgumentException(String.format("No filter named \"%s\" is defined", valueString));
+            if (! filters.containsKey(replaced) || immediate && ! filterRefs.containsKey(replaced)) {
+                throw new IllegalArgumentException(String.format("No filter named \"%s\" is defined", replaced));
             }
             if (immediate) {
-                return new SimpleObjectProducer(filterRefs.get(valueString));
+                return new SimpleObjectProducer(filterRefs.get(replaced));
             } else {
-                return new RefProducer(valueString, filterRefs);
+                return new RefProducer(replaced, filterRefs);
             }
         } else if (paramType == Formatter.class) {
-            if (! formatters.containsKey(valueString) || immediate && ! formatterRefs.containsKey(valueString)) {
-                throw new IllegalArgumentException(String.format("No formatter named \"%s\" is defined", valueString));
+            if (! formatters.containsKey(replaced) || immediate && ! formatterRefs.containsKey(replaced)) {
+                throw new IllegalArgumentException(String.format("No formatter named \"%s\" is defined", replaced));
             }
             if (immediate) {
-                return new SimpleObjectProducer(formatterRefs.get(valueString));
+                return new SimpleObjectProducer(formatterRefs.get(replaced));
             } else {
-                return new RefProducer(valueString, formatterRefs);
+                return new RefProducer(replaced, formatterRefs);
             }
         } else if (paramType == ErrorManager.class) {
-            if (! errorManagers.containsKey(valueString) || immediate && ! errorManagerRefs.containsKey(valueString)) {
-                throw new IllegalArgumentException(String.format("No error manager named \"%s\" is defined", valueString));
+            if (! errorManagers.containsKey(replaced) || immediate && ! errorManagerRefs.containsKey(replaced)) {
+                throw new IllegalArgumentException(String.format("No error manager named \"%s\" is defined", replaced));
             }
             if (immediate) {
-                return new SimpleObjectProducer(errorManagerRefs.get(valueString));
+                return new SimpleObjectProducer(errorManagerRefs.get(replaced));
             } else {
-                return new RefProducer(valueString, errorManagerRefs);
+                return new RefProducer(replaced, errorManagerRefs);
             }
         } else if (paramType == java.util.logging.Level.class) {
-            return new SimpleObjectProducer(LogContext.getSystemLogContext().getLevelForName(valueString));
+            return new SimpleObjectProducer(LogContext.getSystemLogContext().getLevelForName(replaced));
         } else if (paramType == java.util.logging.Logger.class) {
-            return new SimpleObjectProducer(LogContext.getSystemLogContext().getLogger(valueString));
+            return new SimpleObjectProducer(LogContext.getSystemLogContext().getLogger(replaced));
         } else if (paramType == boolean.class || paramType == Boolean.class) {
-            return new SimpleObjectProducer(Boolean.valueOf(valueString));
+            return new SimpleObjectProducer(Boolean.valueOf(replaced));
         } else if (paramType == byte.class || paramType == Byte.class) {
-            return new SimpleObjectProducer(Byte.valueOf(valueString));
+            return new SimpleObjectProducer(Byte.valueOf(replaced));
         } else if (paramType == short.class || paramType == Short.class) {
-            return new SimpleObjectProducer(Short.valueOf(valueString));
+            return new SimpleObjectProducer(Short.valueOf(replaced));
         } else if (paramType == int.class || paramType == Integer.class) {
-            return new SimpleObjectProducer(Integer.valueOf(valueString));
+            return new SimpleObjectProducer(Integer.valueOf(replaced));
         } else if (paramType == long.class || paramType == Long.class) {
-            return new SimpleObjectProducer(Long.valueOf(valueString));
+            return new SimpleObjectProducer(Long.valueOf(replaced));
         } else if (paramType == float.class || paramType == Float.class) {
-            return new SimpleObjectProducer(Float.valueOf(valueString));
+            return new SimpleObjectProducer(Float.valueOf(replaced));
         } else if (paramType == double.class || paramType == Double.class) {
-            return new SimpleObjectProducer(Double.valueOf(valueString));
+            return new SimpleObjectProducer(Double.valueOf(replaced));
         } else if (paramType == char.class || paramType == Character.class) {
-            return new SimpleObjectProducer(Character.valueOf(valueString.length() > 0 ? valueString.charAt(0) : 0));
+            return new SimpleObjectProducer(Character.valueOf(replaced.length() > 0 ? replaced.charAt(0) : 0));
         } else if (paramType == TimeZone.class) {
-            return new SimpleObjectProducer(TimeZone.getTimeZone(valueString));
+            return new SimpleObjectProducer(TimeZone.getTimeZone(replaced));
         } else if (paramType == Charset.class) {
-            return new SimpleObjectProducer(Charset.forName(valueString));
+            return new SimpleObjectProducer(Charset.forName(replaced));
         } else if (paramType.isEnum()) {
-            return new SimpleObjectProducer(Enum.valueOf(paramType.asSubclass(Enum.class), valueString));
+            return new SimpleObjectProducer(Enum.valueOf(paramType.asSubclass(Enum.class), replaced));
         } else {
             throw new IllegalArgumentException("Unknown parameter type for property " + propertyName + " on " + objClass);
         }
@@ -382,5 +390,132 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
 
     Map<String, LoggerConfigurationImpl> getLoggerConfigurations() {
         return loggers;
+    }
+
+    private static final int INITIAL = 0;
+    private static final int GOT_DOLLAR = 1;
+    private static final int GOT_OPEN_BRACE = 2;
+    private static final int RESOLVED = 3;
+    private static final int DEFAULT = 4;
+
+    /**
+     * Replace properties of the form:
+     * <code>${<i>&lt;name&gt;[</i>,<i>&lt;name2&gt;[</i>,<i>&lt;name3&gt;...]][</i>:<i>&lt;default&gt;]</i>}</code>
+     * @param value
+     * @return
+     */
+    private static String replaceProperties(String value) {
+        if (value == null) return null;
+        final StringBuilder builder = new StringBuilder();
+        final char[] chars = value.toCharArray();
+        final int len = chars.length;
+        int state = 0;
+        int start = -1;
+        int nameStart = -1;
+        for (int i = 0; i < len; i ++) {
+            char ch = chars[i];
+            switch (state) {
+                case INITIAL: {
+                    switch (ch) {
+                        case '$': {
+                            state = GOT_DOLLAR;
+                            continue;
+                        }
+                        default: {
+                            builder.append(ch);
+                            continue;
+                        }
+                    }
+                    // not reachable
+                }
+                case GOT_DOLLAR: {
+                    switch (ch) {
+                        case '$': {
+                            builder.append(ch);
+                            state = INITIAL;
+                            continue;
+                        }
+                        case '{': {
+                            start = i + 1;
+                            nameStart = start;
+                            state = GOT_OPEN_BRACE;
+                            continue;
+                        }
+                        default: {
+                            // invalid; emit and resume
+                            builder.append('$').append(ch);
+                            state = INITIAL;
+                            continue;
+                        }
+                    }
+                    // not reachable
+                }
+                case GOT_OPEN_BRACE: {
+                    switch (ch) {
+                        case ':':
+                        case '}':
+                        case ',': {
+                            final String name = value.substring(nameStart, i).trim();
+                            if ("/".equals(name)) {
+                                builder.append(File.separator);
+                                state = ch == '}' ? INITIAL : RESOLVED;
+                                continue;
+                            } else if (":".equals(name)) {
+                                builder.append(File.pathSeparator);
+                                state = ch == '}' ? INITIAL : RESOLVED;
+                                continue;
+                            }
+                            final String val = System.getProperty(name);
+                            if (val != null) {
+                                builder.append(val);
+                                state = ch == '}' ? INITIAL : RESOLVED;
+                                continue;
+                            } else if (ch == ',') {
+                                nameStart = i + 1;
+                                continue;
+                            } else if (ch == ':') {
+                                start = i + 1;
+                                state = DEFAULT;
+                                continue;
+                            } else {
+                                builder.append(value.substring(start - 2, i + 1));
+                                state = INITIAL;
+                                continue;
+                            }
+                        }
+                        default: {
+                            continue;
+                        }
+                    }
+                    // not reachable
+                }
+                case RESOLVED: {
+                    if (ch == '}') {
+                        state = INITIAL;
+                    }
+                    continue;
+                }
+                case DEFAULT: {
+                    if (ch == '}') {
+                        state = INITIAL;
+                        builder.append(value.substring(start, i));
+                    }
+                    continue;
+                }
+                default: throw new IllegalStateException();
+            }
+        }
+        switch (state) {
+            case GOT_DOLLAR: {
+                builder.append('$');
+                break;
+            }
+            case DEFAULT:
+            case GOT_OPEN_BRACE: {
+                builder.append(value.substring(start - 2));
+                break;
+            }
+        }
+        return builder.toString();
     }
 }
