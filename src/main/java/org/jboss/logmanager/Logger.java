@@ -239,6 +239,23 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
+     * A convenience method to atomically replace the handler set.
+     *
+     * @param handlers the new handlers
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public void setHandlers(final Handler[] handlers) throws SecurityException {
+        LogContext.checkAccess();
+        final Handler[] safeHandlers = handlers.clone();
+        for (Handler handler : safeHandlers) {
+            if (handler == null) {
+                throw new IllegalArgumentException("A handler is null");
+            }
+        }
+        loggerNode.setHandlers(safeHandlers);
+    }
+
+    /**
      * A convenience method to atomically get and clear all handlers.
      *
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}

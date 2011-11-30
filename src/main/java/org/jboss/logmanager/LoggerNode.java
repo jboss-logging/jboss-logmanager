@@ -270,6 +270,10 @@ final class LoggerNode {
         handlersUpdater.add(this, handler);
     }
 
+    void setHandlers(final Handler[] handlers) {
+        handlersUpdater.set(this, handlers);
+    }
+
     boolean getUseParentHandlers() {
         return useParentHandlers;
     }
