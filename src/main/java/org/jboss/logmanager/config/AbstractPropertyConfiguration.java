@@ -46,6 +46,9 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         super(name, configuration, refs, configs);
         this.moduleName = moduleName;
         this.className = className;
+        if (className == null) {
+            throw new IllegalArgumentException("className is null");
+        }
         this.constructorProperties = constructorProperties;
         final ClassLoader classLoader;
         if (moduleName != null) try {

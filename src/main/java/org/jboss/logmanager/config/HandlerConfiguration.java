@@ -47,9 +47,9 @@ public interface HandlerConfiguration extends HandlerContainingConfigurable, Nam
 
     void setLevel(String level);
 
-    String getFilterName();
+    String getFilter();
 
-    void setFilterName(String name);
+    void setFilter(String name);
 
     String getEncoding();
 

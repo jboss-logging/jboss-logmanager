@@ -29,17 +29,34 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
+import org.jboss.logmanager.filters.AcceptAllFilter;
+import org.jboss.logmanager.filters.AllFilter;
+import org.jboss.logmanager.filters.AnyFilter;
+import org.jboss.logmanager.filters.DenyAllFilter;
+import org.jboss.logmanager.filters.InvertFilter;
+import org.jboss.logmanager.filters.LevelChangingFilter;
+import org.jboss.logmanager.filters.LevelFilter;
+import org.jboss.logmanager.filters.LevelRangeFilter;
+import org.jboss.logmanager.filters.RegexFilter;
+import org.jboss.logmanager.filters.SubstituteFilter;
 
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
+import java.util.logging.Level;
+
+import static java.lang.Character.isJavaIdentifierPart;
+import static java.lang.Character.isJavaIdentifierStart;
+import static java.lang.Character.isWhitespace;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -60,6 +77,9 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     private final Map<String, ErrorManager> errorManagerRefs = new HashMap<String, ErrorManager>();
 
     private final Deque<ConfigAction<?>> transactionState = new ArrayDeque<ConfigAction<?>>();
+
+    private static final ObjectProducer ACCEPT_PRODUCER = new SimpleObjectProducer(AcceptAllFilter.getInstance());
+    private static final ObjectProducer DENY_PRODUCER = new SimpleObjectProducer(DenyAllFilter.getInstance());
 
     LogContextConfigurationImpl(final LogContext logContext) {
         this.logContext = logContext;
@@ -281,7 +301,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             if (paramType.isPrimitive()) {
                 throw new IllegalArgumentException(String.format("Cannot assign null value to primitive property \"%s\" of %s", propertyName, objClass));
             }
-            return new SimpleObjectProducer(null);
+            return ObjectProducer.NULL_PRODUCER;
         }
         if (paramType == String.class) {
             return new SimpleObjectProducer(replaced);
@@ -295,14 +315,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
                 return new RefProducer(replaced, handlerRefs);
             }
         } else if (paramType == Filter.class) {
-            if (! filters.containsKey(replaced) || immediate && ! filterRefs.containsKey(replaced)) {
-                throw new IllegalArgumentException(String.format("No filter named \"%s\" is defined", replaced));
-            }
-            if (immediate) {
-                return new SimpleObjectProducer(filterRefs.get(replaced));
-            } else {
-                return new RefProducer(replaced, filterRefs);
-            }
+            return parseFilterExpression(replaced, immediate);
         } else if (paramType == Formatter.class) {
             if (! formatters.containsKey(replaced) || immediate && ! formatterRefs.containsKey(replaced)) {
                 throw new IllegalArgumentException(String.format("No formatter named \"%s\" is defined", replaced));
@@ -517,5 +530,220 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             }
         }
         return builder.toString();
+    }
+
+    private static List<String> tokens(String source) {
+        final List<String> tokens = new ArrayList<String>();
+        final int length = source.length();
+        int idx = 0;
+        while (idx < length) {
+            int ch;
+            ch = source.codePointAt(idx);
+            if (isWhitespace(ch)) {
+                ch = source.codePointAt(idx);
+                idx = source.offsetByCodePoints(idx, 1);
+            } else if (isJavaIdentifierStart(ch)) {
+                int start = idx;
+                do {
+                    idx = source.offsetByCodePoints(idx, 1);
+                } while (idx < length && isJavaIdentifierPart(ch = source.codePointAt(idx)));
+                tokens.add(source.substring(start, idx));
+            } else if (ch == '"') {
+                final StringBuilder b = new StringBuilder();
+                // tag token as a string
+                b.append('"');
+                idx = source.offsetByCodePoints(idx, 1);
+                while (idx < length && (ch = source.codePointAt(idx)) != '"') {
+                    ch = source.codePointAt(idx);
+                    if (ch == '\\') {
+                        idx = source.offsetByCodePoints(idx, 1);
+                        if (idx == length) {
+                            throw new IllegalArgumentException("Truncated filter expression string");
+                        }
+                        ch = source.codePointAt(idx);
+                        switch (ch) {
+                            case '\\': b.append('\\'); break;
+                            case '\'': b.append('\''); break;
+                            case '"': b.append('"'); break;
+                            case 'b': b.append('\b'); break;
+                            case 'f': b.append('\f'); break;
+                            case 'n': b.append('\n'); break;
+                            case 'r': b.append('\r'); break;
+                            case 't': b.append('\t'); break;
+                            default:
+                                throw new IllegalArgumentException("Invalid escape found in filter expression string");
+                        }
+                    } else {
+                        b.appendCodePoint(ch);
+                    }
+                    idx = source.offsetByCodePoints(idx, 1);
+                }
+                idx = source.offsetByCodePoints(idx, 1);
+                tokens.add(b.toString());
+            } else {
+                int start = idx;
+                idx = source.offsetByCodePoints(idx, 1);
+                tokens.add(source.substring(start, idx));
+            }
+        }
+        return tokens;
+    }
+
+    private ObjectProducer parseFilterExpression(Iterator<String> iterator, boolean outermost, final boolean immediate) {
+        if (! iterator.hasNext()) {
+            if (outermost) {
+                return ObjectProducer.NULL_PRODUCER;
+            }
+            throw endOfExpression();
+        }
+        final String token = iterator.next();
+        if ("accept".equals(token)) {
+            return ACCEPT_PRODUCER;
+        } else if ("deny".equals(token)) {
+            return DENY_PRODUCER;
+        } else if ("not".equals(token)) {
+            expect("(", iterator);
+            final ObjectProducer nested = parseFilterExpression(iterator, false, immediate);
+            expect(")", iterator);
+            return new ObjectProducer() {
+                public Object getObject() {
+                    return new InvertFilter((Filter) nested.getObject());
+                }
+            };
+        } else if ("all".equals(token)) {
+            expect("(", iterator);
+            final List<ObjectProducer> producers = new ArrayList<ObjectProducer>();
+            do {
+                producers.add(parseFilterExpression(iterator, false, immediate));
+            } while (expect(",", ")", iterator));
+            return new ObjectProducer() {
+                public Object getObject() {
+                    final int length = producers.size();
+                    final Filter[] filters = new Filter[length];
+                    for (int i = 0; i < length; i ++) {
+                        filters[i] = (Filter) producers.get(i).getObject();
+                    }
+                    return new AllFilter(filters);
+                }
+            };
+        } else if ("any".equals(token)) {
+            expect("(", iterator);
+            final List<ObjectProducer> producers = new ArrayList<ObjectProducer>();
+            do {
+                producers.add(parseFilterExpression(iterator, false, immediate));
+            } while (expect(",", ")", iterator));
+            return new ObjectProducer() {
+                public Object getObject() {
+                    final int length = producers.size();
+                    final Filter[] filters = new Filter[length];
+                    for (int i = 0; i < length; i ++) {
+                        filters[i] = (Filter) producers.get(i).getObject();
+                    }
+                    return new AnyFilter(filters);
+                }
+            };
+        } else if ("levelChange".equals(token)) {
+            expect("(", iterator);
+            final String levelName = expectName(iterator);
+            final Level level = logContext.getLevelForName(levelName);
+            expect(")", iterator);
+            return new SimpleObjectProducer(new LevelChangingFilter(level));
+        } else if ("levels".equals(token)) {
+            expect("(", iterator);
+            final Set<Level> levels = new HashSet<Level>();
+            do {
+                levels.add(logContext.getLevelForName(expectName(iterator)));
+            } while (expect(",", ")", iterator));
+            return new SimpleObjectProducer(new LevelFilter(levels));
+        } else if ("levelRange".equals(token)) {
+            final boolean minInclusive = expect("[", "(", iterator);
+            final Level minLevel = logContext.getLevelForName(expectName(iterator));
+            expect(",", iterator);
+            final Level maxLevel = logContext.getLevelForName(expectName(iterator));
+            final boolean maxInclusive = expect("]", ")", iterator);
+            return new SimpleObjectProducer(new LevelRangeFilter(minLevel, minInclusive, maxLevel, maxInclusive));
+        } else if ("match".equals(token)) {
+            expect("(", iterator);
+            final String pattern = expectString(iterator);
+            expect(")", iterator);
+            return new SimpleObjectProducer(new RegexFilter(pattern));
+        } else if ("substitute".equals(token)) {
+            expect("(", iterator);
+            final String pattern = expectString(iterator);
+            expect(",", iterator);
+            final String replacement = expectString(iterator);
+            expect(")", iterator);
+            return new SimpleObjectProducer(new SubstituteFilter(pattern, replacement, false));
+        } else if ("substituteAll".equals(token)) {
+            expect("(", iterator);
+            final String pattern = expectString(iterator);
+            expect(",", iterator);
+            final String replacement = expectString(iterator);
+            expect(")", iterator);
+            return new SimpleObjectProducer(new SubstituteFilter(pattern, replacement, true));
+        } else {
+            final String name = expectName(iterator);
+            if (! filters.containsKey(name) || immediate && ! filterRefs.containsKey(name)) {
+                throw new IllegalArgumentException(String.format("No filter named \"%s\" is defined", name));
+            }
+            if (immediate) {
+                return new SimpleObjectProducer(filterRefs.get(name));
+            } else {
+                return new RefProducer(name, filterRefs);
+            }
+        }
+    }
+
+    private static String expectName(Iterator<String> iterator) {
+        if (iterator.hasNext()) {
+            final String next = iterator.next();
+            if (isJavaIdentifierStart(next.codePointAt(0))) {
+                return next;
+            }
+        }
+        throw new IllegalArgumentException("Expected identifier next in filter expression");
+    }
+
+    private static String expectString(Iterator<String> iterator) {
+        if (iterator.hasNext()) {
+            final String next = iterator.next();
+            if (next.codePointAt(0) == '"') {
+                return next.substring(1);
+            }
+        }
+        throw new IllegalArgumentException("Expected string next in filter expression");
+    }
+
+    private static boolean expect(String trueToken, String falseToken, Iterator<String> iterator) {
+        final boolean hasNext = iterator.hasNext();
+        final String next = hasNext ? iterator.next() : null;
+        final boolean result;
+        if (! hasNext || ! ((result = trueToken.equals(next)) || falseToken.equals(next))) {
+            throw new IllegalArgumentException("Expected '" + trueToken + "' or '" + falseToken + "' next in filter expression");
+        }
+        return result;
+    }
+
+    private static void expect(String token, Iterator<String> iterator) {
+        if (! iterator.hasNext() || ! token.equals(iterator.next())) {
+            throw new IllegalArgumentException("Expected '" + token + "' next in filter expression");
+        }
+    }
+
+    private static IllegalArgumentException endOfExpression() {
+        return new IllegalArgumentException("Unexpected end of filter expression");
+    }
+
+    private ObjectProducer parseFilterExpression(String expression, final boolean immediate) {
+        final Iterator<String> iterator = tokens(expression).iterator();
+        final ObjectProducer result = parseFilterExpression(iterator, true, immediate);
+        if (iterator.hasNext()) {
+            throw new IllegalArgumentException("Extra data after filter expression");
+        }
+        return result;
+    }
+
+    ObjectProducer parseFilterExpression(String expression) {
+        return parseFilterExpression(expression, false);
     }
 }

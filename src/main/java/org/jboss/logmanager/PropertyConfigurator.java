@@ -86,7 +86,6 @@ public final class PropertyConfigurator implements Configurator {
     public void writeConfiguration(final OutputStream outputStream) throws IOException {
         final Writer writer = new OutputStreamWriter(outputStream, "utf-8");
         final Set<String> implicitHandlers = new HashSet<String>();
-        final Set<String> implicitFilters = new HashSet<String>();
         final Set<String> implicitFormatters = new HashSet<String>();
         final Set<String> implicitErrorManagers = new HashSet<String>();
         final List<String> loggerNames = config.getLoggerNames();
@@ -95,9 +94,9 @@ public final class PropertyConfigurator implements Configurator {
         writeList(writer, loggerNames);
         writer.write('\n');
         final LoggerConfiguration rootLogger = config.getLoggerConfiguration("");
-        writeLoggerConfiguration(writer, rootLogger, implicitHandlers, implicitFilters);
+        writeLoggerConfiguration(writer, rootLogger, implicitHandlers);
         for (String loggerName : loggerNames) {
-            writeLoggerConfiguration(writer, config.getLoggerConfiguration(loggerName), implicitHandlers, implicitFilters);
+            writeLoggerConfiguration(writer, config.getLoggerConfiguration(loggerName), implicitHandlers);
         }
         final List<String> allHandlerNames = config.getHandlerNames();
         final List<String> explicitHandlerNames = new ArrayList<String>(allHandlerNames);
@@ -110,15 +109,13 @@ public final class PropertyConfigurator implements Configurator {
             writer.write('\n');
         }
         for (String handlerName : allHandlerNames) {
-            writeHandlerConfiguration(writer, config.getHandlerConfiguration(handlerName), implicitHandlers, implicitFilters, implicitFormatters, implicitErrorManagers);
+            writeHandlerConfiguration(writer, config.getHandlerConfiguration(handlerName), implicitHandlers, implicitFormatters, implicitErrorManagers);
         }
         final List<String> allFilterNames = config.getFilterNames();
-        final ArrayList<String> explicitFilterNames = new ArrayList<String>(allFilterNames);
-        explicitFilterNames.removeAll(implicitFilters);
-        if (! explicitFilterNames.isEmpty()) {
+        if (! allFilterNames.isEmpty()) {
             writer.write("\n# Additional filters to configure\n");
             writer.write("filters=");
-            writeList(writer, explicitFilterNames);
+            writeList(writer, allFilterNames);
             writer.write('\n');
             writer.write('\n');
         }
@@ -153,7 +150,7 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeLoggerConfiguration(final Writer writer, final LoggerConfiguration logger, final Set<String> implicitHandlers, final Set<String> implicitFilters) throws IOException {
+    private static void writeLoggerConfiguration(final Writer writer, final LoggerConfiguration logger, final Set<String> implicitHandlers) throws IOException {
         if (logger != null) {
             writer.write('\n');
             final String name = logger.getName();
@@ -171,7 +168,6 @@ public final class PropertyConfigurator implements Configurator {
                 writer.write("filter=");
                 writer.write(filterName);
                 writer.write('\n');
-                implicitFilters.add(filterName);
             }
             final Boolean useParentHandlers = logger.getUseParentHandlers();
             if (useParentHandlers != null) {
@@ -193,7 +189,7 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeHandlerConfiguration(final Writer writer, final HandlerConfiguration handler, final Set<String> implicitHandlers, final Set<String> implicitFilters, final Set<String> implicitFormatters, final Set<String> implicitErrorManagers) throws IOException {
+    private static void writeHandlerConfiguration(final Writer writer, final HandlerConfiguration handler, final Set<String> implicitHandlers, final Set<String> implicitFormatters, final Set<String> implicitErrorManagers) throws IOException {
         if (handler != null) {
             writer.write('\n');
             final String name = handler.getName();
@@ -218,13 +214,12 @@ public final class PropertyConfigurator implements Configurator {
                 writer.write(level);
                 writer.write('\n');
             }
-            final String filterName = handler.getFilterName();
-            if (filterName != null) {
+            final String filter = handler.getFilter();
+            if (filter != null) {
                 writer.write(prefix);
                 writer.write("filter=");
-                writer.write(filterName);
+                writer.write(filter);
                 writer.write('\n');
-                implicitFilters.add(filterName);
             }
             final String formatterName = handler.getFormatterName();
             if (formatterName != null) {
@@ -498,10 +493,9 @@ public final class PropertyConfigurator implements Configurator {
                 getStringProperty(properties, getKey("handler", handlerName)),
                 handlerName,
                 getStringCsvArray(properties, getKey("handler", handlerName, "constructorProperties")));
-        final String filterName = getStringProperty(properties, getKey("handler", handlerName, "filter"));
-        if (filterName != null) {
-            configuration.setFilterName(filterName);
-            configureFilter(properties, filterName);
+        final String filter = getStringProperty(properties, getKey("handler", handlerName, "filter"));
+        if (filter != null) {
+            configuration.setFilter(filter);
         }
         final String levelName = getStringProperty(properties, getKey("handler", handlerName, "level"));
         if (levelName != null) {

@@ -29,6 +29,8 @@ import java.util.Map;
  */
 interface ObjectProducer {
 
+    SimpleObjectProducer NULL_PRODUCER = new SimpleObjectProducer(null);
+
     Object getObject();
 }
 
