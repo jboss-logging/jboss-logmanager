@@ -26,7 +26,6 @@ import java.io.File;
 import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -130,7 +129,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     public List<String> getLoggerNames() {
-        return Collections.unmodifiableList(new ArrayList<String>(loggers.keySet()));
+        return new ArrayList<String>(loggers.keySet());
     }
 
     public HandlerConfiguration addHandlerConfiguration(final String moduleName, final String className, final String handlerName, final String... constructorProperties) {
@@ -159,7 +158,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     public List<String> getHandlerNames() {
-        return Collections.unmodifiableList(new ArrayList<String>(handlers.keySet()));
+        return new ArrayList<String>(handlers.keySet());
     }
 
     public FormatterConfiguration addFormatterConfiguration(final String moduleName, final String className, final String formatterName, final String... constructorProperties) {
@@ -188,7 +187,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     public List<String> getFormatterNames() {
-        return Collections.unmodifiableList(new ArrayList<String>(formatters.keySet()));
+        return new ArrayList<String>(formatters.keySet());
     }
 
     public FilterConfiguration addFilterConfiguration(final String moduleName, final String className, final String filterName, final String... constructorProperties) {
@@ -217,7 +216,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     public List<String> getFilterNames() {
-        return Collections.unmodifiableList(new ArrayList<String>(filters.keySet()));
+        return new ArrayList<String>(filters.keySet());
     }
 
     public ErrorManagerConfiguration addErrorManagerConfiguration(final String moduleName, final String className, final String errorManagerName, final String... constructorProperties) {
@@ -246,7 +245,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     public List<String> getErrorManagerNames() {
-        return Collections.unmodifiableList(new ArrayList<String>(errorManagers.keySet()));
+        return new ArrayList<String>(errorManagers.keySet());
     }
 
     public void commit() {

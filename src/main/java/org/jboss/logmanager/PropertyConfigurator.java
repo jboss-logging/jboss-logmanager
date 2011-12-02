@@ -57,7 +57,16 @@ public final class PropertyConfigurator implements Configurator {
      * Construct an instance.
      */
     public PropertyConfigurator() {
-        config = LogContextConfiguration.Factory.create(LogContext.getSystemLogContext());
+        this(LogContext.getSystemLogContext());
+    }
+
+    /**
+     * Construct a new instance.
+     *
+     * @param context the log context to be configured
+     */
+    public PropertyConfigurator(LogContext context) {
+        config = LogContextConfiguration.Factory.create(context);
     }
 
     /**
@@ -380,7 +389,13 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private void configure(final Properties properties) throws IOException {
+    /**
+     * Configure the log manager from the given properties.
+     *
+     * @param properties the properties
+     * @throws IOException if an error occurs
+     */
+    public void configure(final Properties properties) throws IOException {
         try {
             // Start with the list of loggers to configure.  The root logger is always on the list.
             configureLogger(properties, "");
