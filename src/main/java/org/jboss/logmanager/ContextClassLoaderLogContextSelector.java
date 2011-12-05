@@ -65,10 +65,6 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
     private final ConcurrentMap<ClassLoader, LogContext> contextMap =
             new ConcurrentReferenceHashMap<ClassLoader, LogContext>(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, WEAK, WEAK, EnumSet.of(IDENTITY_COMPARISONS));
 
-    /**
-     * {@inheritDoc}  This instance will consult the call stack to see if any calling classloader is associated
-     * with any log context.
-     */
     public LogContext getLogContext() {
         ClassLoader cl = getContextClassLoader();
         if (cl != null) {
