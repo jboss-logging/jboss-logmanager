@@ -88,10 +88,12 @@ public final class MDC {
 
     private static final class Holder extends InheritableThreadLocal<FastCopyHashMap<String, String>> {
 
-        protected FastCopyHashMap<String, String> childValue(final Map<String, String> parentValue) {
+        @Override
+        protected FastCopyHashMap<String, String> childValue(final FastCopyHashMap<String, String> parentValue) {
             return new FastCopyHashMap<String, String>(parentValue);
         }
 
+        @Override
         protected FastCopyHashMap<String, String> initialValue() {
             return new FastCopyHashMap<String, String>();
         }
