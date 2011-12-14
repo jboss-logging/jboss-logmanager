@@ -34,14 +34,14 @@ public interface LoggerConfiguration extends NamedConfigurable, HandlerContainin
      *
      * @return the filter name
      */
-    String getFilterName();
+    String getFilter();
 
     /**
      * Set the name of the filter to use, or {@code null} to leave unconfigured.
      *
      * @param name the filter name
      */
-    void setFilterName(String name);
+    void setFilter(String name);
 
     /**
      * Determine whether parent handlers will be used.

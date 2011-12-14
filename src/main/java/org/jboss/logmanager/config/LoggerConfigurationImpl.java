@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.Map;
 import org.jboss.logmanager.Logger;
 
+import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 
@@ -38,7 +39,7 @@ import static java.util.Arrays.asList;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, LoggerConfigurationImpl> implements LoggerConfiguration {
-    private String filterName;
+    private String filter;
     private Boolean useParentHandlers;
     private String level;
     private final List<String> handlerNames = new ArrayList<String>(0);
@@ -47,31 +48,28 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         super(name, configuration, configuration.getLoggerRefs(), configuration.getLoggerConfigurations());
     }
 
-    public String getFilterName() {
-        return filterName;
+    public String getFilter() {
+        return filter;
     }
 
-    public void setFilterName(final String filterName) {
-        final String oldFilterName = this.filterName;
-        this.filterName = filterName;
+    public void setFilter(final String filter) {
+        final String oldFilterName = this.filter;
+        this.filter = filter;
         final LogContextConfigurationImpl configuration = getConfiguration();
-        configuration.addAction(new ConfigAction<Void>() {
-            public Void validate() throws IllegalArgumentException {
-                if (configuration.getFilterConfiguration(filterName) == null) {
-                    throw new IllegalArgumentException(String.format("Filter \"%s\" is not found", filterName));
-                }
-                return null;
+        configuration.addAction(new ConfigAction<ObjectProducer>() {
+            public ObjectProducer validate() throws IllegalArgumentException {
+                return configuration.parseFilterExpression(filter);
             }
 
-            public void applyPreCreate(final Void param) {
+            public void applyPreCreate(final ObjectProducer param) {
             }
 
-            public void applyPostCreate(final Void param) {
-                configuration.getLoggerRefs().get(getName()).setFilter(configuration.getFilterRefs().get(filterName));
+            public void applyPostCreate(final ObjectProducer param) {
+                configuration.getHandlerRefs().get(getName()).setFilter((Filter) param.getObject());
             }
 
             public void rollback() {
-                LoggerConfigurationImpl.this.filterName = oldFilterName;
+                LoggerConfigurationImpl.this.filter = oldFilterName;
             }
         });
     }

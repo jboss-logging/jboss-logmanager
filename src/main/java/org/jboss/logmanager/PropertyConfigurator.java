@@ -171,7 +171,7 @@ public final class PropertyConfigurator implements Configurator {
                 writer.write(level);
                 writer.write('\n');
             }
-            final String filterName = logger.getFilterName();
+            final String filterName = logger.getFilter();
             if (filterName != null) {
                 writer.write(prefix);
                 writer.write("filter=");
@@ -441,7 +441,7 @@ public final class PropertyConfigurator implements Configurator {
         // Get logger filter
         final String filterName = getStringProperty(properties, getKey("logger", loggerName, "filter"));
         if (filterName != null) {
-            loggerConfiguration.setFilterName(filterName);
+            loggerConfiguration.setFilter(filterName);
             configureFilter(properties, filterName);
         }
 
