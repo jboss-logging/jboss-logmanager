@@ -29,6 +29,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
 
@@ -238,7 +239,11 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         }
 
         static ClassLoader getClassLoader(final String moduleName) throws Exception {
-            return ModuleLoader.forClass(ModuleFinder.class).loadModule(ModuleIdentifier.create(moduleName)).getClassLoader();
+            ModuleLoader moduleLoader = ModuleLoader.forClass(ModuleFinder.class);
+            if (moduleLoader == null) {
+                moduleLoader = Module.getBootModuleLoader();
+            }
+            return moduleLoader.loadModule(ModuleIdentifier.create(moduleName)).getClassLoader();
         }
     }
 }
