@@ -734,6 +734,9 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     private ObjectProducer parseFilterExpression(String expression, final boolean immediate) {
+        if (expression == null) {
+            return ObjectProducer.NULL_PRODUCER;
+        }
         final Iterator<String> iterator = tokens(expression).iterator();
         final ObjectProducer result = parseFilterExpression(iterator, true, immediate);
         if (iterator.hasNext()) {

@@ -155,7 +155,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         getConfiguration().addAction(new ConfigAction<ObjectProducer>() {
             public ObjectProducer validate() throws IllegalArgumentException {
                 if (setter == null) {
-                    return null;
+                    return ObjectProducer.NULL_PRODUCER;
                 }
                 final Class<?> propertyType = getPropertyType(actualClass, propertyName);
                 if (propertyType == null) {
