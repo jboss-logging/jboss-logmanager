@@ -82,7 +82,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             final Class<?>[] paramTypes = new Class<?>[length];
             for (int i = 0; i < length; i++) {
                 final String property = constructorProperties[i];
-                final Class<?> type = getPropertyType(actualClass, property);
+                final Class<?> type = getConstructorPropertyType(actualClass, property);
                 if (type == null) {
                     throw new IllegalArgumentException(String.format("No property named \"%s\" for %s \"%s\"", property, getDescription(), getName()));
                 }
@@ -101,7 +101,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                     throw new IllegalArgumentException(String.format("No property named \"%s\" is configured on %s \"%s\"", property, getDescription(), getName()));
                 }
                 final String valueString = properties.get(property);
-                final Object value = getConfiguration().getValue(actualClass, property, paramTypes[i], valueString, true);
+                final Object value = getConfiguration().getValue(actualClass, property, paramTypes[i], valueString, true).getObject();
                 params[i] = value;
             }
             try {
@@ -154,6 +154,9 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         final String oldValue = properties.put(propertyName, value);
         getConfiguration().addAction(new ConfigAction<ObjectProducer>() {
             public ObjectProducer validate() throws IllegalArgumentException {
+                if (setter == null) {
+                    return null;
+                }
                 final Class<?> propertyType = getPropertyType(actualClass, propertyName);
                 if (propertyType == null) {
                     throw new IllegalArgumentException(String.format("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName()));
@@ -222,11 +225,27 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         return setter != null ? setter.getParameterTypes()[0] : null;
     }
 
+    static Class<?> getConstructorPropertyType(Class<?> clazz, String propertyName) {
+        final Method getter = getPropertyGetter(clazz, propertyName);
+        return getter != null ? getter.getReturnType() : getPropertyType(clazz, propertyName);
+    }
+
     static Method getPropertySetter(Class<?> clazz, String propertyName) {
         final String upperPropertyName = Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
         final String set = "set" + upperPropertyName;
         for (Method method : clazz.getMethods()) {
             if ((method.getName().equals(set) && Modifier.isPublic(method.getModifiers())) && method.getParameterTypes().length == 1) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    static Method getPropertyGetter(Class<?> clazz, String propertyName) {
+        final String upperPropertyName = Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
+        final String get = "get" + upperPropertyName;
+        for (Method method : clazz.getMethods()) {
+            if ((method.getName().equals(get) && Modifier.isPublic(method.getModifiers())) && method.getParameterTypes().length == 0) {
                 return method;
             }
         }

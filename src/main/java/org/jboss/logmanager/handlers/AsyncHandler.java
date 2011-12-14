@@ -40,6 +40,7 @@ import java.util.logging.ErrorManager;
 public class AsyncHandler extends ExtHandler {
 
     private final BlockingQueue<ExtLogRecord> recordQueue;
+    private final int queueLength;
     private final Thread thread;
     private volatile OverflowAction overflowAction = OverflowAction.BLOCK;
 
@@ -63,6 +64,7 @@ public class AsyncHandler extends ExtHandler {
             throw new IllegalArgumentException("Thread factory did not create a thread");
         }
         thread.setDaemon(true);
+        this.queueLength = queueLength;
     }
 
     /**
@@ -88,6 +90,15 @@ public class AsyncHandler extends ExtHandler {
      */
     public AsyncHandler() {
         this(DEFAULT_QUEUE_LENGTH);
+    }
+
+    /**
+     * The full size of the queue.
+     *
+     * @return the full size of the queue.
+     */
+    public int getQueueLength() {
+        return queueLength;
     }
 
     /**
