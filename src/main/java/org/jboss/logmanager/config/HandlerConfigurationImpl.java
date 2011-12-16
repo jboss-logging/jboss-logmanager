@@ -89,11 +89,12 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
 
     public void setLevel(final String level) {
         final String oldLevel = this.level;
-        this.level = level;
+        final String resolvedLevel = PropertyHelper.resolveValue(level);
+        this.level = resolvedLevel;
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Level>() {
             public Level validate() throws IllegalArgumentException {
-                return oldLevel == null ? null : configuration.getLogContext().getLevelForName(oldLevel);
+                return resolvedLevel == null ? null : configuration.getLogContext().getLevelForName(resolvedLevel);
             }
 
             public void applyPreCreate(final Level param) {
@@ -160,8 +161,13 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
                 try {
                     configuration.getHandlerRefs().get(getName()).setEncoding(encoding);
                 } catch (UnsupportedEncodingException e) {
-                    // todo log properly
-                    e.printStackTrace();
+                    // Check for the root logger
+                    if (configuration.getLoggerNames().contains("")) {
+                        configuration.getLoggerRefs().get("").log(Level.WARNING, "The encoding value '" + encoding + "' is invalid.", e);
+                    } else {
+                        // No logger, just print the stack trace.
+                        e.printStackTrace();
+                    }
                 }
             }
 
