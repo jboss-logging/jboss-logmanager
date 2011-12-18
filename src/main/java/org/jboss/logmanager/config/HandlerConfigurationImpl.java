@@ -324,4 +324,33 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
     String getDescription() {
         return "handler";
     }
+
+
+    @Override
+    ConfigAction<Void> getRemoveAction() {
+        return new ConfigAction<Void>() {
+            @Override
+            public Void validate() throws IllegalArgumentException {
+                return null;
+            }
+
+            @Override
+            public void applyPreCreate(final Void param) {
+                final Handler handler = refs.remove(getName());
+                if (handler != null) {
+                    handler.close();
+                }
+            }
+
+            @Override
+            public void applyPostCreate(final Void param) {
+            }
+
+            @Override
+            public void rollback() {
+                configs.put(getName(), HandlerConfigurationImpl.this);
+                clearRemoved();
+            }
+        };
+    }
 }
