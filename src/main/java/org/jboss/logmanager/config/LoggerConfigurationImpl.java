@@ -22,18 +22,18 @@
 
 package org.jboss.logmanager.config;
 
+import static java.util.Arrays.asList;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import org.jboss.logmanager.Logger;
-
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 
-import static java.util.Arrays.asList;
+import org.jboss.logmanager.Logger;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -92,7 +92,8 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
             }
 
             public void applyPostCreate(final Void param) {
-                if (useParentHandlers != null) configuration.getLoggerRefs().get(getName()).setUseParentHandlers(useParentHandlers.booleanValue());
+                if (useParentHandlers != null)
+                    configuration.getLoggerRefs().get(getName()).setUseParentHandlers(useParentHandlers.booleanValue());
             }
 
             public void rollback() {
@@ -158,7 +159,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
                 final Logger logger = loggerRefs.get(getName());
                 final int length = stringsArray.length;
                 final Handler[] handlers = new Handler[length];
-                for (int i = 0; i < length; i ++) {
+                for (int i = 0; i < length; i++) {
                     handlers[i] = handlerRefs.get(stringsArray[i]);
                 }
                 logger.setHandlers(handlers);
@@ -180,6 +181,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         if (handlerNames.contains(name)) {
             return false;
         }
+        handlerNames.add(name);
         configuration.addAction(new ConfigAction<Void>() {
             public Void validate() throws IllegalArgumentException {
                 if (configuration.getHandlerConfiguration(name) == null) {
@@ -207,7 +209,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
 
     public boolean removeHandlerName(final String name) {
         final LogContextConfigurationImpl configuration = getConfiguration();
-        if (! handlerNames.contains(name)) {
+        if (!handlerNames.contains(name)) {
             return false;
         }
         final int index = handlerNames.indexOf(name);

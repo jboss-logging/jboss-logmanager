@@ -161,13 +161,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
                 try {
                     configuration.getHandlerRefs().get(getName()).setEncoding(encoding);
                 } catch (UnsupportedEncodingException e) {
-                    // Check for the root logger
-                    if (configuration.getLoggerNames().contains("")) {
-                        configuration.getLoggerRefs().get("").log(Level.WARNING, "The encoding value '" + encoding + "' is invalid.", e);
-                    } else {
-                        // No logger, just print the stack trace.
-                        e.printStackTrace();
-                    }
+                    throw new IllegalArgumentException(String.format("The encoding value '%s' is invalid.", encoding), e);
                 }
             }
 
