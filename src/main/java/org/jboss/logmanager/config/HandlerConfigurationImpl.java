@@ -146,10 +146,12 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
             public Void validate() throws IllegalArgumentException {
-                try {
-                    Charset.forName(encoding);
-                } catch (Throwable t) {
-                    throw new IllegalArgumentException(String.format("Unsupported character set \"%s\"", encoding));
+                if (encoding != null) {
+                    try {
+                        Charset.forName(encoding);
+                    } catch (Throwable t) {
+                        throw new IllegalArgumentException(String.format("Unsupported character set \"%s\"", encoding));
+                    }
                 }
                 return null;
             }
