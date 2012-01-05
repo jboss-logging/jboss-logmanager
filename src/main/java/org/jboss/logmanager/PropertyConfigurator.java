@@ -92,70 +92,88 @@ public final class PropertyConfigurator implements Configurator {
         configure(properties);
     }
 
+    /**
+     * Writes the current configuration to the output stream.
+     *
+     * <b>Note:</b> the output stream will be closed.
+     *
+     * @param outputStream the output stream to write to.
+     * @throws IOException if an error occurs while writing the configuration.
+     */
     public void writeConfiguration(final OutputStream outputStream) throws IOException {
-        final Writer writer = new OutputStreamWriter(outputStream, "utf-8");
-        final Set<String> implicitHandlers = new HashSet<String>();
-        final Set<String> implicitFormatters = new HashSet<String>();
-        final Set<String> implicitErrorManagers = new HashSet<String>();
-        final List<String> loggerNames = config.getLoggerNames();
-        writer.write("# Additional loggers to configure (the root logger is always configured)\n");
-        writer.write("loggers=");
-        writeList(writer, loggerNames);
-        writer.write('\n');
-        final LoggerConfiguration rootLogger = config.getLoggerConfiguration("");
-        writeLoggerConfiguration(writer, rootLogger, implicitHandlers);
-        for (String loggerName : loggerNames) {
-            writeLoggerConfiguration(writer, config.getLoggerConfiguration(loggerName), implicitHandlers);
-        }
-        final List<String> allHandlerNames = config.getHandlerNames();
-        final List<String> explicitHandlerNames = new ArrayList<String>(allHandlerNames);
-        explicitHandlerNames.removeAll(implicitHandlers);
-        if (! explicitHandlerNames.isEmpty()) {
-            writer.write("\n# Additional handlers to configure\n");
-            writer.write("handlers=");
-            writeList(writer, explicitHandlerNames);
-            writer.write('\n');
-            writer.write('\n');
-        }
-        for (String handlerName : allHandlerNames) {
-            writeHandlerConfiguration(writer, config.getHandlerConfiguration(handlerName), implicitHandlers, implicitFormatters, implicitErrorManagers);
-        }
-        final List<String> allFilterNames = config.getFilterNames();
-        if (! allFilterNames.isEmpty()) {
-            writer.write("\n# Additional filters to configure\n");
-            writer.write("filters=");
-            writeList(writer, allFilterNames);
-            writer.write('\n');
-            writer.write('\n');
-        }
-        for (String filterName : allFilterNames) {
-            writeFilterConfiguration(writer, config.getFilterConfiguration(filterName));
-        }
-        final List<String> allFormatterNames = config.getFormatterNames();
-        final ArrayList<String> explicitFormatterNames = new ArrayList<String>(allFormatterNames);
-        explicitFormatterNames.removeAll(implicitFormatters);
-        if (! explicitFormatterNames.isEmpty()) {
-            writer.write("\n# Additional formatters to configure\n");
-            writer.write("formatters=");
-            writeList(writer, explicitFormatterNames);
-            writer.write('\n');
-            writer.write('\n');
-        }
-        for (String formatterName : allFormatterNames) {
-            writeFormatterConfiguration(writer, config.getFormatterConfiguration(formatterName));
-        }
-        final List<String> allErrorManagerNames = config.getErrorManagerNames();
-        final ArrayList<String> explicitErrorManagerNames = new ArrayList<String>(allErrorManagerNames);
-        explicitErrorManagerNames.removeAll(implicitErrorManagers);
-        if (! explicitErrorManagerNames.isEmpty()) {
-            writer.write("\n# Additional errorManagers to configure\n");
-            writer.write("errorManagers=");
-            writeList(writer, explicitErrorManagerNames);
-            writer.write('\n');
-            writer.write('\n');
-        }
-        for (String errorManagerName : allErrorManagerNames) {
-            writeErrorManagerConfiguration(writer, config.getErrorManagerConfiguration(errorManagerName));
+        try {
+            final Writer writer = new OutputStreamWriter(outputStream, "utf-8");
+            try {
+                final Set<String> implicitHandlers = new HashSet<String>();
+                final Set<String> implicitFormatters = new HashSet<String>();
+                final Set<String> implicitErrorManagers = new HashSet<String>();
+                final List<String> loggerNames = config.getLoggerNames();
+                writer.write("# Additional loggers to configure (the root logger is always configured)\n");
+                writer.write("loggers=");
+                writeList(writer, loggerNames);
+                writer.write('\n');
+                final LoggerConfiguration rootLogger = config.getLoggerConfiguration("");
+                writeLoggerConfiguration(writer, rootLogger, implicitHandlers);
+                for (String loggerName : loggerNames) {
+                    writeLoggerConfiguration(writer, config.getLoggerConfiguration(loggerName), implicitHandlers);
+                }
+                final List<String> allHandlerNames = config.getHandlerNames();
+                final List<String> explicitHandlerNames = new ArrayList<String>(allHandlerNames);
+                explicitHandlerNames.removeAll(implicitHandlers);
+                if (!explicitHandlerNames.isEmpty()) {
+                    writer.write("\n# Additional handlers to configure\n");
+                    writer.write("handlers=");
+                    writeList(writer, explicitHandlerNames);
+                    writer.write('\n');
+                    writer.write('\n');
+                }
+                for (String handlerName : allHandlerNames) {
+                    writeHandlerConfiguration(writer, config.getHandlerConfiguration(handlerName), implicitHandlers, implicitFormatters, implicitErrorManagers);
+                }
+                final List<String> allFilterNames = config.getFilterNames();
+                if (!allFilterNames.isEmpty()) {
+                    writer.write("\n# Additional filters to configure\n");
+                    writer.write("filters=");
+                    writeList(writer, allFilterNames);
+                    writer.write('\n');
+                    writer.write('\n');
+                }
+                for (String filterName : allFilterNames) {
+                    writeFilterConfiguration(writer, config.getFilterConfiguration(filterName));
+                }
+                final List<String> allFormatterNames = config.getFormatterNames();
+                final ArrayList<String> explicitFormatterNames = new ArrayList<String>(allFormatterNames);
+                explicitFormatterNames.removeAll(implicitFormatters);
+                if (!explicitFormatterNames.isEmpty()) {
+                    writer.write("\n# Additional formatters to configure\n");
+                    writer.write("formatters=");
+                    writeList(writer, explicitFormatterNames);
+                    writer.write('\n');
+                    writer.write('\n');
+                }
+                for (String formatterName : allFormatterNames) {
+                    writeFormatterConfiguration(writer, config.getFormatterConfiguration(formatterName));
+                }
+                final List<String> allErrorManagerNames = config.getErrorManagerNames();
+                final ArrayList<String> explicitErrorManagerNames = new ArrayList<String>(allErrorManagerNames);
+                explicitErrorManagerNames.removeAll(implicitErrorManagers);
+                if (!explicitErrorManagerNames.isEmpty()) {
+                    writer.write("\n# Additional errorManagers to configure\n");
+                    writer.write("errorManagers=");
+                    writeList(writer, explicitErrorManagerNames);
+                    writer.write('\n');
+                    writer.write('\n');
+                }
+                for (String errorManagerName : allErrorManagerNames) {
+                    writeErrorManagerConfiguration(writer, config.getErrorManagerConfiguration(errorManagerName));
+                }
+                writer.close();
+            } finally {
+                safeClose(writer);
+            }
+            outputStream.close();
+        } finally {
+            safeClose(outputStream);
         }
     }
 
