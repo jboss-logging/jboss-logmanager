@@ -51,7 +51,7 @@ public final class OnlyOnceErrorManager extends ErrorManager {
             case WRITE_FAILURE: codeStr = "WRITE_FAILURE"; break;
             default: codeStr = "INVALID (" + code + ")"; break;
         }
-        ps.printf("LogManager error of type %s: %s\n", codeStr, msg);
+        ps.printf("LogManager error of type %s: %s%n", codeStr, msg);
         if (ex != null) {
             ex.printStackTrace(ps);
         }

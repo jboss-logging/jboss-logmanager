@@ -27,8 +27,7 @@ import java.io.InputStream;
 import java.io.Closeable;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
+import java.io.PrintStream;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Properties;
@@ -50,6 +49,7 @@ import org.jboss.logmanager.config.PropertyConfigurable;
 public final class PropertyConfigurator implements Configurator {
 
     private static final String[] EMPTY_STRINGS = new String[0];
+    private static final String ENCODING = "utf-8";
 
     private final LogContextConfiguration config;
 
@@ -84,7 +84,7 @@ public final class PropertyConfigurator implements Configurator {
     public void configure(final InputStream inputStream) throws IOException {
         final Properties properties = new Properties();
         try {
-            properties.load(new InputStreamReader(inputStream, "utf-8"));
+            properties.load(new InputStreamReader(inputStream, ENCODING));
             inputStream.close();
         } finally {
             safeClose(inputStream);
@@ -102,74 +102,62 @@ public final class PropertyConfigurator implements Configurator {
      */
     public void writeConfiguration(final OutputStream outputStream) throws IOException {
         try {
-            final Writer writer = new OutputStreamWriter(outputStream, "utf-8");
+            final PrintStream out = new PrintStream(outputStream, true, ENCODING);
             try {
                 final Set<String> implicitHandlers = new HashSet<String>();
                 final Set<String> implicitFormatters = new HashSet<String>();
                 final Set<String> implicitErrorManagers = new HashSet<String>();
                 final List<String> loggerNames = config.getLoggerNames();
-                writer.write("# Additional loggers to configure (the root logger is always configured)\n");
-                writer.write("loggers=");
-                writeList(writer, loggerNames);
-                writer.write('\n');
+                writePropertyComment(out, "Additional loggers to configure (the root logger is always configured)");
+                out.printf("loggers=%s%n", toCsvString(loggerNames));
                 final LoggerConfiguration rootLogger = config.getLoggerConfiguration("");
-                writeLoggerConfiguration(writer, rootLogger, implicitHandlers);
+                writeLoggerConfiguration(out, rootLogger, implicitHandlers);
+                // Remove the root loggers
+                loggerNames.remove("");
                 for (String loggerName : loggerNames) {
-                    writeLoggerConfiguration(writer, config.getLoggerConfiguration(loggerName), implicitHandlers);
+                    writeLoggerConfiguration(out, config.getLoggerConfiguration(loggerName), implicitHandlers);
                 }
                 final List<String> allHandlerNames = config.getHandlerNames();
                 final List<String> explicitHandlerNames = new ArrayList<String>(allHandlerNames);
                 explicitHandlerNames.removeAll(implicitHandlers);
                 if (!explicitHandlerNames.isEmpty()) {
-                    writer.write("\n# Additional handlers to configure\n");
-                    writer.write("handlers=");
-                    writeList(writer, explicitHandlerNames);
-                    writer.write('\n');
-                    writer.write('\n');
+                    writePropertyComment(out, "Additional handlers to configure");
+                    out.printf("handlers=%s%n%n", toCsvString(explicitHandlerNames));
                 }
                 for (String handlerName : allHandlerNames) {
-                    writeHandlerConfiguration(writer, config.getHandlerConfiguration(handlerName), implicitHandlers, implicitFormatters, implicitErrorManagers);
+                    writeHandlerConfiguration(out, config.getHandlerConfiguration(handlerName), implicitHandlers, implicitFormatters, implicitErrorManagers);
                 }
                 final List<String> allFilterNames = config.getFilterNames();
                 if (!allFilterNames.isEmpty()) {
-                    writer.write("\n# Additional filters to configure\n");
-                    writer.write("filters=");
-                    writeList(writer, allFilterNames);
-                    writer.write('\n');
-                    writer.write('\n');
+                    writePropertyComment(out, "Additional filters to configure");
+                    out.printf("filters=%s%n%n", toCsvString(allFilterNames));
                 }
                 for (String filterName : allFilterNames) {
-                    writeFilterConfiguration(writer, config.getFilterConfiguration(filterName));
+                    writeFilterConfiguration(out, config.getFilterConfiguration(filterName));
                 }
                 final List<String> allFormatterNames = config.getFormatterNames();
                 final ArrayList<String> explicitFormatterNames = new ArrayList<String>(allFormatterNames);
                 explicitFormatterNames.removeAll(implicitFormatters);
                 if (!explicitFormatterNames.isEmpty()) {
-                    writer.write("\n# Additional formatters to configure\n");
-                    writer.write("formatters=");
-                    writeList(writer, explicitFormatterNames);
-                    writer.write('\n');
-                    writer.write('\n');
+                    writePropertyComment(out, "Additional formatters to configure");
+                    out.printf("formatters=%s%n%n", toCsvString(explicitFormatterNames));
                 }
                 for (String formatterName : allFormatterNames) {
-                    writeFormatterConfiguration(writer, config.getFormatterConfiguration(formatterName));
+                    writeFormatterConfiguration(out, config.getFormatterConfiguration(formatterName));
                 }
                 final List<String> allErrorManagerNames = config.getErrorManagerNames();
                 final ArrayList<String> explicitErrorManagerNames = new ArrayList<String>(allErrorManagerNames);
                 explicitErrorManagerNames.removeAll(implicitErrorManagers);
                 if (!explicitErrorManagerNames.isEmpty()) {
-                    writer.write("\n# Additional errorManagers to configure\n");
-                    writer.write("errorManagers=");
-                    writeList(writer, explicitErrorManagerNames);
-                    writer.write('\n');
-                    writer.write('\n');
+                    writePropertyComment(out, "Additional errorManagers to configure");
+                    out.printf("errorManagers=%s%n%n", toCsvString(explicitErrorManagerNames));
                 }
                 for (String errorManagerName : allErrorManagerNames) {
-                    writeErrorManagerConfiguration(writer, config.getErrorManagerConfiguration(errorManagerName));
+                    writeErrorManagerConfiguration(out, config.getErrorManagerConfiguration(errorManagerName));
                 }
-                writer.close();
+                out.close();
             } finally {
-                safeClose(writer);
+                safeClose(out);
             }
             outputStream.close();
         } finally {
@@ -177,38 +165,26 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeLoggerConfiguration(final Writer writer, final LoggerConfiguration logger, final Set<String> implicitHandlers) throws IOException {
+    private static void writeLoggerConfiguration(final PrintStream out, final LoggerConfiguration logger, final Set<String> implicitHandlers) throws IOException {
         if (logger != null) {
-            writer.write('\n');
+            out.println();
             final String name = logger.getName();
             final String prefix = name.isEmpty() ? "logger." : "logger." + name + ".";
             final String level = logger.getLevel();
             if (level != null) {
-                writer.write(prefix);
-                writer.write("level=");
-                writer.write(level);
-                writer.write('\n');
+                writeProperty(out, prefix, "level", level);
             }
             final String filterName = logger.getFilter();
             if (filterName != null) {
-                writer.write(prefix);
-                writer.write("filter=");
-                writer.write(filterName);
-                writer.write('\n');
+                writeProperty(out, prefix, "filter", filterName);
             }
             final Boolean useParentHandlers = logger.getUseParentHandlers();
             if (useParentHandlers != null) {
-                writer.write(prefix);
-                writer.write("useParentHandlers=");
-                writer.write(useParentHandlers.toString());
-                writer.write('\n');
+                writeProperty(out, prefix, "useParentHandlers", useParentHandlers);
             }
             final List<String> handlerNames = logger.getHandlerNames();
-            if (! handlerNames.isEmpty()) {
-                writer.write(prefix);
-                writer.write("handlers=");
-                writeList(writer, handlerNames);
-                writer.write('\n');
+            if (!handlerNames.isEmpty()) {
+                writeProperty(out, prefix, "handlers", toCsvString(handlerNames));
                 for (String handlerName : handlerNames) {
                     implicitHandlers.add(handlerName);
                 }
@@ -216,195 +192,165 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeHandlerConfiguration(final Writer writer, final HandlerConfiguration handler, final Set<String> implicitHandlers, final Set<String> implicitFormatters, final Set<String> implicitErrorManagers) throws IOException {
+    private static void writeHandlerConfiguration(final PrintStream out, final HandlerConfiguration handler, final Set<String> implicitHandlers, final Set<String> implicitFormatters, final Set<String> implicitErrorManagers) throws IOException {
         if (handler != null) {
-            writer.write('\n');
+            out.println();
             final String name = handler.getName();
             final String prefix = "handler." + name + ".";
             final String className = handler.getClassName();
-            writer.write("handler.");
-            writer.write(name);
-            writer.write('=');
-            writer.write(className);
-            writer.write('\n');
+            out.printf("handler.%s=%s%n", name, className);
             final String moduleName = handler.getModuleName();
             if (moduleName != null) {
-                writer.write(prefix);
-                writer.write("module=");
-                writer.write(moduleName);
-                writer.write('\n');
+                writeProperty(out, prefix, "module", moduleName);
             }
             final String level = handler.getLevel();
             if (level != null) {
-                writer.write(prefix);
-                writer.write("level=");
-                writer.write(level);
-                writer.write('\n');
+                writeProperty(out, prefix, "level", level);
             }
             final String filter = handler.getFilter();
             if (filter != null) {
-                writer.write(prefix);
-                writer.write("filter=");
-                writer.write(filter);
-                writer.write('\n');
+                writeProperty(out, prefix, "filter", filter);
             }
             final String formatterName = handler.getFormatterName();
             if (formatterName != null) {
-                writer.write(prefix);
-                writer.write("formatter=");
-                writer.write(formatterName);
-                writer.write('\n');
+                writeProperty(out, prefix, "formatter", formatterName);
                 implicitFormatters.add(formatterName);
             }
             final String errorManagerName = handler.getErrorManagerName();
             if (errorManagerName != null) {
-                writer.write(prefix);
-                writer.write("errorManager=");
-                writer.write(errorManagerName);
-                writer.write('\n');
+                writeProperty(out, prefix, "errorManager", errorManagerName);
                 implicitErrorManagers.add(errorManagerName);
             }
             final List<String> handlerNames = handler.getHandlerNames();
             if (! handlerNames.isEmpty()) {
-                writer.write(prefix);
-                writer.write("handlers=");
-                writeList(writer, handlerNames);
-                writer.write('\n');
+                writeProperty(out, prefix, "handlers", toCsvString(handlerNames));
                 for (String handlerName : handlerNames) {
                     implicitHandlers.add(handlerName);
                 }
             }
-            final List<String> propertyNames = handler.getPropertyNames();
-            if (! propertyNames.isEmpty()) {
-                writer.write(prefix);
-                writer.write("properties=");
-                writeList(writer, propertyNames);
-                writer.write('\n');
-                for (String propertyName : propertyNames) {
-                    writer.write(prefix);
-                    writer.write(propertyName);
-                    writer.write('=');
-                    writer.write(handler.getPropertyValueString(propertyName));
-                    writer.write('\n');
-                }
-            }
+            writeProperties(out, prefix, handler);
         }
     }
 
-    private static void writeFilterConfiguration(final Writer writer, final FilterConfiguration filter) throws IOException {
+    private static void writeFilterConfiguration(final PrintStream out, final FilterConfiguration filter) throws IOException {
         if (filter != null) {
-            writer.write('\n');
+            out.println();
             final String name = filter.getName();
             final String prefix = "filter." + name + ".";
             final String className = filter.getClassName();
-            writer.write("filter.");
-            writer.write(name);
-            writer.write('=');
-            writer.write(className);
-            writer.write('\n');
+            writeProperty(out, "filter.", name, className);
             final String moduleName = filter.getModuleName();
             if (moduleName != null) {
-                writer.write(prefix);
-                writer.write("module=");
-                writer.write(moduleName);
-                writer.write('\n');
+                writeProperty(out, prefix, "module", moduleName);
             }
-            final List<String> propertyNames = filter.getPropertyNames();
-            if (! propertyNames.isEmpty()) {
-                writer.write(prefix);
-                writer.write("properties=");
-                writeList(writer, propertyNames);
-                writer.write('\n');
-                for (String propertyName : propertyNames) {
-                    writer.write(prefix);
-                    writer.write(propertyName);
-                    writer.write('=');
-                    writer.write(filter.getPropertyValueString(propertyName));
-                    writer.write('\n');
-                }
-            }
+            writeProperties(out, prefix, filter);
         }
     }
 
-    private static void writeFormatterConfiguration(final Writer writer, final FormatterConfiguration formatter) throws IOException {
+    private static void writeFormatterConfiguration(final PrintStream out, final FormatterConfiguration formatter) throws IOException {
         if (formatter != null) {
-            writer.write('\n');
+            out.println();
             final String name = formatter.getName();
             final String prefix = "formatter." + name + ".";
             final String className = formatter.getClassName();
-            writer.write("formatter.");
-            writer.write(name);
-            writer.write('=');
-            writer.write(className);
-            writer.write('\n');
+            writeProperty(out, "formatter.", name, className);
             final String moduleName = formatter.getModuleName();
             if (moduleName != null) {
-                writer.write(prefix);
-                writer.write("module=");
-                writer.write(moduleName);
-                writer.write('\n');
+                writeProperty(out, prefix, "module", moduleName);
             }
-            final List<String> propertyNames = formatter.getPropertyNames();
-            if (! propertyNames.isEmpty()) {
-                writer.write(prefix);
-                writer.write("properties=");
-                writeList(writer, propertyNames);
-                writer.write('\n');
-                for (String propertyName : propertyNames) {
-                    writer.write(prefix);
-                    writer.write(propertyName);
-                    writer.write('=');
-                    writer.write(formatter.getPropertyValueString(propertyName));
-                    writer.write('\n');
-                }
-            }
+            writeProperties(out, prefix, formatter);
         }
     }
 
-    private static void writeErrorManagerConfiguration(final Writer writer, final ErrorManagerConfiguration errorManager) throws IOException {
+    private static void writeErrorManagerConfiguration(final PrintStream out, final ErrorManagerConfiguration errorManager) throws IOException {
         if (errorManager != null) {
-            writer.write('\n');
+            out.println();
             final String name = errorManager.getName();
             final String prefix = "errorManager." + name + ".";
             final String className = errorManager.getClassName();
-            writer.write("errorManager.");
-            writer.write(name);
-            writer.write('=');
-            writer.write(className);
-            writer.write('\n');
+            writeProperty(out, "errorManager.", name, className);
             final String moduleName = errorManager.getModuleName();
             if (moduleName != null) {
-                writer.write(prefix);
-                writer.write("module=");
-                writer.write(moduleName);
-                writer.write('\n');
+                writeProperty(out, prefix, "module", moduleName);
             }
-            final List<String> propertyNames = errorManager.getPropertyNames();
-            if (! propertyNames.isEmpty()) {
-                writer.write(prefix);
-                writer.write("properties=");
-                writeList(writer, propertyNames);
-                writer.write('\n');
-                for (String propertyName : propertyNames) {
-                    writer.write(prefix);
-                    writer.write(propertyName);
-                    writer.write('=');
-                    writer.write(errorManager.getPropertyValueString(propertyName));
-                    writer.write('\n');
+            writeProperties(out, prefix, errorManager);
+        }
+    }
+
+    /**
+     * Writes a comment to the print stream. Prepends the comment with a {@code #}.
+     *
+     * @param out     the print stream to write to.
+     * @param comment the comment to write.
+     */
+    private static void writePropertyComment(final PrintStream out, final String comment) {
+        out.printf("%n# %s%n", comment);
+    }
+
+    /**
+     * Writes a property to the print stream.
+     *
+     * @param out    the print stream to write to.
+     * @param prefix the prefix for the name or {@code null} to use no prefix.
+     * @param name   the name of the property.
+     * @param value  the value of the property.
+     */
+    private static void writeProperty(final PrintStream out, final String prefix, final String name, final Object value) {
+        if (prefix == null) {
+            out.printf("%s=%s%n", name, value);
+        } else {
+            out.printf("%s%s=%s%n", prefix, name, value);
+        }
+    }
+
+    /**
+     * Writes a collection of properties to the print stream. Uses the {@link PropertyConfigurable#getPropertyValueString(String)}
+     * to extract the value.
+     *
+     * @param out                  the print stream to write to.
+     * @param prefix               the prefix for the name or {@code null} to use no prefix.
+     * @param propertyConfigurable the configuration to extract the property value from.
+     */
+    private static void writeProperties(final PrintStream out, final String prefix, final PropertyConfigurable propertyConfigurable) {
+        final List<String> names = propertyConfigurable.getPropertyNames();
+        if (!names.isEmpty()) {
+            if (prefix == null) {
+                out.printf("properties=%s%n", toCsvString(names));
+                for (String name : names) {
+                    writeProperty(out, null, name, propertyConfigurable.getPropertyValueString(name));
+                }
+            } else {
+                out.printf("%sproperties=%s%n", prefix, toCsvString(names));
+                for (String name : names) {
+                    writeProperty(out, prefix, name, propertyConfigurable.getPropertyValueString(name));
                 }
             }
         }
     }
 
-    private static void writeList(final Writer writer, final List<String> names) throws IOException {
+    /**
+     * Parses the list and creates a comma delimited string of the names.
+     * <p/>
+     * <b>Notes:</b> empty names are ignored.
+     *
+     * @param names the names to process.
+     *
+     * @return a comma delimited list of the names.
+     */
+    private static String toCsvString(final List<String> names) {
+        final StringBuilder result = new StringBuilder(1024);
         Iterator<String> iterator = names.iterator();
         while (iterator.hasNext()) {
             final String name = iterator.next();
-            writer.write(name);
-            if (iterator.hasNext()) {
-                writer.write(',');
+            // No need to write empty names
+            if (!name.isEmpty()) {
+                result.append(name);
+                if (iterator.hasNext()) {
+                    result.append(",");
+                }
             }
         }
+        return result.toString();
     }
 
     /**

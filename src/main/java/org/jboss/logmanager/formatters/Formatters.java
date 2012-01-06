@@ -48,6 +48,8 @@ import org.jboss.logmanager.NDC;
  */
 public final class Formatters {
 
+    private static final String NEW_LINE = String.format("%n");
+
     private Formatters() {
     }
 
@@ -379,7 +381,7 @@ public final class Formatters {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 final Throwable t = record.getThrown();
                 if (t != null) {
-                    builder.append(": ").append(t).append('\n');
+                    builder.append(": ").append(t).append(NEW_LINE);
                     final StackTraceElement[] stackTrace = t.getStackTrace();
                     final Map<String, String> cache = extended ? new HashMap<String, String>() : null;
                     if (extended) {
@@ -399,7 +401,7 @@ public final class Formatters {
             }
 
             private void renderTrivial(final StringBuilder builder, final StackTraceElement element) {
-                builder.append("\tat ").append(element).append('\n');
+                builder.append("\tat ").append(element).append(NEW_LINE);
             }
 
             private void renderExtended(final StringBuilder builder, final StackTraceElement element, final Map<String, String> cache) {
@@ -407,7 +409,7 @@ public final class Formatters {
                 final String className = element.getClassName();
                 final String cached;
                 if ((cached = cache.get(className)) != null) {
-                    builder.append(cached).append('\n');
+                    builder.append(cached).append(NEW_LINE);
                     return;
                 }
                 final int dotIdx = className.lastIndexOf('.');
@@ -566,7 +568,7 @@ public final class Formatters {
                 } else {
                     cache.put(className, "");
                 }
-                builder.append('\n');
+                builder.append(NEW_LINE);
             }
 
             private Class<?> guessClass(final String name) {
@@ -603,7 +605,7 @@ public final class Formatters {
                 }
                 int framesInCommon = causeStack.length - 1 - m;
 
-                builder.append("Caused by: ").append(cause).append('\n');
+                builder.append("Caused by: ").append(cause).append(NEW_LINE);
 
                 if (extended) {
                     for (int i=0; i <= m; i++) {
@@ -615,7 +617,7 @@ public final class Formatters {
                     }
                 }
                 if (framesInCommon != 0) {
-                    builder.append("\t... ").append(framesInCommon).append(" more").append('\n');
+                    builder.append("\t... ").append(framesInCommon).append(" more").append(NEW_LINE);
                 }
 
                 // Recurse if we have a cause
