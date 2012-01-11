@@ -314,13 +314,20 @@ public final class PropertyConfigurator implements Configurator {
     private static void writeProperties(final PrintStream out, final String prefix, final PropertyConfigurable propertyConfigurable) {
         final List<String> names = propertyConfigurable.getPropertyNames();
         if (!names.isEmpty()) {
+            final List<String> ctorProps = propertyConfigurable.getConstructorProperties();
             if (prefix == null) {
                 out.printf("properties=%s%n", toCsvString(names));
+                if (!ctorProps.isEmpty()) {
+                    out.printf("constructorProperties=%s%n", toCsvString(ctorProps));
+                }
                 for (String name : names) {
                     writeProperty(out, null, name, propertyConfigurable.getPropertyValueString(name));
                 }
             } else {
                 out.printf("%sproperties=%s%n", prefix, toCsvString(names));
+                if (!ctorProps.isEmpty()) {
+                    out.printf("%sconstructorProperties=%s%n", prefix, toCsvString(ctorProps));
+                }
                 for (String name : names) {
                     writeProperty(out, prefix, name, propertyConfigurable.getPropertyValueString(name));
                 }

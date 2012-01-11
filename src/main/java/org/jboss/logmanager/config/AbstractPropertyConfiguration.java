@@ -26,6 +26,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -212,12 +213,18 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         return new ArrayList<String>(properties.keySet());
     }
 
+    @Override
+    public boolean hasConstructorProperty(final String propertyName) {
+        return contains(constructorProperties, propertyName);
+    }
+
     Class<? extends T> getActualClass() {
         return actualClass;
     }
 
-    String[] getConstructorProperties() {
-        return constructorProperties;
+    @Override
+    public List<String> getConstructorProperties() {
+        return Arrays.asList(constructorProperties);
     }
 
     static Class<?> getPropertyType(Class<?> clazz, String propertyName) {

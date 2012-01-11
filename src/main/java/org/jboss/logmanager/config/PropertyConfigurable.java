@@ -71,4 +71,20 @@ public interface PropertyConfigurable {
      * @return the property names
      */
     List<String> getPropertyNames();
+
+    /**
+     * Determine whether the given property name is a constructor property.
+     *
+     * @param propertyName the name of the property to check.
+     *
+     * @return {@code true} if the property should be used as a construction property, otherwise {@code false}.
+     */
+    boolean hasConstructorProperty(String propertyName);
+
+    /**
+     * Returns a collection of the constructor properties.
+     *
+     * @return a collection of the constructor properties.
+     */
+    List<String> getConstructorProperties();
 }
