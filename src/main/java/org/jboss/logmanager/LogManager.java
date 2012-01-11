@@ -234,16 +234,26 @@ public final class LogManager extends java.util.logging.LogManager {
             return;
         }
         final String confLocClassName = tryGetProperty("org.jboss.logmanager.configurationLocator", null);
-        final ConfigurationLocator locator;
+        ConfigurationLocator locator = null;
         if (confLocClassName != null) {
             locator = construct(ConfigurationLocator.class, confLocClassName);
         } else {
-            final ServiceLoader<ConfigurationLocator> loader = ServiceLoader.load(ConfigurationLocator.class, LogManager.class.getClassLoader());
-            final Iterator<ConfigurationLocator> iterator = loader.iterator();
-            if (iterator.hasNext()) {
-                locator = iterator.next();
-            } else {
-                locator = new DefaultConfigurationLocator();
+            final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+            if (tccl != null) {
+                final ServiceLoader<ConfigurationLocator> loader = ServiceLoader.load(ConfigurationLocator.class, tccl);
+                final Iterator<ConfigurationLocator> iterator = loader.iterator();
+                if (iterator.hasNext()) {
+                    locator = iterator.next();
+                }
+            }
+            if (locator == null) {
+                final ServiceLoader<ConfigurationLocator> loader = ServiceLoader.load(ConfigurationLocator.class, tccl != null ? tccl : LogManager.class.getClassLoader());
+                final Iterator<ConfigurationLocator> iterator = loader.iterator();
+                if (iterator.hasNext()) {
+                    locator = iterator.next();
+                } else {
+                    locator = new DefaultConfigurationLocator();
+                }
             }
         }
         if (locator != null) {
@@ -264,16 +274,26 @@ public final class LogManager extends java.util.logging.LogManager {
             checkAccess();
             configured.set(true);
             final String confClassName = tryGetProperty("org.jboss.logmanager.configurator", null);
-            final Configurator configurator;
+            Configurator configurator = null;
             if (confClassName != null) {
                 configurator = construct(Configurator.class, confClassName);
             } else {
-                final ServiceLoader<Configurator> loader = ServiceLoader.load(Configurator.class, LogManager.class.getClassLoader());
-                final Iterator<Configurator> iterator = loader.iterator();
-                if (iterator.hasNext()) {
-                    configurator = iterator.next();
-                } else {
-                    configurator = new PropertyConfigurator();
+                final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
+                if (tccl != null) {
+                    final ServiceLoader<Configurator> loader = ServiceLoader.load(Configurator.class, tccl);
+                    final Iterator<Configurator> iterator = loader.iterator();
+                    if (iterator.hasNext()) {
+                        configurator = iterator.next();
+                    }
+                }
+                if (configurator == null) {
+                    final ServiceLoader<Configurator> loader = ServiceLoader.load(Configurator.class, LogManager.class.getClassLoader());
+                    final Iterator<Configurator> iterator = loader.iterator();
+                    if (iterator.hasNext()) {
+                        configurator = iterator.next();
+                    } else {
+                        configurator = new PropertyConfigurator();
+                    }
                 }
             }
             if (configurator != null) try {
