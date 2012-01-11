@@ -122,6 +122,7 @@ public class OutputStreamHandler extends WriterHandler {
     }
 
     private void updateWriter(final OutputStream newOutputStream, final String encoding) throws UnsupportedEncodingException {
-        super.setWriter(newOutputStream == null ? null : encoding == null ? new OutputStreamWriter(newOutputStream) : new OutputStreamWriter(newOutputStream, encoding));
+        final UninterruptibleOutputStream outputStream = new UninterruptibleOutputStream(newOutputStream);
+        super.setWriter(newOutputStream == null ? null : encoding == null ? new OutputStreamWriter(outputStream) : new OutputStreamWriter(outputStream, encoding));
     }
 }
