@@ -25,7 +25,6 @@ package org.jboss.logmanager.handlers;
 import java.io.Writer;
 import java.io.Closeable;
 import java.io.Flushable;
-import java.io.IOException;
 
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
