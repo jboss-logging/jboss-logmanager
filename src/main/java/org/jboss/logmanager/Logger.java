@@ -101,7 +101,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void setFilter(Filter filter) throws SecurityException {
-        LogContext.checkAccess();
+        LogContext.checkAccess(loggerNode.getContext());
         loggerNode.setFilter(filter);
     }
 
@@ -118,7 +118,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * log level reflects an older effective level than the actual level).
      */
     public void setLevel(Level newLevel) throws SecurityException {
-        LogContext.checkAccess();
+        LogContext.checkAccess(loggerNode.getContext());
         loggerNode.setLevel(newLevel);
     }
 
@@ -178,7 +178,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public <V> V attach(AttachmentKey<V> key, V value) throws SecurityException {
-        LogContext.checkAccess();
+        LogContext.checkAccess(loggerNode.getContext());
         return loggerNode.attach(key, value);
     }
 
@@ -194,7 +194,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     @SuppressWarnings({ "unchecked" })
     public <V> V attachIfAbsent(AttachmentKey<V> key, V value) throws SecurityException {
-        LogContext.checkAccess();
+        LogContext.checkAccess(loggerNode.getContext());
         return loggerNode.attachIfAbsent(key, value);
     }
 
@@ -208,7 +208,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     @SuppressWarnings({ "unchecked" })
     public <V> V detach(AttachmentKey<V> key) throws SecurityException {
-        LogContext.checkAccess();
+        LogContext.checkAccess(loggerNode.getContext());
         return loggerNode.detach(key);
     }
 
@@ -216,7 +216,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void addHandler(Handler handler) throws SecurityException {
-        LogContext.checkAccess();
+        LogContext.checkAccess(loggerNode.getContext());
         if (handler == null) {
             throw new NullPointerException("handler is null");
         }
@@ -225,7 +225,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void removeHandler(Handler handler) throws SecurityException {
-        LogContext.checkAccess();
+        LogContext.checkAccess(loggerNode.getContext());
         if (handler == null) {
             return;
         }
@@ -245,7 +245,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public void setHandlers(final Handler[] handlers) throws SecurityException {
-        LogContext.checkAccess();
+        LogContext.checkAccess(loggerNode.getContext());
         final Handler[] safeHandlers = handlers.clone();
         for (Handler handler : safeHandlers) {
             if (handler == null) {
@@ -261,7 +261,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public Handler[] clearHandlers() throws SecurityException {
-        LogContext.checkAccess();
+        LogContext.checkAccess(loggerNode.getContext());
         return loggerNode.clearHandlers();
     }
 

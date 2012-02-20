@@ -27,6 +27,7 @@ import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -48,6 +49,11 @@ public final class LogContext {
     private final LoggerNode rootLogger = new LoggerNode(this);
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
+
+    private volatile Object protectKey;
+    private final ThreadLocal<Boolean> granted = new InheritableThreadLocal<Boolean>();
+
+    private static final AtomicReferenceFieldUpdater<LogContext, Object> protectKeyUpdater = AtomicReferenceFieldUpdater.newUpdater(LogContext.class, Object.class, "protectKey");
 
     /**
      * This lazy holder class is required to prevent a problem due to a LogContext instance being constructed
@@ -286,10 +292,41 @@ public final class LogContext {
         logContextSelector = newSelector;
     }
 
-    static void checkAccess() {
+    public void protect(Object protectionKey) throws SecurityException {
+        if (protectKeyUpdater.compareAndSet(this, null, protectionKey)) {
+            return;
+        }
+        throw new SecurityException("Log context already protected");
+    }
+
+    public void unprotect(Object protectionKey) throws SecurityException {
+        if (protectKeyUpdater.compareAndSet(this, protectionKey, null)) {
+            return;
+        }
+        throw accessDenied();
+    }
+
+    public void enableAccess(Object protectKey) throws SecurityException {
+        if (protectKey == this.protectKey) {
+            granted.set(Boolean.TRUE);
+        }
+    }
+
+    public void disableAccess() {
+        granted.remove();
+    }
+
+    private static SecurityException accessDenied() {
+        return new SecurityException("Log context modification access denied");
+    }
+
+    static void checkAccess(final LogContext logContext) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
+        }
+        if (logContext.protectKey != null && logContext.granted.get() == null) {
+            throw accessDenied();
         }
     }
 
