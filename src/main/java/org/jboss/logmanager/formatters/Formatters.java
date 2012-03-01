@@ -690,7 +690,7 @@ public final class Formatters {
     }
 
     /**
-     * Create a format step which emits the localized log level name.
+     * Create a format step which emits the log level name.
      *
      * @param leftJustify {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
@@ -698,6 +698,23 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep levelFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+        return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                final Level level = record.getLevel();
+                builder.append(level.getName());
+            }
+        };
+    }
+
+    /**
+     * Create a format step which emits the localized log level name.
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @return the format step
+     */
+    public static FormatStep localizedLevelFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 final Level level = record.getLevel();

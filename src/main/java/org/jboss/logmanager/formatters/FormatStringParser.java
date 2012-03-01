@@ -135,6 +135,10 @@ public final class FormatStringParser {
                         stepList.add(Formatters.levelFormatStep(leftJustify, minimumWidth, maximumWidth));
                         break;
                     }
+                    case 'P': {
+                        stepList.add(Formatters.localizedLevelFormatStep(leftJustify, minimumWidth, maximumWidth));
+                        break;
+                    }
                     case 'r': {
                         stepList.add(Formatters.relativeTimeFormatStep(time, leftJustify, minimumWidth, maximumWidth));
                         break;
