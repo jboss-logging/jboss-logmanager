@@ -291,6 +291,15 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         throw new SecurityException("setParent() disallowed");
     }
 
+    /**
+     * Get the log context to which this logger belongs.
+     *
+     * @return the log context
+     */
+    public LogContext getLogContext() {
+        return loggerNode.getContext();
+    }
+
     // Logger
 
     static final int OFF_INT = Level.OFF.intValue();
