@@ -71,13 +71,13 @@ public final class FormatStringParser {
             if (otherText != null) {
                 stepList.add(Formatters.textFormatStep(otherText));
             } else {
-                final String hypen = matcher.group(2);
+                final String hyphen = matcher.group(2);
                 final String minWidthString = matcher.group(3);
                 final String maxWidthString = matcher.group(4);
                 final String formatCharString = matcher.group(5);
                 final String argument = matcher.group(6);
                 final int minimumWidth = minWidthString == null ? 0 : Integer.parseInt(minWidthString);
-                final boolean leftJustify = hypen != null;
+                final boolean leftJustify = hyphen != null;
                 final int maximumWidth = maxWidthString == null ? 0 : Integer.parseInt(maxWidthString);
                 final char formatChar = formatCharString.charAt(0);
                 switch (formatChar) {
