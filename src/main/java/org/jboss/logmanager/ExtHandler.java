@@ -22,13 +22,12 @@
 
 package org.jboss.logmanager;
 
-import java.util.logging.ErrorManager;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
-import java.util.logging.LoggingPermission;
+import java.io.UnsupportedEncodingException;
+import java.util.logging.*;
 
 import java.security.Permission;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.logging.Level;
 
 import org.jboss.logmanager.handlers.FlushableCloseable;
 
@@ -321,6 +320,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
     /**
      * Flush all child handlers.
      */
+    @Override
     public void flush() {
         for (Handler handler : handlers) try {
             handler.flush();
@@ -332,6 +332,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
     /**
      * Close all child handlers.
      */
+    @Override
     public void close() throws SecurityException {
         checkAccess(this);
         for (Handler handler : handlers) try {
@@ -339,5 +340,35 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
         } catch (Exception ex) {
             reportError("Failed to close child handler", ex, ErrorManager.CLOSE_FAILURE);
         } catch (Throwable ignored) {}
+    }
+
+    @Override
+    public void setFormatter(final Formatter newFormatter) throws SecurityException {
+        checkAccess(this);
+        super.setFormatter(newFormatter);
+    }
+
+    @Override
+    public void setFilter(final Filter newFilter) throws SecurityException {
+        checkAccess(this);
+        super.setFilter(newFilter);
+    }
+
+    @Override
+    public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
+        checkAccess(this);
+        super.setEncoding(encoding);
+    }
+
+    @Override
+    public void setErrorManager(final ErrorManager em) {
+        checkAccess(this);
+        super.setErrorManager(em);
+    }
+
+    @Override
+    public void setLevel(final Level newLevel) throws SecurityException {
+        checkAccess(this);
+        super.setLevel(newLevel);
     }
 }
