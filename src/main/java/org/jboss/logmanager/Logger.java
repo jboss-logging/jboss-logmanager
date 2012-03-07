@@ -24,6 +24,7 @@ package org.jboss.logmanager;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.ResourceBundle;
 
 import java.util.logging.Filter;
@@ -239,7 +240,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
-     * A convenience method to atomically replace the handler set.
+     * A convenience method to atomically replace the handler list for this logger.
      *
      * @param handlers the new handlers
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
@@ -253,6 +254,51 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             }
         }
         loggerNode.setHandlers(safeHandlers);
+    }
+
+    /**
+     * Atomically get and set the handler list for this logger.
+     *
+     * @param handlers the new handler set
+     * @return the old handler set
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public Handler[] getAndSetHandlers(final Handler[] handlers) throws SecurityException {
+        LogContext.checkAccess(loggerNode.getContext());
+        final Handler[] safeHandlers = handlers.clone();
+        for (Handler handler : safeHandlers) {
+            if (handler == null) {
+                throw new IllegalArgumentException("A handler is null");
+            }
+        }
+        return loggerNode.setHandlers(safeHandlers);
+    }
+
+    /**
+     * Atomically compare and set the handler list for this logger.
+     *
+     * @param expected the expected list of handlers
+     * @param newHandlers the replacement list of handlers
+     * @return {@code true} if the handler list was updated or {@code false} if the current handlers did not match the expected handlers list
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public boolean compareAndSetHandlers(final Handler[] expected, final Handler[] newHandlers) throws SecurityException {
+        LogContext.checkAccess(loggerNode.getContext());
+        final Handler[] safeExpectedHandlers = expected.clone();
+        final Handler[] safeNewHandlers = newHandlers.clone();
+        for (Handler handler : safeNewHandlers) {
+            if (handler == null) {
+                throw new IllegalArgumentException("A handler is null");
+            }
+        }
+        Handler[] oldHandlers;
+        do {
+            oldHandlers = loggerNode.getHandlers();
+            if (! Arrays.equals(oldHandlers, safeExpectedHandlers)) {
+                return false;
+            }
+        } while (! loggerNode.compareAndSetHandlers(oldHandlers, safeNewHandlers));
+        return true;
     }
 
     /**

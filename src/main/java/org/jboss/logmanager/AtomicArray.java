@@ -377,4 +377,16 @@ final class AtomicArray<T, V> {
             return (V[]) Array.newInstance(componentType, length);
         }
     }
+
+    /**
+     * Compare and set the array.
+     *
+     * @param instance the instance holding the field
+     * @param expect the expected value
+     * @param update the update value
+     * @return {@code true} if the value was updated or {@code false} if the expected value did not match
+     */
+    public boolean compareAndSet(final T instance, final V[] expect, final V[] update) {
+        return updater.compareAndSet(instance, expect, update);
+    }
 }

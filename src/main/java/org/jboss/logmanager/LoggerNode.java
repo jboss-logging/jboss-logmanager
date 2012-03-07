@@ -269,8 +269,12 @@ final class LoggerNode {
         handlersUpdater.add(this, handler);
     }
 
-    void setHandlers(final Handler[] handlers) {
-        handlersUpdater.set(this, handlers);
+    Handler[] setHandlers(final Handler[] handlers) {
+        return handlersUpdater.getAndSet(this, handlers);
+    }
+
+    boolean compareAndSetHandlers(final Handler[] oldHandlers, final Handler[] newHandlers) {
+        return handlersUpdater.compareAndSet(this, oldHandlers, newHandlers);
     }
 
     boolean getUseParentHandlers() {
