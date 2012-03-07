@@ -36,7 +36,7 @@ import java.util.logging.LoggingPermission;
 /**
  * A logging context, for producing isolated logging environments.
  */
-public final class LogContext {
+public final class LogContext implements Protectable {
     private static final LogContext SYSTEM_CONTEXT = new LogContext();
 
     static final Permission CREATE_CONTEXT_PERMISSION = new RuntimePermission("createLogContext", null);
@@ -290,6 +290,7 @@ public final class LogContext {
         logContextSelector = newSelector;
     }
 
+    @Override
     public void protect(Object protectionKey) throws SecurityException {
         if (protectKeyUpdater.compareAndSet(this, null, protectionKey)) {
             return;
@@ -297,6 +298,7 @@ public final class LogContext {
         throw new SecurityException("Log context already protected");
     }
 
+    @Override
     public void unprotect(Object protectionKey) throws SecurityException {
         if (protectKeyUpdater.compareAndSet(this, protectionKey, null)) {
             return;
@@ -304,12 +306,14 @@ public final class LogContext {
         throw accessDenied();
     }
 
+    @Override
     public void enableAccess(Object protectKey) throws SecurityException {
         if (protectKey == this.protectKey) {
             granted.set(Boolean.TRUE);
         }
     }
 
+    @Override
     public void disableAccess() {
         granted.remove();
     }

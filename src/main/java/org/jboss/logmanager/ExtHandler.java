@@ -35,7 +35,7 @@ import org.jboss.logmanager.handlers.FlushableCloseable;
  * An extended logger handler.  Use this class as a base class for log handlers which require {@code ExtLogRecord}
  * instances.
  */
-public abstract class ExtHandler extends Handler implements FlushableCloseable {
+public abstract class ExtHandler extends Handler implements FlushableCloseable, Protectable {
 
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
     private volatile boolean autoFlush;
@@ -233,13 +233,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
         enabled = true;
     }
 
-    /**
-     * Protect this handler from modifications.
-     *
-     * @param protectionKey the key used to protect the handler.
-     *
-     * @throws SecurityException if the log handler is already protected.
-     */
+    @Override
     public final void protect(Object protectionKey) throws SecurityException {
         if (protectKeyUpdater.compareAndSet(this, null, protectionKey)) {
             return;
@@ -247,14 +241,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
         throw new SecurityException("Log handler already protected");
     }
 
-    /**
-     * Allows the log handler to be modified if the {@code protectionKey} matches the key used to {@link
-     * #protect(Object) protect} the log handler.
-     *
-     * @param protectionKey the key used to protect the handler.
-     *
-     * @throws SecurityException if the log handler is protected and the key doesn't match.
-     */
+    @Override
     public final void unprotect(Object protectionKey) throws SecurityException {
         if (protectKeyUpdater.compareAndSet(this, protectionKey, null)) {
             return;
@@ -262,20 +249,14 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
         throw accessDenied();
     }
 
-    /**
-     * Enable access to the handler for modifications.
-     *
-     * @param protectKey the key used to {@link #protect(Object) protect} modifications.
-     */
+    @Override
     public final void enableAccess(Object protectKey) {
         if (protectKey == this.protectKey) {
             granted.set(Boolean.TRUE);
         }
     }
 
-    /**
-     * Disable previous access to the handler for modifications.
-     */
+    @Override
     public final void disableAccess() {
         granted.remove();
     }
