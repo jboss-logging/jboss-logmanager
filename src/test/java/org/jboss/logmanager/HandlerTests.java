@@ -113,4 +113,16 @@ public final class HandlerTests {
             tempFile.delete();
         }
     }
+
+    public void testEnableDisableHandler() throws Throwable {
+        final StringListHandler handler = new StringListHandler();
+        testPublish(handler);
+        assertEquals(1, handler.size());
+        handler.disable();
+        testPublish(handler);
+        assertEquals(1, handler.size());
+        handler.enable();
+        testPublish(handler);
+        assertEquals(2, handler.size());
+    }
 }
