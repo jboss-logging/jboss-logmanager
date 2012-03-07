@@ -31,6 +31,9 @@ package org.jboss.logmanager;
  * <p/>
  * To protect the object after {@link #enableAccess(Object) enabling} access, invoke the {@link #disableAccess()}
  * access.
+ * <p/>
+ * Note that {@link #enableAccess(Object) enabling} or {@link #disableAccess() disabling} access only applies to the
+ * current thread.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
@@ -56,14 +59,14 @@ public interface Protectable {
     void unprotect(Object protectionKey) throws SecurityException;
 
     /**
-     * Enable access to the object for modifications.
+     * Enable access to the object for modifications on the current thread.
      *
      * @param protectKey the key used to {@link #protect(Object) protect} modifications.
      */
     void enableAccess(Object protectKey);
 
     /**
-     * Disable previous access to the object for modifications.
+     * Disable previous access to the object for modifications on the current thread.
      */
     void disableAccess();
 }

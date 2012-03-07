@@ -23,11 +23,16 @@
 package org.jboss.logmanager;
 
 import java.io.UnsupportedEncodingException;
-import java.util.logging.*;
 
 import java.security.Permission;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.logging.ErrorManager;
+import java.util.logging.Filter;
+import java.util.logging.Formatter;
+import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.logging.LoggingPermission;
 
 import org.jboss.logmanager.handlers.FlushableCloseable;
 
