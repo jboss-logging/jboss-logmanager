@@ -142,7 +142,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param rotateSize the number of bytes before the log is rotated
      */
     public void setRotateSize(final long rotateSize) {
-        checkAccess();
+        checkAccess(this);
         synchronized (outputLock) {
             this.rotateSize = rotateSize;
         }
@@ -154,7 +154,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param maxBackupIndex the maximum backup index
      */
     public void setMaxBackupIndex(final int maxBackupIndex) {
-        checkAccess();
+        checkAccess(this);
         synchronized (outputLock) {
             this.maxBackupIndex = maxBackupIndex;
         }

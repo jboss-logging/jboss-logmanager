@@ -107,7 +107,7 @@ public class OutputStreamHandler extends WriterHandler {
      * @param outputStream the new output stream or {@code null} for none
      */
     public void setOutputStream(final OutputStream outputStream) {
-        checkAccess();
+        checkAccess(this);
         try {
             synchronized (outputLock) {
                 this.outputStream = outputStream;

@@ -42,6 +42,11 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
     private volatile boolean autoFlush;
     private volatile boolean enabled = true;
 
+    private volatile Object protectKey;
+    private final ThreadLocal<Boolean> granted = new InheritableThreadLocal<Boolean>();
+
+    private static final AtomicReferenceFieldUpdater<ExtHandler, Object> protectKeyUpdater = AtomicReferenceFieldUpdater.newUpdater(ExtHandler.class, Object.class, "protectKey");
+
     /**
      * The sub-handlers for this handler.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
      * instance should not be modified (treat as immutable).
@@ -99,10 +104,12 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      * Add a sub-handler to this handler.  Some handler types do not utilize sub-handlers.
      *
      * @param handler the handler to add
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code
+     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
      */
     public void addHandler(Handler handler) throws SecurityException {
-        checkAccess();
+        checkAccess(this);
         if (handler == null) {
             throw new NullPointerException("handler is null");
         }
@@ -113,10 +120,12 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      * Remove a sub-handler from this handler.  Some handler types do not utilize sub-handlers.
      *
      * @param handler the handler to remove
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code
+     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
      */
     public void removeHandler(Handler handler) throws SecurityException {
-        checkAccess();
+        checkAccess(this);
         if (handler == null) {
             return;
         }
@@ -137,10 +146,12 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      * A convenience method to atomically get and clear all sub-handlers.
      *
      * @return the old sub-handler array
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code
+     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
      */
     public Handler[] clearHandlers() throws SecurityException {
-        checkAccess();
+        checkAccess(this);
         final Handler[] handlers = this.handlers;
         handlersUpdater.clear(this);
         return handlers.length > 0 ? handlers.clone() : handlers;
@@ -151,7 +162,9 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      *
      * @param newHandlers the new sub-handlers
      * @return the old sub-handler array
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code
+     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
      */
     public Handler[] setHandlers(final Handler[] newHandlers) throws SecurityException {
         if (newHandlers == null) {
@@ -160,7 +173,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
         if (newHandlers.length == 0) {
             return clearHandlers();
         } else {
-            checkAccess();
+            checkAccess(this);
             final Handler[] handlers = handlersUpdater.getAndSet(this, newHandlers);
             return handlers.length > 0 ? handlers.clone() : handlers;
         }
@@ -179,10 +192,12 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      * Change the autoflush setting for this handler.
      *
      * @param autoFlush {@code true} to automatically flush after each write; false otherwise
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code
+     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
      */
     public void setAutoFlush(final boolean autoFlush) throws SecurityException {
-        checkAccess();
+        checkAccess(this);
         this.autoFlush = autoFlush;
     }
 
@@ -191,10 +206,10 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      * already disabled, nothing happens.
      *
      * @throws SecurityException if a security manager exists and if the caller does not have {@code
-     *                           LoggingPermission(control)}
+     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
      */
     public final void disable() throws SecurityException {
-        checkAccess();
+        checkAccess(this);
         enabled = false;
     }
 
@@ -212,22 +227,94 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      * happens.
      *
      * @throws SecurityException if a security manager exists and if the caller does not have {@code
-     *                           LoggingPermission(control)}
+     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
      */
     public final void enable() throws SecurityException {
-        checkAccess();
+        checkAccess(this);
         enabled = true;
+    }
+
+    /**
+     * Protect this handler from modifications.
+     *
+     * @param protectionKey the key used to protect the handler.
+     *
+     * @throws SecurityException if the log handler is already protected.
+     */
+    public final void protect(Object protectionKey) throws SecurityException {
+        if (protectKeyUpdater.compareAndSet(this, null, protectionKey)) {
+            return;
+        }
+        throw new SecurityException("Log handler already protected");
+    }
+
+    /**
+     * Allows the log handler to be modified if the {@code protectionKey} matches the key used to {@link
+     * #protect(Object) protect} the log handler.
+     *
+     * @param protectionKey the key used to protect the handler.
+     *
+     * @throws SecurityException if the log handler is protected and the key doesn't match.
+     */
+    public final void unprotect(Object protectionKey) throws SecurityException {
+        if (protectKeyUpdater.compareAndSet(this, protectionKey, null)) {
+            return;
+        }
+        throw accessDenied();
+    }
+
+    /**
+     * Enable access to the handler for modifications.
+     *
+     * @param protectKey the key used to {@link #protect(Object) protect} modifications.
+     */
+    public final void enableAccess(Object protectKey) {
+        if (protectKey == this.protectKey) {
+            granted.set(Boolean.TRUE);
+        }
+    }
+
+    /**
+     * Disable previous access to the handler for modifications.
+     */
+    public final void disableAccess() {
+        granted.remove();
+    }
+
+    private static SecurityException accessDenied() {
+        return new SecurityException("Log handler modification access denied");
     }
 
     /**
      * Check access.
      *
+     * @deprecated use {@link #checkAccess(ExtHandler)}
+     *
      * @throws SecurityException if a security manager is installed and the caller does not have the {@code "control" LoggingPermission}
      */
+    @Deprecated
     protected static void checkAccess() throws SecurityException {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
+        }
+    }
+
+    /**
+     * Check access.
+     *
+     * @param handler the handler to check access on.
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code
+     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
+     */
+    protected static void checkAccess(final ExtHandler handler) throws SecurityException {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(CONTROL_PERMISSION);
+        }
+        if (handler.protectKey != null && handler.granted.get() == null) {
+            throw accessDenied();
         }
     }
 
@@ -246,7 +333,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      * Close all child handlers.
      */
     public void close() throws SecurityException {
-        checkAccess();
+        checkAccess(this);
         for (Handler handler : handlers) try {
             handler.close();
         } catch (Exception ex) {
