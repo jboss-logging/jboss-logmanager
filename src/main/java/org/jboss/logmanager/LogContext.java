@@ -28,8 +28,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 import java.util.logging.Level;
 import java.util.logging.LoggingMXBean;
@@ -97,7 +95,7 @@ public final class LogContext {
     /**
      * This lock is taken any time a change is made which affects multiple nodes in the hierarchy.
      */
-    final Lock treeLock = new ReentrantLock(false);
+    final Object treeLock = new Object();
 
     LogContext() {
         levelMapReference = new AtomicReference<Map<String, LevelRef>>(LazyHolder.INITIAL_LEVEL_MAP);

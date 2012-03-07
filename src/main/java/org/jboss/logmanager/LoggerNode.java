@@ -31,7 +31,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-import java.util.concurrent.locks.Lock;
 
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -298,9 +297,8 @@ final class LoggerNode {
 
     void setLevel(final Level newLevel) {
         final LogContext context = this.context;
-        final Lock lock = context.treeLock;
-        lock.lock();
-        try {
+        final Object lock = context.treeLock;
+        synchronized (lock) {
             final int oldEffectiveLevel = effectiveLevel;
             final int newEffectiveLevel;
             if (newLevel != null) {
@@ -325,10 +323,7 @@ final class LoggerNode {
                     }
                 }
             }
-        } finally {
-            lock.unlock();
         }
-
     }
 
     Level getLevel() {
