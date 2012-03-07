@@ -29,6 +29,7 @@ import java.util.logging.LoggingPermission;
 
 import java.security.Permission;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+
 import org.jboss.logmanager.handlers.FlushableCloseable;
 
 /**
@@ -39,6 +40,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
 
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
     private volatile boolean autoFlush;
+    private volatile boolean enabled = true;
 
     /**
      * The sub-handlers for this handler.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
@@ -61,7 +63,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
 
     /** {@inheritDoc} */
     public final void publish(final LogRecord record) {
-        if (record != null && isLoggable(record)) {
+        if (enabled && record != null && isLoggable(record)) {
             doPublish(ExtLogRecord.wrap(record));
         }
     }
@@ -77,7 +79,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
      * @param record the log record to publish
      */
     public final void publish(final ExtLogRecord record) {
-        if (record != null && isLoggable(record)) {
+        if (enabled && record != null && isLoggable(record)) {
             doPublish(record);
         }
     }
@@ -182,6 +184,39 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable {
     public void setAutoFlush(final boolean autoFlush) throws SecurityException {
         checkAccess();
         this.autoFlush = autoFlush;
+    }
+
+    /**
+     * Disables the handler meaning all log messages processed through this handler are ignored. If the handler is
+     * already disabled, nothing happens.
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code
+     *                           LoggingPermission(control)}
+     */
+    public final void disable() throws SecurityException {
+        checkAccess();
+        enabled = false;
+    }
+
+    /**
+     * Determine if the handler is enabled.
+     *
+     * @return {@code true} if the handler is enabled, otherwise {@code false}.
+     */
+    public final boolean isEnabled() {
+        return enabled;
+    }
+
+    /**
+     * Enables the handler if it was previously {@link #disable() disabled}. If the handler is not disabled, nothing
+     * happens.
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code
+     *                           LoggingPermission(control)}
+     */
+    public final void enable() throws SecurityException {
+        checkAccess();
+        enabled = true;
     }
 
     /**
