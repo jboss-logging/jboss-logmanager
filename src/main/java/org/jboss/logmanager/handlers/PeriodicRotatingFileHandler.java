@@ -149,6 +149,15 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         }
     }
 
+    /**
+     * Returns the suffix to be used.
+     *
+     * @return the suffix to be used
+     */
+    protected final String getNextSuffix() {
+        return nextSuffix;
+    }
+
     private void rollOver() {
         try {
             final File file = getFile();
