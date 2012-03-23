@@ -206,15 +206,16 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
     }
 
     /**
-     * Disables the handler meaning all log messages processed through this handler are ignored. If the handler is
-     * already disabled, nothing happens.
+     * Enables or disables the handler based on the value passed in.
+     *
+     * @param enabled {@code true} to enable the handler or {@code false} to disable the handler.
      *
      * @throws SecurityException if a security manager exists and if the caller does not have {@code
      *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
      */
-    public final void disable() throws SecurityException {
+    public final void setEnabled(final boolean enabled) throws SecurityException {
         checkAccess(this);
-        enabled = false;
+        this.enabled = enabled;
     }
 
     /**
@@ -224,18 +225,6 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
      */
     public final boolean isEnabled() {
         return enabled;
-    }
-
-    /**
-     * Enables the handler if it was previously {@link #disable() disabled}. If the handler is not disabled, nothing
-     * happens.
-     *
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code
-     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
-     */
-    public final void enable() throws SecurityException {
-        checkAccess(this);
-        enabled = true;
     }
 
     @Override

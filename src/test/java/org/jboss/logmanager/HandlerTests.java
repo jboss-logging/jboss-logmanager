@@ -118,10 +118,10 @@ public final class HandlerTests {
         final StringListHandler handler = new StringListHandler();
         testPublish(handler);
         assertEquals(1, handler.size());
-        handler.disable();
+        handler.setEnabled(false);
         testPublish(handler);
         assertEquals(1, handler.size());
-        handler.enable();
+        handler.setEnabled(true);
         testPublish(handler);
         assertEquals(2, handler.size());
     }
