@@ -226,7 +226,7 @@ public final class Formatters {
     }
 
     /**
-     * Create a format step which emits the date of the log record with the given justificaiton rules.
+     * Create a format step which emits the date of the log record with the given justification rules.
      *
      * @param timeZone the time zone to format to
      * @param formatString the date format string
@@ -236,23 +236,22 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep dateFormatStep(final TimeZone timeZone, final String formatString, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
-        final SimpleDateFormat dateFormatMaster = new SimpleDateFormat(formatString == null ? "yyyy-MM-dd HH:mm:ss,SSS" : formatString);
         return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
-            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
-                final SimpleDateFormat dateFormat = dateFormatMaster;
-                dateFormat.setTimeZone(timeZone);
-                final String formatted;
-                final Date date = new Date(record.getMillis());
-                synchronized (dateFormat) {
-                    formatted = dateFormat.format(date);
+            private final ThreadLocal<SimpleDateFormat> holder = new ThreadLocal<SimpleDateFormat>() {
+                protected SimpleDateFormat initialValue() {
+                    final SimpleDateFormat dateFormat = new SimpleDateFormat(formatString == null ? "yyyy-MM-dd HH:mm:ss,SSS" : formatString);
+                    dateFormat.setTimeZone(timeZone);
+                    return dateFormat;
                 }
-                builder.append(formatted);
+            };
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                builder.append(holder.get().format(new Date(record.getMillis())));
             }
         };
     }
 
     /**
-     * Create a format step which emits the date of the log record with the given justificaiton rules.
+     * Create a format step which emits the date of the log record with the given justification rules.
      *
      * @param formatString the date format string
      * @param leftJustify {@code true} to left justify, {@code false} to right justify
