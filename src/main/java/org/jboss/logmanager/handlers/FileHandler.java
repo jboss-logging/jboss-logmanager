@@ -22,10 +22,11 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
-
+import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.util.logging.Formatter;
 
 /**
@@ -149,7 +150,7 @@ public class FileHandler extends OutputStreamHandler {
                 parentFile.mkdirs();
             }
             boolean ok = false;
-            final FileOutputStream fos = new FileOutputStream(file, append);
+            final OutputStream fos = new BufferedOutputStream(new FileOutputStream(file, append));
             try {
                 setOutputStream(fos);
                 this.file = file;
