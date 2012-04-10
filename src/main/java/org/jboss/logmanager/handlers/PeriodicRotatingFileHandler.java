@@ -99,6 +99,16 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         setSuffix(suffix);
     }
 
+    @Override
+    public void setFile(final File file) throws FileNotFoundException {
+        synchronized (outputLock) {
+            super.setFile(file);
+            if (format != null && file != null && file.lastModified() > 0) {
+                calcNextRollover(file.lastModified());
+            }
+        }
+    }
+
     /** {@inheritDoc}  This implementation checks to see if the scheduled rollover time has yet occurred. */
     protected void preWrite(final ExtLogRecord record) {
         final long recordMillis = record.getMillis();
@@ -144,7 +154,13 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         synchronized (outputLock) {
             this.format = format;
             this.period = period;
-            final long now = System.currentTimeMillis();
+            final long now;
+            final File file = getFile();
+            if (file != null && file.lastModified() > 0) {
+                now = file.lastModified();
+            } else {
+                now = System.currentTimeMillis();
+            }
             calcNextRollover(now);
         }
     }
