@@ -22,6 +22,7 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.BufferedWriter;
 import java.io.Writer;
 import java.io.Closeable;
 import java.io.Flushable;
@@ -92,34 +93,43 @@ public class WriterHandler extends ExtHandler {
      */
     public void setWriter(final Writer writer) {
         checkAccess(this);
-        final Writer oldWriter;
-        synchronized (outputLock) {
-            oldWriter = this.writer;
-            writeTail(oldWriter);
-            safeFlush(oldWriter);
-            writeHead(writer);
-            this.writer = writer;
+        Writer oldWriter = null;
+        boolean ok = false;
+        try {
+            synchronized (outputLock) {
+                oldWriter = this.writer;
+                if (oldWriter != null) {
+                    writeTail(oldWriter);
+                    safeFlush(oldWriter);
+                }
+                if (writer != null) {
+                    writeHead(this.writer = new BufferedWriter(writer));
+                } else {
+                    this.writer = null;
+                }
+                ok = true;
+            }
+        } finally {
+            safeClose(oldWriter);
+            if (! ok) safeClose(writer);
         }
-        safeClose(oldWriter);
     }
 
     private void writeHead(final Writer writer) {
-        if (writer != null) {
-            try {
-                writer.write(getFormatter().getHead(this));
-            } catch (Exception e) {
-                reportError("Error writing section header", e, ErrorManager.WRITE_FAILURE);
-            }
+        try {
+            final Formatter formatter = getFormatter();
+            if (formatter != null) writer.write(formatter.getHead(this));
+        } catch (Exception e) {
+            reportError("Error writing section header", e, ErrorManager.WRITE_FAILURE);
         }
     }
 
     private void writeTail(final Writer writer) {
-        if (writer != null) {
-            try {
-                writer.write(getFormatter().getTail(this));
-            } catch (Exception ex) {
-                reportError("Error writing section tail", ex, ErrorManager.WRITE_FAILURE);
-            }
+        try {
+            final Formatter formatter = getFormatter();
+            if (formatter != null) writer.write(formatter.getTail(this));
+        } catch (Exception ex) {
+            reportError("Error writing section tail", ex, ErrorManager.WRITE_FAILURE);
         }
     }
 
