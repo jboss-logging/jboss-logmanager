@@ -141,6 +141,7 @@ public class FileHandler extends OutputStreamHandler {
     public void setFile(File file) throws FileNotFoundException {
         synchronized (outputLock) {
             if (file == null) {
+                this.file = null;
                 setOutputStream(null);
                 return;
             }
@@ -151,9 +152,16 @@ public class FileHandler extends OutputStreamHandler {
             boolean ok = false;
             final FileOutputStream fos = new FileOutputStream(file, append);
             try {
-                setOutputStream(fos);
-                this.file = file;
-                ok = true;
+                final OutputStream bos = new BufferedOutputStream(fos);
+                try {
+                    setOutputStream(bos);
+                    this.file = file;
+                    ok = true;
+                } finally {
+                    if (! ok) {
+                        safeClose(bos);
+                    }
+                }
             } finally {
                 if (! ok) {
                     safeClose(fos);
