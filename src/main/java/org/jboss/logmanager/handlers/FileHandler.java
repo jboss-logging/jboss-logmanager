@@ -188,6 +188,6 @@ public class FileHandler extends OutputStreamHandler {
      * @throws FileNotFoundException if an error occurs opening the file
      */
     public void setFileName(String fileName) throws FileNotFoundException {
-        setFile(new File(fileName));
+        setFile(fileName == null ? null : new File(fileName));
     }
 }
