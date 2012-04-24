@@ -52,6 +52,10 @@ public class ExtLogRecord extends LogRecord {
          * Format the message using the {@link java.util.Formatter} (also known as {@code printf()}) parameter style.
          */
         PRINTF,
+        /**
+         * Do not format the message; parameters are ignored.
+         */
+        NO_FORMAT,
     }
 
     /**
@@ -134,7 +138,7 @@ public class ExtLogRecord extends LogRecord {
 
     private String ndc;
     private FormatStyle formatStyle = FormatStyle.MESSAGE_FORMAT;
-    private Map<String, String> mdcCopy;
+    private FastCopyHashMap<String, String> mdcCopy;
     private int sourceLineNumber = -1;
     private String sourceFileName;
     private String resourceKey;
@@ -172,7 +176,7 @@ public class ExtLogRecord extends LogRecord {
      */
     public void copyMdc() {
         if (mdcCopy == null) {
-            mdcCopy = MDC.copy();
+            mdcCopy = MDC.fastCopy();
         }
     }
 
@@ -188,6 +192,18 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
+     * Get a copy of all the MDC properties for this log record.  If the MDC has not yet been copied, this method will copy it.
+     *
+     * @return a copy of the MDC map
+     */
+    public Map<String, String> getMdcCopy() {
+        if (mdcCopy == null) {
+            mdcCopy = MDC.fastCopy();
+        }
+        return mdcCopy.clone();
+    }
+
+    /**
      * Change an MDC value on this record.  If the MDC has not yet been copied, this method will copy it.
      *
      * @param key the key to set
@@ -197,6 +213,34 @@ public class ExtLogRecord extends LogRecord {
     public String putMdc(String key, String value) {
         copyMdc();
         return mdcCopy.put(key, value);
+    }
+
+    /**
+     * Remove an MDC value on this record.  If the MDC has not yet been copied, this method will copy it.
+     *
+     * @param key the key to remove
+     * @return the old value, if any
+     */
+    public String removeMdc(String key) {
+        copyMdc();
+        return mdcCopy.remove(key);
+    }
+
+    /**
+     * Create a new MDC using a copy of the source map.
+     *
+     * @param sourceMap the source man, must not be {@code null}
+     */
+    public void setMdc(Map<?, ?> sourceMap) {
+        final FastCopyHashMap<String, String> newMdc = new FastCopyHashMap<String, String>();
+        for (Map.Entry<?, ?> entry : sourceMap.entrySet()) {
+            final Object key = entry.getKey();
+            final Object value = entry.getValue();
+            if (key != null && value != null) {
+                newMdc.put(key.toString(), value.toString());
+            }
+        }
+        mdcCopy = newMdc;
     }
 
     /**

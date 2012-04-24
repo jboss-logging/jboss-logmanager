@@ -79,6 +79,10 @@ public final class MDC {
         return mdc.get().clone();
     }
 
+    static FastCopyHashMap<String, String> fastCopy() {
+        return mdc.get().clone();
+    }
+
     /**
      * Clear the current MDC map.
      */

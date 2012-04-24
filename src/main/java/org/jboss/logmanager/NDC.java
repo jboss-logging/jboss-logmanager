@@ -103,6 +103,16 @@ public final class NDC {
         }
     }
 
+    /**
+     * Provided for compatibility with log4j.  Get the NDC value that is {@code n} entries from the bottom.
+     *
+     * @param n the index
+     * @return the value or {@code null} if there is none
+     */
+    public static String get(int n) {
+        return ndc.get().get(n);
+    }
+
     private static final class Holder extends ThreadLocal<Stack<String>> {
         protected Stack<String> initialValue() {
             return new Stack<String>();
@@ -123,7 +133,7 @@ public final class NDC {
             data[sp++] = value;
         }
 
-        @SuppressWarnings({ "unchecked" })
+        @SuppressWarnings("unchecked")
         public T pop() {
             try {
                 return (T) data[--sp];
@@ -132,7 +142,7 @@ public final class NDC {
             }
         }
 
-        @SuppressWarnings({ "unchecked" })
+        @SuppressWarnings("unchecked")
         public T top() {
             return (T) data[sp - 1];
         }
@@ -151,6 +161,11 @@ public final class NDC {
                 Arrays.fill(data, max, sp - 1, null);
                 this.sp = max;
             }
+        }
+
+        @SuppressWarnings("unchecked")
+        public T get(int n) {
+            return n < sp ? (T) data[n] : null;
         }
 
         public String toString() {
