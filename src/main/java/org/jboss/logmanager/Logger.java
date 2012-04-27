@@ -179,7 +179,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public <V> V attach(AttachmentKey<V> key, V value) throws SecurityException {
-        LogContext.checkAccess(loggerNode.getContext());
+        LogContext.checkSecurityAccess();
         return loggerNode.attach(key, value);
     }
 
@@ -195,7 +195,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     @SuppressWarnings({ "unchecked" })
     public <V> V attachIfAbsent(AttachmentKey<V> key, V value) throws SecurityException {
-        LogContext.checkAccess(loggerNode.getContext());
+        LogContext.checkSecurityAccess();
         return loggerNode.attachIfAbsent(key, value);
     }
 
