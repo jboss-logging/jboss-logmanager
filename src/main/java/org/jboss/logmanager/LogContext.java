@@ -322,11 +322,15 @@ public final class LogContext implements Protectable {
         return new SecurityException("Log context modification access denied");
     }
 
-    static void checkAccess(final LogContext logContext) {
+    static void checkSecurityAccess() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
         }
+    }
+
+    static void checkAccess(final LogContext logContext) {
+        checkSecurityAccess();
         if (logContext.protectKey != null && logContext.granted.get() == null) {
             throw accessDenied();
         }
