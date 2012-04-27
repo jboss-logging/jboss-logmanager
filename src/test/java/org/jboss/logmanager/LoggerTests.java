@@ -22,9 +22,13 @@
 
 package org.jboss.logmanager;
 
+import org.jboss.logmanager.formatters.PatternFormatter;
 import org.testng.annotations.Test;
 import static org.testng.AssertJUnit.*;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
@@ -138,6 +142,33 @@ public final class LoggerTests {
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
         assertTrue("Handler wasn't run", ran.get());
+    }
+
+    public void testResourceBundle() {
+        final ListHandler handler = new ListHandler();
+        final Logger logger = Logger.getLogger("rbLogger", getClass().getName());
+        logger.setLevel(Level.INFO);
+        handler.setLevel(Level.INFO);
+        logger.addHandler(handler);
+        logger.log(Level.INFO, null, new IllegalArgumentException());
+        logger.log(Level.INFO, "test", new IllegalArgumentException());
+        assertEquals(null, handler.messages.get(0));
+        assertEquals("Test message", handler.messages.get(1));
+    }
+
+    private static final class ListHandler extends ExtHandler {
+        final List<String> messages = Collections.synchronizedList(new ArrayList<String>());
+
+        ListHandler() {
+            super();
+            setFormatter(new PatternFormatter("%s"));
+        }
+
+        @Override
+        protected void doPublish(final ExtLogRecord record) {
+            super.doPublish(record);
+            messages.add(record.getFormattedMessage());
+        }
     }
 
     private static final class CheckingHandler extends Handler {

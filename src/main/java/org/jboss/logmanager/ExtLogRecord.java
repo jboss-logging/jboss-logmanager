@@ -405,6 +405,8 @@ public class ExtLogRecord extends LogRecord {
     private String formatRecord() {
         final ResourceBundle bundle = getResourceBundle();
         String msg = getMessage();
+        if (msg == null)
+            return null;
         if (bundle != null) {
             try {
                 String locMsg = bundle.getString(msg);
