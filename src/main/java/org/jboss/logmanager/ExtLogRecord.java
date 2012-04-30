@@ -133,7 +133,7 @@ public class ExtLogRecord extends LogRecord {
         }
     }
 
-    private transient final String loggerClassName;
+    private final transient String loggerClassName;
     private transient boolean calculateCaller = true;
 
     private String ndc;
