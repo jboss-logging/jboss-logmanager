@@ -518,7 +518,7 @@ public final class Formatters {
                     if (jarName == null) {
                         // OK, that would have been too easy.  Next let's just grab the last piece before the class name
                         int endIdx = path.lastIndexOf(classResourceName);
-                        if (endIdx != -1) {
+                        if (endIdx > 0) {
                             do {
                                 endIdx--;
                             } while (path.charAt(endIdx) == '/' || path.charAt(endIdx) == '\\' || path.charAt(endIdx) == '?');
