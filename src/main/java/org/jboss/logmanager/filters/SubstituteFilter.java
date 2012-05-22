@@ -28,6 +28,8 @@ import java.util.regex.Pattern;
 import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 
+import org.jboss.logmanager.ExtLogRecord;
+
 /**
  * A filter which applies a text substitution on the message if the nested filter matches.
  */
@@ -69,10 +71,17 @@ public final class SubstituteFilter implements Filter {
      */
     public boolean isLoggable(final LogRecord record) {
         final Matcher matcher = pattern.matcher(record.getMessage());
+        final String msg;
         if (replaceAll) {
-            record.setMessage(matcher.replaceAll(replacement));
+            msg = matcher.replaceAll(replacement);
         } else {
-            record.setMessage(matcher.replaceFirst(replacement));
+            msg = matcher.replaceFirst(replacement);
+        }
+        if (record instanceof ExtLogRecord) {
+            final ExtLogRecord extRecord = (ExtLogRecord) record;
+            extRecord.setMessage(msg, extRecord.getFormatStyle());
+        } else {
+            record.setMessage(msg);
         }
         return true;
     }
