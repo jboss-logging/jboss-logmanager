@@ -22,6 +22,8 @@
 
 package org.jboss.logmanager;
 
+import org.jboss.logmanager.ExtLogRecord.FormatStyle;
+import org.jboss.logmanager.formatters.PatternFormatter;
 import org.testng.annotations.Test;
 import static org.testng.AssertJUnit.*;
 import org.jboss.logmanager.filters.AcceptAllFilter;
@@ -35,7 +37,9 @@ import org.jboss.logmanager.filters.LevelRangeFilter;
 import org.jboss.logmanager.filters.RegexFilter;
 import org.jboss.logmanager.filters.SubstituteFilter;
 
+import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
+import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
@@ -397,7 +401,7 @@ public final class FilterTests {
         assertEquals("Substitution was not correctly applied", "This is a lunch lunch.", result.get());
     }
 
-    public void testSubstitueFilter1() {
+    public void testSubstituteFilter1() {
         final Filter filter = new SubstituteFilter(Pattern.compile("test"), "lunch", false);
         final AtomicReference<String> result = new AtomicReference<String>();
         final Handler handler = new MessageCheckingHandler(result);
@@ -411,7 +415,7 @@ public final class FilterTests {
         assertEquals("Substitution was not correctly applied", "This is a lunch test.", result.get());
     }
 
-    public void testSubstitueFilter2() {
+    public void testSubstituteFilter2() {
         final Filter filter = new SubstituteFilter(Pattern.compile("t(es)t"), "lunch$1", true);
         final AtomicReference<String> result = new AtomicReference<String>();
         final Handler handler = new MessageCheckingHandler(result);
@@ -423,6 +427,14 @@ public final class FilterTests {
         handler.setLevel(Level.INFO);
         logger.info("This is a test test.");
         assertEquals("Substitution was not correctly applied", "This is a lunches lunches.", result.get());
+    }
+
+    public void testSubstituteFilter3() {
+        final Filter filter = new SubstituteFilter(Pattern.compile("t(es)t"), "lunch$1", true);
+        final ExtLogRecord record = new ExtLogRecord(Level.INFO, "This is a test %s", FormatStyle.PRINTF, FilterTests.class.getName());
+        record.setParameters(new String[] {"test"});
+        filter.isLoggable(record);
+        assertEquals("Substitution was not correctly applied", "This is a lunches test", record.getFormattedMessage());
     }
 
 

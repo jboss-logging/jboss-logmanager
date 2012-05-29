@@ -271,6 +271,15 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
+     * Get the format style for the record.
+     *
+     * @return the format style
+     */
+    public FormatStyle getFormatStyle() {
+        return formatStyle;
+    }
+
+    /**
      * Find the first stack frame below the call to the logger, and populate the log record with that information.
      */
     private void calculateCaller() {
