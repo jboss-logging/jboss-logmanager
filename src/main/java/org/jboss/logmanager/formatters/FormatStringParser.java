@@ -61,11 +61,13 @@ public final class FormatStringParser {
      * @param formatString the format string
      * @return the format steps
      */
-    public static FormatStep[] getSteps(final String formatString) {
+    public static FormatStep[] getSteps(final String formatString, ColorMap colors) {
         final long time = System.currentTimeMillis();
         final ArrayList<FormatStep> stepList = new ArrayList<FormatStep>();
         final Matcher matcher = pattern.matcher(formatString);
         TimeZone timeZone = TimeZone.getDefault();
+
+        boolean colorUsed = false;
         while (matcher.find()) {
             final String otherText = matcher.group(1);
             if (otherText != null) {
@@ -109,6 +111,13 @@ public final class FormatStringParser {
                     }
                     case 'k': {
                         stepList.add(Formatters.resourceKeyFormatStep(leftJustify, minimumWidth, maximumWidth));
+                        break;
+                    }
+                    case 'K': {
+                        if (ColorMap.SUPPORTS_COLOR) {
+                            colorUsed = true;
+                            stepList.add(Formatters.formatColor(colors, argument));
+                        }
                         break;
                     }
                     case 'l': {
@@ -173,6 +182,9 @@ public final class FormatStringParser {
                     }
                 }
             }
+        }
+        if (colorUsed) {
+            stepList.add(Formatters.formatColor(colors, ColorMap.CLEAR_NAME));
         }
         return stepList.toArray(new FormatStep[stepList.size()]);
     }

@@ -50,6 +50,7 @@ public final class Formatters {
 
     private static final String NEW_LINE = String.format("%n");
 
+
     private Formatters() {
     }
 
@@ -800,6 +801,22 @@ public final class Formatters {
                     builder.append(value);
                 }
             }
+        };
+    }
+
+    public static FormatStep formatColor(final ColorMap colors, final String color) {
+            return new FormatStep() {
+            public void render(final StringBuilder builder, final ExtLogRecord record) {
+                String code = colors.getCode(color, record.getLevel());
+                if (code != null) {
+                    builder.append(code);
+                }
+            }
+
+            public int estimateLength() {
+                return 7;
+            }
+
         };
     }
 }
