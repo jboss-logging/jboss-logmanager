@@ -22,7 +22,6 @@
 
 package org.jboss.logmanager;
 
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 /**
@@ -47,10 +46,9 @@ public final class SerializedLogger implements Serializable {
      * Get the actual logger for this marker.
      *
      * @return the logger
-     * @throws ObjectStreamException (never)
      * @see <a href="http://java.sun.com/javase/6/docs/platform/serialization/spec/input.html#5903">Serialization spec, 3.7</a>
      */
-    public Object readResolve() throws ObjectStreamException {
-        return Logger.getLogger(name);
+    public Object readResolve() {
+        return java.util.logging.Logger.getLogger(name);
     }
 }
