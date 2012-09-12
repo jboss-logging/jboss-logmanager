@@ -192,22 +192,26 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         switch (period) {
             default:
             case YEAR:
-                calendar.clear(Calendar.MONTH);
+                calendar.set(Calendar.MONTH, 0);
             case MONTH:
-                calendar.clear(Calendar.DAY_OF_MONTH);
+                calendar.set(Calendar.DAY_OF_MONTH, 0);
                 calendar.clear(Calendar.WEEK_OF_MONTH);
             case WEEK:
-                calendar.clear(Calendar.DAY_OF_WEEK);
+                if (period == Period.WEEK) {
+                    calendar.set(Calendar.DAY_OF_WEEK, 0);
+                } else {
+                    calendar.clear(Calendar.DAY_OF_WEEK);
+                }
                 calendar.clear(Calendar.DAY_OF_WEEK_IN_MONTH);
             case DAY:
                 calendar.clear(Calendar.HOUR_OF_DAY);
             case HALF_DAY:
-                calendar.clear(Calendar.HOUR);
+                calendar.set(Calendar.HOUR, 0);
             case HOUR:
-                calendar.clear(Calendar.MINUTE);
+                calendar.set(Calendar.MINUTE, 0);
             case MINUTE:
-                calendar.clear(Calendar.SECOND);
-                calendar.clear(Calendar.MILLISECOND);
+                calendar.set(Calendar.SECOND, 0);
+                calendar.set(Calendar.MILLISECOND, 0);
         }
         // increment the relevant field
         switch (period) {
@@ -227,7 +231,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
                 calendar.add(Calendar.AM_PM, 1);
                 break;
             case HOUR:
-                calendar.add(Calendar.HOUR, 1);
+                calendar.add(Calendar.HOUR_OF_DAY, 1);
                 break;
             case MINUTE:
                 calendar.add(Calendar.MINUTE, 1);
