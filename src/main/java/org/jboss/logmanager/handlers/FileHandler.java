@@ -22,9 +22,11 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.FileNotFoundException;
+import java.io.OutputStream;
 
 import java.util.logging.Formatter;
 

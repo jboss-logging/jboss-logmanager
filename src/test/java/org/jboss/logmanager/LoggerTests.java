@@ -164,6 +164,12 @@ public final class LoggerTests {
             setFormatter(new PatternFormatter("%s"));
         }
 
+        public void flush() {
+        }
+
+        public void close() throws SecurityException {
+        }
+
         @Override
         protected void doPublish(final ExtLogRecord record) {
             super.doPublish(record);
