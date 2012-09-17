@@ -22,8 +22,10 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.Console;
 import java.io.OutputStream;
-import java.util.EnumMap;
+import java.io.PrintWriter;
+import java.io.Writer;
 
 import java.util.logging.Formatter;
 
@@ -49,15 +51,17 @@ public class ConsoleHandler extends OutputStreamHandler {
          * The target for {@link System#err}.
          */
         SYSTEM_ERR,
+        /**
+         * The target for {@link System#console()}.
+         */
+        CONSOLE,
     }
 
-    private static final EnumMap<Target, OutputStream> targets;
+    private static final PrintWriter console;
 
     static {
-        final EnumMap<Target, OutputStream> map = new EnumMap<Target, OutputStream>(Target.class);
-        map.put(Target.SYSTEM_ERR, err);
-        map.put(Target.SYSTEM_OUT, out);
-        targets = map;
+        final Console con = System.console();
+        console = con == null ? null : con.writer();
     }
 
     /**
@@ -73,7 +77,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @param formatter the formatter to use
      */
     public ConsoleHandler(final Formatter formatter) {
-        this(Target.SYSTEM_OUT, formatter);
+        this(Target.CONSOLE, formatter);
     }
 
     /**
@@ -92,7 +96,13 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @param formatter the formatter to use
      */
     public ConsoleHandler(final Target target, final Formatter formatter) {
-        super(wrap(targets.get(target)), formatter);
+        super(formatter);
+        switch (target) {
+            case SYSTEM_OUT: setOutputStream(wrap(out)); break;
+            case SYSTEM_ERR: setOutputStream(wrap(err)); break;
+            case CONSOLE: setWriter(wrap(console)); break;
+            default: throw new IllegalArgumentException();
+        }
     }
 
     /**
@@ -101,7 +111,12 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @param target the target to write to, or {@code null} to clear the target
      */
     public void setTarget(Target target) {
-        setOutputStream(targets.get(target));
+        switch (target) {
+            case SYSTEM_OUT: setOutputStream(wrap(out)); break;
+            case SYSTEM_ERR: setOutputStream(wrap(err)); break;
+            case CONSOLE: setWriter(wrap(console)); break;
+            default: throw new IllegalArgumentException();
+        }
     }
 
     private static OutputStream wrap(final OutputStream outputStream) {
@@ -110,6 +125,14 @@ public class ConsoleHandler extends OutputStreamHandler {
                 outputStream instanceof UncloseableOutputStream ?
                         outputStream :
                         new UncloseableOutputStream(outputStream);
+    }
+
+    private static Writer wrap(final Writer writer) {
+        return writer == null ?
+                null :
+                writer instanceof UncloseableWriter ?
+                        writer :
+                        new UncloseableWriter(writer);
     }
 
     /** {@inheritDoc} */
