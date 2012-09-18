@@ -77,7 +77,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @param formatter the formatter to use
      */
     public ConsoleHandler(final Formatter formatter) {
-        this(Target.CONSOLE, formatter);
+        this(console == null ? Target.SYSTEM_OUT : Target.CONSOLE, formatter);
     }
 
     /**
