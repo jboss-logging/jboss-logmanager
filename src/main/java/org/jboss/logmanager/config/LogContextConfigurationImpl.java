@@ -68,11 +68,13 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     private final Map<String, FormatterConfigurationImpl> formatters = new HashMap<String, FormatterConfigurationImpl>();
     private final Map<String, FilterConfigurationImpl> filters = new HashMap<String, FilterConfigurationImpl>();
     private final Map<String, ErrorManagerConfigurationImpl> errorManagers = new HashMap<String, ErrorManagerConfigurationImpl>();
+    private final Map<String, PojoConfigurationImpl> pojos = new HashMap<String, PojoConfigurationImpl>();
     private final Map<String, Logger> loggerRefs = new HashMap<String, Logger>();
     private final Map<String, Handler> handlerRefs = new HashMap<String, Handler>();
     private final Map<String, Filter> filterRefs = new HashMap<String, Filter>();
     private final Map<String, Formatter> formatterRefs = new HashMap<String, Formatter>();
     private final Map<String, ErrorManager> errorManagerRefs = new HashMap<String, ErrorManager>();
+    private final Map<String, Object> pojoRefs = new HashMap<String, Object>();
 
     private final Deque<ConfigAction<?>> transactionState = new ArrayDeque<ConfigAction<?>>();
 
@@ -250,6 +252,27 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     @Override
+    public PojoConfiguration addPojoConfiguration(final String moduleName, final String className, final String pojoName, final String... constructorProperties) {
+        if (pojos.containsKey(pojoName)) {
+            throw new IllegalArgumentException(String.format("POJO \"%s\" already exists", pojoName));
+        }
+        final PojoConfigurationImpl pojoConfiguration = new PojoConfigurationImpl(this, pojoName, moduleName, className, constructorProperties);
+        pojos.put(pojoName, pojoConfiguration);
+        transactionState.addFirst(pojoConfiguration.getConstructAction());
+        return pojoConfiguration;
+    }
+
+    @Override
+    public PojoConfiguration getPojoConfiguration(final String pojoName) {
+        return pojos.get(pojoName);
+    }
+
+    @Override
+    public List<String> getPojoNames() {
+        return new ArrayList<String>(pojos.keySet());
+    }
+
+    @Override
     public void prepare() {
         List<Object> items = new ArrayList<Object>();
         for (ConfigAction<?> action : transactionState) {
@@ -370,6 +393,8 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             return new SimpleObjectProducer(Charset.forName(replaced));
         } else if (paramType.isEnum()) {
             return new SimpleObjectProducer(Enum.valueOf(paramType.asSubclass(Enum.class), replaced));
+        } else if (pojos.containsKey(replaced)) {
+            return new RefProducer(replaced, pojoRefs);
         } else {
             throw new IllegalArgumentException("Unknown parameter type for property " + propertyName + " on " + objClass);
         }
@@ -413,6 +438,14 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
 
     Map<String, LoggerConfigurationImpl> getLoggerConfigurations() {
         return loggers;
+    }
+
+    Map<String, Object> getPojoRefs() {
+        return pojoRefs;
+    }
+
+    Map<String, PojoConfigurationImpl> getPojoConfigurations() {
+        return pojos;
     }
 
     private static List<String> tokens(String source) {

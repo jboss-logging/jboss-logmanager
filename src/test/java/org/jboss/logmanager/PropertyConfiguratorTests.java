@@ -181,6 +181,16 @@ public class PropertyConfiguratorTests {
         props.setProperty("formatter.OTHER", "org.jboss.logmanager.formatters.PatternFormatter");
         props.setProperty("formatter.OTHER.properties", "pattern");
         props.setProperty("formatter.OTHER.pattern", "%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n");
+
+        // Add a pojo
+        props.setProperty("pojos", "filePojo");
+        props.setProperty("pojo.filePojo", FileHandler.class.getName());
+        props.setProperty("pojo.filePojo.properties", "autoFlush,append,fileName,encoding");
+        props.setProperty("pojo.filePojo.constructorProperties", "fileName,append");
+        props.setProperty("pojo.filePojo.autoFlush", Boolean.toString(true));
+        props.setProperty("pojo.filePojo.append", Boolean.toString(false));
+        props.setProperty("pojo.filePojo.fileName", "logs/test.log");
+        props.setProperty("pojo.filePojo.encoding", "UTF-8");
         return props;
     }
 

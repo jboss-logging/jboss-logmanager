@@ -23,6 +23,7 @@
 package org.jboss.logmanager.config;
 
 import java.util.List;
+
 import org.jboss.logmanager.LogContext;
 
 /**
@@ -99,6 +100,35 @@ public interface LogContextConfiguration {
      * back using the {@link #forget()} method if {@link #commit()} has not been invoked.
      */
     void prepare();
+
+    /**
+     * Add a POJO configuration.
+     *
+     * @param moduleName            the module name, or {@code null} to use the logmanager's class path
+     * @param className             the class name of the handler (must not be {@code null})
+     * @param handlerName           the name of the handler (must be unique within this configuration and not {@code
+     *                              null}
+     * @param constructorProperties an optional list of constructor property names
+     *
+     * @return the new handler configuration
+     */
+    PojoConfiguration addPojoConfiguration(String moduleName, String className, String handlerName, String... constructorProperties);
+
+    /**
+     * Gets the POJO configuration.
+     *
+     * @param pojoName the name of the POJO
+     *
+     * @return the POJO configuration if found, otherwise {@code null}
+     */
+    PojoConfiguration getPojoConfiguration(String pojoName);
+
+    /**
+     * A list of the POJO configuration names.
+     *
+     * @return a list of the names
+     */
+    List<String> getPojoNames();
 
     /**
      * Commit the current changes into the running logging configuration.
