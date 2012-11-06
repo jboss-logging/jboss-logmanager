@@ -22,25 +22,25 @@
 
 package org.jboss.logmanager.formatters;
 
+import static java.lang.Math.max;
+import static java.lang.Math.min;
+
+import java.io.PrintWriter;
 import java.net.URL;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.util.HashMap;
-import java.util.Map;
-import org.jboss.logmanager.ExtLogRecord;
-
-import java.util.logging.Level;
-import java.util.logging.Formatter;
-import java.util.logging.LogRecord;
-
 import java.security.AccessController;
+import java.security.CodeSource;
 import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.TimeZone;
-import static java.lang.Math.min;
-import static java.lang.Math.max;
-import java.io.PrintWriter;
+import java.util.logging.Formatter;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+
+import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.NDC;
 
 /**
@@ -495,56 +495,7 @@ public final class Formatters {
                 }
 
                 // now try to extract the JAR name from the resource URL
-                String jarName = null;
-                if (resource != null) {
-                    final String path = resource.getPath();
-                    final String protocol = resource.getProtocol();
-                    if ("jar".equals(protocol)) {
-                        // the last path segment before "!/" should be the JAR name
-                        final int sepIdx = path.lastIndexOf("!/");
-                        if (sepIdx != -1) {
-                            // hit!
-                            final String firstPart = path.substring(0, sepIdx);
-                            // now find the last file separator before the JAR separator
-                            final int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
-                            if (lsIdx != -1) {
-                                jarName = firstPart.substring(lsIdx + 1);
-                            } else {
-                                jarName = firstPart;
-                            }
-                        }
-                    } else if ("module".equals(protocol)) {
-                        jarName = resource.getPath();
-                    }
-                    if (jarName == null) {
-                        // OK, that would have been too easy.  Next let's just grab the last piece before the class name
-                        int endIdx = path.lastIndexOf(classResourceName);
-                        if (endIdx > 0) {
-                            do {
-                                endIdx--;
-                            } while (path.charAt(endIdx) == '/' || path.charAt(endIdx) == '\\' || path.charAt(endIdx) == '?');
-                            final String firstPart = path.substring(0, endIdx);
-                            final int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
-                            if (lsIdx != -1) {
-                                jarName = firstPart.substring(lsIdx + 1);
-                            } else {
-                                jarName = firstPart;
-                            }
-                        }
-                    }
-                    if (jarName == null) {
-                        // OK, just use the last segment
-                        final int endIdx = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
-                        if (endIdx != -1) {
-                            jarName = path.substring(endIdx + 1);
-                        } else {
-                            jarName = path;
-                        }
-                    }
-                    if (jarName == null && exceptionClass != null && exceptionClass.getClassLoader() == null) {
-                        jarName = "(bootstrap)";
-                    }
-                }
+                String jarName = getJarName(resource, exceptionClass, classResourceName);
 
                 // finally, render the mess
                 boolean started = false;
@@ -627,6 +578,60 @@ public final class Formatters {
                 }
             }
         };
+    }
+
+    static String getJarName(URL resource, Class<?> exceptionClass, String classResourceName) {
+        String jarName = null;
+        if (resource != null) {
+            final String path = resource.getPath();
+            final String protocol = resource.getProtocol();
+            if ("jar".equals(protocol)) {
+                // the last path segment before "!/" should be the JAR name
+                final int sepIdx = path.lastIndexOf("!/");
+                if (sepIdx != -1) {
+                    // hit!
+                    final String firstPart = path.substring(0, sepIdx);
+                    // now find the last file separator before the JAR separator
+                    final int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
+                    if (lsIdx != -1) {
+                        jarName = firstPart.substring(lsIdx + 1);
+                    } else {
+                        jarName = firstPart;
+                    }
+                }
+            } else if ("module".equals(protocol)) {
+                jarName = resource.getPath();
+            }
+            if (jarName == null) {
+                // OK, that would have been too easy.  Next let's just grab the last piece before the class name
+                int endIdx = path.lastIndexOf(classResourceName);
+                if (endIdx > 0) {
+                    do {
+                        endIdx--;
+                    } while (path.charAt(endIdx) == '/' || path.charAt(endIdx) == '\\' || path.charAt(endIdx) == '?');
+                    final String firstPart = path.substring(0, endIdx);
+                    final int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
+                    if (lsIdx != -1) {
+                        jarName = firstPart.substring(lsIdx + 1);
+                    } else {
+                        jarName = firstPart;
+                    }
+                }
+            }
+            if (jarName == null) {
+                // OK, just use the last segment
+                final int endIdx = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
+                if (endIdx != -1) {
+                    jarName = path.substring(endIdx + 1);
+                } else {
+                    jarName = path;
+                }
+            }
+            if (jarName == null && exceptionClass != null && exceptionClass.getClassLoader() == null) {
+                jarName = "(bootstrap)";
+            }
+        }
+        return jarName;
     }
 
     /**
