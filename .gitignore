@@ -3,3 +3,7 @@
 *.iml
 .idea
 target
+/test-output
+/.settings
+/.project
+/.classpath
