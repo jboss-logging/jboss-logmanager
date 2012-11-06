@@ -603,12 +603,12 @@ public final class Formatters {
         }
         
         // OK, that would have been too easy.  Next let's just grab the last piece before the class name
-    	for (int endIdx = path.lastIndexOf(classResourceName); endIdx > 0; endIdx--) {
+    	for (int endIdx = path.lastIndexOf(classResourceName); endIdx >= 0; endIdx--) {
     		char ch = path.charAt(endIdx);
 			if (ch == '/' || ch == '\\' || ch == '?') {
                 String firstPart = path.substring(0, endIdx);
                 int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
-                return firstPart.substring(lsIdx);
+                return firstPart.substring(lsIdx + 1);
     		}
     	}
         
