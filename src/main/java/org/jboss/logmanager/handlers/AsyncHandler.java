@@ -178,7 +178,17 @@ public class AsyncHandler extends ExtHandler {
                                 return;
                             }
                         } else {
-                            rec = recordQueue.take();
+                            // auto-flush will flush on an empty queue
+                            if (isAutoFlush()) {
+                                rec = recordQueue.poll();
+                                if (rec == null) {
+                                    // flush all handlers
+                                    flush();
+                                    rec = recordQueue.take();
+                                }
+                            } else {
+                                rec = recordQueue.take();
+                            }
                         }
                     } catch (InterruptedException e) {
                         intr = true;
