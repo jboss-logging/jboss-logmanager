@@ -203,6 +203,9 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
     public void setAutoFlush(final boolean autoFlush) throws SecurityException {
         checkAccess(this);
         this.autoFlush = autoFlush;
+        if (autoFlush) {
+            flush();
+        }
     }
 
     /**
