@@ -43,7 +43,7 @@ import org.jboss.logmanager.handlers.FlushableCloseable;
 public abstract class ExtHandler extends Handler implements FlushableCloseable, Protectable {
 
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
-    private volatile boolean autoFlush;
+    private volatile boolean autoFlush = true;
     private volatile boolean enabled = true;
 
     private volatile Object protectKey;
