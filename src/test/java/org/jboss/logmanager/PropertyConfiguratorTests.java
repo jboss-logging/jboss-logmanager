@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.LogRecord;
@@ -82,13 +83,15 @@ public class PropertyConfiguratorTests {
     }
 
     private void compare(final Properties defaultProps, final Properties configProps) {
-        // Compare keys and values
-        assertTrue(String.format("Properties are a different size: %nDefault: %20s%nConfiguration: %20s%n", defaultProps, configProps), configProps.size() == defaultProps.size());
-
-        // Property names need to match
         final Set<String> dftNames = defaultProps.stringPropertyNames();
         final Set<String> configNames = configProps.stringPropertyNames();
-        assertTrue(String.format("Unmatched keys: %nDefault: %20s%nConfiguration: %20s", dftNames, configNames), dftNames.containsAll(configNames));
+        // Look for missing keys
+        final Set<String> missingDftNames = new TreeSet<String>(dftNames);
+        missingDftNames.removeAll(configNames);
+        final Set<String> missingConfigNames = new TreeSet<String>(configNames);
+        missingConfigNames.removeAll(dftNames);
+        assertTrue("Default properties are missing: " + missingDftNames, missingDftNames.isEmpty());
+        assertTrue("Configuration properties are missing: " + missingConfigNames, missingConfigNames.isEmpty());
 
         // Values need to match
         for (String key : defaultProps.stringPropertyNames()) {
@@ -112,12 +115,18 @@ public class PropertyConfiguratorTests {
         final String spacedLoggerName = "Spaced Logger";
         final String specialCharLoggerName = "Special:Char\\Logger";
         // Create the loggers
-        props.setProperty("loggers", loggerName.concat(",").concat(spacedLoggerName).concat(",").concat(specialCharLoggerName));
+        props.setProperty("loggers", loggerName.concat(",").concat(spacedLoggerName).concat(",")
+                .concat(specialCharLoggerName).concat(",org.jboss.filter1,org.jboss.filter2"));
         props.setProperty("logger.level", "INFO");
         props.setProperty("logger.handlers", "CONSOLE");
         loggerInit(props, loggerName);
         loggerInit(props, spacedLoggerName);
         loggerInit(props, specialCharLoggerName);
+
+        // Apply filter to logger
+        props.setProperty("logger.org.jboss.filter1.filter", "match(\".*\")");
+        // An explicit filter - currently these are not supported - LOGMGR-51
+        // props.setProperty("logger.org.jboss.filter2", "FILTER");
 
         // An explicit console handler
         props.setProperty("handler.CONSOLE", ConsoleHandler.class.getName());
@@ -125,6 +134,9 @@ public class PropertyConfiguratorTests {
         props.setProperty("handler.CONSOLE.properties", "autoFlush,target");
         props.setProperty("handler.CONSOLE.autoFlush", Boolean.toString(true));
         props.setProperty("handler.CONSOLE.target", Target.SYSTEM_OUT.toString());
+
+        // Apply filter the handler - not currently supported for named filters - LOGMGR-51
+        // props.setProperty("handler.CONSOLE.filter", "FILTER2");
 
         // An implicit handler
         props.setProperty("handler.FILE", FileHandler.class.getName());
@@ -135,9 +147,12 @@ public class PropertyConfiguratorTests {
         props.setProperty("handler.FILE.autoFlush", Boolean.toString(true));
         props.setProperty("handler.FILE.append", Boolean.toString(false));
         props.setProperty("handler.FILE.fileName", "logs/test.log");
+        props.setProperty("handler.FILE.encoding", "UTF-8");
+        // Apply filter the handler
+        props.setProperty("handler.FILE.filter", "match(\".*\")");
         props.setProperty("handlers", "FILE");
 
-        // An explicit filter - currently these are not supported
+        // An explicit filter - currently these are not supported - LOGMGR-51
         //        props.setProperty("filter.FILTER", RegexFilter.class.getName());
         //        props.setProperty("filter.FILTER.properties", "patternString");
         //        props.setProperty("filter.FILTER.constructorProperties", "patternString");
