@@ -211,6 +211,10 @@ public final class PropertyConfigurator implements Configurator {
             if (level != null) {
                 writeProperty(out, prefix, "level", level);
             }
+            final String encoding = handler.getEncoding();
+            if (encoding != null) {
+                writeProperty(out, prefix, "encoding", encoding);
+            }
             final String filter = handler.getFilter();
             if (filter != null) {
                 writeProperty(out, prefix, "filter", filter);
@@ -430,7 +434,8 @@ public final class PropertyConfigurator implements Configurator {
         final String filterName = getStringProperty(properties, getKey("logger", loggerName, "filter"));
         if (filterName != null) {
             loggerConfiguration.setFilter(filterName);
-            configureFilter(properties, filterName);
+            // TODO (jrp) doesn't work LOGMGR-51
+            // configureFilter(properties, filterName);
         }
 
         // Get logger handlers
