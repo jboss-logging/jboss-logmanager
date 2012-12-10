@@ -22,25 +22,25 @@
 
 package org.jboss.logmanager.formatters;
 
-import static java.lang.Math.max;
-import static java.lang.Math.min;
-
-import java.io.PrintWriter;
 import java.net.URL;
-import java.security.AccessController;
 import java.security.CodeSource;
-import java.security.PrivilegedAction;
 import java.security.ProtectionDomain;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.TimeZone;
-import java.util.logging.Formatter;
+import org.jboss.logmanager.ExtLogRecord;
+
 import java.util.logging.Level;
+import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
-import org.jboss.logmanager.ExtLogRecord;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.TimeZone;
+import static java.lang.Math.min;
+import static java.lang.Math.max;
+import java.io.PrintWriter;
 import org.jboss.logmanager.NDC;
 
 /**
@@ -582,8 +582,8 @@ public final class Formatters {
 
     static String getJarName(URL resource, String classResourceName) {
         if (resource == null) {
-			return null;
-		}
+            return null;
+        }
         
         final String path = resource.getPath();
         final String protocol = resource.getProtocol();
@@ -603,19 +603,19 @@ public final class Formatters {
         }
         
         // OK, that would have been too easy.  Next let's just grab the last piece before the class name
-    	for (int endIdx = path.lastIndexOf(classResourceName); endIdx >= 0; endIdx--) {
-    		char ch = path.charAt(endIdx);
-			if (ch == '/' || ch == '\\' || ch == '?') {
+        for (int endIdx = path.lastIndexOf(classResourceName); endIdx >= 0; endIdx--) {
+            char ch = path.charAt(endIdx);
+            if (ch == '/' || ch == '\\' || ch == '?') {
                 String firstPart = path.substring(0, endIdx);
                 int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
                 return firstPart.substring(lsIdx + 1);
-    		}
-    	}
+            }
+        }
         
         // OK, just use the last segment
         final int endIdx = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
         return path.substring(endIdx + 1);
-	}
+    }
 
     /**
      * Create a format step which emits the log message resource key (if any) with the given justification rules.
