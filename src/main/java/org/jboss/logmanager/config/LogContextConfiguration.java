@@ -95,6 +95,12 @@ public interface LogContextConfiguration {
     List<String> getErrorManagerNames();
 
     /**
+     * Prepares the current changes. The changes are applied into the running logging configuration, but can be rolled
+     * back using the {@link #forget()} method if {@link #commit()} has not been invoked.
+     */
+    void prepare();
+
+    /**
      * Commit the current changes into the running logging configuration.
      */
     void commit();
