@@ -27,6 +27,7 @@ import static org.testng.AssertJUnit.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
@@ -48,8 +49,10 @@ import org.testng.annotations.Test;
  */
 @Test
 public class PropertyConfiguratorTests {
+    private static final String BASE_LOG_DIR;
     static {
         System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
+        BASE_LOG_DIR = System.getProperty("test.log.dir");
     }
 
     public void testReadWrite() throws Exception {
@@ -146,7 +149,7 @@ public class PropertyConfiguratorTests {
         props.setProperty("handler.FILE.constructorProperties", "fileName,append");
         props.setProperty("handler.FILE.autoFlush", Boolean.toString(true));
         props.setProperty("handler.FILE.append", Boolean.toString(false));
-        props.setProperty("handler.FILE.fileName", "logs/test.log");
+        props.setProperty("handler.FILE.fileName", createFilePath("test.log"));
         props.setProperty("handler.FILE.encoding", "UTF-8");
         // Apply filter the handler
         props.setProperty("handler.FILE.filter", "match(\".*\")");
@@ -189,7 +192,7 @@ public class PropertyConfiguratorTests {
         props.setProperty("pojo.filePojo.constructorProperties", "fileName,append");
         props.setProperty("pojo.filePojo.autoFlush", Boolean.toString(true));
         props.setProperty("pojo.filePojo.append", Boolean.toString(false));
-        props.setProperty("pojo.filePojo.fileName", "logs/test.log");
+        props.setProperty("pojo.filePojo.fileName", createFilePath("test.log"));
         props.setProperty("pojo.filePojo.encoding", "UTF-8");
         return props;
     }
@@ -197,6 +200,10 @@ public class PropertyConfiguratorTests {
     private static void loggerInit(final Properties props, final String loggerName) {
         props.setProperty(String.format("logger.%s.useParentHandlers", loggerName), Boolean.toString(true));
         props.setProperty(String.format("logger.%s.level", loggerName), "INFO");
+    }
+
+    private static String createFilePath(final String filename) {
+        return BASE_LOG_DIR.concat(File.separator).concat("logs").concat(File.separator).concat(filename);
     }
 
     public static class AcceptFilter implements Filter {
