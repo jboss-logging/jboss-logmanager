@@ -23,6 +23,7 @@
 package org.jboss.logmanager;
 
 import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertNull;
 import static org.testng.AssertJUnit.assertTrue;
 
 import java.io.ByteArrayInputStream;
@@ -39,6 +40,9 @@ import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 
+import org.jboss.logmanager.config.HandlerConfiguration;
+import org.jboss.logmanager.config.LogContextConfiguration;
+import org.jboss.logmanager.config.LoggerConfiguration;
 import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.jboss.logmanager.handlers.ConsoleHandler.Target;
 import org.jboss.logmanager.handlers.FileHandler;
@@ -82,6 +86,39 @@ public class PropertyConfiguratorTests {
         configProps.clear();
         configProps.load(new InputStreamReader(new ByteArrayInputStream(configOut.toByteArray()), "utf-8"));
         compare(dftProps, configProps);
+
+    }
+
+    public void testPrepareAndRollback() throws Exception {
+        final Properties defaultProperties = defaultProperties();
+        final LogContext logContext = LogContext.create();
+        final PropertyConfigurator configurator = new PropertyConfigurator(logContext);
+        configurator.configure(defaultProperties);
+
+        final LogContextConfiguration logContextConfiguration = configurator.getLogContextConfiguration();
+        // Add a logger to be rolled back
+        final LoggerConfiguration fooConfiguration = logContextConfiguration.addLoggerConfiguration("foo");
+
+        // Add a handler to be rolled back
+        final HandlerConfiguration handlerConfiguration = logContextConfiguration.addHandlerConfiguration(null, FileHandler.class.getName(), "removalFile");
+        handlerConfiguration.setLevel("INFO");
+        handlerConfiguration.setPostConfigurationMethods("flush");
+        handlerConfiguration.setPropertyValueString("fileName", createFilePath("removalFile.log"));
+
+        logContextConfiguration.prepare();
+        logContextConfiguration.forget();
+
+        // Make sure the logger and handler are not in the configuration
+        assertNull("Logger not removed", logContextConfiguration.getLoggerConfiguration("foo"));
+        assertNull("Handler not removed", logContextConfiguration.getLoggerConfiguration("removalFile"));
+
+        // Reload output streams into properties
+        final Properties configProps = new Properties();
+        final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
+        configurator.writeConfiguration(configOut);
+        final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
+        configProps.load(new InputStreamReader(configIn, "utf-8"));
+        compare(defaultProperties, configProps);
 
     }
 
@@ -194,6 +231,7 @@ public class PropertyConfiguratorTests {
         props.setProperty("pojo.filePojo.append", Boolean.toString(false));
         props.setProperty("pojo.filePojo.fileName", createFilePath("test.log"));
         props.setProperty("pojo.filePojo.encoding", "UTF-8");
+        props.setProperty("pojo.filePojo.postConfiguration", "flush");
         return props;
     }
 

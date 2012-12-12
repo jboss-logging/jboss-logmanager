@@ -29,6 +29,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -77,6 +78,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     private final Map<String, Object> pojoRefs = new HashMap<String, Object>();
 
     private final Deque<ConfigAction<?>> transactionState = new ArrayDeque<ConfigAction<?>>();
+    private final Map<String, Deque<ConfigAction<?>>> postConfigurationTransactionState = new LinkedHashMap<String, Deque<ConfigAction<?>>>();
 
     private boolean prepared = false;
 
@@ -274,17 +276,9 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
 
     @Override
     public void prepare() {
-        List<Object> items = new ArrayList<Object>();
-        for (ConfigAction<?> action : transactionState) {
-            items.add(action.validate());
-        }
-        Iterator<Object> iterator = items.iterator();
-        for (ConfigAction<?> action : transactionState) {
-            doApplyPreCreate(action, iterator.next());
-        }
-        iterator = items.iterator();
-        for (ConfigAction<?> action : transactionState) {
-            doApplyPostCreate(action, iterator.next());
+        doPrepare(transactionState);
+        for (Deque<ConfigAction<?>> items : postConfigurationTransactionState.values()) {
+            doPrepare(items);
         }
         prepared = true;
     }
@@ -294,6 +288,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             prepare();
         }
         prepared = false;
+        postConfigurationTransactionState.clear();
         transactionState.clear();
     }
 
@@ -312,7 +307,32 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     public void forget() {
-        final Iterator<ConfigAction<?>> iterator = transactionState.descendingIterator();
+        doForget(transactionState);
+        for (Deque<ConfigAction<?>> items : postConfigurationTransactionState.values()) {
+            doForget(items);
+        }
+        prepared = false;
+        postConfigurationTransactionState.clear();
+        transactionState.clear();
+    }
+
+    private void doPrepare(final Deque<ConfigAction<?>> transactionState) {
+        List<Object> items = new ArrayList<Object>();
+        for (ConfigAction<?> action : transactionState) {
+            items.add(action.validate());
+        }
+        Iterator<Object> iterator = items.iterator();
+        for (ConfigAction<?> action : transactionState) {
+            doApplyPreCreate(action, iterator.next());
+        }
+        iterator = items.iterator();
+        for (ConfigAction<?> action : transactionState) {
+            doApplyPostCreate(action, iterator.next());
+        }
+    }
+
+    private void doForget(final Deque<ConfigAction<?>> transactionState) {
+        Iterator<ConfigAction<?>> iterator = transactionState.descendingIterator();
         while (iterator.hasNext()) {
             final ConfigAction<?> action = iterator.next();
             try {
@@ -320,12 +340,31 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             } catch (Throwable ignored) {
             }
         }
-        prepared = false;
-        transactionState.clear();
     }
 
     void addAction(final ConfigAction<?> action) {
         transactionState.addLast(action);
+    }
+
+    /**
+     * Adds or replaces the post configuration actions for the configuration identified by the {@code name} parameter.
+     *
+     * @param name    the name of the configuration
+     * @param actions the actions to be invoked after the properties have been set
+     */
+    void addPostConfigurationActions(final String name, final Deque<ConfigAction<?>> actions) {
+        if (actions != null && !actions.isEmpty()) {
+            postConfigurationTransactionState.put(name, actions);
+        }
+    }
+
+    /**
+     * Checks to see if configuration actions have already been defined for the configuration.
+     * @param name the name of the configuration
+     * @return {@code true} if the configuration actions have been defined, otherwise {@code false}
+     */
+    boolean postConfigurationActionsExist(final String name) {
+        return postConfigurationTransactionState.containsKey(name);
     }
 
     ObjectProducer getValue(final Class<?> objClass, final String propertyName, final Class<?> paramType, final String valueString, final boolean immediate) {

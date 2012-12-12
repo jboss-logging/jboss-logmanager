@@ -22,14 +22,20 @@
 
 package org.jboss.logmanager.config;
 
+import static java.util.Arrays.asList;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -43,6 +49,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
     private final String className;
     private final String[] constructorProperties;
     private final Map<String, String> properties = new LinkedHashMap<String, String>(0);
+    private final Map<String, Method> postConfigurationMethods = new LinkedHashMap<String, Method>();
 
     protected AbstractPropertyConfiguration(final Class<T> baseClass, final LogContextConfigurationImpl configuration, final Map<String, T> refs, final Map<String, C> configs, final String name, final String moduleName, final String className, final String[] constructorProperties) {
         super(name, configuration, refs, configs);
@@ -166,6 +173,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             }
 
             public void applyPreCreate(final ObjectProducer param) {
+                addPostConfigurationActions();
             }
 
             public void applyPostCreate(final ObjectProducer param) {
@@ -225,6 +233,163 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
     @Override
     public List<String> getConstructorProperties() {
         return Arrays.asList(constructorProperties);
+    }
+
+    @Override
+    public boolean addPostConfigurationMethod(final String methodName) {
+        final LogContextConfigurationImpl configuration = getConfiguration();
+        if (postConfigurationMethods.containsKey(methodName)) {
+            return false;
+        }
+        configuration.addAction(new ConfigAction<Method>() {
+            public Method validate() throws IllegalArgumentException {
+                try {
+                    return actualClass.getMethod(methodName);
+                } catch (NoSuchMethodException e) {
+                    throw new IllegalArgumentException(String.format("Method '%s' not found on '%s'", methodName, actualClass.getName()));
+                }
+            }
+
+            public void applyPreCreate(final Method param) {
+            }
+
+            public void applyPostCreate(final Method param) {
+                postConfigurationMethods.put(methodName, param);
+                // TODO (jrp) this isn't the best for performance
+                addPostConfigurationActions(true);
+            }
+
+            public void rollback() {
+                postConfigurationMethods.remove(methodName);
+                addPostConfigurationActions(true);
+            }
+        });
+        return true;
+    }
+
+    @Override
+    public List<String> getPostConfigurationMethods() {
+        return new ArrayList<String>(postConfigurationMethods.keySet());
+    }
+
+    @Override
+    public void setPostConfigurationMethods(final String... methodNames) {
+        setPostConfigurationMethods(asList(methodNames));
+    }
+
+    @Override
+    public void setPostConfigurationMethods(final List<String> methodNames) {
+        final Map<String, Method> oldMethods = new LinkedHashMap<String, Method>(postConfigurationMethods);
+        postConfigurationMethods.clear();
+        final LinkedHashSet<String> names = new LinkedHashSet<String>(methodNames);
+        getConfiguration().addAction(new ConfigAction<Map<String, Method>>() {
+            @Override
+            public Map<String, Method> validate() throws IllegalArgumentException {
+                final Map<String, Method> result = new LinkedHashMap<String, Method>();
+                for (String methodName : names) {
+                    try {
+                        result.put(methodName, actualClass.getMethod(methodName));
+                    } catch (NoSuchMethodException e) {
+                        throw new IllegalArgumentException(String.format("Method '%s' not found on '%s'", methodName, actualClass.getName()));
+                    }
+
+                }
+                return result;
+            }
+
+            @Override
+            public void applyPreCreate(final Map<String, Method> param) {
+            }
+
+            @Override
+            public void applyPostCreate(final Map<String, Method> param) {
+                postConfigurationMethods.clear();
+                postConfigurationMethods.putAll(param);
+                addPostConfigurationActions(true);
+            }
+
+            @Override
+            public void rollback() {
+                postConfigurationMethods.clear();
+                postConfigurationMethods.putAll(oldMethods);
+                addPostConfigurationActions(true);
+            }
+        });
+    }
+
+    @Override
+    public boolean removePostConfigurationMethod(final String methodName) {
+        final LogContextConfigurationImpl configuration = getConfiguration();
+        if (!postConfigurationMethods.containsKey(methodName)) {
+            return false;
+        }
+        final Method method = postConfigurationMethods.get(methodName);
+        postConfigurationMethods.remove(methodName);
+        configuration.addAction(new ConfigAction<Void>() {
+            public Void validate() throws IllegalArgumentException {
+                return null;
+            }
+
+            public void applyPreCreate(final Void param) {
+            }
+
+            public void applyPostCreate(final Void param) {
+                addPostConfigurationActions(true);
+            }
+
+            public void rollback() {
+                postConfigurationMethods.put(methodName, method);
+                addPostConfigurationActions(true);
+            }
+        });
+        return true;
+    }
+
+    protected final void addPostConfigurationActions() {
+        addPostConfigurationActions(false);
+    }
+
+    private void addPostConfigurationActions(final boolean replace) {
+        final String name = className + "." + getName();
+        final LogContextConfigurationImpl configuration = getConfiguration();
+        if (!replace && configuration.postConfigurationActionsExist(name)) {
+            return;
+        }
+        final Deque<ConfigAction<?>> queue = new ArrayDeque<ConfigAction<?>>(postConfigurationMethods.size());
+        for (final String methodName : postConfigurationMethods.keySet()) {
+            final ConfigAction<Method> configAction = new ConfigAction<Method>() {
+                public Method validate() throws IllegalArgumentException {
+                    final Method result = postConfigurationMethods.get(methodName);
+                    if (result == null) {
+                        throw new IllegalArgumentException(String.format("Method '%s' not found on '%s'", methodName, actualClass.getName()));
+                    }
+                    // References should not be null at this point
+                    if (!getRefs().containsKey(getName())) {
+                        throw new IllegalArgumentException(String.format("No reference found for '%s'", actualClass.getName()));
+                    }
+                    return result;
+                }
+
+                public void applyPreCreate(final Method param) {
+                }
+
+                public void applyPostCreate(final Method param) {
+                    final T instance = getRefs().get(getName());
+                    try {
+                        param.invoke(instance);
+                    } catch (Throwable e) {
+                        // todo log it properly...
+                        e.printStackTrace();
+                    }
+                }
+
+                public void rollback() {
+                    // ignore any rollbacks at this point
+                }
+            };
+            queue.addLast(configAction);
+        }
+        configuration.addPostConfigurationActions(name, queue);
     }
 
     static Class<?> getPropertyType(Class<?> clazz, String propertyName) {
