@@ -29,6 +29,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -68,13 +69,18 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     private final Map<String, FormatterConfigurationImpl> formatters = new HashMap<String, FormatterConfigurationImpl>();
     private final Map<String, FilterConfigurationImpl> filters = new HashMap<String, FilterConfigurationImpl>();
     private final Map<String, ErrorManagerConfigurationImpl> errorManagers = new HashMap<String, ErrorManagerConfigurationImpl>();
+    private final Map<String, PojoConfigurationImpl> pojos = new HashMap<String, PojoConfigurationImpl>();
     private final Map<String, Logger> loggerRefs = new HashMap<String, Logger>();
     private final Map<String, Handler> handlerRefs = new HashMap<String, Handler>();
     private final Map<String, Filter> filterRefs = new HashMap<String, Filter>();
     private final Map<String, Formatter> formatterRefs = new HashMap<String, Formatter>();
     private final Map<String, ErrorManager> errorManagerRefs = new HashMap<String, ErrorManager>();
+    private final Map<String, Object> pojoRefs = new HashMap<String, Object>();
 
     private final Deque<ConfigAction<?>> transactionState = new ArrayDeque<ConfigAction<?>>();
+    private final Map<String, Deque<ConfigAction<?>>> postConfigurationTransactionState = new LinkedHashMap<String, Deque<ConfigAction<?>>>();
+
+    private boolean prepared = false;
 
     private static final ObjectProducer ACCEPT_PRODUCER = new SimpleObjectProducer(AcceptAllFilter.getInstance());
     private static final ObjectProducer DENY_PRODUCER = new SimpleObjectProducer(DenyAllFilter.getInstance());
@@ -247,19 +253,42 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return new ArrayList<String>(errorManagers.keySet());
     }
 
+    @Override
+    public PojoConfiguration addPojoConfiguration(final String moduleName, final String className, final String pojoName, final String... constructorProperties) {
+        if (pojos.containsKey(pojoName)) {
+            throw new IllegalArgumentException(String.format("POJO \"%s\" already exists", pojoName));
+        }
+        final PojoConfigurationImpl pojoConfiguration = new PojoConfigurationImpl(this, pojoName, moduleName, className, constructorProperties);
+        pojos.put(pojoName, pojoConfiguration);
+        transactionState.addFirst(pojoConfiguration.getConstructAction());
+        return pojoConfiguration;
+    }
+
+    @Override
+    public PojoConfiguration getPojoConfiguration(final String pojoName) {
+        return pojos.get(pojoName);
+    }
+
+    @Override
+    public List<String> getPojoNames() {
+        return new ArrayList<String>(pojos.keySet());
+    }
+
+    @Override
+    public void prepare() {
+        doPrepare(transactionState);
+        for (Deque<ConfigAction<?>> items : postConfigurationTransactionState.values()) {
+            doPrepare(items);
+        }
+        prepared = true;
+    }
+
     public void commit() {
-        List<Object> items = new ArrayList<Object>();
-        for (ConfigAction<?> action : transactionState) {
-            items.add(action.validate());
+        if (!prepared) {
+            prepare();
         }
-        Iterator<Object> iterator = items.iterator();
-        for (ConfigAction<?> action : transactionState) {
-            doApplyPreCreate(action, iterator.next());
-        }
-        iterator = items.iterator();
-        for (ConfigAction<?> action : transactionState) {
-            doApplyPostCreate(action, iterator.next());
-        }
+        prepared = false;
+        postConfigurationTransactionState.clear();
         transactionState.clear();
     }
 
@@ -278,7 +307,32 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     public void forget() {
-        final Iterator<ConfigAction<?>> iterator = transactionState.descendingIterator();
+        doForget(transactionState);
+        for (Deque<ConfigAction<?>> items : postConfigurationTransactionState.values()) {
+            doForget(items);
+        }
+        prepared = false;
+        postConfigurationTransactionState.clear();
+        transactionState.clear();
+    }
+
+    private void doPrepare(final Deque<ConfigAction<?>> transactionState) {
+        List<Object> items = new ArrayList<Object>();
+        for (ConfigAction<?> action : transactionState) {
+            items.add(action.validate());
+        }
+        Iterator<Object> iterator = items.iterator();
+        for (ConfigAction<?> action : transactionState) {
+            doApplyPreCreate(action, iterator.next());
+        }
+        iterator = items.iterator();
+        for (ConfigAction<?> action : transactionState) {
+            doApplyPostCreate(action, iterator.next());
+        }
+    }
+
+    private void doForget(final Deque<ConfigAction<?>> transactionState) {
+        Iterator<ConfigAction<?>> iterator = transactionState.descendingIterator();
         while (iterator.hasNext()) {
             final ConfigAction<?> action = iterator.next();
             try {
@@ -286,11 +340,31 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             } catch (Throwable ignored) {
             }
         }
-        transactionState.clear();
     }
 
     void addAction(final ConfigAction<?> action) {
         transactionState.addLast(action);
+    }
+
+    /**
+     * Adds or replaces the post configuration actions for the configuration identified by the {@code name} parameter.
+     *
+     * @param name    the name of the configuration
+     * @param actions the actions to be invoked after the properties have been set
+     */
+    void addPostConfigurationActions(final String name, final Deque<ConfigAction<?>> actions) {
+        if (actions != null && !actions.isEmpty()) {
+            postConfigurationTransactionState.put(name, actions);
+        }
+    }
+
+    /**
+     * Checks to see if configuration actions have already been defined for the configuration.
+     * @param name the name of the configuration
+     * @return {@code true} if the configuration actions have been defined, otherwise {@code false}
+     */
+    boolean postConfigurationActionsExist(final String name) {
+        return postConfigurationTransactionState.containsKey(name);
     }
 
     ObjectProducer getValue(final Class<?> objClass, final String propertyName, final Class<?> paramType, final String valueString, final boolean immediate) {
@@ -358,6 +432,8 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             return new SimpleObjectProducer(Charset.forName(replaced));
         } else if (paramType.isEnum()) {
             return new SimpleObjectProducer(Enum.valueOf(paramType.asSubclass(Enum.class), replaced));
+        } else if (pojos.containsKey(replaced)) {
+            return new RefProducer(replaced, pojoRefs);
         } else {
             throw new IllegalArgumentException("Unknown parameter type for property " + propertyName + " on " + objClass);
         }
@@ -401,6 +477,14 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
 
     Map<String, LoggerConfigurationImpl> getLoggerConfigurations() {
         return loggers;
+    }
+
+    Map<String, Object> getPojoRefs() {
+        return pojoRefs;
+    }
+
+    Map<String, PojoConfigurationImpl> getPojoConfigurations() {
+        return pojos;
     }
 
     private static List<String> tokens(String source) {

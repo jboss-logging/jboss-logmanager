@@ -71,6 +71,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             }
 
             public void applyPreCreate(final Void param) {
+                addPostConfigurationActions();
             }
 
             public void applyPostCreate(final Void param) {
@@ -98,6 +99,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             }
 
             public void applyPreCreate(final Level param) {
+                addPostConfigurationActions();
             }
 
             public void applyPostCreate(final Level param) {
@@ -124,6 +126,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             }
 
             public void applyPreCreate(final ObjectProducer param) {
+                addPostConfigurationActions();
             }
 
             public void applyPostCreate(final ObjectProducer param) {
@@ -157,6 +160,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             }
 
             public void applyPreCreate(final Void param) {
+                addPostConfigurationActions();
             }
 
             public void applyPostCreate(final Void param) {
@@ -190,6 +194,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             }
 
             public void applyPreCreate(final Void param) {
+                addPostConfigurationActions();
             }
 
             public void applyPostCreate(final Void param) {
@@ -230,6 +235,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             }
 
             public void applyPreCreate(final Void param) {
+                addPostConfigurationActions();
             }
 
             public void applyPostCreate(final Void param) {
@@ -271,6 +277,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             }
 
             public void applyPreCreate(final Void param) {
+                addPostConfigurationActions();
             }
 
             public void applyPostCreate(final Void param) {
@@ -302,6 +309,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             }
 
             public void applyPreCreate(final Void param) {
+                addPostConfigurationActions();
             }
 
             public void applyPostCreate(final Void param) {
@@ -340,6 +348,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
 
             @Override
             public void applyPostCreate(final Void param) {
+                addPostConfigurationActions();
             }
 
             @Override

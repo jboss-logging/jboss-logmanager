@@ -41,6 +41,7 @@ import org.jboss.logmanager.config.FormatterConfiguration;
 import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.config.LoggerConfiguration;
+import org.jboss.logmanager.config.PojoConfiguration;
 import org.jboss.logmanager.config.PropertyConfigurable;
 
 /**
@@ -159,6 +160,17 @@ public final class PropertyConfigurator implements Configurator {
                 for (String errorManagerName : allErrorManagerNames) {
                     writeErrorManagerConfiguration(out, config.getErrorManagerConfiguration(errorManagerName));
                 }
+
+                // Write POJO configurations
+                final List<String> pojoNames = config.getPojoNames();
+                if (!pojoNames.isEmpty()) {
+                    writePropertyComment(out, "POJOs to configure");
+                    writeProperty(out, "pojos", toCsvString(pojoNames));
+                    for (String pojoName : pojoNames) {
+                        writePojoConfiguration(out, config.getPojoConfiguration(pojoName));
+                    }
+                }
+
                 out.close();
             } finally {
                 safeClose(out);
@@ -236,6 +248,10 @@ public final class PropertyConfigurator implements Configurator {
                     implicitHandlers.add(handlerName);
                 }
             }
+            final List<String> postConfigurationMethods = handler.getPostConfigurationMethods();
+            if (! postConfigurationMethods.isEmpty()) {
+                writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
+            }
             writeProperties(out, prefix, handler);
         }
     }
@@ -250,6 +266,10 @@ public final class PropertyConfigurator implements Configurator {
             final String moduleName = filter.getModuleName();
             if (moduleName != null) {
                 writeProperty(out, prefix, "module", moduleName);
+            }
+            final List<String> postConfigurationMethods = filter.getPostConfigurationMethods();
+            if (! postConfigurationMethods.isEmpty()) {
+                writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
             }
             writeProperties(out, prefix, filter);
         }
@@ -266,6 +286,10 @@ public final class PropertyConfigurator implements Configurator {
             if (moduleName != null) {
                 writeProperty(out, prefix, "module", moduleName);
             }
+            final List<String> postConfigurationMethods = formatter.getPostConfigurationMethods();
+            if (! postConfigurationMethods.isEmpty()) {
+                writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
+            }
             writeProperties(out, prefix, formatter);
         }
     }
@@ -281,7 +305,30 @@ public final class PropertyConfigurator implements Configurator {
             if (moduleName != null) {
                 writeProperty(out, prefix, "module", moduleName);
             }
+            final List<String> postConfigurationMethods = errorManager.getPostConfigurationMethods();
+            if (! postConfigurationMethods.isEmpty()) {
+                writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
+            }
             writeProperties(out, prefix, errorManager);
+        }
+    }
+
+    private static void writePojoConfiguration(final PrintStream out, final PojoConfiguration pojo) {
+        if (pojo != null) {
+            out.println();
+            final String name = pojo.getName();
+            final String prefix = "pojo." + name + ".";
+            final String className = pojo.getClassName();
+            writeProperty(out, "pojo.", name, className);
+            final String moduleName = pojo.getModuleName();
+            if (moduleName != null) {
+                writeProperty(out, prefix, "module", moduleName);
+            }
+            final List<String> postConfigurationMethods = pojo.getPostConfigurationMethods();
+            if (! postConfigurationMethods.isEmpty()) {
+                writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
+            }
+            writeProperties(out, prefix, pojo);
         }
     }
 
@@ -411,6 +458,10 @@ public final class PropertyConfigurator implements Configurator {
             for (String errorManagerName : getStringCsvArray(properties, "errorManagers")) {
                 configureErrorManager(properties, errorManagerName);
             }
+            // Configure POJOs
+            for (String pojoName : getStringCsvArray(properties, "pojos")) {
+                configurePojos(properties, pojoName);
+            }
             config.commit();
         } finally {
             config.forget();
@@ -462,6 +513,8 @@ public final class PropertyConfigurator implements Configurator {
                 getStringProperty(properties, getKey("filter", filterName)),
                 filterName,
                 getStringCsvArray(properties, getKey("filter", filterName, "constructorProperties")));
+        final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("filter", filterName, "postConfiguration"));
+        configuration.setPostConfigurationMethods(postConfigurationMethods);
         configureProperties(properties, configuration, getKey("filter", filterName));
     }
 
@@ -475,6 +528,8 @@ public final class PropertyConfigurator implements Configurator {
                 getStringProperty(properties, getKey("formatter", formatterName)),
                 formatterName,
                 getStringCsvArray(properties, getKey("formatter", formatterName, "constructorProperties")));
+        final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("formatter", formatterName, "postConfiguration"));
+        configuration.setPostConfigurationMethods(postConfigurationMethods);
         configureProperties(properties, configuration, getKey("formatter", formatterName));
     }
 
@@ -488,6 +543,8 @@ public final class PropertyConfigurator implements Configurator {
                 getStringProperty(properties, getKey("errorManager", errorManagerName)),
                 errorManagerName,
                 getStringCsvArray(properties, getKey("errorManager", errorManagerName, "constructorProperties")));
+        final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("errorManager", errorManagerName, "postConfiguration"));
+        configuration.setPostConfigurationMethods(postConfigurationMethods);
         configureProperties(properties, configuration, getKey("errorManager", errorManagerName));
     }
 
@@ -528,7 +585,24 @@ public final class PropertyConfigurator implements Configurator {
         for (String name : handlerNames) {
             configureHandler(properties, name);
         }
+        final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("handler", handlerName, "postConfiguration"));
+        configuration.setPostConfigurationMethods(postConfigurationMethods);
         configureProperties(properties, configuration, getKey("handler", handlerName));
+    }
+
+    private void configurePojos(final Properties properties, final String pojoName) {
+        if (config.getPojoConfiguration(pojoName) != null) {
+            // already configured!
+            return;
+        }
+        final PojoConfiguration configuration = config.addPojoConfiguration(
+                getStringProperty(properties, getKey("pojo", pojoName, "module")),
+                getStringProperty(properties, getKey("pojo", pojoName)),
+                pojoName,
+                getStringCsvArray(properties, getKey("pojo", pojoName, "constructorProperties")));
+        final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("pojo", pojoName, "postConfiguration"));
+        configuration.setPostConfigurationMethods(postConfigurationMethods);
+        configureProperties(properties, configuration, getKey("pojo", pojoName));
     }
 
     private void configureProperties(final Properties properties, final PropertyConfigurable configurable, final String prefix) {

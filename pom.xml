@@ -70,6 +70,9 @@
                     <includes>
                         <include>**/*Tests.java</include>
                     </includes>
+                    <systemPropertyVariables>
+                        <test.log.dir>${project.build.directory}</test.log.dir>
+                    </systemPropertyVariables>
                 </configuration>
             </plugin>
             <plugin>

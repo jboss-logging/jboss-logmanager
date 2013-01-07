@@ -87,4 +87,43 @@ public interface PropertyConfigurable {
      * @return a collection of the constructor properties.
      */
     List<String> getConstructorProperties();
+
+    /**
+     * Adds a method name to be invoked after all properties have been set.
+     *
+     * @param methodName the name of the method
+     *
+     * @return {@code true} if the method was successfully added, otherwise {@code false}
+     */
+    boolean addPostConfigurationMethod(String methodName);
+
+    /**
+     * Returns a collection of the methods to be invoked after the properties have been set.
+     *
+     * @return a collection of method names or an empty list
+     */
+    List<String> getPostConfigurationMethods();
+
+    /**
+     * Sets the method names to be invoked after the properties have been set.
+     *
+     * @param methodNames the method names to invoke
+     */
+    void setPostConfigurationMethods(String... methodNames);
+
+    /**
+     * Sets the method names to be invoked after the properties have been set.
+     *
+     * @param methodNames the method names to invoke
+     */
+    void setPostConfigurationMethods(List<String> methodNames);
+
+    /**
+     * Removes the post configuration method.
+     *
+     * @param methodName the method to remove
+     *
+     * @return {@code true} if the method was removed, otherwise {@code false}
+     */
+    boolean removePostConfigurationMethod(String methodName);
 }
