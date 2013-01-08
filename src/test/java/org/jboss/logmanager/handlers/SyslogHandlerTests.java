@@ -76,7 +76,7 @@ public class SyslogHandlerTests {
 
     private static Calendar getCalendar() {
         final Calendar cal = Calendar.getInstance();
-        cal.set(cal.get(Calendar.YEAR), Calendar.JANUARY, 9, 4, 39, 22);
+        cal.set(2012, Calendar.JANUARY, 9, 4, 39, 22);
         cal.set(Calendar.MILLISECOND, 0);
         return cal;
     }
