@@ -25,23 +25,18 @@ package org.jboss.logmanager;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Permission;
+import java.util.Collections;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.EnumSet;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.WEAK;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.DEFAULT_CONCURRENCY_LEVEL;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.DEFAULT_LOAD_FACTOR;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.DEFAULT_INITIAL_CAPACITY;
 
 /**
- * A log context selector which chooses a log context based on the caller's classloader.  This selector maintains
- * weak references to the classloader as well as the log context; if either is collected, the association is
- * broken.  Therefore, strong references must be kept external to this class.
+ * A log context selector which chooses a log context based on the caller's classloader.
  */
 public final class ClassLoaderLogContextSelector implements LogContextSelector {
 
     private static final Permission REGISTER_LOG_CONTEXT_PERMISSION = new RuntimePermission("registerLogContext", null);
     private static final Permission UNREGISTER_LOG_CONTEXT_PERMISSION = new RuntimePermission("unregisterLogContext", null);
+    private static final Permission LOG_API_PERMISSION = new RuntimePermission("logApiPermission", null);
 
     /**
      * Construct a new instance.  If no matching log context is found, the provided default selector is consulted.
@@ -77,8 +72,8 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
 
     private final LogContextSelector defaultSelector;
 
-    private final ConcurrentMap<ClassLoader, LogContext> contextMap =
-            new ConcurrentReferenceHashMap<ClassLoader, LogContext>(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, WEAK, WEAK, EnumSet.of(IDENTITY_COMPARISONS));
+    private final ConcurrentMap<ClassLoader, LogContext> contextMap = new CopyOnWriteMap<ClassLoader, LogContext>();
+    private final Set<ClassLoader> logApiClassLoaders = Collections.newSetFromMap(new CopyOnWriteMap<ClassLoader, Boolean>());
 
     /**
      * {@inheritDoc}  This instance will consult the call stack to see if any calling classloader is associated
@@ -86,12 +81,44 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
      */
     public LogContext getLogContext() {
         for (Class caller : GATEWAY.getClassContext()) {
-            final LogContext context = contextMap.get(caller.getClassLoader());
-            if (context != null) {
-                return context;
+            final ClassLoader classLoader = caller.getClassLoader();
+            if (classLoader != null && ! logApiClassLoaders.contains(classLoader)) {
+                final LogContext context = contextMap.get(classLoader);
+                if (context != null) {
+                    return context;
+                }
             }
         }
         return defaultSelector.getLogContext();
+    }
+
+    /**
+     * Register a class loader which is a known log API, and thus should be skipped over when searching for the
+     * log context to use for the caller class.
+     *
+     * @param apiClassLoader the API class loader
+     * @return {@code true} if this class loader was previously unknown, or {@code false} if it was already registered
+     */
+    public boolean addLogApiClassLoader(ClassLoader apiClassLoader) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(LOG_API_PERMISSION);
+        }
+        return logApiClassLoaders.add(apiClassLoader);
+    }
+
+    /**
+     * Remove a class loader from the known log APIs set.
+     *
+     * @param apiClassLoader the API class loader
+     * @return {@code true} if the class loader was removed, or {@code false} if it was not known to this selector
+     */
+    public boolean removeLogApiClassLoader(ClassLoader apiClassLoader) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(LOG_API_PERMISSION);
+        }
+        return logApiClassLoaders.remove(apiClassLoader);
     }
 
     /**

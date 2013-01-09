@@ -25,19 +25,10 @@ package org.jboss.logmanager;
 import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
-import java.util.EnumSet;
 import java.util.concurrent.ConcurrentMap;
 
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.DEFAULT_CONCURRENCY_LEVEL;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.DEFAULT_INITIAL_CAPACITY;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.DEFAULT_LOAD_FACTOR;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.Option.IDENTITY_COMPARISONS;
-import static org.jboss.logmanager.ConcurrentReferenceHashMap.ReferenceType.WEAK;
-
 /**
- * A log context selector which chooses a log context based on the thread context classloader.  This selector maintains
- * weak references to the classloader as well as the log context; if either is collected, the association is
- * broken.  Therefore, strong references must be kept external to this class.
+ * A log context selector which chooses a log context based on the thread context classloader.
  */
 public final class ContextClassLoaderLogContextSelector implements LogContextSelector {
 
@@ -62,8 +53,7 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
 
     private final LogContextSelector defaultSelector;
 
-    private final ConcurrentMap<ClassLoader, LogContext> contextMap =
-            new ConcurrentReferenceHashMap<ClassLoader, LogContext>(DEFAULT_INITIAL_CAPACITY, DEFAULT_LOAD_FACTOR, DEFAULT_CONCURRENCY_LEVEL, WEAK, WEAK, EnumSet.of(IDENTITY_COMPARISONS));
+    private final ConcurrentMap<ClassLoader, LogContext> contextMap = new CopyOnWriteMap<ClassLoader, LogContext>();
 
     public LogContext getLogContext() {
         ClassLoader cl = getContextClassLoader();
