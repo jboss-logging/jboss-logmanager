@@ -57,7 +57,7 @@ final class LoggerNode {
     /**
      * The map of names to child nodes.  The child node references are weak.
      */
-    private final ConcurrentMap<String, LoggerNode> children = new CopyOnWriteWeakMap<String, LoggerNode>();
+    private final ConcurrentMap<String, LoggerNode> children;
 
     /**
      * The handlers for this logger.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
@@ -112,6 +112,7 @@ final class LoggerNode {
         fullName = "";
         handlersUpdater.clear(this);
         this.context = context;
+        children = context.createChildMap();
     }
 
     /**
@@ -135,6 +136,7 @@ final class LoggerNode {
         }
         this.context = context;
         effectiveLevel = parent.effectiveLevel;
+        children = context.createChildMap();
     }
 
     /**

@@ -26,6 +26,7 @@ import java.lang.ref.WeakReference;
 import java.security.Permission;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -37,7 +38,7 @@ import java.util.logging.LoggingPermission;
  * A logging context, for producing isolated logging environments.
  */
 public final class LogContext implements Protectable {
-    private static final LogContext SYSTEM_CONTEXT = new LogContext();
+    private static final LogContext SYSTEM_CONTEXT = new LogContext(false);
 
     static final Permission CREATE_CONTEXT_PERMISSION = new RuntimePermission("createLogContext", null);
     static final Permission SET_CONTEXT_SELECTOR_PERMISSION = new RuntimePermission("setLogContextSelector", null);
@@ -47,8 +48,11 @@ public final class LogContext implements Protectable {
     private final LoggerNode rootLogger = new LoggerNode(this);
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
+    private final boolean strong;
 
+    @SuppressWarnings("unused")
     private volatile Object protectKey;
+
     private final ThreadLocal<Boolean> granted = new InheritableThreadLocal<Boolean>();
 
     private static final AtomicReferenceFieldUpdater<LogContext, Object> protectKeyUpdater = AtomicReferenceFieldUpdater.newUpdater(LogContext.class, Object.class, "protectKey");
@@ -97,8 +101,25 @@ public final class LogContext implements Protectable {
      */
     final Object treeLock = new Object();
 
-    LogContext() {
+    LogContext(final boolean strong) {
+        this.strong = strong;
         levelMapReference = new AtomicReference<Map<String, LevelRef>>(LazyHolder.INITIAL_LEVEL_MAP);
+    }
+
+    /**
+     * Create a new log context.  If a security manager is installed, the caller must have the {@code "createLogContext"}
+     * {@link RuntimePermission RuntimePermission} to invoke this method.
+     *
+     * @param strong {@code true} if the context should use strong references, {@code false} to use (default) weak
+     *      references for automatic logger GC
+     * @return a new log context
+     */
+    public static LogContext create(boolean strong) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(CREATE_CONTEXT_PERMISSION);
+        }
+        return new LogContext(strong);
     }
 
     /**
@@ -108,11 +129,7 @@ public final class LogContext implements Protectable {
      * @return a new log context
      */
     public static LogContext create() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            sm.checkPermission(CREATE_CONTEXT_PERMISSION);
-        }
-        return new LogContext();
+        return create(false);
     }
 
     /**
@@ -338,6 +355,10 @@ public final class LogContext implements Protectable {
 
     LoggerNode getRootLoggerNode() {
         return rootLogger;
+    }
+
+    ConcurrentMap<String, LoggerNode> createChildMap() {
+        return strong ? new CopyOnWriteMap<String, LoggerNode>() : new CopyOnWriteWeakMap<String, LoggerNode>();
     }
 
     private interface LevelRef {
