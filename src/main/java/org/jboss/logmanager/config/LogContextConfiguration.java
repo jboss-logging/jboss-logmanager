@@ -105,14 +105,24 @@ public interface LogContextConfiguration {
      * Add a POJO configuration.
      *
      * @param moduleName            the module name, or {@code null} to use the logmanager's class path
-     * @param className             the class name of the handler (must not be {@code null})
-     * @param handlerName           the name of the handler (must be unique within this configuration and not {@code
+     * @param className             the class name of the POJO (must not be {@code null})
+     * @param pojoName              the name of the POJO (must be unique within this configuration and not {@code
      *                              null}
      * @param constructorProperties an optional list of constructor property names
      *
      * @return the new handler configuration
      */
-    PojoConfiguration addPojoConfiguration(String moduleName, String className, String handlerName, String... constructorProperties);
+    PojoConfiguration addPojoConfiguration(String moduleName, String className, String pojoName, String... constructorProperties);
+
+    /**
+     * Removes the POJO configuration.
+     *
+     * @param pojoName the name of the POJO
+     *
+     * @return {@code true} if the configuration was removed, othwerwise {@code false} if the configuration did not
+     *         exist or was not remove.
+     */
+    boolean removePojoConfiguration(String pojoName);
 
     /**
      * Gets the POJO configuration.

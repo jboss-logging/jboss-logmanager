@@ -265,6 +265,17 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     @Override
+    public boolean removePojoConfiguration(final String pojoName) {
+        final PojoConfigurationImpl removed = pojos.remove(pojoName);
+        if (removed != null) {
+            transactionState.addLast(removed.getRemoveAction());
+            removed.setRemoved();
+            return true;
+        }
+        return false;
+    }
+
+    @Override
     public PojoConfiguration getPojoConfiguration(final String pojoName) {
         return pojos.get(pojoName);
     }
