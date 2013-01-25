@@ -22,19 +22,21 @@
 
 package org.jboss.logmanager;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.Closeable;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
 import java.util.Set;
+import java.util.regex.Pattern;
+
 import org.jboss.logmanager.config.ErrorManagerConfiguration;
 import org.jboss.logmanager.config.FilterConfiguration;
 import org.jboss.logmanager.config.FormatterConfiguration;
@@ -51,6 +53,7 @@ public final class PropertyConfigurator implements Configurator {
 
     private static final String[] EMPTY_STRINGS = new String[0];
     private static final String ENCODING = "utf-8";
+    private static final Pattern EXPRESSION_PATTERN = Pattern.compile(".*\\$\\{.*\\}.*");
 
     private final LogContextConfiguration config;
 
@@ -98,25 +101,40 @@ public final class PropertyConfigurator implements Configurator {
      *
      * <b>Note:</b> the output stream will be closed.
      *
-     * @param outputStream the output stream to write to.
+     * @param outputStream     the output stream to write to.
      * @throws IOException if an error occurs while writing the configuration.
      */
     public void writeConfiguration(final OutputStream outputStream) throws IOException {
+        writeConfiguration(outputStream, false);
+    }
+
+    /**
+     * Writes the current configuration to the output stream.
+     *
+     * <b>Note:</b> the output stream will be closed.
+     *
+     * @param outputStream     the output stream to write to.
+     * @param writeExpressions {@code true} if expressions should be written, {@code false} if the resolved value should
+     *                                     be written
+     * @throws IOException if an error occurs while writing the configuration.
+     */
+    public void writeConfiguration(final OutputStream outputStream, final boolean writeExpressions) throws IOException {
         try {
             final PrintStream out = new PrintStream(outputStream, true, ENCODING);
             try {
                 final Set<String> implicitHandlers = new HashSet<String>();
+                final Set<String> implicitFilters = new HashSet<String>();
                 final Set<String> implicitFormatters = new HashSet<String>();
                 final Set<String> implicitErrorManagers = new HashSet<String>();
                 final List<String> loggerNames = config.getLoggerNames();
                 writePropertyComment(out, "Additional loggers to configure (the root logger is always configured)");
                 writeProperty(out, "loggers", toCsvString(loggerNames));
                 final LoggerConfiguration rootLogger = config.getLoggerConfiguration("");
-                writeLoggerConfiguration(out, rootLogger, implicitHandlers);
+                writeLoggerConfiguration(out, rootLogger, implicitHandlers, implicitFilters, writeExpressions);
                 // Remove the root loggers
                 loggerNames.remove("");
                 for (String loggerName : loggerNames) {
-                    writeLoggerConfiguration(out, config.getLoggerConfiguration(loggerName), implicitHandlers);
+                    writeLoggerConfiguration(out, config.getLoggerConfiguration(loggerName), implicitHandlers, implicitFilters, writeExpressions);
                 }
                 final List<String> allHandlerNames = config.getHandlerNames();
                 final List<String> explicitHandlerNames = new ArrayList<String>(allHandlerNames);
@@ -127,16 +145,19 @@ public final class PropertyConfigurator implements Configurator {
                     out.println();
                 }
                 for (String handlerName : allHandlerNames) {
-                    writeHandlerConfiguration(out, config.getHandlerConfiguration(handlerName), implicitHandlers, implicitFormatters, implicitErrorManagers);
+                    writeHandlerConfiguration(out, config.getHandlerConfiguration(handlerName), implicitHandlers, implicitFilters,
+                            implicitFormatters, implicitErrorManagers, writeExpressions);
                 }
                 final List<String> allFilterNames = config.getFilterNames();
-                if (!allFilterNames.isEmpty()) {
+                final List<String> explicitFilterNames = new ArrayList<String>(allFilterNames);
+                explicitFilterNames.removeAll(implicitFilters);
+                if (!explicitFilterNames.isEmpty()) {
                     writePropertyComment(out, "Additional filters to configure");
-                    writeProperty(out, "filters", toCsvString(allFilterNames));
+                    writeProperty(out, "filters", toCsvString(explicitFilterNames));
                     out.println();
                 }
                 for (String filterName : allFilterNames) {
-                    writeFilterConfiguration(out, config.getFilterConfiguration(filterName));
+                    writeFilterConfiguration(out, config.getFilterConfiguration(filterName), writeExpressions);
                 }
                 final List<String> allFormatterNames = config.getFormatterNames();
                 final ArrayList<String> explicitFormatterNames = new ArrayList<String>(allFormatterNames);
@@ -147,7 +168,7 @@ public final class PropertyConfigurator implements Configurator {
                     out.println();
                 }
                 for (String formatterName : allFormatterNames) {
-                    writeFormatterConfiguration(out, config.getFormatterConfiguration(formatterName));
+                    writeFormatterConfiguration(out, config.getFormatterConfiguration(formatterName), writeExpressions);
                 }
                 final List<String> allErrorManagerNames = config.getErrorManagerNames();
                 final ArrayList<String> explicitErrorManagerNames = new ArrayList<String>(allErrorManagerNames);
@@ -158,7 +179,7 @@ public final class PropertyConfigurator implements Configurator {
                     out.println();
                 }
                 for (String errorManagerName : allErrorManagerNames) {
-                    writeErrorManagerConfiguration(out, config.getErrorManagerConfiguration(errorManagerName));
+                    writeErrorManagerConfiguration(out, config.getErrorManagerConfiguration(errorManagerName), writeExpressions);
                 }
 
                 // Write POJO configurations
@@ -167,7 +188,7 @@ public final class PropertyConfigurator implements Configurator {
                     writePropertyComment(out, "POJOs to configure");
                     writeProperty(out, "pojos", toCsvString(pojoNames));
                     for (String pojoName : pojoNames) {
-                        writePojoConfiguration(out, config.getPojoConfiguration(pojoName));
+                        writePojoConfiguration(out, config.getPojoConfiguration(pojoName), writeExpressions);
                     }
                 }
 
@@ -181,22 +202,27 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeLoggerConfiguration(final PrintStream out, final LoggerConfiguration logger, final Set<String> implicitHandlers) {
+    private static void writeLoggerConfiguration(final PrintStream out, final LoggerConfiguration logger,
+                                                 final Set<String> implicitHandlers, final Set<String> implicitFilters,
+                                                 final boolean writeExpressions) {
         if (logger != null) {
             out.println();
             final String name = logger.getName();
             final String prefix = name.isEmpty() ? "logger." : "logger." + name + ".";
-            final String level = logger.getLevel();
+            final String level = (writeExpressions ? logger.getLevelValueExpression().getValue() : logger.getLevel());
             if (level != null) {
                 writeProperty(out, prefix, "level", level);
             }
-            final String filterName = logger.getFilter();
+            final String filterName = (writeExpressions ? logger.getFilterValueExpression().getValue() : logger.getFilter());
             if (filterName != null) {
                 writeProperty(out, prefix, "filter", filterName);
+                implicitFilters.add(logger.getFilter());
             }
             final Boolean useParentHandlers = logger.getUseParentHandlers();
-            if (useParentHandlers != null) {
-                writeProperty(out, prefix, "useParentHandlers", useParentHandlers.toString());
+            final String useParentHandlersValue = (writeExpressions ? logger.getUseParentHandlersValueExpression().getValue() :
+                    useParentHandlers == null ? null : useParentHandlers.toString());
+            if (useParentHandlersValue != null) {
+                writeProperty(out, prefix, "useParentHandlers", useParentHandlersValue);
             }
             final List<String> handlerNames = logger.getHandlerNames();
             if (!handlerNames.isEmpty()) {
@@ -208,7 +234,10 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeHandlerConfiguration(final PrintStream out, final HandlerConfiguration handler, final Set<String> implicitHandlers, final Set<String> implicitFormatters, final Set<String> implicitErrorManagers) {
+    private static void writeHandlerConfiguration(final PrintStream out, final HandlerConfiguration handler,
+                                                  final Set<String> implicitHandlers, final Set<String> implicitFilters,
+                                                  final Set<String> implicitFormatters, final Set<String> implicitErrorManagers,
+                                                  final boolean writeExpressions) {
         if (handler != null) {
             out.println();
             final String name = handler.getName();
@@ -219,27 +248,28 @@ public final class PropertyConfigurator implements Configurator {
             if (moduleName != null) {
                 writeProperty(out, prefix, "module", moduleName);
             }
-            final String level = handler.getLevel();
+            final String level = (writeExpressions ? handler.getLevelValueExpression().getValue() : handler.getLevel());
             if (level != null) {
                 writeProperty(out, prefix, "level", level);
             }
-            final String encoding = handler.getEncoding();
+            final String encoding = (writeExpressions ? handler.getEncodingValueExpression().getValue() : handler.getEncoding());
             if (encoding != null) {
                 writeProperty(out, prefix, "encoding", encoding);
             }
-            final String filter = handler.getFilter();
+            final String filter = (writeExpressions ? handler.getFilterValueExpression().getValue() : handler.getFilter());
             if (filter != null) {
                 writeProperty(out, prefix, "filter", filter);
+                implicitFilters.add(handler.getFilter());
             }
-            final String formatterName = handler.getFormatterName();
+            final String formatterName = (writeExpressions ? handler.getFormatterNameValueExpression().getValue() : handler.getFormatterName());
             if (formatterName != null) {
                 writeProperty(out, prefix, "formatter", formatterName);
-                implicitFormatters.add(formatterName);
+                implicitFormatters.add(handler.getFormatterName());
             }
-            final String errorManagerName = handler.getErrorManagerName();
+            final String errorManagerName = (writeExpressions ? handler.getErrorManagerNameValueExpression().getValue() : handler.getErrorManagerName());
             if (errorManagerName != null) {
                 writeProperty(out, prefix, "errorManager", errorManagerName);
-                implicitErrorManagers.add(errorManagerName);
+                implicitErrorManagers.add(handler.getErrorManagerName());
             }
             final List<String> handlerNames = handler.getHandlerNames();
             if (! handlerNames.isEmpty()) {
@@ -252,11 +282,11 @@ public final class PropertyConfigurator implements Configurator {
             if (! postConfigurationMethods.isEmpty()) {
                 writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
             }
-            writeProperties(out, prefix, handler);
+            writeProperties(out, prefix, handler, writeExpressions);
         }
     }
 
-    private static void writeFilterConfiguration(final PrintStream out, final FilterConfiguration filter) {
+    private static void writeFilterConfiguration(final PrintStream out, final FilterConfiguration filter, final boolean writeExpressions) {
         if (filter != null) {
             out.println();
             final String name = filter.getName();
@@ -271,11 +301,11 @@ public final class PropertyConfigurator implements Configurator {
             if (! postConfigurationMethods.isEmpty()) {
                 writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
             }
-            writeProperties(out, prefix, filter);
+            writeProperties(out, prefix, filter, writeExpressions);
         }
     }
 
-    private static void writeFormatterConfiguration(final PrintStream out, final FormatterConfiguration formatter) {
+    private static void writeFormatterConfiguration(final PrintStream out, final FormatterConfiguration formatter, final boolean writeExpressions) {
         if (formatter != null) {
             out.println();
             final String name = formatter.getName();
@@ -290,11 +320,11 @@ public final class PropertyConfigurator implements Configurator {
             if (! postConfigurationMethods.isEmpty()) {
                 writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
             }
-            writeProperties(out, prefix, formatter);
+            writeProperties(out, prefix, formatter, writeExpressions);
         }
     }
 
-    private static void writeErrorManagerConfiguration(final PrintStream out, final ErrorManagerConfiguration errorManager) {
+    private static void writeErrorManagerConfiguration(final PrintStream out, final ErrorManagerConfiguration errorManager, final boolean writeExpressions) {
         if (errorManager != null) {
             out.println();
             final String name = errorManager.getName();
@@ -309,11 +339,11 @@ public final class PropertyConfigurator implements Configurator {
             if (! postConfigurationMethods.isEmpty()) {
                 writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
             }
-            writeProperties(out, prefix, errorManager);
+            writeProperties(out, prefix, errorManager, writeExpressions);
         }
     }
 
-    private static void writePojoConfiguration(final PrintStream out, final PojoConfiguration pojo) {
+    private static void writePojoConfiguration(final PrintStream out, final PojoConfiguration pojo, final boolean writeExpressions) {
         if (pojo != null) {
             out.println();
             final String name = pojo.getName();
@@ -328,7 +358,7 @@ public final class PropertyConfigurator implements Configurator {
             if (! postConfigurationMethods.isEmpty()) {
                 writeProperty(out, prefix, "postConfiguration", toCsvString(postConfigurationMethods));
             }
-            writeProperties(out, prefix, pojo);
+            writeProperties(out, prefix, pojo, writeExpressions);
         }
     }
 
@@ -378,8 +408,10 @@ public final class PropertyConfigurator implements Configurator {
      * @param out                  the print stream to write to.
      * @param prefix               the prefix for the name or {@code null} to use no prefix.
      * @param propertyConfigurable the configuration to extract the property value from.
+     * @param writeExpression      {@code true} if expressions should be written, {@code false} if the resolved value
+     *                             should be written
      */
-    private static void writeProperties(final PrintStream out, final String prefix, final PropertyConfigurable propertyConfigurable) {
+    private static void writeProperties(final PrintStream out, final String prefix, final PropertyConfigurable propertyConfigurable, final boolean writeExpression) {
         final List<String> names = propertyConfigurable.getPropertyNames();
         if (!names.isEmpty()) {
             final List<String> ctorProps = propertyConfigurable.getConstructorProperties();
@@ -389,7 +421,11 @@ public final class PropertyConfigurator implements Configurator {
                     writeProperty(out, "constructorProperties", toCsvString(ctorProps));
                 }
                 for (String name : names) {
-                    writeProperty(out, name, propertyConfigurable.getPropertyValueString(name));
+                    if (writeExpression) {
+                        writeProperty(out, name, propertyConfigurable.getPropertyValueExpression(name).getValue());
+                    } else {
+                        writeProperty(out, name, propertyConfigurable.getPropertyValueString(name));
+                    }
                 }
             } else {
                 writeProperty(out, prefix, "properties", toCsvString(names));
@@ -397,7 +433,11 @@ public final class PropertyConfigurator implements Configurator {
                     writeProperty(out, prefix, "constructorProperties", toCsvString(ctorProps));
                 }
                 for (String name : names) {
-                    writeProperty(out, prefix, name, propertyConfigurable.getPropertyValueString(name));
+                    if (writeExpression) {
+                        writeProperty(out, prefix, name, propertyConfigurable.getPropertyValueExpression(name).getValue());
+                    } else {
+                        writeProperty(out, prefix, name, propertyConfigurable.getPropertyValueString(name));
+                    }
                 }
             }
         }
@@ -485,8 +525,13 @@ public final class PropertyConfigurator implements Configurator {
         final String filterName = getStringProperty(properties, getKey("logger", loggerName, "filter"));
         if (filterName != null) {
             loggerConfiguration.setFilter(filterName);
-            // TODO (jrp) doesn't work LOGMGR-51
-            // configureFilter(properties, filterName);
+            final String resolvedFilter = loggerConfiguration.getFilterValueExpression().getResolvedValue();
+            // Check for a filter class
+            final String filterClassName = getStringProperty(properties, getKey("filter", resolvedFilter));
+            // If the filter class is null, assume it's a filter expression
+            if (filterClassName != null) {
+                configureFilter(properties, resolvedFilter);
+            }
         }
 
         // Get logger handlers
@@ -499,7 +544,12 @@ public final class PropertyConfigurator implements Configurator {
         // Get logger properties
         final String useParentHandlersString = getStringProperty(properties, getKey("logger", loggerName, "useParentHandlers"));
         if (useParentHandlersString != null) {
-            loggerConfiguration.setUseParentHandlers(Boolean.valueOf(Boolean.parseBoolean(useParentHandlersString)));
+            // Check for expression
+            if (EXPRESSION_PATTERN.matcher(useParentHandlersString).matches()) {
+                loggerConfiguration.setUseParentHandlers(useParentHandlersString);
+            } else {
+                loggerConfiguration.setUseParentHandlers(Boolean.parseBoolean(useParentHandlersString));
+            }
         }
     }
 
@@ -561,6 +611,13 @@ public final class PropertyConfigurator implements Configurator {
         final String filter = getStringProperty(properties, getKey("handler", handlerName, "filter"));
         if (filter != null) {
             configuration.setFilter(filter);
+            final String resolvedFilter = configuration.getFilterValueExpression().getResolvedValue();
+            // Check for a filter class
+            final String filterClassName = getStringProperty(properties, getKey("filter", resolvedFilter));
+            // If the filter class is null, assume it's a filter expression
+            if (filterClassName != null) {
+                configureFilter(properties, resolvedFilter);
+            }
         }
         final String levelName = getStringProperty(properties, getKey("handler", handlerName, "level"));
         if (levelName != null) {
@@ -569,7 +626,7 @@ public final class PropertyConfigurator implements Configurator {
         final String formatterName = getStringProperty(properties, getKey("handler", handlerName, "formatter"));
         if (formatterName != null) {
             configuration.setFormatterName(formatterName);
-            configureFormatter(properties, formatterName);
+            configureFormatter(properties, configuration.getFormatterNameValueExpression().getResolvedValue());
         }
         final String encoding = getStringProperty(properties, getKey("handler", handlerName, "encoding"));
         if (encoding != null) {
@@ -578,7 +635,7 @@ public final class PropertyConfigurator implements Configurator {
         final String errorManagerName = getStringProperty(properties, getKey("handler", handlerName, "errorManager"));
         if (errorManagerName != null) {
             configuration.setErrorManagerName(errorManagerName);
-            configureErrorManager(properties, errorManagerName);
+            configureErrorManager(properties, configuration.getErrorManagerNameValueExpression().getResolvedValue());
         }
         final String[] handlerNames = getStringCsvArray(properties, getKey("handler", handlerName, "handlers"));
         configuration.setHandlerNames(handlerNames);

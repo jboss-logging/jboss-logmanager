@@ -71,7 +71,7 @@
                         <include>**/*Tests.java</include>
                     </includes>
                     <systemPropertyVariables>
-                        <test.log.dir>${project.build.directory}</test.log.dir>
+                        <test.log.dir>${project.build.directory}${file.separator}logs${file.separator}</test.log.dir>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>

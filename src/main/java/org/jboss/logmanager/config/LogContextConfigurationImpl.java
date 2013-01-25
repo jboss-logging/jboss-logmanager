@@ -378,14 +378,14 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return postConfigurationTransactionState.containsKey(name);
     }
 
-    ObjectProducer getValue(final Class<?> objClass, final String propertyName, final Class<?> paramType, final String valueString, final boolean immediate) {
-        final String replaced = PropertyHelper.resolveValue(valueString);
-        if (valueString == null) {
+    ObjectProducer getValue(final Class<?> objClass, final String propertyName, final Class<?> paramType, final ValueExpression<String> valueExpression, final boolean immediate) {
+        if (valueExpression == null || valueExpression.getResolvedValue() == null) {
             if (paramType.isPrimitive()) {
                 throw new IllegalArgumentException(String.format("Cannot assign null value to primitive property \"%s\" of %s", propertyName, objClass));
             }
             return ObjectProducer.NULL_PRODUCER;
         }
+        final String replaced = valueExpression.getResolvedValue();
         if (paramType == String.class) {
             return new SimpleObjectProducer(replaced);
         } else if (paramType == Handler.class) {
@@ -398,7 +398,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
                 return new RefProducer(replaced, handlerRefs);
             }
         } else if (paramType == Filter.class) {
-            return parseFilterExpression(replaced, immediate);
+            return resolveFilter(replaced, immediate);
         } else if (paramType == Formatter.class) {
             if (! formatters.containsKey(replaced) || immediate && ! formatterRefs.containsKey(replaced)) {
                 throw new IllegalArgumentException(String.format("No formatter named \"%s\" is defined", replaced));
@@ -700,9 +700,17 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return new IllegalArgumentException("Unexpected end of filter expression");
     }
 
-    private ObjectProducer parseFilterExpression(String expression, final boolean immediate) {
+    private ObjectProducer resolveFilter(String expression, final boolean immediate) {
         if (expression == null) {
             return ObjectProducer.NULL_PRODUCER;
+        }
+        // First check for a defined filter
+        if (filters.containsKey(expression)) {
+            if (immediate) {
+                return new SimpleObjectProducer(filterRefs.get(expression));
+            } else {
+                return new RefProducer(expression, filterRefs);
+            }
         }
         final Iterator<String> iterator = tokens(expression).iterator();
         final ObjectProducer result = parseFilterExpression(iterator, true, immediate);
@@ -712,7 +720,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return result;
     }
 
-    ObjectProducer parseFilterExpression(String expression) {
-        return parseFilterExpression(expression, false);
+    ObjectProducer resolveFilter(String expression) {
+        return resolveFilter(expression, false);
     }
 }

@@ -44,23 +44,38 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
 
     private final List<String> handlerNames = new ArrayList<String>(0);
 
-    private String formatterName;
-    private String level;
-    private String filter;
-    private String encoding;
-    private String errorManagerName;
+    private ValueExpression<String> formatterName;
+    private ValueExpression<String> level;
+    private ValueExpression<String> filter;
+    private ValueExpression<String> encoding;
+    private ValueExpression<String> errorManagerName;
 
     HandlerConfigurationImpl(final LogContextConfigurationImpl configuration, final String name, final String moduleName, final String className, final String[] constructorProperties) {
         super(Handler.class, configuration, configuration.getHandlerRefs(), configuration.getHandlerConfigurations(), name, moduleName, className, constructorProperties);
     }
 
     public String getFormatterName() {
-        return formatterName;
+        return getFormatterNameValueExpression().getResolvedValue();
+    }
+
+    @Override
+    public ValueExpression<String> getFormatterNameValueExpression() {
+        return formatterName == null ? ValueExpression.NULL_STRING_EXPRESSION : formatterName;
     }
 
     public void setFormatterName(final String formatterName) {
-        final String oldFormatterName = this.formatterName;
-        this.formatterName = formatterName;
+        setFormatterName(ValueExpression.STRING_RESOLVER.resolve(formatterName));
+    }
+
+    @Override
+    public void setFormatterName(final String expression, final String value) {
+        setFormatterName(new ValueExpressionImpl<String>(expression, value));
+    }
+
+    private void setFormatterName(final ValueExpression<String> expression) {
+        final ValueExpression<String> oldFormatterName = this.formatterName;
+        this.formatterName = expression;
+        final String formatterName = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
             public Void validate() throws IllegalArgumentException {
@@ -85,13 +100,27 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
     }
 
     public String getLevel() {
-        return level;
+        return getLevelValueExpression().getResolvedValue();
+    }
+
+    @Override
+    public ValueExpression<String> getLevelValueExpression() {
+        return level == null ? ValueExpression.NULL_STRING_EXPRESSION : level;
     }
 
     public void setLevel(final String level) {
-        final String oldLevel = this.level;
-        final String resolvedLevel = PropertyHelper.resolveValue(level);
-        this.level = resolvedLevel;
+        setLevelValueExpression(ValueExpression.STRING_RESOLVER.resolve(level));
+    }
+
+    @Override
+    public void setLevel(final String expression, final String level) {
+        setLevelValueExpression(new ValueExpressionImpl<String>(expression, level));
+    }
+
+    private void setLevelValueExpression(final ValueExpression<String> expression) {
+        final ValueExpression<String> oldLevel = this.level;
+        this.level = expression;
+        final String resolvedLevel = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Level>() {
             public Level validate() throws IllegalArgumentException {
@@ -113,16 +142,31 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
     }
 
     public String getFilter() {
-        return filter;
+        return getFilterValueExpression().getResolvedValue();
+    }
+
+    @Override
+    public ValueExpression<String> getFilterValueExpression() {
+        return filter == null ? ValueExpression.NULL_STRING_EXPRESSION : filter;
     }
 
     public void setFilter(final String filter) {
-        final String oldFilterName = this.filter;
-        this.filter = filter;
+        setFilter(ValueExpression.STRING_RESOLVER.resolve(filter));
+    }
+
+    @Override
+    public void setFilter(final String expression, final String value) {
+        setFilter(new ValueExpressionImpl<String>(expression, value));
+    }
+
+    private void setFilter(final ValueExpression<String> expression) {
+        final ValueExpression<String> oldFilterName = this.filter;
+        this.filter = expression;
+        final String filterName = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<ObjectProducer>() {
             public ObjectProducer validate() throws IllegalArgumentException {
-                return configuration.parseFilterExpression(filter);
+                return configuration.resolveFilter(filterName);
             }
 
             public void applyPreCreate(final ObjectProducer param) {
@@ -140,12 +184,27 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
     }
 
     public String getEncoding() {
-        return encoding;
+        return getEncodingValueExpression().getResolvedValue();
+    }
+
+    @Override
+    public ValueExpression<String> getEncodingValueExpression() {
+        return encoding == null ? ValueExpression.NULL_STRING_EXPRESSION : encoding;
     }
 
     public void setEncoding(final String encoding) {
-        final String oldEncoding = this.encoding;
-        this.encoding = encoding;
+        setEncoding(ValueExpression.STRING_RESOLVER.resolve(encoding));
+    }
+
+    @Override
+    public void setEncoding(final String expression, final String value) {
+        setEncoding(new ValueExpressionImpl<String>(expression, value));
+    }
+
+    private void setEncoding(final ValueExpression<String> expression) {
+        final ValueExpression<String> oldEncoding = this.encoding;
+        this.encoding = expression;
+        final String encoding = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
             public Void validate() throws IllegalArgumentException {
@@ -178,12 +237,27 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
     }
 
     public String getErrorManagerName() {
-        return errorManagerName;
+        return getErrorManagerNameValueExpression().getResolvedValue();
+    }
+
+    @Override
+    public ValueExpression<String> getErrorManagerNameValueExpression() {
+        return errorManagerName == null ? ValueExpression.NULL_STRING_EXPRESSION : errorManagerName;
     }
 
     public void setErrorManagerName(final String errorManagerName) {
-        final String oldErrorManagerName = this.errorManagerName;
-        this.errorManagerName = errorManagerName;
+        setErrorManagerName(ValueExpression.STRING_RESOLVER.resolve(errorManagerName));
+    }
+
+    @Override
+    public void setErrorManagerName(final String expression, final String value) {
+        setErrorManagerName(new ValueExpressionImpl<String>(expression, value));
+    }
+
+    private void setErrorManagerName(final ValueExpression<String> expression) {
+        final ValueExpression<String> oldErrorManagerName = this.errorManagerName;
+        this.errorManagerName = expression;
+        final String errorManagerName = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
             public Void validate() throws IllegalArgumentException {

@@ -35,7 +35,8 @@ public interface PropertyConfigurable {
      * Set a property value from a string.
      *
      * @param propertyName the property name
-     * @param value the property value
+     * @param value        the property value
+     *
      * @throws IllegalArgumentException if the given value is not acceptable for this property
      */
     void setPropertyValueString(String propertyName, String value) throws IllegalArgumentException;
@@ -44,14 +45,45 @@ public interface PropertyConfigurable {
      * Get the string property value with the given name.
      *
      * @param propertyName the property name
+     *
      * @return the property value string
      */
     String getPropertyValueString(String propertyName);
 
     /**
+     * Get the property value.
+     *
+     * @param propertyName the property name
+     *
+     * @return the property value
+     */
+    ValueExpression<String> getPropertyValueExpression(String propertyName);
+
+    /**
+     * Sets the expression value for the property.
+     *
+     * @param propertyName the name of the property
+     * @param expression   the expression used to resolve the value
+     */
+    void setPropertyValueExpression(String propertyName, String expression);
+
+    /**
+     * Sets the expression value for the property.
+     * <p/>
+     * This method will not parse the expression for the value and instead use the {@code value} parameter for the
+     * value.
+     *
+     * @param propertyName the name of the property
+     * @param expression   the expression used to resolve the value
+     * @param value        the value to use
+     */
+    void setPropertyValueExpression(String propertyName, String expression, String value);
+
+    /**
      * Determine whether the given property name is configured.
      *
      * @param propertyName the property name to test
+     *
      * @return {@code true} if the name is configured, {@code false} otherwise
      */
     boolean hasProperty(String propertyName);
@@ -61,6 +93,7 @@ public interface PropertyConfigurable {
      * configuration.
      *
      * @param propertyName the property name
+     *
      * @return {@code true} if the property name was removed, {@code false} if it was not present
      */
     boolean removeProperty(String propertyName);

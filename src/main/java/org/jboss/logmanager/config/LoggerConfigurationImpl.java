@@ -39,9 +39,9 @@ import org.jboss.logmanager.Logger;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, LoggerConfigurationImpl> implements LoggerConfiguration {
-    private String filter;
-    private Boolean useParentHandlers;
-    private String level;
+    private ValueExpression<String> filter;
+    private ValueExpression<Boolean> useParentHandlers;
+    private ValueExpression<String> level;
     private final List<String> handlerNames = new ArrayList<String>(0);
 
     LoggerConfigurationImpl(final String name, final LogContextConfigurationImpl configuration) {
@@ -49,16 +49,31 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
     }
 
     public String getFilter() {
-        return filter;
+        return getFilterValueExpression().getResolvedValue();
+    }
+
+    @Override
+    public ValueExpression<String> getFilterValueExpression() {
+        return filter == null ? ValueExpression.NULL_STRING_EXPRESSION : filter;
     }
 
     public void setFilter(final String filter) {
-        final String oldFilterName = this.filter;
-        this.filter = filter;
+        setFilter(ValueExpression.STRING_RESOLVER.resolve(filter));
+    }
+
+    @Override
+    public void setFilter(final String expression, final String value) {
+        setFilter(new ValueExpressionImpl<String>(expression, value));
+    }
+
+    private void setFilter(final ValueExpression<String> valueExpression) {
+        final ValueExpression<String> oldFilterName = this.filter;
+        this.filter = valueExpression;
+        final String filterName = valueExpression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<ObjectProducer>() {
             public ObjectProducer validate() throws IllegalArgumentException {
-                return configuration.parseFilterExpression(filter);
+                return configuration.resolveFilter(filterName);
             }
 
             public void applyPreCreate(final ObjectProducer param) {
@@ -76,12 +91,32 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
 
 
     public Boolean getUseParentHandlers() {
-        return useParentHandlers;
+        return getUseParentHandlersValueExpression().getResolvedValue();
+    }
+
+    @Override
+    public ValueExpression<Boolean> getUseParentHandlersValueExpression() {
+        return useParentHandlers == null ? ValueExpression.NULL_BOOLEAN_EXPRESSION : useParentHandlers;
     }
 
     public void setUseParentHandlers(final Boolean useParentHandlers) {
-        final Boolean oldUseParentHandlers = this.useParentHandlers;
-        this.useParentHandlers = useParentHandlers;
+        setUseParentHandlers(new ValueExpressionImpl<Boolean>(null, useParentHandlers));
+    }
+
+    @Override
+    public void setUseParentHandlers(final String expression) {
+        setUseParentHandlers(ValueExpression.BOOLEAN_RESOLVER.resolve(expression));
+    }
+
+    @Override
+    public void setUseParentHandlers(final String expression, final Boolean value) {
+        setUseParentHandlers(new ValueExpressionImpl<Boolean>(expression, value));
+    }
+
+    private void setUseParentHandlers(final ValueExpression<Boolean> valueExpression) {
+        final ValueExpression<Boolean> oldUseParentHandlers = this.useParentHandlers;
+        this.useParentHandlers = valueExpression;
+        final Boolean useParentHandlers = valueExpression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
             public Void validate() throws IllegalArgumentException {
@@ -103,13 +138,27 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
     }
 
     public String getLevel() {
-        return level;
+        return getLevelValueExpression().getResolvedValue();
+    }
+
+    @Override
+    public ValueExpression<String> getLevelValueExpression() {
+        return level == null ? ValueExpression.NULL_STRING_EXPRESSION : level;
     }
 
     public void setLevel(final String level) {
-        final String oldLevel = this.level;
-        final String resolvedLevel = PropertyHelper.resolveValue(level);
-        this.level = resolvedLevel;
+        setLevelValueExpression(ValueExpression.STRING_RESOLVER.resolve(level));
+    }
+
+    @Override
+    public void setLevel(final String expression, final String level) {
+        setLevelValueExpression(new ValueExpressionImpl<String>(expression, level));
+    }
+
+    private void setLevelValueExpression(final ValueExpression<String> expression) {
+        final ValueExpression oldLevel = this.level;
+        this.level = expression;
+        final String resolvedLevel = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Level>() {
             public Level validate() throws IllegalArgumentException {

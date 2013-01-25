@@ -28,24 +28,19 @@ import static org.testng.AssertJUnit.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.logging.ErrorManager;
-import java.util.logging.Filter;
-import java.util.logging.LogRecord;
 
 import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.config.LoggerConfiguration;
-import org.jboss.logmanager.handlers.ConsoleHandler;
-import org.jboss.logmanager.handlers.ConsoleHandler.Target;
-import org.jboss.logmanager.handlers.FileHandler;
 import org.testng.annotations.Test;
 
 /**
@@ -53,10 +48,10 @@ import org.testng.annotations.Test;
  */
 @Test
 public class PropertyConfiguratorTests {
-    private static final String BASE_LOG_DIR;
+
     static {
         System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
-        BASE_LOG_DIR = System.getProperty("test.log.dir");
+        System.setProperty("default.log.level", "DEBUG");
     }
 
     public void testReadWrite() throws Exception {
@@ -100,10 +95,10 @@ public class PropertyConfiguratorTests {
         final LoggerConfiguration fooConfiguration = logContextConfiguration.addLoggerConfiguration("foo");
 
         // Add a handler to be rolled back
-        final HandlerConfiguration handlerConfiguration = logContextConfiguration.addHandlerConfiguration(null, FileHandler.class.getName(), "removalFile");
+        final HandlerConfiguration handlerConfiguration = logContextConfiguration.addHandlerConfiguration(null, TestFileHandler.class.getName(), "removalFile");
         handlerConfiguration.setLevel("INFO");
         handlerConfiguration.setPostConfigurationMethods("flush");
-        handlerConfiguration.setPropertyValueString("fileName", createFilePath("removalFile.log"));
+        handlerConfiguration.setPropertyValueString("fileName", "removalFile.log");
 
         logContextConfiguration.prepare();
         logContextConfiguration.forget();
@@ -120,6 +115,46 @@ public class PropertyConfiguratorTests {
         configProps.load(new InputStreamReader(configIn, "utf-8"));
         compare(defaultProperties, configProps);
 
+    }
+
+    public void testExpressions() throws Exception {
+        final Properties defaultProperties = new Properties();
+        defaultProperties.load(PropertyConfiguratorTests.class.getResourceAsStream("expression-logging.properties"));
+        final LogContext logContext = LogContext.create();
+        final PropertyConfigurator configurator = new PropertyConfigurator(logContext);
+        configurator.configure(defaultProperties);
+
+        // Write out the configuration
+        final ByteArrayOutputStream propsOut = new ByteArrayOutputStream();
+        defaultProperties.store(new OutputStreamWriter(propsOut, "utf-8"), null);
+        final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
+        configurator.writeConfiguration(configOut, true);
+
+        // Reload output streams into properties
+        final Properties configProps = new Properties();
+        final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
+        configProps.load(new InputStreamReader(configIn, "utf-8"));
+        final Properties dftProps = new Properties();
+        dftProps.load(new InputStreamReader(new ByteArrayInputStream(propsOut.toByteArray()), "utf-8"));
+        compare(dftProps, configProps);
+
+        // Reconfigure the context with the written results
+        configurator.configure(configIn);
+        configOut.reset();
+        configurator.writeConfiguration(configOut, true);
+        configProps.clear();
+        configProps.load(new InputStreamReader(new ByteArrayInputStream(configOut.toByteArray()), "utf-8"));
+        compare(dftProps, configProps);
+
+        // Test resolved values
+        configOut.reset();
+        configurator.writeConfiguration(configOut, false);
+        configProps.clear();
+        configProps.load(new InputStreamReader(new ByteArrayInputStream(configOut.toByteArray()), "utf-8"));
+        assertEquals("DEBUG", configProps.getProperty("logger.level"));
+        assertEquals("SYSTEM_OUT", configProps.getProperty("handler.CONSOLE.target"));
+        assertEquals("true", configProps.getProperty("handler.FILE.autoFlush").toLowerCase(Locale.ENGLISH));
+        assertEquals("UTF-8", configProps.getProperty("handler.FILE.encoding"));
     }
 
     private void compare(final Properties defaultProps, final Properties configProps) {
@@ -149,106 +184,9 @@ public class PropertyConfiguratorTests {
         }
     }
 
-    private static Properties defaultProperties() {
+    private static Properties defaultProperties() throws IOException {
         final Properties props = new Properties();
-        final String loggerName = PropertyConfiguratorTests.class.getPackage().getName();
-        final String spacedLoggerName = "Spaced Logger";
-        final String specialCharLoggerName = "Special:Char\\Logger";
-        // Create the loggers
-        props.setProperty("loggers", loggerName.concat(",").concat(spacedLoggerName).concat(",")
-                .concat(specialCharLoggerName).concat(",org.jboss.filter1,org.jboss.filter2"));
-        props.setProperty("logger.level", "INFO");
-        props.setProperty("logger.handlers", "CONSOLE");
-        loggerInit(props, loggerName);
-        loggerInit(props, spacedLoggerName);
-        loggerInit(props, specialCharLoggerName);
-
-        // Apply filter to logger
-        props.setProperty("logger.org.jboss.filter1.filter", "match(\".*\")");
-        // An explicit filter - currently these are not supported - LOGMGR-51
-        // props.setProperty("logger.org.jboss.filter2", "FILTER");
-
-        // An explicit console handler
-        props.setProperty("handler.CONSOLE", ConsoleHandler.class.getName());
-        props.setProperty("handler.CONSOLE.formatter", "PATTERN");
-        props.setProperty("handler.CONSOLE.properties", "autoFlush,target");
-        props.setProperty("handler.CONSOLE.autoFlush", Boolean.toString(true));
-        props.setProperty("handler.CONSOLE.target", Target.SYSTEM_OUT.toString());
-
-        // Apply filter the handler - not currently supported for named filters - LOGMGR-51
-        // props.setProperty("handler.CONSOLE.filter", "FILTER2");
-
-        // An implicit handler
-        props.setProperty("handler.FILE", FileHandler.class.getName());
-        props.setProperty("handler.FILE.formatter", "PATTERN");
-        props.setProperty("handler.FILE.level", "TRACE");
-        props.setProperty("handler.FILE.properties", "autoFlush,append,fileName");
-        props.setProperty("handler.FILE.constructorProperties", "fileName,append");
-        props.setProperty("handler.FILE.autoFlush", Boolean.toString(true));
-        props.setProperty("handler.FILE.append", Boolean.toString(false));
-        props.setProperty("handler.FILE.fileName", createFilePath("test.log"));
-        props.setProperty("handler.FILE.encoding", "UTF-8");
-        // Apply filter the handler
-        props.setProperty("handler.FILE.filter", "match(\".*\")");
-        props.setProperty("handlers", "FILE");
-
-        // An explicit filter - currently these are not supported - LOGMGR-51
-        //        props.setProperty("filter.FILTER", RegexFilter.class.getName());
-        //        props.setProperty("filter.FILTER.properties", "patternString");
-        //        props.setProperty("filter.FILTER.constructorProperties", "patternString");
-        //        props.setProperty("filter.FILTER.patternString", ".*");
-        //        props.setProperty("handler.FILE.filter", "FILTER");
-
-        // An implicit filter
-        props.setProperty("filters", "FILTER2");
-        props.setProperty("filter.FILTER2", AcceptFilter.class.getName());
-
-        // An implicit error manager
-        props.setProperty("errorManager.DFT", ErrorManager.class.getName());
-        props.setProperty("handler.FILE.errorManager", "DFT");
-
-        // An explicit error manager
-        props.setProperty("errorManagers", "OTHER");
-        props.setProperty("errorManager.OTHER", ErrorManager.class.getName());
-
-        // An implicit pattern
-        props.setProperty("formatter.PATTERN", "org.jboss.logmanager.formatters.PatternFormatter");
-        props.setProperty("formatter.PATTERN.properties", "pattern");
-        props.setProperty("formatter.PATTERN.pattern", "%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n");
-
-        // An explicit pattern
-        props.setProperty("formatters", "OTHER");
-        props.setProperty("formatter.OTHER", "org.jboss.logmanager.formatters.PatternFormatter");
-        props.setProperty("formatter.OTHER.properties", "pattern");
-        props.setProperty("formatter.OTHER.pattern", "%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n");
-
-        // Add a pojo
-        props.setProperty("pojos", "filePojo");
-        props.setProperty("pojo.filePojo", FileHandler.class.getName());
-        props.setProperty("pojo.filePojo.properties", "autoFlush,append,fileName,encoding");
-        props.setProperty("pojo.filePojo.constructorProperties", "fileName,append");
-        props.setProperty("pojo.filePojo.autoFlush", Boolean.toString(true));
-        props.setProperty("pojo.filePojo.append", Boolean.toString(false));
-        props.setProperty("pojo.filePojo.fileName", createFilePath("test.log"));
-        props.setProperty("pojo.filePojo.encoding", "UTF-8");
-        props.setProperty("pojo.filePojo.postConfiguration", "flush");
+        props.load(PropertyConfiguratorTests.class.getResourceAsStream("default-logging.properties"));
         return props;
-    }
-
-    private static void loggerInit(final Properties props, final String loggerName) {
-        props.setProperty(String.format("logger.%s.useParentHandlers", loggerName), Boolean.toString(true));
-        props.setProperty(String.format("logger.%s.level", loggerName), "INFO");
-    }
-
-    private static String createFilePath(final String filename) {
-        return BASE_LOG_DIR.concat(File.separator).concat("logs").concat(File.separator).concat(filename);
-    }
-
-    public static class AcceptFilter implements Filter {
-
-        @Override
-        public boolean isLoggable(final LogRecord record) {
-            return true;
-        }
     }
 }
