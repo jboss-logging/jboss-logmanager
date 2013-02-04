@@ -240,7 +240,7 @@ public class SyslogHandler extends ExtHandler {
                 }
                 // Set the message
                 // The encoding is not specified in the spec, but UTF-8 is probably the safest bet
-                message.append(new String(record.getMessage().getBytes(ENCODING), ENCODING));
+                message.append(new String(record.getFormattedMessage().getBytes(ENCODING), ENCODING));
                 if (message.length() > 1024) {
                     return message.substring(0, 1024);
                 }
