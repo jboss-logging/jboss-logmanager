@@ -80,7 +80,7 @@ public final class LogManager extends java.util.logging.LogManager {
                             )));
                         }
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     // ignore; just don't install
                 }
                 /* Next hack: the default Sun JMX implementation has a horribly inefficient log implementation which
@@ -91,7 +91,7 @@ public final class LogManager extends java.util.logging.LogManager {
                     final Field outField = traceManagerClass.getDeclaredField("out");
                     outField.setAccessible(true);
                     outField.set(null, null);
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     // ignore; just skip it
                 }
                 /* Next hack: Replace the crappy MXBean on the system logmanager, if it's there.
@@ -103,7 +103,7 @@ public final class LogManager extends java.util.logging.LogManager {
                         loggingMXBean.setAccessible(true);
                         loggingMXBean.set(null, LogContext.getSystemLogContext().getLoggingMXBean());
                     }
-                } catch (Exception e) {
+                } catch (Throwable e) {
                     // ignore; just skip it
                 }
                 return null;
