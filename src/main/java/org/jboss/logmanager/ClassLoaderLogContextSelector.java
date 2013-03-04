@@ -75,21 +75,27 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
     private final ConcurrentMap<ClassLoader, LogContext> contextMap = new CopyOnWriteMap<ClassLoader, LogContext>();
     private final Set<ClassLoader> logApiClassLoaders = Collections.newSetFromMap(new CopyOnWriteMap<ClassLoader, Boolean>());
 
+    private final PrivilegedAction<LogContext> logContextAction = new PrivilegedAction<LogContext>() {
+        public LogContext run() {
+            for (Class caller : GATEWAY.getClassContext()) {
+                final ClassLoader classLoader = caller.getClassLoader();
+                if (classLoader != null && ! logApiClassLoaders.contains(classLoader)) {
+                    final LogContext context = contextMap.get(classLoader);
+                    if (context != null) {
+                        return context;
+                    }
+                }
+            }
+            return defaultSelector.getLogContext();
+        }
+    };
+
     /**
      * {@inheritDoc}  This instance will consult the call stack to see if any calling classloader is associated
      * with any log context.
      */
     public LogContext getLogContext() {
-        for (Class caller : GATEWAY.getClassContext()) {
-            final ClassLoader classLoader = caller.getClassLoader();
-            if (classLoader != null && ! logApiClassLoaders.contains(classLoader)) {
-                final LogContext context = contextMap.get(classLoader);
-                if (context != null) {
-                    return context;
-                }
-            }
-        }
-        return defaultSelector.getLogContext();
+        return AccessController.doPrivileged(logContextAction);
     }
 
     /**

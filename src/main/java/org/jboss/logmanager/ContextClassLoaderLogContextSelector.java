@@ -22,10 +22,13 @@
 
 package org.jboss.logmanager;
 
-import java.security.AccessController;
 import java.security.Permission;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentMap;
+
+import static java.lang.System.getSecurityManager;
+import static java.lang.Thread.currentThread;
+import static java.security.AccessController.doPrivileged;
 
 /**
  * A log context selector which chooses a log context based on the thread context classloader.
@@ -55,24 +58,21 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
 
     private final ConcurrentMap<ClassLoader, LogContext> contextMap = new CopyOnWriteMap<ClassLoader, LogContext>();
 
-    public LogContext getLogContext() {
-        ClassLoader cl = getContextClassLoader();
-        if (cl != null) {
-            final LogContext mappedContext = contextMap.get(cl);
-            if (mappedContext != null) {
-                return mappedContext;
+    private final PrivilegedAction<LogContext> logContextAction = new PrivilegedAction<LogContext>() {
+        public LogContext run() {
+            ClassLoader cl = currentThread().getContextClassLoader();
+            if (cl != null) {
+                final LogContext mappedContext = contextMap.get(cl);
+                if (mappedContext != null) {
+                    return mappedContext;
+                }
             }
+            return defaultSelector.getLogContext();
         }
-        return defaultSelector.getLogContext();
-    }
+    };
 
-    private static ClassLoader getContextClassLoader() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            return AccessController.doPrivileged(CLASS_LOADER_ACTION);
-        } else {
-            return Thread.currentThread().getContextClassLoader();
-        }
+    public LogContext getLogContext() {
+        return doPrivileged(logContextAction);
     }
 
     /**
@@ -83,7 +83,7 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
      * @throws IllegalArgumentException if the classloader is already associated with a log context
      */
     public void registerLogContext(ClassLoader classLoader, LogContext logContext) throws IllegalArgumentException {
-        final SecurityManager sm = System.getSecurityManager();
+        final SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(REGISTER_LOG_CONTEXT_PERMISSION);
         }
@@ -100,19 +100,10 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
      * @return {@code true} if the association exists and was removed, {@code false} otherwise
      */
     public boolean unregisterLogContext(ClassLoader classLoader, LogContext logContext) {
-        final SecurityManager sm = System.getSecurityManager();
+        final SecurityManager sm = getSecurityManager();
         if (sm != null) {
             sm.checkPermission(UNREGISTER_LOG_CONTEXT_PERMISSION);
         }
         return contextMap.remove(classLoader, logContext);
-    }
-
-    private static final ContextClassLoaderAction CLASS_LOADER_ACTION = new ContextClassLoaderAction();
-
-    private static class ContextClassLoaderAction implements PrivilegedAction<ClassLoader> {
-
-        public ClassLoader run() {
-            return Thread.currentThread().getContextClassLoader();
-        }
     }
 }
