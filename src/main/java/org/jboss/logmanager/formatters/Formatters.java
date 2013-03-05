@@ -40,6 +40,10 @@ import java.util.Date;
 import java.util.TimeZone;
 import static java.lang.Math.min;
 import static java.lang.Math.max;
+import static java.lang.System.getSecurityManager;
+import static java.lang.Thread.currentThread;
+import static java.security.AccessController.doPrivileged;
+
 import java.io.PrintWriter;
 import org.jboss.logmanager.NDC;
 
@@ -363,7 +367,7 @@ public final class Formatters {
 
     private static final PrivilegedAction<ClassLoader> GET_TCCL_ACTION = new PrivilegedAction<ClassLoader>() {
         public ClassLoader run() {
-            return Thread.currentThread().getContextClassLoader();
+            return currentThread().getContextClassLoader();
         }
     };
 
@@ -449,7 +453,7 @@ public final class Formatters {
 
                 // now try to find the originating resource of the class
                 URL resource = null;
-                final SecurityManager sm = System.getSecurityManager();
+                final SecurityManager sm = getSecurityManager();
                 final String classResourceName = className.replace('.', '/') + ".class";
                 if (exceptionClass != null) {
                     try {
@@ -462,7 +466,7 @@ public final class Formatters {
                                 }
                             }
                         } else {
-                            resource = AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                            resource = doPrivileged(new PrivilegedAction<URL>() {
                                 public URL run() {
                                     final ProtectionDomain protectionDomain = exceptionClass.getProtectionDomain();
                                     if (protectionDomain != null) {
@@ -483,7 +487,7 @@ public final class Formatters {
                         if (sm == null) {
                             resource = exceptionClassLoader == null ? ClassLoader.getSystemResource(classResourceName) : exceptionClassLoader.getResource(classResourceName);
                         } else {
-                            resource = AccessController.doPrivileged(new PrivilegedAction<URL>() {
+                            resource = doPrivileged(new PrivilegedAction<URL>() {
                                 public URL run() {
                                     return exceptionClassLoader == null ? ClassLoader.getSystemResource(classResourceName) : exceptionClassLoader.getResource(classResourceName);
                                 }
@@ -523,23 +527,26 @@ public final class Formatters {
             }
 
             private Class<?> guessClass(final String name) {
-                final SecurityManager sm = System.getSecurityManager();
-                try {
-                    try {
-                        final ClassLoader tccl = sm != null ? AccessController.doPrivileged(GET_TCCL_ACTION) : GET_TCCL_ACTION.run();
-                        if (tccl != null) return Class.forName(name, false, tccl);
-                    } catch (ClassNotFoundException e) {
-                        // ok, try something else...
+                return doPrivileged(new PrivilegedAction<Class<?>>() {
+                    public Class<?> run() {
+                        try {
+                            try {
+                                final ClassLoader tccl = currentThread().getContextClassLoader();
+                                if (tccl != null) return Class.forName(name, false, tccl);
+                            } catch (ClassNotFoundException e) {
+                                // ok, try something else...
+                            }
+                            try {
+                                return Class.forName(name);
+                            } catch (ClassNotFoundException e) {
+                                // ok, try something else...
+                            }
+                            return Class.forName(name, false, null);
+                        } catch (Throwable t) {
+                            return null;
+                        }
                     }
-                    try {
-                        return Class.forName(name);
-                    } catch (ClassNotFoundException e) {
-                        // ok, try something else...
-                    }
-                    return Class.forName(name, false, null);
-                } catch (Throwable t) {
-                    return null;
-                }
+                });
             }
 
             private void renderCause(final StringBuilder builder, final Throwable t, final Throwable cause, final Map<String, String> cache, final boolean extended) {
@@ -654,7 +661,7 @@ public final class Formatters {
     private static final String separatorString;
 
     static {
-        separatorString = AccessController.doPrivileged(new PrivilegedAction<String>() {
+        separatorString = doPrivileged(new PrivilegedAction<String>() {
             public String run() {
                 return System.getProperty("line.separator");
             }
