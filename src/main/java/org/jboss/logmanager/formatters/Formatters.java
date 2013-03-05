@@ -33,7 +33,6 @@ import java.util.logging.Level;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -112,7 +111,7 @@ public final class Formatters {
         return subject.substring(idx + 1);
     }
 
-    private static abstract class JustifyingFormatStep implements FormatStep {
+    private abstract static class JustifyingFormatStep implements FormatStep {
         private final boolean leftJustify;
         private final int minimumWidth;
         private final int maximumWidth;
@@ -180,7 +179,7 @@ public final class Formatters {
         public abstract void renderRaw(final StringBuilder builder, final ExtLogRecord record);
     }
 
-    private static abstract class SegmentedFormatStep extends JustifyingFormatStep {
+    private abstract static class SegmentedFormatStep extends JustifyingFormatStep {
         private final int count;
 
         protected SegmentedFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final int count) {
@@ -365,12 +364,6 @@ public final class Formatters {
         };
     }
 
-    private static final PrivilegedAction<ClassLoader> GET_TCCL_ACTION = new PrivilegedAction<ClassLoader>() {
-        public ClassLoader run() {
-            return currentThread().getContextClassLoader();
-        }
-    };
-
     /**
      * Create a format step which emits the stack trace of an exception with the given justification rules.
      *
@@ -383,25 +376,30 @@ public final class Formatters {
     public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final boolean extended) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
-                final Throwable t = record.getThrown();
-                if (t != null) {
-                    builder.append(": ").append(t).append(NEW_LINE);
-                    final StackTraceElement[] stackTrace = t.getStackTrace();
-                    final Map<String, String> cache = extended ? new HashMap<String, String>() : null;
-                    if (extended) {
-                        for (StackTraceElement element : stackTrace) {
-                            renderExtended(builder, element, cache);
+                doPrivileged(new PrivilegedAction<Void>() {
+                    public Void run() {
+                        final Throwable t = record.getThrown();
+                        if (t != null) {
+                            builder.append(": ").append(t).append(NEW_LINE);
+                            final StackTraceElement[] stackTrace = t.getStackTrace();
+                            final Map<String, String> cache = extended ? new HashMap<String, String>() : null;
+                            if (extended) {
+                                for (StackTraceElement element : stackTrace) {
+                                    renderExtended(builder, element, cache);
+                                }
+                            } else {
+                                for (StackTraceElement element : stackTrace) {
+                                    renderTrivial(builder, element);
+                                }
+                            }
+                            final Throwable cause = t.getCause();
+                            if (cause != null) {
+                                renderCause(builder, t, cause, cache, extended);
+                            }
                         }
-                    } else {
-                        for (StackTraceElement element : stackTrace) {
-                            renderTrivial(builder, element);
-                        }
+                        return null;
                     }
-                    final Throwable cause = t.getCause();
-                    if (cause != null) {
-                        renderCause(builder, t, cause, cache, extended);
-                    }
-                }
+                });
             }
 
             private void renderTrivial(final StringBuilder builder, final StackTraceElement element) {
@@ -527,26 +525,22 @@ public final class Formatters {
             }
 
             private Class<?> guessClass(final String name) {
-                return doPrivileged(new PrivilegedAction<Class<?>>() {
-                    public Class<?> run() {
-                        try {
-                            try {
-                                final ClassLoader tccl = currentThread().getContextClassLoader();
-                                if (tccl != null) return Class.forName(name, false, tccl);
-                            } catch (ClassNotFoundException e) {
-                                // ok, try something else...
-                            }
-                            try {
-                                return Class.forName(name);
-                            } catch (ClassNotFoundException e) {
-                                // ok, try something else...
-                            }
-                            return Class.forName(name, false, null);
-                        } catch (Throwable t) {
-                            return null;
-                        }
+                try {
+                    try {
+                        final ClassLoader tccl = currentThread().getContextClassLoader();
+                        if (tccl != null) return Class.forName(name, false, tccl);
+                    } catch (ClassNotFoundException e) {
+                        // ok, try something else...
                     }
-                });
+                    try {
+                        return Class.forName(name);
+                    } catch (ClassNotFoundException e) {
+                        // ok, try something else...
+                    }
+                    return Class.forName(name, false, null);
+                } catch (Throwable t) {
+                    return null;
+                }
             }
 
             private void renderCause(final StringBuilder builder, final Throwable t, final Throwable cause, final Map<String, String> cache, final boolean extended) {
