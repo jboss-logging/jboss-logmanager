@@ -35,6 +35,8 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
@@ -446,9 +448,9 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
 
     static Method getPropertyGetter(Class<?> clazz, String propertyName) {
         final String upperPropertyName = Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
-        final String get = "get" + upperPropertyName;
+        final Pattern pattern = Pattern.compile("(get|has|is)(" + upperPropertyName + ")");
         for (Method method : clazz.getMethods()) {
-            if ((method.getName().equals(get) && Modifier.isPublic(method.getModifiers())) && method.getParameterTypes().length == 0) {
+            if ((pattern.matcher(method.getName()).matches() && Modifier.isPublic(method.getModifiers())) && method.getParameterTypes().length == 0) {
                 return method;
             }
         }
