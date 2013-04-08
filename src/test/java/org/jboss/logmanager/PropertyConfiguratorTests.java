@@ -22,9 +22,7 @@
 
 package org.jboss.logmanager;
 
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertNull;
-import static org.testng.AssertJUnit.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -41,19 +39,18 @@ import java.util.TreeSet;
 import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.config.LoggerConfiguration;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@Test
 public class PropertyConfiguratorTests {
 
     static {
-        System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
         System.setProperty("default.log.level", "DEBUG");
     }
 
+    @Test
     public void testReadWrite() throws Exception {
         final Properties defaultProperties = defaultProperties();
         final LogContext logContext = LogContext.create();
@@ -84,6 +81,7 @@ public class PropertyConfiguratorTests {
 
     }
 
+    @Test
     public void testPrepareAndRollback() throws Exception {
         final Properties defaultProperties = defaultProperties();
         final LogContext logContext = LogContext.create();
@@ -117,6 +115,7 @@ public class PropertyConfiguratorTests {
 
     }
 
+    @Test
     public void testExpressions() throws Exception {
         final Properties defaultProperties = new Properties();
         defaultProperties.load(PropertyConfiguratorTests.class.getResourceAsStream("expression-logging.properties"));

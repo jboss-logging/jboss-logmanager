@@ -23,8 +23,8 @@
 package org.jboss.logmanager;
 
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.testng.annotations.Test;
-import static org.testng.AssertJUnit.*;
+import org.junit.Test;
+import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -34,16 +34,14 @@ import java.util.logging.LogRecord;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@Test
 public final class LoggerTests {
-    static {
-        System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
-    }
 
+    @Test
     public void testInstall() {
         assertTrue("Wrong logger class", (java.util.logging.Logger.getLogger("test") instanceof Logger));
     }
 
+    @Test
     public void testHandlerAdd() {
         final NullHandler h1 = new NullHandler();
         final NullHandler h2 = new NullHandler();
@@ -65,6 +63,7 @@ public final class LoggerTests {
         assertTrue("Handler 3 missing", f3);
     }
 
+    @Test
     public void testHandlerAdd2() {
         final NullHandler h1 = new NullHandler();
         final Logger logger = Logger.getLogger("testHandlerAdd2");
@@ -80,6 +79,7 @@ public final class LoggerTests {
         assertEquals("Extra handlers missing", 3, handlers.length);
     }
 
+    @Test
     public void testHandlerRemove() {
         final NullHandler h1 = new NullHandler();
         final NullHandler h2 = new NullHandler();
@@ -102,6 +102,7 @@ public final class LoggerTests {
         assertTrue("Handler 3 missing", f3);
     }
 
+    @Test
     public void testHandlerRemove2() {
         final NullHandler h1 = new NullHandler();
         final Logger logger = Logger.getLogger("testHandlerRemove2");
@@ -110,6 +111,7 @@ public final class LoggerTests {
         assertEquals(0, handlers.length);
     }
 
+    @Test
     public void testHandlerClear() {
         final NullHandler h1 = new NullHandler();
         final NullHandler h2 = new NullHandler();
@@ -132,6 +134,7 @@ public final class LoggerTests {
         assertFalse("Handler 3 wasn't removed", f3);
     }
 
+    @Test
     public void testHandlerRun() {
         final AtomicBoolean ran = new AtomicBoolean();
         final Handler handler = new CheckingHandler(ran);
@@ -144,6 +147,7 @@ public final class LoggerTests {
         assertTrue("Handler wasn't run", ran.get());
     }
 
+    @Test
     public void testResourceBundle() {
         final ListHandler handler = new ListHandler();
         final Logger logger = Logger.getLogger("rbLogger", getClass().getName());

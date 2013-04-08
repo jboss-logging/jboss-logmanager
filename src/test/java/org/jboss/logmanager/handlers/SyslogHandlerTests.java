@@ -25,20 +25,20 @@ package org.jboss.logmanager.handlers;
 import java.util.Calendar;
 import java.util.logging.Level;
 
-import junit.framework.Assert;
+import org.junit.Assert;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.handlers.SyslogHandler.Facility;
 import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@Test
 public class SyslogHandlerTests {
 
     private static final String MSG = "This is a test message";
 
+    @Test
     public void testRFC5424Format() throws Exception {
         final Calendar cal = getCalendar();
         String formattedMessage = SyslogType.RFC5424.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", "java");
@@ -55,6 +55,7 @@ public class SyslogHandlerTests {
         Assert.assertEquals(expectedMessage, formattedMessage);
     }
 
+    @Test
     public void testRFC31644Format() throws Exception {
         final Calendar cal = getCalendar();
         String formattedMessage = SyslogType.RFC3164.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", "java");
