@@ -22,18 +22,15 @@
 
 package org.jboss.logmanager;
 
-import org.testng.Assert;
-import org.testng.annotations.Test;
+import org.junit.Assert;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@Test
 public class ProtectTests {
-    static {
-        System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
-    }
 
+    @Test
     public void testLogContextLock() {
         final Object lock = new Object();
         final Logger logger = Logger.getLogger("org.jboss.logmanager.test");
@@ -42,7 +39,7 @@ public class ProtectTests {
         // Should throw a SecurityException
         try {
             logger.setLevel(Level.INFO);
-            Assert.assertTrue(false, "Logger not locked");
+            Assert.fail("Logger not locked");
         } catch (SecurityException e) {
             // no-op
         }
@@ -53,7 +50,7 @@ public class ProtectTests {
         // Should throw a SecurityException
         try {
             logger.setLevel(Level.ALL);
-            Assert.assertTrue(false, "Logger not locked");
+            Assert.fail("Logger not locked");
         } catch (SecurityException e) {
             // no-op
         }
@@ -61,7 +58,7 @@ public class ProtectTests {
         // Invalid lock Should throw a SecurityException
         try {
             logContext.unprotect(new Object());
-            Assert.assertTrue(false, "Unprotect passed with invalid object");
+            Assert.fail("Unprotect passed with invalid object");
         } catch (SecurityException e) {
             // no-op
         }
@@ -70,6 +67,7 @@ public class ProtectTests {
         logger.setLevel(Level.INFO);
     }
 
+    @Test
     public void testHandlerLock() {
         final Object lock = new Object();
         final Logger logger = Logger.getLogger("org.jboss.logmanager.test");
@@ -80,7 +78,7 @@ public class ProtectTests {
         // Should throw a SecurityException
         try {
             handler.setLevel(Level.INFO);
-            Assert.assertTrue(false, "Handler not locked");
+            Assert.fail("Handler not locked");
         } catch (SecurityException e) {
             // no-op
         }
@@ -94,7 +92,7 @@ public class ProtectTests {
         // Should throw a SecurityException
         try {
             handler.setLevel(Level.ALL);
-            Assert.assertTrue(false, "Logger not locked");
+            Assert.fail("Logger not locked");
         } catch (SecurityException e) {
             // no-op
         }
@@ -102,7 +100,7 @@ public class ProtectTests {
         // Invalid lock Should throw a SecurityException
         try {
             handler.unprotect(new Object());
-            Assert.assertTrue(false, "Unprotect passed with invalid object");
+            Assert.fail("Unprotect passed with invalid object");
         } catch (SecurityException e) {
             // no-op
         }

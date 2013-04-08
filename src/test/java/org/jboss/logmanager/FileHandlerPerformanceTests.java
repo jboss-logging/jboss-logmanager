@@ -24,7 +24,7 @@ package org.jboss.logmanager;
 
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.FileHandler;
-import org.testng.annotations.Test;
+import org.junit.Test;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -33,7 +33,6 @@ import java.util.logging.Formatter;
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
  */
-@Test (groups = { "performance" })
 public class FileHandlerPerformanceTests {
     private static final Formatter testFormatter = new PatternFormatter("%m\n");
 
@@ -48,6 +47,7 @@ public class FileHandlerPerformanceTests {
         handler.publish(new ExtLogRecord(Level.INFO, msg, null));
     }
 
+    @Test
     public void testPerformance() throws Exception {
         final FileHandler handler = new FileHandler();
         initHandler(handler);
