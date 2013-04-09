@@ -34,6 +34,7 @@ public class SizeRotatingFileHandler extends FileHandler {
     private long rotateSize = 0xa0000L;
     private int maxBackupIndex = 1;
     private CountingOutputStream outputStream;
+    private boolean rotateOnBoot;
 
     /**
      * Construct a new instance with no formatter and no output file.
@@ -133,9 +134,37 @@ public class SizeRotatingFileHandler extends FileHandler {
     /** {@inheritDoc} */
     public void setFile(final File file) throws FileNotFoundException {
         synchronized (outputLock) {
+            // Check for a rotate
+            if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
+                rotate(file);
+            }
             super.setFile(file);
             if (outputStream != null)
                 outputStream.currentSize = file == null ? 0L : file.length();
+        }
+    }
+
+    /**
+     * Indicates whether or a not the handler should rotate the file before the first log record is written.
+     *
+     * @return {@code true} if file should rotate on boot, otherwise {@code false}/
+     */
+    public boolean isRotateOnBoot() {
+        synchronized (outputLock) {
+            return rotateOnBoot;
+        }
+    }
+
+    /**
+     * Set to a value of {@code true} if the file should be rotated before the a new file is set. The rotation only
+     * happens if the file names are the same and the file has a {@link java.io.File#length() length} greater than 0.
+     *
+     * @param rotateOnBoot {@code true} to rotate on boot, otherwise {@code false}
+     */
+    public void setRotateOnBoot(final boolean rotateOnBoot) {
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.rotateOnBoot = rotateOnBoot;
         }
     }
 
@@ -176,17 +205,21 @@ public class SizeRotatingFileHandler extends FileHandler {
                 }
                 // close the old file.
                 setFile(null);
-                // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
-                new File(file.getAbsolutePath() + "." + maxBackupIndex).delete();
-                for (int i = maxBackupIndex - 1; i >= 1; i--) {
-                    new File(file.getAbsolutePath() + "." + i).renameTo(new File(file.getAbsolutePath() + "." + (i + 1)));
-                }
-                file.renameTo(new File(file.getAbsolutePath() + ".1"));
+                rotate(file);
                 // start with new file.
                 setFile(file);
             } catch (FileNotFoundException e) {
                 reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
             }
         }
+    }
+
+    private void rotate(final File file) {
+        // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
+        new File(file.getAbsolutePath() + "." + maxBackupIndex).delete();
+        for (int i = maxBackupIndex - 1; i >= 1; i--) {
+            new File(file.getAbsolutePath() + "." + i).renameTo(new File(file.getAbsolutePath() + "." + (i + 1)));
+        }
+        file.renameTo(new File(file.getAbsolutePath() + ".1"));
     }
 }
