@@ -34,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.LoggingPermission;
 
+import org.jboss.logmanager.errormanager.OnlyOnceErrorManager;
 import org.jboss.logmanager.handlers.FlushableCloseable;
 
 /**
@@ -45,6 +46,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
     private volatile boolean autoFlush;
     private volatile boolean enabled = true;
+    private static final ErrorManager DEFAULT_ERROR_MANAGER = new OnlyOnceErrorManager();
 
     private volatile Object protectKey;
     private final ThreadLocal<Boolean> granted = new InheritableThreadLocal<Boolean>();
@@ -68,6 +70,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
      */
     protected ExtHandler() {
         handlersUpdater.clear(this);
+        super.setErrorManager(DEFAULT_ERROR_MANAGER);
     }
 
     /** {@inheritDoc} */
