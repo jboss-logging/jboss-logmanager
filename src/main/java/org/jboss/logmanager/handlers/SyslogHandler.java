@@ -34,6 +34,7 @@ import java.text.DateFormatSymbols;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.logging.ErrorManager;
+import java.util.logging.Formatter;
 import java.util.logging.Level;
 
 import org.jboss.logmanager.ExtHandler;
@@ -52,11 +53,54 @@ import org.jboss.logmanager.ExtLogRecord;
  */
 public class SyslogHandler extends ExtHandler {
 
-    public enum SocketType {
+    /**
+     * The type of socket the syslog should write to
+     */
+    public static enum Protocol {
+        /**
+         * Transmission Control Protocol
+         */
         TCP,
+        /**
+         * User Datagram Protocol
+         */
         UDP,
+        /**
+         * Transport Layer Security over TCP
+         */
         SSL_TCP,
+    }
 
+
+    /**
+     * The type of framing that should be used for TCP connections.
+     */
+    public static enum MessageTransfer {
+        /**
+         * Used to indicate messages should be prefixed with the total message length to act as a delimiter for the
+         * syslog reliever. Not all syslog servers support this.
+         */
+        OCTET_COUNTING,
+
+        /**
+         * Used to indicate a traditional delimiter should be used. The delimiter should be specified via the {@link
+         * #setFormatter(java.util.logging.Formatter) formatter}.
+         * <p/>
+         * LF terminator example:
+         * <pre>
+         *     <code>
+         *
+         *     final {@link org.jboss.logmanager.formatters.PatternFormatter PatternFormatter} formatter = new {@link
+         * org.jboss.logmanager.formatters.PatternFormatter PatternFormatter()};
+         *     formatter.{@link org.jboss.logmanager.formatters.PatternFormatter#setPattern(String)
+         * setPattern("%s%n")};
+         *     syslogHandler.{@link #setFormatter(java.util.logging.Formatter) formatter(formatter)};
+         *     </code>
+         * </pre>
+         * <p/>
+         * This only disables the {@link #OCTET_COUNTING}.
+         */
+        NON_TRANSPARENT_FRAMING,
     }
 
     /**
@@ -94,6 +138,7 @@ public class SyslogHandler extends ExtHandler {
          *
          * @return the severity
          */
+        // TODO (jrp) allow for a custom mapping
         public static Severity fromLevel(final Level level) {
             if (level == null) {
                 throw new IllegalArgumentException("Level cannot be null");
@@ -168,196 +213,18 @@ public class SyslogHandler extends ExtHandler {
         /**
          * Formats the message according the the RFC-5424 specification (<a href="http://tools.ietf.org/html/rfc5424#section-6">http://tools.ietf.org/html/rfc5424#section-6</a>
          */
-        RFC5424 {
-            @Override
-            protected String format(final ExtLogRecord record, final String encoding, final Facility facility, final String hostname, final String pid, final String appName) throws UnsupportedEncodingException {
-                final StringBuilder message = new StringBuilder();
-                // Set the property
-                message.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
-                // Set the version
-                message.append("1 ");
-                // Set the time
-                final long millis = record.getMillis();
-                if (millis <= 0) {
-                    message.append(NILVALUE).append(' ');
-                } else {
-                    formatDate(this, millis, message);
-                }
-                message.append(' ');
-                // Set the host name
-                if (hostname == null) {
-                    message.append(NILVALUE).append(' ');
-                } else {
-                    message.append(hostname).append(' ');
-                }
-                // Set the app name
-                if (appName == null) {
-                    message.append(NILVALUE).append(' ');
-                } else {
-                    message.append(appName).append(' ');
-                }
-                // Set the procid
-                if (pid == null) {
-                    message.append(NILVALUE).append(' ');
-                } else {
-                    message.append(pid).append(' ');
-                }
-                // Set the msgid
-                final String msgid = record.getLoggerName();
-                if (msgid == null || msgid.isEmpty()) {
-                    message.append(NILVALUE).append(' ');
-                } else {
-                    message.append(msgid).append(' ');
-                }
-                // Set the structured data
-                message.append(NILVALUE).append(' ');
-                // Set the message
-                // TODO (jrp) probably a better way to do this.
-                final String enc = (encoding == null ? "UTF-8" : encoding);
-                message.append(new String(record.getFormattedMessage().getBytes(enc), enc));
-                return message.toString();
-            }
-        },
+        RFC5424,
 
         /**
          * Formats the message according the the RFC-3164 specification (<a href="http://tools.ietf.org/html/rfc3164#section-4.1">http://tools.ietf.org/html/rfc3164#section-4.1</a>
          */
-        RFC3164 {
-            @Override
-            protected String format(final ExtLogRecord record, final String encoding, final Facility facility, final String hostname, final String pid, final String appName) throws UnsupportedEncodingException {
-                final StringBuilder message = new StringBuilder();
-                // Set the property
-                message.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
-                // Set the time
-                final long millis = record.getMillis();
-                formatDate(this, (millis <= 0 ? System.currentTimeMillis() : millis), message);
-                message.append(' ');
-                // Set the host name
-                if (hostname == null) {
-                    // TODO might not be the best solution
-                    message.append("UNKNOWN_HOSTNAME").append(' ');
-                } else {
-                    message.append(hostname).append(' ');
-                }
-                // Set the app name and the proc id
-                if (appName != null && pid != null) {
-                    message.append(appName).append("[").append(pid).append("]").append(": ");
-                } else if (appName != null) {
-                    message.append(appName).append(": ");
-                } else if (pid != null) {
-                    message.append("[").append(pid).append("]").append(": ");
-                }
-                // Set the message
-                // TODO (jrp) probably a better way to do this.
-                final String enc = (encoding == null ? "UTF-8" : encoding);
-                message.append(new String(record.getFormattedMessage().getBytes(enc), enc));
-                if (message.length() > 1024) {
-                    return message.substring(0, 1024);
-                }
-                return message.toString();
-            }
-        };
-
-        protected abstract String format(ExtLogRecord record, final String encoding, Facility facility, String hostname, String pid, String appName) throws UnsupportedEncodingException;
-
-        protected static int calculatePriority(final Level level, final Facility facility) {
-            final Severity severity = Severity.fromLevel(level);
-            // facility * 8 + severity
-            return facility.octal | severity.code;
-        }
-
-        protected static void formatDate(final SyslogType syslogType, final long millis, final StringBuilder buffer) {
-            final Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(millis);
-            final int month = cal.get(Calendar.MONTH);
-            final int day = cal.get(Calendar.DAY_OF_MONTH);
-            final int hours = cal.get(Calendar.HOUR_OF_DAY);
-            final int minutes = cal.get(Calendar.MINUTE);
-            final int seconds = cal.get(Calendar.SECOND);
-
-            switch (syslogType) {
-                // yyyy-MM-dd'T'HH:mm:ss.SSSXXX
-                case RFC5424: {
-                    buffer.append(cal.get(Calendar.YEAR)).append('-');
-                    if (month < 10) {
-                        buffer.append(0);
-                    }
-                    buffer.append(month + 1).append('-');
-                    if (day < 10) {
-                        buffer.append(0);
-                    }
-                    buffer.append(day).append('T');
-                    if (hours < 10) {
-                        buffer.append(0);
-                    }
-                    buffer.append(hours).append(':');
-                    if (minutes < 10) {
-                        buffer.append(0);
-                    }
-                    buffer.append(minutes).append(':');
-                    if (seconds < 10) {
-                        buffer.append(0);
-                    }
-                    buffer.append(seconds).append('.');
-                    final int milliseconds = cal.get(Calendar.MILLISECOND);
-                    if (milliseconds < 10) {
-                        buffer.append(0).append(0);
-                    } else if (milliseconds < 100) {
-                        buffer.append(0);
-                    }
-                    buffer.append(milliseconds);
-                    final int tz = cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET);
-                    if (tz == 0) {
-                        buffer.append("+00:00");
-                    } else {
-                        int tzMinutes = tz / 60000; // milliseconds to minutes
-                        if (tzMinutes < 0) {
-                            tzMinutes = -tzMinutes;
-                            buffer.append('-');
-                        } else {
-                            buffer.append('+');
-                        }
-                        final int tzHour = tzMinutes / 60; // minutes to hours
-                        tzMinutes -= tzHour * 60; // subtract hours from minutes in minutes
-                        if (tzHour < 10) {
-                            buffer.append(0);
-                        }
-                        buffer.append(tzHour).append(':');
-                        if (tzMinutes < 10) {
-                            buffer.append(0);
-                        }
-                        buffer.append(tzMinutes);
-                    }
-                    break;
-                }
-                // MMM dd hh:mm:ss (note dd should be (space)d if less than 10)
-                case RFC3164: {
-                    final DateFormatSymbols formatSymbols = DateFormatSymbols.getInstance(Locale.ENGLISH);
-                    buffer.append(formatSymbols.getShortMonths()[month]).append(' ');
-                    if (day < 10) {
-                        buffer.append(' ');
-                    }
-                    buffer.append(day).append(' ');
-                    if (hours < 10) {
-                        buffer.append(0);
-                    }
-                    buffer.append(hours).append(':');
-                    if (minutes < 10) {
-                        buffer.append(0);
-                    }
-                    buffer.append(minutes).append(':');
-                    if (seconds < 10) {
-                        buffer.append(0);
-                    }
-                    buffer.append(seconds);
-                    break;
-                }
-            }
-        }
+        RFC3164,
     }
 
     public static final InetAddress DEFAULT_ADDRESS;
+    // TODO (jrp) Default SSL_TCP port should be 6514
     public static final int DEFAULT_PORT = 514;
+    public static final String DEFAULT_ENCODING = "UTF-8";
     public static final Facility DEFAULT_FACILITY = Facility.USER_LEVEL;
     public static final char NILVALUE = '-';
 
@@ -378,7 +245,10 @@ public class SyslogHandler extends ExtHandler {
     private SyslogType syslogType;
     private final String pid;
     private OutputStream out;
-    private SocketType type;
+    private Protocol protocol;
+    private MessageTransfer messageTransfer;
+    private boolean initializeConnection;
+    private boolean outputStreamSet;
 
     /**
      * The default class constructor.
@@ -422,7 +292,8 @@ public class SyslogHandler extends ExtHandler {
      * @param serverHostname the server to send the messages to
      * @param port           the port the syslogd is listening on
      * @param facility       the facility to use when calculating priority
-     * @param hostname       the name of the host the messages are being sent from
+     * @param hostname       the name of the host the messages are being sent from see {@link #setHostname(String)} for
+     *                       details on the hostname
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
@@ -437,7 +308,8 @@ public class SyslogHandler extends ExtHandler {
      * @param serverAddress the server to send the messages to
      * @param port          the port the syslogd is listening on
      * @param facility      the facility to use when calculating priority
-     * @param hostname      the name of the host the messages are being sent from
+     * @param hostname      the name of the host the messages are being sent from see {@link #setHostname(String)} for
+     *                      details on the hostname
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
@@ -453,7 +325,8 @@ public class SyslogHandler extends ExtHandler {
      * @param port           the port the syslogd is listening on
      * @param facility       the facility to use when calculating priority
      * @param syslogType     the type of the syslog used to format the message
-     * @param hostname       the name of the host the messages are being sent from
+     * @param hostname       the name of the host the messages are being sent from see {@link #setHostname(String)} for
+     *                       details on the hostname
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
@@ -469,7 +342,8 @@ public class SyslogHandler extends ExtHandler {
      * @param port          the port the syslogd is listening on
      * @param facility      the facility to use when calculating priority
      * @param syslogType    the type of the syslog used to format the message
-     * @param hostname      the name of the host the messages are being sent from
+     * @param hostname      the name of the host the messages are being sent from see {@link #setHostname(String)} for
+     *                      details on the hostname
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
@@ -485,13 +359,14 @@ public class SyslogHandler extends ExtHandler {
      * @param port           the port the syslogd is listening on
      * @param facility       the facility to use when calculating priority
      * @param syslogType     the type of the syslog used to format the message
-     * @param socketType     the socket type used to the connect to the syslog server
-     * @param hostname       the name of the host the messages are being sent from
+     * @param protocol       the socket type used to the connect to the syslog server
+     * @param hostname       the name of the host the messages are being sent from see {@link #setHostname(String)} for
+     *                       details on the hostname
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
-    public SyslogHandler(final String serverHostname, final int port, final Facility facility, final SyslogType syslogType, final SocketType socketType, final String hostname) throws IOException {
-        this(InetAddress.getByName(serverHostname), port, facility, syslogType, socketType, hostname);
+    public SyslogHandler(final String serverHostname, final int port, final Facility facility, final SyslogType syslogType, final Protocol protocol, final String hostname) throws IOException {
+        this(InetAddress.getByName(serverHostname), port, facility, syslogType, protocol, hostname);
     }
 
     /**
@@ -502,12 +377,13 @@ public class SyslogHandler extends ExtHandler {
      * @param port          the port the syslogd is listening on
      * @param facility      the facility to use when calculating priority
      * @param syslogType    the type of the syslog used to format the message
-     * @param socketType    the socket type used to the connect to the syslog server
-     * @param hostname      the name of the host the messages are being sent from
+     * @param protocol      the socket type used to the connect to the syslog server
+     * @param hostname      the name of the host the messages are being sent from see {@link #setHostname(String)} for
+     *                      details on the hostname
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
-    public SyslogHandler(final InetAddress serverAddress, final int port, final Facility facility, final SyslogType syslogType, final SocketType socketType, final String hostname) throws IOException {
+    public SyslogHandler(final InetAddress serverAddress, final int port, final Facility facility, final SyslogType syslogType, final Protocol protocol, final String hostname) throws IOException {
         this.serverAddress = serverAddress;
         this.port = port;
         this.facility = facility;
@@ -515,7 +391,10 @@ public class SyslogHandler extends ExtHandler {
         this.appName = "java";
         this.hostname = hostname;
         this.syslogType = (syslogType == null ? SyslogType.RFC5424 : syslogType);
-        this.type = (socketType == null ? SocketType.UDP : socketType);
+        this.protocol = (protocol == null ? Protocol.UDP : protocol);
+        this.messageTransfer = MessageTransfer.NON_TRANSPARENT_FRAMING;
+        initializeConnection = true;
+        outputStreamSet = false;
     }
 
     @Override
@@ -525,13 +404,48 @@ public class SyslogHandler extends ExtHandler {
             return;
         }
         synchronized (outputLock) {
-            init(); // TODO (jrp) better initialization strategy needed
+            init();
             if (out == null) {
                 throw new IllegalStateException("The syslog handler has been closed.");
             }
             try {
-                final byte[] message = syslogType.format(record, getEncoding(), facility, hostname, pid, appName).getBytes();
-                out.write(message);
+                final StringBuilder buffer = new StringBuilder();
+
+                switch (syslogType) {
+                    case RFC5424:
+                        writeRFC5424Header(buffer, record);
+                        break;
+                    case RFC3164:
+                        writeRFC3164Header(buffer, record);
+                        break;
+                }
+
+                // Set the message
+                // TODO (jrp) probably a better way to do this.
+                // TODO (jrp) the message should also add the encoding prefix http://tools.ietf.org/html/rfc5424#section-6.4
+                final String encoding = (getEncoding() == null ? DEFAULT_ENCODING : getEncoding());
+                final Formatter formatter = getFormatter();
+                final String msg;
+                if (formatter != null) {
+                    msg = formatter.format(record);
+                } else {
+                    msg = record.getFormattedMessage();
+                }
+                // buffer.append(0xefbbbf);
+                // TODO (jrp) the BOM doesn't seem to work with rsyslog
+                // UTF-8 BOM
+                // final char[] bom = {0xef, 0xbb, 0xbf};
+                // buffer.append(bom);
+                buffer.append(new String(msg.getBytes(encoding), encoding));
+
+                // TODO (jrp) check length, RFC3164 should be wrapped or discard after 1024
+
+                // Should the message size be inserted
+                if (messageTransfer == MessageTransfer.OCTET_COUNTING) {
+                    buffer.insert(0, ' ');
+                    buffer.insert(0, buffer.length() - 1);
+                }
+                out.write(buffer.toString().getBytes());
             } catch (IOException e) {
                 reportError("Could not write to syslog", e, ErrorManager.WRITE_FAILURE);
             }
@@ -614,6 +528,7 @@ public class SyslogHandler extends ExtHandler {
         checkAccess(this);
         synchronized (outputLock) {
             this.port = port;
+            initializeConnection = true;
         }
     }
 
@@ -636,7 +551,9 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setFacility(final Facility facility) {
         checkAccess(this);
-        this.facility = facility;
+        synchronized (outputLock) {
+            this.facility = facility;
+        }
     }
 
     /**
@@ -652,6 +569,16 @@ public class SyslogHandler extends ExtHandler {
      * Sets the host name which is used when sending the message to the syslog.
      * <p/>
      * This should be the name of the host sending the log messages, Note that the name cannot contain any whitespace.
+     * <p/>
+     * The hostname should be the most specific available value first. The order of preference for the contents of the
+     * hostname is as follows:
+     * <ol>
+     * <li>FQDN</li>
+     * <li>Static IP address</li>
+     * <li>hostname</li>
+     * <li>Dynamic IP address</li>
+     * <li>{@code null}</li>
+     * </ol>
      *
      * @param hostname the host name
      */
@@ -659,7 +586,33 @@ public class SyslogHandler extends ExtHandler {
         if (hostname != null && hostname.contains(" ")) {
             throw new IllegalArgumentException(String.format("Host name '%s' is invalid. Whitespace is now allowed in the host name.", hostname));
         }
-        this.hostname = hostname;
+        synchronized (outputLock) {
+            this.hostname = hostname;
+        }
+    }
+
+    /**
+     * Returns the message transfer type.
+     *
+     * @return the message transfer type
+     */
+    public MessageTransfer getMessageTransfer() {
+        return messageTransfer;
+    }
+
+    /**
+     * Sets the message transfer type.
+     *
+     * @param messageTransfer the message transfer type
+     *
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code
+     *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}
+     */
+    public void setMessageTransfer(final MessageTransfer messageTransfer) {
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.messageTransfer = messageTransfer;
+        }
     }
 
     /**
@@ -701,6 +654,7 @@ public class SyslogHandler extends ExtHandler {
         checkAccess(this);
         synchronized (outputLock) {
             this.serverAddress = serverAddress;
+            initializeConnection = true;
         }
     }
 
@@ -730,14 +684,61 @@ public class SyslogHandler extends ExtHandler {
         }
     }
 
-    public SocketType getSocketType() {
-        return type;
+    /**
+     * The protocol used to connect to the syslog server
+     *
+     * @return the protocol
+     */
+    public Protocol getProtocol() {
+        return protocol;
     }
 
-    public void setSocketType(final SocketType type) {
+    /**
+     * Sets the protocol used to connect to the syslog server
+     *
+     * @param type the protocol
+     */
+    public void setProtocol(final Protocol type) {
         checkAccess(this);
         synchronized (outputLock) {
-            this.type = type;
+            this.protocol = type;
+            initializeConnection = true;
+        }
+    }
+
+    /**
+     * Sets the output stream for the syslog handler to write to.
+     * <p/>
+     * Setting the output stream closes any already established connections or open output streams and will not open
+     * any new connections until the output stream is set to {@code null}. The {@link
+     * #setProtocol(org.jboss.logmanager.handlers.SyslogHandler.Protocol) protocol}, {@link
+     * #setServerAddress(java.net.InetAddress), server address}, {@link #setServerHostname(String) server hostname} or
+     * {@link #setPort(int) port} have no effect when the output stream is set.
+     *
+     * @param out the output stream to write to
+     */
+    public void setOutputStream(final OutputStream out) {
+        setOutputStream(out, true);
+    }
+
+    private void setOutputStream(final OutputStream out, final boolean outputStreamSet) {
+        checkAccess(this);
+        OutputStream oldOut = null;
+        boolean ok = false;
+        try {
+            synchronized (outputLock) {
+                initializeConnection = false;
+                oldOut = this.out;
+                if (oldOut != null) {
+                    safeFlush(oldOut);
+                }
+                this.out = out;
+                ok = true;
+                this.outputStreamSet = (out != null && outputStreamSet);
+            }
+        } finally {
+            safeClose(oldOut);
+            if (!ok) safeClose(out);
         }
     }
 
@@ -772,39 +773,195 @@ public class SyslogHandler extends ExtHandler {
     }
 
     private void init() {
-        // TODO (jrp) better initialization strategy needed
-        if (serverAddress == null || port <= 0 || type == null) {
-            return;
-        }
-        // Close any previous stream
-        if (out != null) {
-            safeClose(out);
-        }
-        // Check the sockets
-        switch (type) {
-            case TCP: {
-                try {
-                    out = new TcpOutputStream(serverAddress, port);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Could not set TCP output stream.", e);
-                }
-                break;
+        if (initializeConnection && !outputStreamSet) {
+            if (serverAddress == null || port < 0 || protocol == null) {
+                throw new IllegalStateException("Invalid connection parameters. The port, server address and protocol must be set.");
             }
-            case UDP: {
-                try {
-                    out = new UdpOutputStream(serverAddress, port);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Could not set UDP output stream.", e);
+            initializeConnection = false;
+            // Check the sockets
+            switch (protocol) {
+                case TCP: {
+                    try {
+                        setOutputStream(new TcpOutputStream(serverAddress, port), false);
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Could not set TCP output stream.", e);
+                    }
+                    break;
                 }
-                break;
+                case UDP: {
+                    try {
+                        setOutputStream(new UdpOutputStream(serverAddress, port), false);
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Could not set UDP output stream.", e);
+                    }
+                    break;
+                }
+                case SSL_TCP:
+                    try {
+                        setOutputStream(new SslTcpOutputStream(serverAddress, port), false);
+                    } catch (IOException e) {
+                        throw new IllegalStateException("Could not set SSL output stream.", e);
+                    }
+                    break;
             }
-            case SSL_TCP:
-                try {
-                    out = new SslTcpOutputStream(serverAddress, port);
-                } catch (IOException e) {
-                    throw new IllegalStateException("Could not set SSL output stream.", e);
+        }
+    }
+
+    protected int calculatePriority(final Level level, final Facility facility) {
+        final Severity severity = Severity.fromLevel(level);
+        // facility * 8 + severity
+        return facility.octal | severity.code;
+    }
+
+    protected void writeRFC5424Header(final StringBuilder buffer, final ExtLogRecord record) throws UnsupportedEncodingException {
+        // Set the property
+        buffer.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
+        // Set the version
+        buffer.append("1 ");
+        // Set the time
+        final long millis = record.getMillis();
+        if (millis <= 0) {
+            buffer.append(NILVALUE).append(' ');
+        } else {
+            // The follow can be changed to use a formatter with Java 7 pattern is yyyy-MM-dd'T'hh:mm:ss.SSSXXX
+            final Calendar cal = Calendar.getInstance();
+            cal.setTimeInMillis(millis);
+            final int month = cal.get(Calendar.MONTH);
+            final int day = cal.get(Calendar.DAY_OF_MONTH);
+            final int hours = cal.get(Calendar.HOUR_OF_DAY);
+            final int minutes = cal.get(Calendar.MINUTE);
+            final int seconds = cal.get(Calendar.SECOND);
+            buffer.append(cal.get(Calendar.YEAR)).append('-');
+            if (month < 10) {
+                buffer.append(0);
+            }
+            buffer.append(month + 1).append('-');
+            if (day < 10) {
+                buffer.append(0);
+            }
+            buffer.append(day).append('T');
+            if (hours < 10) {
+                buffer.append(0);
+            }
+            buffer.append(hours).append(':');
+            if (minutes < 10) {
+                buffer.append(0);
+            }
+            buffer.append(minutes).append(':');
+            if (seconds < 10) {
+                buffer.append(0);
+            }
+            buffer.append(seconds).append('.');
+            final int milliseconds = cal.get(Calendar.MILLISECOND);
+            if (milliseconds < 10) {
+                buffer.append(0).append(0);
+            } else if (milliseconds < 100) {
+                buffer.append(0);
+            }
+            buffer.append(milliseconds);
+            final int tz = cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET);
+            if (tz == 0) {
+                buffer.append("+00:00");
+            } else {
+                int tzMinutes = tz / 60000; // milliseconds to minutes
+                if (tzMinutes < 0) {
+                    tzMinutes = -tzMinutes;
+                    buffer.append('-');
+                } else {
+                    buffer.append('+');
                 }
-                break;
+                final int tzHour = tzMinutes / 60; // minutes to hours
+                tzMinutes -= tzHour * 60; // subtract hours from minutes in minutes
+                if (tzHour < 10) {
+                    buffer.append(0);
+                }
+                buffer.append(tzHour).append(':');
+                if (tzMinutes < 10) {
+                    buffer.append(0);
+                }
+                buffer.append(tzMinutes);
+            }
+        }
+        buffer.append(' ');
+        // Set the host name
+        if (hostname == null) {
+            buffer.append(NILVALUE).append(' ');
+        } else {
+            buffer.append(hostname).append(' ');
+        }
+        // Set the app name
+        if (appName == null) {
+            buffer.append(NILVALUE).append(' ');
+        } else {
+            buffer.append(appName).append(' ');
+        }
+        // Set the procid
+        if (pid == null) {
+            buffer.append(NILVALUE).append(' ');
+        } else {
+            buffer.append(pid).append(' ');
+        }
+        // Set the msgid
+        final String msgid = record.getLoggerName();
+        if (msgid == null) {
+            buffer.append(NILVALUE).append(' ');
+        } else if (msgid.isEmpty()) {
+            buffer.append("root-logger");
+        } else {
+            buffer.append(msgid).append(' ');
+        }
+        // Set the structured data
+        buffer.append(NILVALUE).append(' ');
+        // TODO (jrp) review structured data http://tools.ietf.org/html/rfc5424#section-6.3
+    }
+
+    protected void writeRFC3164Header(final StringBuilder buffer, final ExtLogRecord record) throws UnsupportedEncodingException {
+        // Set the property
+        buffer.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
+
+        // Set the time
+        final long millis = record.getMillis();
+        final Calendar cal = Calendar.getInstance();
+        cal.setTimeInMillis((millis <= 0 ? System.currentTimeMillis() : millis));
+        final int month = cal.get(Calendar.MONTH);
+        final int day = cal.get(Calendar.DAY_OF_MONTH);
+        final int hours = cal.get(Calendar.HOUR_OF_DAY);
+        final int minutes = cal.get(Calendar.MINUTE);
+        final int seconds = cal.get(Calendar.SECOND);
+        final DateFormatSymbols formatSymbols = DateFormatSymbols.getInstance(Locale.ENGLISH);
+        buffer.append(formatSymbols.getShortMonths()[month]).append(' ');
+        if (day < 10) {
+            buffer.append(' ');
+        }
+        buffer.append(day).append(' ');
+        if (hours < 10) {
+            buffer.append(0);
+        }
+        buffer.append(hours).append(':');
+        if (minutes < 10) {
+            buffer.append(0);
+        }
+        buffer.append(minutes).append(':');
+        if (seconds < 10) {
+            buffer.append(0);
+        }
+        buffer.append(seconds);
+        buffer.append(' ');
+
+        // Set the host name
+        if (hostname == null) {
+            // TODO might not be the best solution
+            buffer.append("UNKNOWN_HOSTNAME").append(' ');
+        } else {
+            buffer.append(hostname).append(' ');
+        }
+        // Set the app name and the proc id
+        if (appName != null && pid != null) {
+            buffer.append(appName).append("[").append(pid).append("]").append(": ");
+        } else if (appName != null) {
+            buffer.append(appName).append(": ");
+        } else if (pid != null) {
+            buffer.append("[").append(pid).append("]").append(": ");
         }
     }
 }

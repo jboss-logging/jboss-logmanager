@@ -22,13 +22,16 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.ByteArrayOutputStream;
 import java.util.Calendar;
 import java.util.logging.Level;
 
-import org.junit.Assert;
 import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.handlers.SyslogHandler.Facility;
+import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
+import org.junit.After;
+import org.junit.Assert;
+import org.junit.Before;
 import org.junit.Test;
 
 /**
@@ -37,35 +40,81 @@ import org.junit.Test;
 public class SyslogHandlerTests {
 
     private static final String MSG = "This is a test message";
+    private static final String HOSTNAME = "localhost";
+    private static final int PORT = 10999;
+
+    private SyslogHandler handler;
+
+    @Before
+    public void startLogServer() throws Exception {
+        handler = new SyslogHandler(HOSTNAME, PORT);
+    }
+
+    @After
+    public void stopLogServer() throws Exception {
+        // Close the handler
+        handler.flush();
+        handler.close();
+    }
 
     @Test
-    public void testRFC5424Format() throws Exception {
+    public void testRFC5424Tcp() throws Exception {
+        // Setup the handler
+        handler.setSyslogType(SyslogType.RFC5424);
+        handler.setFormatter(new PatternFormatter("%s%n"));
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        handler.setOutputStream(out);
+
         final Calendar cal = getCalendar();
-        String formattedMessage = SyslogType.RFC5424.format(createRecord(cal, MSG), null, Facility.USER_LEVEL, "test", "1234", "java");
-        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java 1234 - - " + MSG;
-        Assert.assertEquals(expectedMessage, formattedMessage);
+        // Create the record
+        handler.setHostname("test");
+        ExtLogRecord record = createRecord(cal, MSG);
+        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + MSG + '\n';
+        handler.publish(record);
+        Assert.assertEquals(expectedMessage, out.toString());
 
-        formattedMessage = SyslogType.RFC5424.format(createRecord(cal, MSG), null, Facility.USER_LEVEL, null, "1234", null);
-        expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " - - 1234 - - " + MSG;
-        Assert.assertEquals(expectedMessage, formattedMessage);
+        // Create the record
+        out.reset();
+        record = createRecord(cal, MSG);
+        handler.setHostname(null);
+        handler.setAppName(null);
+        expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " - - " + handler.getPid() + " - - " + MSG + '\n';
+        handler.publish(record);
+        Assert.assertEquals(expectedMessage, out.toString());
 
+        out.reset();
         cal.set(Calendar.DAY_OF_MONTH, 31);
-        formattedMessage = SyslogType.RFC5424.format(createRecord(cal, MSG), null, Facility.USER_LEVEL, "test", "1234", "java");
-        expectedMessage = "<14>1 2012-01-31T04:39:22.000" + calculateTimeZone(cal) + " test java 1234 - - " + MSG;
-        Assert.assertEquals(expectedMessage, formattedMessage);
+        record = createRecord(cal, MSG);
+        handler.setHostname("test");
+        handler.setAppName("java");
+        expectedMessage = "<14>1 2012-01-31T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + MSG + '\n';
+        handler.publish(record);
+        Assert.assertEquals(expectedMessage, out.toString());
     }
 
     @Test
     public void testRFC31644Format() throws Exception {
-        final Calendar cal = getCalendar();
-        String formattedMessage = SyslogType.RFC3164.format(createRecord(cal, MSG), null, Facility.USER_LEVEL, "test", "1234", "java");
-        String expectedMessage = "<14>Jan  9 04:39:22 test java[1234]: " + MSG;
-        Assert.assertEquals(expectedMessage, formattedMessage);
+        // Setup the handler
+        handler.setSyslogType(SyslogType.RFC3164);
+        handler.setFormatter(new PatternFormatter("%s"));
+        handler.setHostname("test");
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        handler.setOutputStream(out);
 
+        final Calendar cal = getCalendar();
+
+        // Create the record
+        ExtLogRecord record = createRecord(cal, MSG);
+        handler.publish(record);
+        String expectedMessage = "<14>Jan  9 04:39:22 test java[" + handler.getPid() + "]: " + MSG;
+        Assert.assertEquals(expectedMessage, out.toString());
+
+        out.reset();
         cal.set(Calendar.DAY_OF_MONTH, 31);
-        formattedMessage = SyslogType.RFC3164.format(createRecord(cal, MSG), null, Facility.USER_LEVEL, "test", "1234", null);
-        expectedMessage = "<14>Jan 31 04:39:22 test [1234]: " + MSG;
-        Assert.assertEquals(expectedMessage, formattedMessage);
+        record = createRecord(cal, MSG);
+        handler.publish(record);
+        expectedMessage = "<14>Jan 31 04:39:22 test java[" + handler.getPid() + "]: " + MSG;
+        Assert.assertEquals(expectedMessage, out.toString());
     }
 
     private static ExtLogRecord createRecord(final Calendar cal, final String message) {
