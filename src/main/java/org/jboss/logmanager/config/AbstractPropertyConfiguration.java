@@ -366,7 +366,6 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             }
 
             public void applyPostCreate(final Void param) {
-                addPostConfigurationActions(true);
             }
 
             public void rollback() {
@@ -390,14 +389,11 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         final Deque<ConfigAction<?>> queue = new ArrayDeque<ConfigAction<?>>(postConfigurationMethods.size());
         for (final String methodName : postConfigurationMethods.keySet()) {
             final ConfigAction<Method> configAction = new ConfigAction<Method>() {
+
                 public Method validate() throws IllegalArgumentException {
                     final Method result = postConfigurationMethods.get(methodName);
                     if (result == null) {
                         throw new IllegalArgumentException(String.format("Method '%s' not found on '%s'", methodName, actualClass.getName()));
-                    }
-                    // References should not be null at this point
-                    if (!getRefs().containsKey(getName())) {
-                        throw new IllegalArgumentException(String.format("No reference found for '%s'", actualClass.getName()));
                     }
                     return result;
                 }
@@ -422,6 +418,11 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             queue.addLast(configAction);
         }
         configuration.addPostConfigurationActions(name, queue);
+    }
+
+    protected final Deque<?> removePostConfigurationActions() {
+        final String name = className + "." + getName();
+        return getConfiguration().removePostConfigurationActions(name);
     }
 
     static Class<?> getPropertyType(Class<?> clazz, String propertyName) {

@@ -261,7 +261,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         }
         final PojoConfigurationImpl pojoConfiguration = new PojoConfigurationImpl(this, pojoName, moduleName, className, constructorProperties);
         pojos.put(pojoName, pojoConfiguration);
-        transactionState.addFirst(pojoConfiguration.getConstructAction());
+        transactionState.addLast(pojoConfiguration.getConstructAction());
         return pojoConfiguration;
     }
 
@@ -374,6 +374,15 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         if (actions != null && !actions.isEmpty()) {
             postConfigurationTransactionState.put(name, actions);
         }
+    }
+
+    /**
+     * Removes the post configuration actions for the configuration identified by the {@code name} parameter.
+     *
+     * @param name    the name of the configuration
+     */
+    Deque<?> removePostConfigurationActions(final String name) {
+        return postConfigurationTransactionState.remove(name);
     }
 
     /**
