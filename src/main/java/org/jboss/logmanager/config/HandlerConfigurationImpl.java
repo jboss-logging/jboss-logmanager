@@ -422,13 +422,14 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
 
             @Override
             public void applyPostCreate(final Void param) {
-                addPostConfigurationActions();
+                removePostConfigurationActions();
             }
 
             @Override
             public void rollback() {
                 configs.put(getName(), HandlerConfigurationImpl.this);
                 clearRemoved();
+                addPostConfigurationActions();
             }
         };
     }
