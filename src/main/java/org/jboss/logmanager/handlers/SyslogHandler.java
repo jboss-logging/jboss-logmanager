@@ -22,6 +22,7 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
@@ -31,6 +32,7 @@ import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DateFormatSymbols;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.logging.ErrorManager;
@@ -226,7 +228,7 @@ public class SyslogHandler extends ExtHandler {
     public static final int DEFAULT_PORT = 514;
     public static final String DEFAULT_ENCODING = "UTF-8";
     public static final Facility DEFAULT_FACILITY = Facility.USER_LEVEL;
-    public static final char NILVALUE = '-';
+    public static final String NILVALUE_SP = "- ";
 
     static {
         try {
@@ -249,6 +251,7 @@ public class SyslogHandler extends ExtHandler {
     private MessageTransfer messageTransfer;
     private boolean initializeConnection;
     private boolean outputStreamSet;
+    private byte[] bom;
 
     /**
      * The default class constructor.
@@ -409,7 +412,7 @@ public class SyslogHandler extends ExtHandler {
                 throw new IllegalStateException("The syslog handler has been closed.");
             }
             try {
-                final StringBuilder buffer = new StringBuilder();
+                final AppendableOutputStream buffer = new AppendableOutputStream();
 
                 switch (syslogType) {
                     case RFC5424:
@@ -421,9 +424,6 @@ public class SyslogHandler extends ExtHandler {
                 }
 
                 // Set the message
-                // TODO (jrp) probably a better way to do this.
-                // TODO (jrp) the message should also add the encoding prefix http://tools.ietf.org/html/rfc5424#section-6.4
-                final String encoding = (getEncoding() == null ? DEFAULT_ENCODING : getEncoding());
                 final Formatter formatter = getFormatter();
                 final String msg;
                 if (formatter != null) {
@@ -431,26 +431,46 @@ public class SyslogHandler extends ExtHandler {
                 } else {
                     msg = record.getFormattedMessage();
                 }
-                // buffer.append(0xefbbbf);
-                // TODO (jrp) the BOM doesn't seem to work with rsyslog
-                // UTF-8 BOM
-                // final char[] bom = {0xef, 0xbb, 0xbf};
-                // buffer.append(bom);
-                buffer.append(new String(msg.getBytes(encoding), encoding));
+                // TODO (jrp) messages may need to be wrapped/sent as multiple messages RFC3164 has a max length of 1024
 
-                // TODO (jrp) check length, RFC3164 should be wrapped or discard after 1024
+                // TODO (jrp) the BOM doesn't seem to work with rsyslog unless it's UTF-8
+                final String encoding = getEncoding();
+                // TODO (jrp) should escape any characters below d32
+                if (encoding == null || bom == null) {
+                    buffer.append(msg, DEFAULT_ENCODING);
+                } else {
+                    buffer.write(bom);
+                    buffer.append(msg, encoding);
+                }
+                byte[] fullMessage = buffer.toByteArray();
 
                 // Should the message size be inserted
                 if (messageTransfer == MessageTransfer.OCTET_COUNTING) {
-                    buffer.insert(0, ' ');
-                    buffer.insert(0, buffer.length() - 1);
+                    final byte[] prefix = (fullMessage.length + " ").getBytes();
+                    final byte[] a = Arrays.copyOf(fullMessage, fullMessage.length);
+                    // Create a new array
+                    fullMessage = new byte[a.length + prefix.length];
+                    System.arraycopy(prefix, 0, fullMessage, 0, prefix.length);
+                    System.arraycopy(a, 0, fullMessage, prefix.length, a.length);
                 }
-                out.write(buffer.toString().getBytes());
+                // TODO (jrp) remove this
+                System.out.println(new String(fullMessage));
+                this.out.write(fullMessage);
             } catch (IOException e) {
                 reportError("Could not write to syslog", e, ErrorManager.WRITE_FAILURE);
             }
         }
         super.doPublish(record);
+    }
+
+    @Override
+    public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
+        super.setEncoding(encoding);
+        if (encoding == null) {
+            bom = null;
+        } else {
+            bom = (new String(new char[] {(char) 0xfeff})).getBytes(encoding);
+        }
     }
 
     @Override
@@ -813,15 +833,15 @@ public class SyslogHandler extends ExtHandler {
         return facility.octal | severity.code;
     }
 
-    protected void writeRFC5424Header(final StringBuilder buffer, final ExtLogRecord record) throws UnsupportedEncodingException {
+    protected void writeRFC5424Header(final AppendableOutputStream buffer, final ExtLogRecord record) throws IOException {
         // Set the property
-        buffer.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
+        buffer.append("<").append(calculatePriority(record.getLevel(), facility)).append(">");
         // Set the version
         buffer.append("1 ");
         // Set the time
         final long millis = record.getMillis();
         if (millis <= 0) {
-            buffer.append(NILVALUE).append(' ');
+            buffer.append(NILVALUE_SP);
         } else {
             // The follow can be changed to use a formatter with Java 7 pattern is yyyy-MM-dd'T'hh:mm:ss.SSSXXX
             final Calendar cal = Calendar.getInstance();
@@ -881,41 +901,47 @@ public class SyslogHandler extends ExtHandler {
                 }
                 buffer.append(tzMinutes);
             }
+            buffer.append(" ");
         }
-        buffer.append(' ');
+        // TODO (jrp) validate lengths
         // Set the host name
         if (hostname == null) {
-            buffer.append(NILVALUE).append(' ');
+            buffer.append(NILVALUE_SP);
         } else {
-            buffer.append(hostname).append(' ');
+            buffer.append(hostname).append(" ");
         }
         // Set the app name
         if (appName == null) {
-            buffer.append(NILVALUE).append(' ');
+            buffer.append(NILVALUE_SP);
         } else {
-            buffer.append(appName).append(' ');
+            buffer.appendUSASCII(appName);
+            buffer.append(" ");
         }
         // Set the procid
         if (pid == null) {
-            buffer.append(NILVALUE).append(' ');
+            buffer.append(NILVALUE_SP);
         } else {
-            buffer.append(pid).append(' ');
+            buffer.appendUSASCII(pid);
+            buffer.append(" ");
         }
         // Set the msgid
         final String msgid = record.getLoggerName();
         if (msgid == null) {
-            buffer.append(NILVALUE).append(' ');
+            buffer.append(NILVALUE_SP);
+            buffer.append(" ");
         } else if (msgid.isEmpty()) {
-            buffer.append("root-logger");
+            buffer.appendUSASCII("root-logger");
+            buffer.append(" ");
         } else {
-            buffer.append(msgid).append(' ');
+            buffer.appendUSASCII(msgid);
+            buffer.append(" ");
         }
         // Set the structured data
-        buffer.append(NILVALUE).append(' ');
+        buffer.append(NILVALUE_SP);
         // TODO (jrp) review structured data http://tools.ietf.org/html/rfc5424#section-6.3
     }
 
-    protected void writeRFC3164Header(final StringBuilder buffer, final ExtLogRecord record) throws UnsupportedEncodingException {
+    protected void writeRFC3164Header(final AppendableOutputStream buffer, final ExtLogRecord record) throws IOException {
         // Set the property
         buffer.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
 
@@ -929,11 +955,11 @@ public class SyslogHandler extends ExtHandler {
         final int minutes = cal.get(Calendar.MINUTE);
         final int seconds = cal.get(Calendar.SECOND);
         final DateFormatSymbols formatSymbols = DateFormatSymbols.getInstance(Locale.ENGLISH);
-        buffer.append(formatSymbols.getShortMonths()[month]).append(' ');
+        buffer.append(formatSymbols.getShortMonths()[month]).append(" ");
         if (day < 10) {
-            buffer.append(' ');
+            buffer.append(" ");
         }
-        buffer.append(day).append(' ');
+        buffer.append(day).append(" ");
         if (hours < 10) {
             buffer.append(0);
         }
@@ -946,14 +972,14 @@ public class SyslogHandler extends ExtHandler {
             buffer.append(0);
         }
         buffer.append(seconds);
-        buffer.append(' ');
+        buffer.append(" ");
 
         // Set the host name
         if (hostname == null) {
             // TODO might not be the best solution
-            buffer.append("UNKNOWN_HOSTNAME").append(' ');
+            buffer.append("UNKNOWN_HOSTNAME").append(" ");
         } else {
-            buffer.append(hostname).append(' ');
+            buffer.append(hostname).append(" ");
         }
         // Set the app name and the proc id
         if (appName != null && pid != null) {
@@ -962,6 +988,48 @@ public class SyslogHandler extends ExtHandler {
             buffer.append(appName).append(": ");
         } else if (pid != null) {
             buffer.append("[").append(pid).append("]").append(": ");
+        }
+    }
+
+    static class AppendableOutputStream extends ByteArrayOutputStream implements Appendable {
+
+        public AppendableOutputStream appendUSASCII(final String s) throws IOException {
+            write(s.getBytes("US-ASCII"));
+            return this;
+        }
+
+        public AppendableOutputStream appendUTF8(final String s) throws IOException {
+            write(s.getBytes("UTF-8"));
+            return this;
+        }
+
+        public AppendableOutputStream append(final String s, final String encoding) throws IOException {
+            write(s.getBytes(encoding));
+            return this;
+        }
+
+        public AppendableOutputStream append(final String s) throws IOException {
+            write(s.getBytes());
+            return this;
+        }
+
+        public AppendableOutputStream append(final int i) throws IOException {
+            return append(Integer.toString(i));
+        }
+
+        @Override
+        public AppendableOutputStream append(final CharSequence csq) throws IOException {
+            return append(csq.toString());
+        }
+
+        @Override
+        public AppendableOutputStream append(final CharSequence csq, final int start, final int end) throws IOException {
+            return append(csq.subSequence(start, end).toString());
+        }
+
+        @Override
+        public AppendableOutputStream append(final char c) throws IOException {
+            return append(Character.toString(c));
         }
     }
 }

@@ -23,6 +23,7 @@ public class SyslogTest {
     private boolean useOctetCounting;
     private String formatPattern;
     private int logCount;
+    private String encoding;
     private String message;
 
     @Before
@@ -32,6 +33,7 @@ public class SyslogTest {
         useOctetCounting = Boolean.parseBoolean(System.getProperty("syslog.useOctectCounting", "false"));
         formatPattern = System.getProperty("syslog.formatPattern", "%s%n");
         logCount = Integer.parseInt(System.getProperty("syslog.logCount", "3"));
+        encoding = System.getProperty("syslog.encoding");
         message = System.getProperty("syslog.message");
     }
 
@@ -86,6 +88,7 @@ public class SyslogTest {
         final SyslogHandler handler = new SyslogHandler(hostname, port);
         if (useOctetCounting)
             handler.setMessageTransfer(MessageTransfer.OCTET_COUNTING);
+        handler.setEncoding(encoding);
         handler.setHostname("localhost");
         handler.setFormatter(new PatternFormatter(formatPattern));
         return handler;
