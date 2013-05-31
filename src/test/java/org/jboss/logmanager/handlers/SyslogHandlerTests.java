@@ -46,12 +46,14 @@ public class SyslogHandlerTests {
     private SyslogHandler handler;
 
     @Before
-    public void startLogServer() throws Exception {
+    public void setupHandler() throws Exception {
         handler = new SyslogHandler(HOSTNAME, PORT);
+        handler.setFormatter(new PatternFormatter("%s"));
+        handler.setEscapeEnabled(false);
     }
 
     @After
-    public void stopLogServer() throws Exception {
+    public void closeHandler() throws Exception {
         // Close the handler
         handler.flush();
         handler.close();
@@ -61,7 +63,8 @@ public class SyslogHandlerTests {
     public void testRFC5424Tcp() throws Exception {
         // Setup the handler
         handler.setSyslogType(SyslogType.RFC5424);
-        handler.setFormatter(new PatternFormatter("%s%n"));
+        handler.setMessageDelimiter("\n");
+        handler.setUseMessageDelimiter(true);
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         handler.setOutputStream(out);
 
@@ -96,7 +99,6 @@ public class SyslogHandlerTests {
     public void testRFC31644Format() throws Exception {
         // Setup the handler
         handler.setSyslogType(SyslogType.RFC3164);
-        handler.setFormatter(new PatternFormatter("%s"));
         handler.setHostname("test");
         final ByteArrayOutputStream out = new ByteArrayOutputStream();
         handler.setOutputStream(out);

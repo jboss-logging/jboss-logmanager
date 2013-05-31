@@ -25,16 +25,18 @@ public class SyslogTest {
     private int logCount;
     private String encoding;
     private String message;
+    private String delimiter;
 
     @Before
     public void propertyInit() {
         hostname = System.getProperty("syslog.hostname", "localhost");
         port = Integer.parseInt(System.getProperty("syslog.port", "514"));
         useOctetCounting = Boolean.parseBoolean(System.getProperty("syslog.useOctectCounting", "false"));
-        formatPattern = System.getProperty("syslog.formatPattern", "%s%n");
+        formatPattern = System.getProperty("syslog.formatPattern", "%s");
         logCount = Integer.parseInt(System.getProperty("syslog.logCount", "3"));
         encoding = System.getProperty("syslog.encoding");
         message = System.getProperty("syslog.message");
+        delimiter = System.getProperty("syslog.delimiter", "\n");
     }
 
     @Test
@@ -91,6 +93,22 @@ public class SyslogTest {
         handler.setEncoding(encoding);
         handler.setHostname("localhost");
         handler.setFormatter(new PatternFormatter(formatPattern));
+        if (delimiter == null || delimiter.isEmpty()) {
+            handler.setMessageDelimiter(null);
+            handler.setUseMessageDelimiter(false);
+        } else if ("%n".equals(delimiter)) {
+            handler.setMessageDelimiter("\n");
+            handler.setUseMessageDelimiter(true);
+        } else if ("null".equalsIgnoreCase(delimiter)) {
+            handler.setMessageDelimiter(null);
+            handler.setUseMessageDelimiter(true);
+        } else if ("%t".equalsIgnoreCase(delimiter)) {
+            handler.setMessageDelimiter("\t");
+            handler.setUseMessageDelimiter(true);
+        } else {
+            handler.setMessageDelimiter(delimiter);
+            handler.setUseMessageDelimiter(true);
+        }
         return handler;
     }
 }
