@@ -28,6 +28,7 @@ import java.util.logging.Level;
 
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.formatters.PatternFormatter;
+import org.jboss.logmanager.handlers.SyslogHandler.MessageTransfer;
 import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
 import org.junit.After;
 import org.junit.Assert;
@@ -116,6 +117,44 @@ public class SyslogHandlerTests {
         record = createRecord(cal, MSG);
         handler.publish(record);
         expectedMessage = "<14>Jan 31 04:39:22 test java[" + handler.getPid() + "]: " + MSG;
+        Assert.assertEquals(expectedMessage, out.toString());
+    }
+
+    @Test
+    public void testOctetCounting() throws Exception {
+        // Setup the handler
+        handler.setSyslogType(SyslogType.RFC5424);
+        handler.setUseMessageDelimiter(false);
+        handler.setMessageTransfer(MessageTransfer.OCTET_COUNTING);
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        handler.setOutputStream(out);
+
+        final Calendar cal = getCalendar();
+        // Create the record
+        handler.setHostname("test");
+        ExtLogRecord record = createRecord(cal, MSG);
+        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + MSG;
+        expectedMessage = expectedMessage.getBytes().length + " " + expectedMessage;
+        handler.publish(record);
+        Assert.assertEquals(expectedMessage, out.toString());
+    }
+
+    @Test
+    public void testEscaping() throws Exception {
+        // Setup the handler
+        handler.setSyslogType(SyslogType.RFC5424);
+        handler.setUseMessageDelimiter(false);
+        handler.setEscapeEnabled(true);
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        handler.setOutputStream(out);
+
+        final Calendar cal = getCalendar();
+        // Create the record
+        handler.setHostname("test");
+        final String message = MSG + "\n" + "new line";
+        ExtLogRecord record = createRecord(cal, message);
+        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + MSG + "#012new line";
+        handler.publish(record);
         Assert.assertEquals(expectedMessage, out.toString());
     }
 
