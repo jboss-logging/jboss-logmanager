@@ -31,6 +31,7 @@ import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.Charset;
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
 import java.util.Locale;
@@ -40,51 +41,120 @@ import java.util.logging.Level;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
-// TODO (jrp) write better JavaDoc
 
 /**
  * A syslog handler for logging to syslogd.
  * <p/>
- * Log messages can be sent via {@link Protocol#TCP TCP}, {@link Protocol#SSL_TCP SSL} or {@link Protocol#UDP UDP} with
- * {@link Protocol#UDP UDP} being the default.
+ * This handler can write to syslog servers that accept the <a href="http://tools.ietf.org/html/rfc3164">RFC3164</a>
+ * and <a href="http://tools.ietf.org/html/rfc5424">RFC5424</a> formats. Writes can be done via TCP, SSL over TCP or
+ * UDP protocols. You can also override the {@link #setOutputStream(java.io.OutputStream) output stream} if a custom
+ * protocol is needed.
  * <p/>
- * TODO (jrp) remove these defaults from the JavaDoc
+ * <pre>
+ * <table border="1">
+ *  <thead>
+ *      <tr>
+ *          <td colspan="4">Configuration Properties:</td>
+ *      </tr>
+ *  </thead>
+ *  <tbody>
+ *      <tr>
+ *          <th>Property</th>
+ *          <th>Description</th>
+ *          <th>Type</th>
+ *          <th>Default</th>
+ *      </tr>
+ *      <tr>
+ *          <td>serverAddress</td>
+ *          <td>The address of the syslog server</td>
+ *          <td>{@link java.lang.String String}</td>
+ *          <td>localhost</td>
+ *      </tr>
+ *      <tr>
+ *          <td>port</td>
+ *          <td>The port of the syslog server</td>
+ *          <td>int</td>
+ *          <td>514</td>
+ *      </tr>
+ *      <tr>
+ *          <td>facility</td>
+ *          <td>The facility used to calculate the priority of the log message</td>
+ *          <td>{@link Facility Facility}</td>
+ *          <td>{@link Facility#USER_LEVEL USER_LEVEL}</td>
+ *      </tr>
+ *      <tr>
+ *          <td>appName</td>
+ *          <td>The name of the application that is logging</td>
+ *          <td>{@link java.lang.String String}</td>
+ *          <td>java</td>
+ *      </tr>
+ *      <tr>
+ *          <td>hostname</td>
+ *          <td>The name of the host the messages are being sent from. See {@link #setHostname(String)} for more
+ * details</td>
+ *          <td>{@link java.lang.String String}</td>
+ *          <td>{@code null}</td>
+ *      </tr>
+ *      <tr>
+ *          <td>syslogType</td>
+ *          <td>The type of the syslog used to format the message</td>
+ *          <td>{@link SyslogType SyslogType}</td>
+ *          <td>{@link SyslogType#RFC5424 RFC5424}</td>
+ *      </tr>
+ *      <tr>
+ *          <td>protocol</td>
+ *          <td>The protocol to send the message over</td>
+ *          <td>{@link Protocol Protocol}</td>
+ *          <td>{@link Protocol#UDP UDP}</td>
+ *      </tr>
+ *      <tr>
+ *          <td>delimiter</td>
+ *          <td>The delimiter to use at the end of the message if {@link #setUseMessageDelimiter(boolean) useDelimiter}
+ * is set to {@code true}</td>
+ *          <td>{@link java.lang.String String}</td>
+ *          <td>For {@link Protocol#UDP UDP} {@code null} - For {@link Protocol#TCP TCP} or {@link Protocol#SSL_TCP
+ * SSL_TCP} {@code \n}</td>
+ *      </tr>
+ *      <tr>
+ *          <td>useDelimiter</td>
+ *          <td>Whether or not the message should be appended with a {@link #setMessageDelimiter(String)
+ * delimiter}</td>
+ *          <td>{@code boolean}</td>
+ *          <td>For {@link Protocol#UDP UDP} {@code false} - For {@link Protocol#TCP TCP} or {@link Protocol#SSL_TCP
+ * SSL_TCP} {@code true}</td>
+ *      </tr>
+ *      <tr>
+ *          <td>messageTransfer</td>
+ *          <td>The type of framing to use, mainly for {@link Protocol#TCP TCP} or {@link Protocol#SSL_TCP SSL_TCP},
+ * connections</td>
+ *          <td>{@link MessageTransfer MessageTransfer}</td>
+ *          <td>{@link MessageTransfer#NON_TRANSPARENT_FRAMING NON_TRANSPARENT_FRAMING}</td>
+ *      </tr>
+ *      <tr>
+ *          <td>escapeEnabled</td>
+ *          <td>Whether or not values below decimal 32 should be escaped within the log message</td>
+ *          <td>{@code boolean}</td>
+ *          <td>{@code true}</td>
+ *      </tr>
+ *      <tr>
+ *          <td>truncate</td>
+ *          <td>Whether or not a message, including the header, should truncate the message if the length in bytes is
+ * greater than the {@link #setMaxLength(int) maximum length}. If set to {@code false} messages will be split and sent
+ * with the same header values.</td>
+ *          <td>{@code boolean}</td>
+ *          <td>{@code true}</td>
+ *      </tr>
+ *      <tr>
+ *          <td>maxLength</td>
+ *          <td>The maximum length a log message, including the header, is allowed to be.</td>
+ *          <td>{@code int}</td>
+ *          <td>For {@link SyslogType#RFC3164 RFC3164} 1024 (1k) - For {@link SyslogType#RFC5424 RFC5424} 2048
+ * (2k)</td>
+ *      </tr>
+ *  </tbody>
+ * </table>
+ * </pre>
  * <p/>
- * this.serverAddress = serverAddress;
- * this.port = port;
- * this.facility = facility;
- * this.pid = findPid();
- * this.appName = "java";
- * this.hostname = hostname;
- * this.syslogType = (syslogType == null ? SyslogType.RFC5424 : syslogType);
- * if (protocol == null) {
- * this.protocol = Protocol.UDP;
- * delimiter = null;
- * useDelimiter = false;
- * } else if (protocol == Protocol.UDP) {
- * delimiter = null;
- * useDelimiter = false;
- * } else if (protocol == Protocol.TCP || protocol == Protocol.SSL_TCP) {
- * delimiter = "\n";
- * useDelimiter = true;
- * }
- * this.messageTransfer = MessageTransfer.NON_TRANSPARENT_FRAMING;
- * initializeConnection = true;
- * outputStreamSet = false;
- * escapeEnabled = true;
- * truncate = true;
- * if (this.syslogType == SyslogType.RFC3164) {
- * maxLen = 1024;
- * } else if (this.syslogType == SyslogType.RFC5424) {
- * maxLen = 20448;
- * }
- * <p/>
- * <p/>
- * The log messages are sent via UDP and formatted based on the {@link SyslogType}. Note that not all settable fields
- * are used on all format types.
- * <p/>
- * Setting {@link #setFormatter(java.util.logging.Formatter) formatter} has no effect on this handler. The syslog RFC
- * specifications require explicit message formats.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
@@ -273,14 +343,14 @@ public class SyslogHandler extends ExtHandler {
         }
     }
 
-    private static final String UTF_16_BOM = new String(new char[] {(char) 0xfeff});
+    private static final byte[] UTF_8_BOM = {(byte) 0xef, (byte) 0xbb, (byte) 0xbf};
 
     private final Object outputLock = new Object();
     private InetAddress serverAddress;
     private int port;
     private String appName;
     private String hostname;
-    private volatile Facility facility;
+    private Facility facility;
     private SyslogType syslogType;
     private final String pid;
     private OutputStream out;
@@ -289,6 +359,7 @@ public class SyslogHandler extends ExtHandler {
     private boolean initializeConnection;
     private boolean outputStreamSet;
     private byte[] bom;
+    private boolean writeBom;
     private String delimiter;
     private boolean useDelimiter;
     private boolean escapeEnabled;
@@ -457,6 +528,8 @@ public class SyslogHandler extends ExtHandler {
         } else if (this.syslogType == SyslogType.RFC5424) {
             maxLen = 2048;
         }
+        // Defaults to UTF-8, but cleared if setEncoding is invoked
+        bom = UTF_8_BOM;
     }
 
     @Override
@@ -471,8 +544,8 @@ public class SyslogHandler extends ExtHandler {
                 throw new IllegalStateException("The syslog handler has been closed.");
             }
             try {
+                // Create the header
                 final ByteOutputStream headerBuffer = new ByteOutputStream();
-
                 switch (syslogType) {
                     case RFC5424:
                         writeRFC5424Header(headerBuffer, record);
@@ -482,7 +555,7 @@ public class SyslogHandler extends ExtHandler {
                         break;
                 }
 
-                // Set the message
+                // Create the message
                 final Formatter formatter = getFormatter();
                 String logMsg;
                 if (formatter != null) {
@@ -490,11 +563,11 @@ public class SyslogHandler extends ExtHandler {
                 } else {
                     logMsg = record.getFormattedMessage();
                 }
+                // escape the message values
                 if (escapeEnabled) {
                     logMsg = escape(logMsg);
                 }
 
-                // TODO (jrp) the BOM doesn't seem to work with rsyslog unless it's UTF-8
                 final ByteOutputStream messageBuffer = new ByteOutputStream();
                 final String encoding = getEncoding();
                 if (encoding == null) {
@@ -503,13 +576,18 @@ public class SyslogHandler extends ExtHandler {
                     messageBuffer.writeString(logMsg, encoding);
                 }
 
-                // Header bytes
+                // Header in bytes
                 final byte[] header = headerBuffer.toByteArray();
 
+                // Message in bytes
                 final byte[] msg = messageBuffer.toByteArray();
 
-                if ((header.length + msg.length) > maxLen) {
-                    final int maxMsgLen = maxLen - header.length;
+                final int bomLen = (bom == null ? 0 : bom.length);
+                final int totalLen = header.length + bomLen + msg.length;
+
+                // Check if the message should be wrapped
+                if (totalLen > maxLen) {
+                    final int maxMsgLen = maxLen - header.length - bomLen;
                     // The full header must be there, if the header is greater than the maxLen report an exception
                     if (maxMsgLen < 1) {
                         throw new IOException(String.format("The header length, %d, is great than the message length, %d, allows.", header.length, maxLen));
@@ -519,7 +597,7 @@ public class SyslogHandler extends ExtHandler {
                         // Should the message size be inserted
                         if (messageTransfer == MessageTransfer.OCTET_COUNTING) {
                             payload.writeInt(maxLen);
-                            payload.write(' ');
+                            payload.writeChar(' ');
                         }
                         payload.write(header);
                         if (bom != null) {
@@ -539,7 +617,7 @@ public class SyslogHandler extends ExtHandler {
                             // Should the message size be inserted
                             if (messageTransfer == MessageTransfer.OCTET_COUNTING) {
                                 payload.writeInt(headerLen + len);
-                                payload.write(' ');
+                                payload.writeChar(' ');
                             }
                             payload.write(header);
                             if (bom != null) {
@@ -568,8 +646,8 @@ public class SyslogHandler extends ExtHandler {
 
                     // Should the message size be inserted
                     if (messageTransfer == MessageTransfer.OCTET_COUNTING) {
-                        payload.writeInt(header.length + msg.length);
-                        payload.write(' ');
+                        payload.writeInt(totalLen);
+                        payload.writeChar(' ');
                     }
                     payload.write(header);
                     if (bom != null) {
@@ -591,10 +669,10 @@ public class SyslogHandler extends ExtHandler {
     @Override
     public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
         super.setEncoding(encoding);
-        if (encoding == null) {
-            bom = null;
+        if (encoding == null || DEFAULT_ENCODING.equalsIgnoreCase(encoding)) {
+            bom = UTF_8_BOM;
         } else {
-            bom = UTF_16_BOM.getBytes(encoding);
+            bom = null;
         }
     }
 
@@ -649,7 +727,9 @@ public class SyslogHandler extends ExtHandler {
      *         representation of the value.
      */
     public boolean isEscapeEnabled() {
-        return escapeEnabled;
+        synchronized (outputLock) {
+            return escapeEnabled;
+        }
     }
 
     /**
@@ -660,7 +740,10 @@ public class SyslogHandler extends ExtHandler {
      * @param escapeEnabled {@code true} to escape characters, {@code false} to not escape characters
      */
     public void setEscapeEnabled(final boolean escapeEnabled) {
-        this.escapeEnabled = escapeEnabled;
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.escapeEnabled = escapeEnabled;
+        }
     }
 
     /**
@@ -669,7 +752,9 @@ public class SyslogHandler extends ExtHandler {
      * @return the pid
      */
     public String getPid() {
-        return pid;
+        synchronized (outputLock) {
+            return pid;
+        }
     }
 
     /**
@@ -705,7 +790,9 @@ public class SyslogHandler extends ExtHandler {
      * @return the facility
      */
     public Facility getFacility() {
-        return facility;
+        synchronized (outputLock) {
+            return facility;
+        }
     }
 
     /**
@@ -729,7 +816,9 @@ public class SyslogHandler extends ExtHandler {
      * @return the host name
      */
     public String getHostname() {
-        return hostname;
+        synchronized (outputLock) {
+            return hostname;
+        }
     }
 
     /**
@@ -739,7 +828,9 @@ public class SyslogHandler extends ExtHandler {
      * @return the maximum length, in bytes, of the message allowed to be sent
      */
     public int getMaxLength() {
-        return maxLen;
+        synchronized (outputLock) {
+            return maxLen;
+        }
     }
 
     /**
@@ -749,7 +840,10 @@ public class SyslogHandler extends ExtHandler {
      * @param maxLen the maximum length, in bytes, allowed to be sent to the syslog server
      */
     public void setMaxLength(final int maxLen) {
-        this.maxLen = maxLen;
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.maxLen = maxLen;
+        }
     }
 
     /**
@@ -784,7 +878,9 @@ public class SyslogHandler extends ExtHandler {
      * @return {@code true} to append the message with a delimiter, otherwise {@code false}
      */
     public boolean isUseMessageDelimiter() {
-        return useDelimiter;
+        synchronized (outputLock) {
+            return useDelimiter;
+        }
     }
 
     /**
@@ -817,6 +913,7 @@ public class SyslogHandler extends ExtHandler {
      * @param hostname the host name
      */
     public void setHostname(final String hostname) {
+        checkAccess(this);
         if (hostname != null && hostname.contains(" ")) {
             throw new IllegalArgumentException(String.format("Host name '%s' is invalid. Whitespace is now allowed in the host name.", hostname));
         }
@@ -831,7 +928,9 @@ public class SyslogHandler extends ExtHandler {
      * @return the message transfer type
      */
     public MessageTransfer getMessageTransfer() {
-        return messageTransfer;
+        synchronized (outputLock) {
+            return messageTransfer;
+        }
     }
 
     /**
@@ -924,7 +1023,9 @@ public class SyslogHandler extends ExtHandler {
      * @return the protocol
      */
     public Protocol getProtocol() {
-        return protocol;
+        synchronized (outputLock) {
+            return protocol;
+        }
     }
 
     /**
@@ -962,7 +1063,9 @@ public class SyslogHandler extends ExtHandler {
      * @return {@code true} if the message should be truncated if too large, otherwise {@code false}
      */
     public boolean isTruncate() {
-        return truncate;
+        synchronized (outputLock) {
+            return truncate;
+        }
     }
 
     /**
@@ -975,7 +1078,10 @@ public class SyslogHandler extends ExtHandler {
      * @param truncate {@code true} to truncate, otherwise {@code false} to send multiple messages
      */
     public void setTruncate(final boolean truncate) {
-        this.truncate = truncate;
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.truncate = truncate;
+        }
     }
 
     private void setOutputStream(final OutputStream out, final boolean outputStreamSet) {
@@ -1072,7 +1178,7 @@ public class SyslogHandler extends ExtHandler {
 
     protected void writeRFC5424Header(final ByteOutputStream buffer, final ExtLogRecord record) throws IOException {
         // Set the property
-        buffer.writeString("<").writeInt(calculatePriority(record.getLevel(), facility)).writeString(">");
+        buffer.writeChar('<').writeInt(calculatePriority(record.getLevel(), facility)).writeChar('>');
         // Set the version
         buffer.writeString("1 ");
         // Set the time
@@ -1138,27 +1244,27 @@ public class SyslogHandler extends ExtHandler {
                 }
                 buffer.writeInt(tzMinutes);
             }
-            buffer.writeString(" ");
+            buffer.writeChar(' ');
         }
         // Set the host name
         if (hostname == null) {
             buffer.writeString(NILVALUE_SP);
         } else {
-            buffer.writeUSASCII(hostname, 255).writeString(" ");
+            buffer.writeUSASCII(hostname, 255).writeChar(' ');
         }
         // Set the app name
         if (appName == null) {
             buffer.writeString(NILVALUE_SP);
         } else {
             buffer.writeUSASCII(appName, 48);
-            buffer.writeString(" ");
+            buffer.writeChar(' ');
         }
         // Set the procid
         if (pid == null) {
             buffer.writeString(NILVALUE_SP);
         } else {
             buffer.writeUSASCII(pid, 128);
-            buffer.writeString(" ");
+            buffer.writeChar(' ');
         }
         // Set the msgid
         final String msgid = record.getLoggerName();
@@ -1166,10 +1272,10 @@ public class SyslogHandler extends ExtHandler {
             buffer.writeString(NILVALUE_SP);
         } else if (msgid.isEmpty()) {
             buffer.writeUSASCII("root-logger");
-            buffer.writeString(" ");
+            buffer.writeChar(' ');
         } else {
             buffer.writeUSASCII(msgid, 32);
-            buffer.writeString(" ");
+            buffer.writeChar(' ');
         }
         // Set the structured data
         buffer.writeString(NILVALUE_SP);
@@ -1190,11 +1296,11 @@ public class SyslogHandler extends ExtHandler {
         final int minutes = cal.get(Calendar.MINUTE);
         final int seconds = cal.get(Calendar.SECOND);
         final DateFormatSymbols formatSymbols = DateFormatSymbols.getInstance(Locale.ENGLISH);
-        buffer.writeString(formatSymbols.getShortMonths()[month]).writeString(" ");
+        buffer.writeString(formatSymbols.getShortMonths()[month]).writeChar(' ');
         if (day < 10) {
-            buffer.writeString(" ");
+            buffer.writeChar(' ');
         }
-        buffer.writeInt(day).writeString(" ");
+        buffer.writeInt(day).writeChar(' ');
         if (hours < 10) {
             buffer.writeInt(0);
         }
@@ -1207,22 +1313,22 @@ public class SyslogHandler extends ExtHandler {
             buffer.writeInt(0);
         }
         buffer.writeInt(seconds);
-        buffer.writeString(" ");
+        buffer.writeChar(' ');
 
         // Set the host name
         if (hostname == null) {
             // TODO might not be the best solution
-            buffer.writeString("UNKNOWN_HOSTNAME").writeString(" ");
+            buffer.writeString("UNKNOWN_HOSTNAME").writeChar(' ');
         } else {
-            buffer.writeString(hostname).writeString(" ");
+            buffer.writeString(hostname).writeChar(' ');
         }
         // Set the app name and the proc id
         if (appName != null && pid != null) {
-            buffer.writeString(appName).writeString("[").writeString(pid).writeString("]").writeString(": ");
+            buffer.writeString(appName).writeChar('[').writeString(pid).writeChar(']').writeString(": ");
         } else if (appName != null) {
             buffer.writeString(appName).writeString(": ");
         } else if (pid != null) {
-            buffer.writeString("[").writeString(pid).writeString("]").writeString(": ");
+            buffer.writeChar('[').writeString(pid).writeChar(']').writeString(": ");
         }
     }
 
@@ -1234,7 +1340,7 @@ public class SyslogHandler extends ExtHandler {
                 if (c < 8) {
                     result.append('0').append('0').append((int) c);
                 } else {
-                    result.append('0').append(c >> 3).append(c & 0b111);
+                    result.append('0').append(c >> 3).append(c & 0x07);
                 }
             } else {
                 result.append(c);
@@ -1244,26 +1350,21 @@ public class SyslogHandler extends ExtHandler {
     }
 
     static class ByteOutputStream extends ByteArrayOutputStream {
+        static final Charset US_ASCII_CHARSET = Charset.forName("US-ASCII");
 
         public ByteOutputStream writeUSASCII(final String s, int maxLen) throws IOException {
-            final byte[] bytes = s.getBytes("US-ASCII");
+            final byte[] bytes = s.getBytes(US_ASCII_CHARSET);
             write(bytes, 0, Math.min(maxLen, bytes.length));
             return this;
         }
 
         public ByteOutputStream writeUSASCII(final String s) throws IOException {
-            write(s.getBytes("US-ASCII"));
+            write(s.getBytes(US_ASCII_CHARSET));
             return this;
         }
 
         public ByteOutputStream writeString(final String s, final String encoding) throws IOException {
             write(s.getBytes(encoding));
-            return this;
-        }
-
-        public ByteOutputStream writeString(final String s, int maxLen) throws IOException {
-            final byte[] bytes = s.getBytes();
-            write(bytes, 0, Math.min(maxLen, bytes.length));
             return this;
         }
 
