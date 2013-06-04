@@ -32,7 +32,6 @@ import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DateFormatSymbols;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.logging.ErrorManager;
@@ -73,6 +72,12 @@ import org.jboss.logmanager.ExtLogRecord;
  * initializeConnection = true;
  * outputStreamSet = false;
  * escapeEnabled = true;
+ * truncate = true;
+ * if (this.syslogType == SyslogType.RFC3164) {
+ * maxLen = 1024;
+ * } else if (this.syslogType == SyslogType.RFC5424) {
+ * maxLen = 20448;
+ * }
  * <p/>
  * <p/>
  * The log messages are sent via UDP and formatted based on the {@link SyslogType}. Note that not all settable fields
@@ -287,6 +292,8 @@ public class SyslogHandler extends ExtHandler {
     private String delimiter;
     private boolean useDelimiter;
     private boolean escapeEnabled;
+    private boolean truncate;
+    private int maxLen;
 
     /**
      * The default class constructor.
@@ -444,6 +451,12 @@ public class SyslogHandler extends ExtHandler {
         initializeConnection = true;
         outputStreamSet = false;
         escapeEnabled = true;
+        truncate = true;
+        if (this.syslogType == SyslogType.RFC3164) {
+            maxLen = 1024;
+        } else if (this.syslogType == SyslogType.RFC5424) {
+            maxLen = 2048;
+        }
     }
 
     @Override
@@ -458,14 +471,14 @@ public class SyslogHandler extends ExtHandler {
                 throw new IllegalStateException("The syslog handler has been closed.");
             }
             try {
-                final AppendableOutputStream buffer = new AppendableOutputStream();
+                final ByteOutputStream headerBuffer = new ByteOutputStream();
 
                 switch (syslogType) {
                     case RFC5424:
-                        writeRFC5424Header(buffer, record);
+                        writeRFC5424Header(headerBuffer, record);
                         break;
                     case RFC3164:
-                        writeRFC3164Header(buffer, record);
+                        writeRFC3164Header(headerBuffer, record);
                         break;
                 }
 
@@ -480,31 +493,94 @@ public class SyslogHandler extends ExtHandler {
                 if (escapeEnabled) {
                     logMsg = escape(logMsg);
                 }
-                // TODO (jrp) messages may need to be wrapped/sent as multiple messages RFC3164 has a max length of 1024
 
                 // TODO (jrp) the BOM doesn't seem to work with rsyslog unless it's UTF-8
+                final ByteOutputStream messageBuffer = new ByteOutputStream();
                 final String encoding = getEncoding();
-                if (encoding == null || bom == null) {
-                    buffer.append(logMsg, DEFAULT_ENCODING);
+                if (encoding == null) {
+                    messageBuffer.writeString(logMsg, DEFAULT_ENCODING);
                 } else {
-                    buffer.write(bom);
-                    buffer.append(logMsg, encoding);
+                    messageBuffer.writeString(logMsg, encoding);
                 }
-                if (useDelimiter) {
-                    buffer.append(delimiter);
-                }
-                byte[] msg = buffer.toByteArray();
 
-                // Should the message size be inserted
-                if (messageTransfer == MessageTransfer.OCTET_COUNTING) {
-                    final byte[] prefix = (msg.length + " ").getBytes();
-                    final byte[] a = Arrays.copyOf(msg, msg.length);
-                    // Create a new array
-                    msg = new byte[a.length + prefix.length];
-                    System.arraycopy(prefix, 0, msg, 0, prefix.length);
-                    System.arraycopy(a, 0, msg, prefix.length, a.length);
+                // Header bytes
+                final byte[] header = headerBuffer.toByteArray();
+
+                final byte[] msg = messageBuffer.toByteArray();
+
+                if ((header.length + msg.length) > maxLen) {
+                    final int maxMsgLen = maxLen - header.length;
+                    // The full header must be there, if the header is greater than the maxLen report an exception
+                    if (maxMsgLen < 1) {
+                        throw new IOException(String.format("The header length, %d, is great than the message length, %d, allows.", header.length, maxLen));
+                    }
+                    final ByteOutputStream payload = new ByteOutputStream();
+                    if (truncate) {
+                        // Should the message size be inserted
+                        if (messageTransfer == MessageTransfer.OCTET_COUNTING) {
+                            payload.writeInt(maxLen);
+                            payload.write(' ');
+                        }
+                        payload.write(header);
+                        if (bom != null) {
+                            payload.write(bom);
+                        }
+                        payload.write(msg, 0, maxMsgLen);
+                        if (useDelimiter) {
+                            payload.writeString(delimiter);
+                        }
+                        this.out.write(payload.toByteArray());
+                    } else {
+                        final int headerLen = header.length;
+                        int offset = 0;
+                        int len = maxMsgLen;
+                        int remaining = msg.length;
+                        while (remaining > 0) {
+                            // Should the message size be inserted
+                            if (messageTransfer == MessageTransfer.OCTET_COUNTING) {
+                                payload.writeInt(headerLen + len);
+                                payload.write(' ');
+                            }
+                            payload.write(header);
+                            if (bom != null) {
+                                payload.write(bom);
+                            }
+                            payload.write(msg, offset, len);
+
+                            // Write the delimiter if required
+                            if (useDelimiter) {
+                                payload.writeString(delimiter);
+                            }
+
+                            // Write to the socket
+                            this.out.write(payload.toByteArray());
+
+                            // Reset the payload
+                            payload.reset();
+                            offset = offset + len;
+                            remaining -= len;
+                            len = Math.min(maxMsgLen, remaining);
+                        }
+
+                    }
+                } else {
+                    final ByteOutputStream payload = new ByteOutputStream();
+
+                    // Should the message size be inserted
+                    if (messageTransfer == MessageTransfer.OCTET_COUNTING) {
+                        payload.writeInt(header.length + msg.length);
+                        payload.write(' ');
+                    }
+                    payload.write(header);
+                    if (bom != null) {
+                        payload.write(bom);
+                    }
+                    payload.write(msg);
+                    if (useDelimiter) {
+                        payload.writeString(delimiter);
+                    }
+                    this.out.write(payload.toByteArray());
                 }
-                this.out.write(msg);
             } catch (IOException e) {
                 reportError("Could not write to syslog", e, ErrorManager.WRITE_FAILURE);
             }
@@ -654,6 +730,26 @@ public class SyslogHandler extends ExtHandler {
      */
     public String getHostname() {
         return hostname;
+    }
+
+    /**
+     * Returns the maximum length, in bytes, of the message allowed to be sent. The length includes the header and the
+     * message.
+     *
+     * @return the maximum length, in bytes, of the message allowed to be sent
+     */
+    public int getMaxLength() {
+        return maxLen;
+    }
+
+    /**
+     * Sets the maximum length, in bytes, of the message allowed to tbe sent. Note that the message length includes the
+     * header and the message itself.
+     *
+     * @param maxLen the maximum length, in bytes, allowed to be sent to the syslog server
+     */
+    public void setMaxLength(final int maxLen) {
+        this.maxLen = maxLen;
     }
 
     /**
@@ -859,6 +955,29 @@ public class SyslogHandler extends ExtHandler {
         setOutputStream(out, true);
     }
 
+    /**
+     * Checks if the message should truncated if the total length, not including the {@link
+     * MessageTransfer#OCTET_COUNTING octet-counting} size, exceeds the {@link #getMaxLength() maximum length}.
+     *
+     * @return {@code true} if the message should be truncated if too large, otherwise {@code false}
+     */
+    public boolean isTruncate() {
+        return truncate;
+    }
+
+    /**
+     * Set to {@code true} if the message should be truncated if the total length, not including the {@link
+     * MessageTransfer#OCTET_COUNTING octet-counting} size, exceeds the {@link #getMaxLength() maximum length}.
+     * <p/>
+     * Set to {@code false} if the message should be split and sent as multiple messages. The header will remain the
+     * same for each message sent. The wrapping is not a word based wrap and could split words between log messages.
+     *
+     * @param truncate {@code true} to truncate, otherwise {@code false} to send multiple messages
+     */
+    public void setTruncate(final boolean truncate) {
+        this.truncate = truncate;
+    }
+
     private void setOutputStream(final OutputStream out, final boolean outputStreamSet) {
         checkAccess(this);
         OutputStream oldOut = null;
@@ -951,15 +1070,15 @@ public class SyslogHandler extends ExtHandler {
         return facility.octal | severity.code;
     }
 
-    protected void writeRFC5424Header(final AppendableOutputStream buffer, final ExtLogRecord record) throws IOException {
+    protected void writeRFC5424Header(final ByteOutputStream buffer, final ExtLogRecord record) throws IOException {
         // Set the property
-        buffer.append("<").append(calculatePriority(record.getLevel(), facility)).append(">");
+        buffer.writeString("<").writeInt(calculatePriority(record.getLevel(), facility)).writeString(">");
         // Set the version
-        buffer.append("1 ");
+        buffer.writeString("1 ");
         // Set the time
         final long millis = record.getMillis();
         if (millis <= 0) {
-            buffer.append(NILVALUE_SP);
+            buffer.writeString(NILVALUE_SP);
         } else {
             // The follow can be changed to use a formatter with Java 7 pattern is yyyy-MM-dd'T'hh:mm:ss.SSSXXX
             final Calendar cal = Calendar.getInstance();
@@ -969,97 +1088,97 @@ public class SyslogHandler extends ExtHandler {
             final int hours = cal.get(Calendar.HOUR_OF_DAY);
             final int minutes = cal.get(Calendar.MINUTE);
             final int seconds = cal.get(Calendar.SECOND);
-            buffer.append(cal.get(Calendar.YEAR)).append('-');
+            buffer.writeInt(cal.get(Calendar.YEAR)).writeChar('-');
             if (month < 10) {
-                buffer.append(0);
+                buffer.writeInt(0);
             }
-            buffer.append(month + 1).append('-');
+            buffer.writeInt(month + 1).writeChar('-');
             if (day < 10) {
-                buffer.append(0);
+                buffer.writeInt(0);
             }
-            buffer.append(day).append('T');
+            buffer.writeInt(day).writeChar('T');
             if (hours < 10) {
-                buffer.append(0);
+                buffer.writeInt(0);
             }
-            buffer.append(hours).append(':');
+            buffer.writeInt(hours).writeChar(':');
             if (minutes < 10) {
-                buffer.append(0);
+                buffer.writeInt(0);
             }
-            buffer.append(minutes).append(':');
+            buffer.writeInt(minutes).writeChar(':');
             if (seconds < 10) {
-                buffer.append(0);
+                buffer.writeInt(0);
             }
-            buffer.append(seconds).append('.');
+            buffer.writeInt(seconds).writeChar('.');
             final int milliseconds = cal.get(Calendar.MILLISECOND);
             if (milliseconds < 10) {
-                buffer.append(0).append(0);
+                buffer.writeInt(0).writeInt(0);
             } else if (milliseconds < 100) {
-                buffer.append(0);
+                buffer.writeInt(0);
             }
-            buffer.append(milliseconds);
+            buffer.writeInt(milliseconds);
             final int tz = cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET);
             if (tz == 0) {
-                buffer.append("+00:00");
+                buffer.writeString("+00:00");
             } else {
                 int tzMinutes = tz / 60000; // milliseconds to minutes
                 if (tzMinutes < 0) {
                     tzMinutes = -tzMinutes;
-                    buffer.append('-');
+                    buffer.writeChar('-');
                 } else {
-                    buffer.append('+');
+                    buffer.writeChar('+');
                 }
                 final int tzHour = tzMinutes / 60; // minutes to hours
                 tzMinutes -= tzHour * 60; // subtract hours from minutes in minutes
                 if (tzHour < 10) {
-                    buffer.append(0);
+                    buffer.writeInt(0);
                 }
-                buffer.append(tzHour).append(':');
+                buffer.writeInt(tzHour).writeChar(':');
                 if (tzMinutes < 10) {
-                    buffer.append(0);
+                    buffer.writeInt(0);
                 }
-                buffer.append(tzMinutes);
+                buffer.writeInt(tzMinutes);
             }
-            buffer.append(" ");
+            buffer.writeString(" ");
         }
         // Set the host name
         if (hostname == null) {
-            buffer.append(NILVALUE_SP);
+            buffer.writeString(NILVALUE_SP);
         } else {
-            buffer.appendUSASCII(hostname, 255).append(" ");
+            buffer.writeUSASCII(hostname, 255).writeString(" ");
         }
         // Set the app name
         if (appName == null) {
-            buffer.append(NILVALUE_SP);
+            buffer.writeString(NILVALUE_SP);
         } else {
-            buffer.appendUSASCII(appName, 48);
-            buffer.append(" ");
+            buffer.writeUSASCII(appName, 48);
+            buffer.writeString(" ");
         }
         // Set the procid
         if (pid == null) {
-            buffer.append(NILVALUE_SP);
+            buffer.writeString(NILVALUE_SP);
         } else {
-            buffer.appendUSASCII(pid, 128);
-            buffer.append(" ");
+            buffer.writeUSASCII(pid, 128);
+            buffer.writeString(" ");
         }
         // Set the msgid
         final String msgid = record.getLoggerName();
         if (msgid == null) {
-            buffer.append(NILVALUE_SP);
+            buffer.writeString(NILVALUE_SP);
         } else if (msgid.isEmpty()) {
-            buffer.appendUSASCII("root-logger");
-            buffer.append(" ");
+            buffer.writeUSASCII("root-logger");
+            buffer.writeString(" ");
         } else {
-            buffer.appendUSASCII(msgid, 32);
-            buffer.append(" ");
+            buffer.writeUSASCII(msgid, 32);
+            buffer.writeString(" ");
         }
         // Set the structured data
-        buffer.append(NILVALUE_SP);
+        buffer.writeString(NILVALUE_SP);
         // TODO (jrp) review structured data http://tools.ietf.org/html/rfc5424#section-6.3
     }
 
-    protected void writeRFC3164Header(final AppendableOutputStream buffer, final ExtLogRecord record) throws IOException {
+    protected void writeRFC3164Header(final ByteOutputStream buffer, final ExtLogRecord record) throws IOException {
         // Set the property
-        buffer.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
+        buffer.writeChar('<').writeInt(calculatePriority(record.getLevel(), facility)).writeChar('>');
 
         // Set the time
         final long millis = record.getMillis();
@@ -1071,39 +1190,39 @@ public class SyslogHandler extends ExtHandler {
         final int minutes = cal.get(Calendar.MINUTE);
         final int seconds = cal.get(Calendar.SECOND);
         final DateFormatSymbols formatSymbols = DateFormatSymbols.getInstance(Locale.ENGLISH);
-        buffer.append(formatSymbols.getShortMonths()[month]).append(" ");
+        buffer.writeString(formatSymbols.getShortMonths()[month]).writeString(" ");
         if (day < 10) {
-            buffer.append(" ");
+            buffer.writeString(" ");
         }
-        buffer.append(day).append(" ");
+        buffer.writeInt(day).writeString(" ");
         if (hours < 10) {
-            buffer.append(0);
+            buffer.writeInt(0);
         }
-        buffer.append(hours).append(':');
+        buffer.writeInt(hours).writeChar(':');
         if (minutes < 10) {
-            buffer.append(0);
+            buffer.writeInt(0);
         }
-        buffer.append(minutes).append(':');
+        buffer.writeInt(minutes).writeChar(':');
         if (seconds < 10) {
-            buffer.append(0);
+            buffer.writeInt(0);
         }
-        buffer.append(seconds);
-        buffer.append(" ");
+        buffer.writeInt(seconds);
+        buffer.writeString(" ");
 
         // Set the host name
         if (hostname == null) {
             // TODO might not be the best solution
-            buffer.append("UNKNOWN_HOSTNAME").append(" ");
+            buffer.writeString("UNKNOWN_HOSTNAME").writeString(" ");
         } else {
-            buffer.append(hostname).append(" ");
+            buffer.writeString(hostname).writeString(" ");
         }
         // Set the app name and the proc id
         if (appName != null && pid != null) {
-            buffer.append(appName).append("[").append(pid).append("]").append(": ");
+            buffer.writeString(appName).writeString("[").writeString(pid).writeString("]").writeString(": ");
         } else if (appName != null) {
-            buffer.append(appName).append(": ");
+            buffer.writeString(appName).writeString(": ");
         } else if (pid != null) {
-            buffer.append("[").append(pid).append("]").append(": ");
+            buffer.writeString("[").writeString(pid).writeString("]").writeString(": ");
         }
     }
 
@@ -1124,52 +1243,51 @@ public class SyslogHandler extends ExtHandler {
         return result.toString().trim();
     }
 
-    static class AppendableOutputStream extends ByteArrayOutputStream implements Appendable {
+    static class ByteOutputStream extends ByteArrayOutputStream {
 
-        public AppendableOutputStream appendUSASCII(final String s, int maxLen) throws IOException {
+        public ByteOutputStream writeUSASCII(final String s, int maxLen) throws IOException {
             final byte[] bytes = s.getBytes("US-ASCII");
             write(bytes, 0, Math.min(maxLen, bytes.length));
             return this;
         }
 
-        public AppendableOutputStream appendUSASCII(final String s) throws IOException {
+        public ByteOutputStream writeUSASCII(final String s) throws IOException {
             write(s.getBytes("US-ASCII"));
             return this;
         }
 
-        public AppendableOutputStream append(final String s, final String encoding) throws IOException {
+        public ByteOutputStream writeString(final String s, final String encoding) throws IOException {
             write(s.getBytes(encoding));
             return this;
         }
 
-        public AppendableOutputStream append(final String s, int maxLen) throws IOException {
+        public ByteOutputStream writeString(final String s, int maxLen) throws IOException {
             final byte[] bytes = s.getBytes();
             write(bytes, 0, Math.min(maxLen, bytes.length));
             return this;
         }
 
-        public AppendableOutputStream append(final String s) throws IOException {
+        public ByteOutputStream writeString(final String s) throws IOException {
             write(s.getBytes());
             return this;
         }
 
-        public AppendableOutputStream append(final int i) throws IOException {
-            return append(Integer.toString(i));
+        public ByteOutputStream writeInt(final int i) throws IOException {
+            return writeString(Integer.toString(i));
         }
 
-        @Override
-        public AppendableOutputStream append(final CharSequence csq) throws IOException {
-            return append(csq.toString());
-        }
-
-        @Override
-        public AppendableOutputStream append(final CharSequence csq, final int start, final int end) throws IOException {
-            return append(csq.subSequence(start, end).toString());
-        }
-
-        @Override
-        public AppendableOutputStream append(final char c) throws IOException {
-            return append(Character.toString(c));
+        public ByteOutputStream writeChar(final char c) throws IOException {
+            if (c >= 0 && c <= 0x7f) {
+                write((byte) c);
+            } else if (c <= 0x07ff) {
+                write((byte) (0xc0 | 0x1f & c >> 6));
+                write((byte) (0x80 | 0x3f & c));
+            } else {
+                write((byte) (0xe0 | 0x0f & c >> 12));
+                write((byte) (0x80 | 0x3f & c >> 6));
+                write((byte) (0x80 | 0x3f & c));
+            }
+            return this;
         }
     }
 }
