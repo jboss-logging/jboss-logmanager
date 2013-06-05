@@ -582,12 +582,11 @@ public class SyslogHandler extends ExtHandler {
                 // Message in bytes
                 final byte[] msg = messageBuffer.toByteArray();
 
-                final int bomLen = (bom == null ? 0 : bom.length);
-                final int totalLen = header.length + bomLen + msg.length;
+                final int totalLen = header.length + msg.length;
 
                 // Check if the message should be wrapped
                 if (totalLen > maxLen) {
-                    final int maxMsgLen = maxLen - header.length - bomLen;
+                    final int maxMsgLen = maxLen - header.length;
                     // The full header must be there, if the header is greater than the maxLen report an exception
                     if (maxMsgLen < 1) {
                         throw new IOException(String.format("The header length, %d, is great than the message length, %d, allows.", header.length, maxLen));
@@ -600,9 +599,6 @@ public class SyslogHandler extends ExtHandler {
                             payload.writeChar(' ');
                         }
                         payload.write(header);
-                        if (bom != null) {
-                            payload.write(bom);
-                        }
                         payload.write(msg, 0, maxMsgLen);
                         if (useDelimiter) {
                             payload.writeString(delimiter);
@@ -620,9 +616,6 @@ public class SyslogHandler extends ExtHandler {
                                 payload.writeChar(' ');
                             }
                             payload.write(header);
-                            if (bom != null) {
-                                payload.write(bom);
-                            }
                             payload.write(msg, offset, len);
 
                             // Write the delimiter if required
@@ -650,9 +643,6 @@ public class SyslogHandler extends ExtHandler {
                         payload.writeChar(' ');
                     }
                     payload.write(header);
-                    if (bom != null) {
-                        payload.write(bom);
-                    }
                     payload.write(msg);
                     if (useDelimiter) {
                         payload.writeString(delimiter);
@@ -1280,6 +1270,9 @@ public class SyslogHandler extends ExtHandler {
         // Set the structured data
         buffer.writeString(NILVALUE_SP);
         // TODO (jrp) review structured data http://tools.ietf.org/html/rfc5424#section-6.3
+        if (bom != null) {
+            buffer.write(bom);
+        }
     }
 
     protected void writeRFC3164Header(final ByteOutputStream buffer, final ExtLogRecord record) throws IOException {

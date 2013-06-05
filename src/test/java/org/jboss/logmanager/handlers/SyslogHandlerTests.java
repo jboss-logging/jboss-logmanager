@@ -39,7 +39,8 @@ import org.junit.Test;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class SyslogHandlerTests {
-
+    private static final byte[] UTF_8_BOM = {(byte) 0xef, (byte) 0xbb, (byte) 0xbf};
+    private static final String BOM = new String(UTF_8_BOM);
     private static final String MSG = "This is a test message";
     private static final String HOSTNAME = "localhost";
     private static final int PORT = 10999;
@@ -73,7 +74,7 @@ public class SyslogHandlerTests {
         // Create the record
         handler.setHostname("test");
         ExtLogRecord record = createRecord(cal, MSG);
-        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + MSG + '\n';
+        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + MSG + '\n';
         handler.publish(record);
         Assert.assertEquals(expectedMessage, out.toString());
 
@@ -82,7 +83,7 @@ public class SyslogHandlerTests {
         record = createRecord(cal, MSG);
         handler.setHostname(null);
         handler.setAppName(null);
-        expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " - - " + handler.getPid() + " - - " + MSG + '\n';
+        expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " - - " + handler.getPid() + " - - " + BOM + MSG + '\n';
         handler.publish(record);
         Assert.assertEquals(expectedMessage, out.toString());
 
@@ -91,7 +92,7 @@ public class SyslogHandlerTests {
         record = createRecord(cal, MSG);
         handler.setHostname("test");
         handler.setAppName("java");
-        expectedMessage = "<14>1 2012-01-31T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + MSG + '\n';
+        expectedMessage = "<14>1 2012-01-31T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + MSG + '\n';
         handler.publish(record);
         Assert.assertEquals(expectedMessage, out.toString());
     }
@@ -133,7 +134,7 @@ public class SyslogHandlerTests {
         // Create the record
         handler.setHostname("test");
         ExtLogRecord record = createRecord(cal, MSG);
-        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + MSG;
+        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + MSG;
         expectedMessage = expectedMessage.getBytes().length + " " + expectedMessage;
         handler.publish(record);
         Assert.assertEquals(expectedMessage, out.toString());
@@ -153,7 +154,7 @@ public class SyslogHandlerTests {
         handler.setHostname("test");
         final String message = MSG + "\n" + "new line";
         ExtLogRecord record = createRecord(cal, message);
-        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + MSG + "#012new line";
+        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + MSG + "#012new line";
         handler.publish(record);
         Assert.assertEquals(expectedMessage, out.toString());
     }
@@ -173,9 +174,9 @@ public class SyslogHandlerTests {
         final String part2 = "Truncated portion of the message that will not be shown in.";
         final String message = part1 + " " + part2;
 
-        final String header = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - ";
+        final String header = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM;
 
-        handler.setMaxLength(header.length() + part1.length());
+        handler.setMaxLength(header.getBytes().length + part1.getBytes().length);
         handler.setTruncate(true);
 
         ExtLogRecord record = createRecord(cal, message);
