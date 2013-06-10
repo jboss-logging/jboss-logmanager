@@ -511,12 +511,15 @@ public class SyslogHandler extends ExtHandler {
             this.protocol = Protocol.UDP;
             delimiter = null;
             useDelimiter = false;
-        } else if (protocol == Protocol.UDP) {
-            delimiter = null;
-            useDelimiter = false;
-        } else if (protocol == Protocol.TCP || protocol == Protocol.SSL_TCP) {
-            delimiter = "\n";
-            useDelimiter = true;
+        } else {
+            this.protocol = protocol;
+            if (protocol == Protocol.UDP) {
+                delimiter = null;
+                useDelimiter = false;
+            } else if (protocol == Protocol.TCP || protocol == Protocol.SSL_TCP) {
+                delimiter = "\n";
+                useDelimiter = true;
+            }
         }
         this.messageTransfer = MessageTransfer.NON_TRANSPARENT_FRAMING;
         initializeConnection = true;
