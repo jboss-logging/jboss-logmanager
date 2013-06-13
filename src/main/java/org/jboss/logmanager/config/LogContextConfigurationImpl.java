@@ -79,6 +79,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
 
     private final Deque<ConfigAction<?>> transactionState = new ArrayDeque<ConfigAction<?>>();
     private final Map<String, Deque<ConfigAction<?>>> postConfigurationTransactionState = new LinkedHashMap<String, Deque<ConfigAction<?>>>();
+    private final Deque<ConfigAction<?>> preparedTransactions = new ArrayDeque<ConfigAction<?>>();
 
     private boolean prepared = false;
 
@@ -260,7 +261,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         }
         final PojoConfigurationImpl pojoConfiguration = new PojoConfigurationImpl(this, pojoName, moduleName, className, constructorProperties);
         pojos.put(pojoName, pojoConfiguration);
-        transactionState.addFirst(pojoConfiguration.getConstructAction());
+        transactionState.addLast(pojoConfiguration.getConstructAction());
         return pojoConfiguration;
     }
 
@@ -298,9 +299,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         if (!prepared) {
             prepare();
         }
-        prepared = false;
-        postConfigurationTransactionState.clear();
-        transactionState.clear();
+        clear();
     }
 
     @SuppressWarnings("unchecked")
@@ -319,18 +318,25 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
 
     public void forget() {
         doForget(transactionState);
+        doForget(preparedTransactions);
         for (Deque<ConfigAction<?>> items : postConfigurationTransactionState.values()) {
             doForget(items);
         }
+        clear();
+    }
+
+    private void clear() {
         prepared = false;
         postConfigurationTransactionState.clear();
         transactionState.clear();
+        preparedTransactions.clear();
     }
 
     private void doPrepare(final Deque<ConfigAction<?>> transactionState) {
         List<Object> items = new ArrayList<Object>();
         for (ConfigAction<?> action : transactionState) {
             items.add(action.validate());
+            preparedTransactions.add(action);
         }
         Iterator<Object> iterator = items.iterator();
         for (ConfigAction<?> action : transactionState) {
@@ -340,6 +346,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         for (ConfigAction<?> action : transactionState) {
             doApplyPostCreate(action, iterator.next());
         }
+        transactionState.clear();
     }
 
     private void doForget(final Deque<ConfigAction<?>> transactionState) {
@@ -367,6 +374,15 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         if (actions != null && !actions.isEmpty()) {
             postConfigurationTransactionState.put(name, actions);
         }
+    }
+
+    /**
+     * Removes the post configuration actions for the configuration identified by the {@code name} parameter.
+     *
+     * @param name    the name of the configuration
+     */
+    Deque<?> removePostConfigurationActions(final String name) {
+        return postConfigurationTransactionState.remove(name);
     }
 
     /**
