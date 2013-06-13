@@ -42,6 +42,14 @@ public final class LoggerTests {
     }
 
     @Test
+    public void testCategories() {
+        assertNotNull("Logger not created with category: " + LoggerTests.class.getName(), Logger.getLogger(LoggerTests.class.getName()));
+        assertNotNull("Logger not created with category: Spaced Logger Name", Logger.getLogger("Spaced Logger Name"));
+        assertNotNull("Logger not created with category: /../Weird/Path", Logger.getLogger("/../Weird/Path"));
+        assertNotNull("Logger not created with category: random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?", Logger.getLogger("random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?"));
+    }
+
+    @Test
     public void testHandlerAdd() {
         final NullHandler h1 = new NullHandler();
         final NullHandler h2 = new NullHandler();
