@@ -124,13 +124,17 @@ final class LoggerNode {
      */
     private LoggerNode(LogContext context, LoggerNode parent, String nodeName) {
         nodeName = nodeName.trim();
-        if (nodeName.length() == 0) {
-            throw new IllegalArgumentException("nodeName is empty, or just whitespace");
+        if (nodeName.length() == 0 && parent == null) {
+            throw new IllegalArgumentException("nodeName is empty, or just whitespace and has no parent");
         }
         this.parent = parent;
         handlersUpdater.clear(this);
         if (parent.parent == null) {
-            fullName = nodeName;
+            if (nodeName.isEmpty()) {
+                fullName = ".";
+            } else {
+                fullName = nodeName;
+            }
         } else {
             fullName = parent.fullName + "." + nodeName;
         }
