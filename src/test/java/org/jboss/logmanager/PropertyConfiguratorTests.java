@@ -43,12 +43,15 @@ import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.config.LoggerConfiguration;
 import org.jboss.logmanager.config.PojoConfiguration;
+import org.jboss.logmanager.handlers.ConsoleHandler;
 import org.junit.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class PropertyConfiguratorTests {
+
+    private static final String ENCODING = "UTF-8";
 
     static {
         System.setProperty("default.log.level", "DEBUG");
@@ -63,16 +66,16 @@ public class PropertyConfiguratorTests {
 
         // Write out the configuration
         final ByteArrayOutputStream propsOut = new ByteArrayOutputStream();
-        defaultProperties.store(new OutputStreamWriter(propsOut, "utf-8"), null);
+        defaultProperties.store(new OutputStreamWriter(propsOut, ENCODING), null);
         final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
         configurator.writeConfiguration(configOut);
 
         // Reload output streams into properties
         final Properties configProps = new Properties();
         final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
-        configProps.load(new InputStreamReader(configIn, "utf-8"));
+        configProps.load(new InputStreamReader(configIn, ENCODING));
         final Properties dftProps = new Properties();
-        dftProps.load(new InputStreamReader(new ByteArrayInputStream(propsOut.toByteArray()), "utf-8"));
+        dftProps.load(new InputStreamReader(new ByteArrayInputStream(propsOut.toByteArray()), ENCODING));
         compare(dftProps, configProps);
 
         // Reconfigure the context with the written results
@@ -80,7 +83,7 @@ public class PropertyConfiguratorTests {
         configOut.reset();
         configurator.writeConfiguration(configOut);
         configProps.clear();
-        configProps.load(new InputStreamReader(new ByteArrayInputStream(configOut.toByteArray()), "utf-8"));
+        configProps.load(new InputStreamReader(new ByteArrayInputStream(configOut.toByteArray()), ENCODING));
         compare(dftProps, configProps);
 
     }
@@ -114,7 +117,7 @@ public class PropertyConfiguratorTests {
         final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
         configurator.writeConfiguration(configOut);
         final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
-        configProps.load(new InputStreamReader(configIn, "utf-8"));
+        configProps.load(new InputStreamReader(configIn, ENCODING));
         compare(defaultProperties, configProps);
 
     }
@@ -129,16 +132,16 @@ public class PropertyConfiguratorTests {
 
         // Write out the configuration
         final ByteArrayOutputStream propsOut = new ByteArrayOutputStream();
-        defaultProperties.store(new OutputStreamWriter(propsOut, "utf-8"), null);
+        defaultProperties.store(new OutputStreamWriter(propsOut, ENCODING), null);
         final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
         configurator.writeConfiguration(configOut, true);
 
         // Reload output streams into properties
         final Properties configProps = new Properties();
         final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
-        configProps.load(new InputStreamReader(configIn, "utf-8"));
+        configProps.load(new InputStreamReader(configIn, ENCODING));
         final Properties dftProps = new Properties();
-        dftProps.load(new InputStreamReader(new ByteArrayInputStream(propsOut.toByteArray()), "utf-8"));
+        dftProps.load(new InputStreamReader(new ByteArrayInputStream(propsOut.toByteArray()), ENCODING));
         compare(dftProps, configProps);
 
         // Reconfigure the context with the written results
@@ -146,18 +149,18 @@ public class PropertyConfiguratorTests {
         configOut.reset();
         configurator.writeConfiguration(configOut, true);
         configProps.clear();
-        configProps.load(new InputStreamReader(new ByteArrayInputStream(configOut.toByteArray()), "utf-8"));
+        configProps.load(new InputStreamReader(new ByteArrayInputStream(configOut.toByteArray()), ENCODING));
         compare(dftProps, configProps);
 
         // Test resolved values
         configOut.reset();
         configurator.writeConfiguration(configOut, false);
         configProps.clear();
-        configProps.load(new InputStreamReader(new ByteArrayInputStream(configOut.toByteArray()), "utf-8"));
+        configProps.load(new InputStreamReader(new ByteArrayInputStream(configOut.toByteArray()), ENCODING));
         assertEquals("DEBUG", configProps.getProperty("logger.level"));
         assertEquals("SYSTEM_OUT", configProps.getProperty("handler.CONSOLE.target"));
         assertEquals("true", configProps.getProperty("handler.FILE.autoFlush").toLowerCase(Locale.ENGLISH));
-        assertEquals("UTF-8", configProps.getProperty("handler.FILE.encoding"));
+        assertEquals(ENCODING, configProps.getProperty("handler.FILE.encoding"));
     }
 
     @Test
@@ -213,6 +216,83 @@ public class PropertyConfiguratorTests {
         } finally {
             stdErr.close();
         }
+    }
+
+    @Test
+    public void testReadInvalidConfig() throws Exception {
+        final Properties defaultProperties = new Properties();
+        defaultProperties.load(PropertyConfiguratorTests.class.getResourceAsStream("invalid-logging.properties"));
+        final LogContext logContext = LogContext.create();
+        final PropertyConfigurator configurator = new PropertyConfigurator(logContext);
+        configurator.configure(defaultProperties);
+
+        // Update the properties to how they should be written
+        final Properties correctedDefaultProperties = new Properties();
+        correctedDefaultProperties.putAll(defaultProperties);
+        correctedDefaultProperties.setProperty("logger.handlers", "CONSOLE");
+        correctedDefaultProperties.remove("handler.CONSOLE.errorManager");
+        correctedDefaultProperties.remove("handler.FILE.formatter");
+
+        // Write out the configuration
+        final ByteArrayOutputStream propsOut = new ByteArrayOutputStream();
+        correctedDefaultProperties.store(new OutputStreamWriter(propsOut, ENCODING), null);
+        final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
+        configurator.writeConfiguration(configOut);
+
+        // Reload output streams into properties
+        final Properties configProps = new Properties();
+        final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
+        configProps.load(new InputStreamReader(configIn, ENCODING));
+        final Properties dftProps = new Properties();
+        dftProps.load(new InputStreamReader(new ByteArrayInputStream(propsOut.toByteArray()), ENCODING));
+        compare(dftProps, configProps);
+
+    }
+
+    // TODO (jrp) Note that in the future this test could break as a handler really shouldn't be allowed to be removed if it's attached to a logger
+    @Test
+    public void testWriteInvalidConfig() throws Exception {
+        final Properties defaultProperties = new Properties();
+        defaultProperties.load(PropertyConfiguratorTests.class.getResourceAsStream("simple-logging.properties"));
+        final LogContext logContext = LogContext.create();
+        final PropertyConfigurator configurator = new PropertyConfigurator(logContext);
+        configurator.configure(defaultProperties);
+
+        /*defaultProperties.setProperty("handler.c2", ConsoleHandler.class.getName());
+        defaultProperties.setProperty("loggers", defaultProperties.getProperty("loggers") + ",test.logger");
+        defaultProperties.setProperty("logger.test.logger.handlers", "c2");*/
+
+        // Write out the configuration
+        final ByteArrayOutputStream propsOut = new ByteArrayOutputStream();
+        defaultProperties.store(new OutputStreamWriter(propsOut, ENCODING), null);
+
+        // Update the configurator with invalid values
+        final LogContextConfiguration configuration = configurator.getLogContextConfiguration();
+
+        // Add a handler
+        final HandlerConfiguration handlerConfiguration = configuration.addHandlerConfiguration(null, ConsoleHandler.class.getName(), "c2");
+
+        final LoggerConfiguration loggerConfiguration = configuration.addLoggerConfiguration("test.logger");
+        loggerConfiguration.addHandlerName("c2");
+
+        configuration.commit();
+
+        // Remove the handler in the same transaction
+        configuration.removeHandlerConfiguration("c2");
+        configuration.commit();
+
+
+        final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
+        configurator.writeConfiguration(configOut);
+
+        // Reload output streams into properties
+        final Properties configProps = new Properties();
+        final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
+        configProps.load(new InputStreamReader(configIn, ENCODING));
+        final Properties dftProps = new Properties();
+        dftProps.load(new InputStreamReader(new ByteArrayInputStream(propsOut.toByteArray()), ENCODING));
+        compare(dftProps, configProps);
+
     }
 
     private void compare(final Properties defaultProps, final Properties configProps) {
