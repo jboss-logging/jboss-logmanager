@@ -45,6 +45,7 @@ import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.config.LoggerConfiguration;
 import org.jboss.logmanager.config.PojoConfiguration;
 import org.jboss.logmanager.config.PropertyConfigurable;
+import org.jboss.logmanager.config.ValueExpression;
 
 /**
  * A configurator which uses a simple property file format.
@@ -202,9 +203,9 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeLoggerConfiguration(final PrintStream out, final LoggerConfiguration logger,
-                                                 final Set<String> implicitHandlers, final Set<String> implicitFilters,
-                                                 final boolean writeExpressions) {
+    private void writeLoggerConfiguration(final PrintStream out, final LoggerConfiguration logger,
+                                          final Set<String> implicitHandlers, final Set<String> implicitFilters,
+                                          final boolean writeExpressions) {
         if (logger != null) {
             out.println();
             final String name = logger.getName();
@@ -224,20 +225,25 @@ public final class PropertyConfigurator implements Configurator {
             if (useParentHandlersValue != null) {
                 writeProperty(out, prefix, "useParentHandlers", useParentHandlersValue);
             }
-            final List<String> handlerNames = logger.getHandlerNames();
+            final List<String> handlerNames = new ArrayList<String>();
+            for (String handlerName : logger.getHandlerNames()) {
+                if (config.getHandlerNames().contains(handlerName)) {
+                    implicitHandlers.add(handlerName);
+                    handlerNames.add(handlerName);
+                } else {
+                    printError("Handler %s is not defined and will not be written to the configuration for logger %s%n", handlerName, (name.isEmpty() ? "ROOT" : name));
+                }
+            }
             if (!handlerNames.isEmpty()) {
                 writeProperty(out, prefix, "handlers", toCsvString(handlerNames));
-                for (String handlerName : handlerNames) {
-                    implicitHandlers.add(handlerName);
-                }
             }
         }
     }
 
-    private static void writeHandlerConfiguration(final PrintStream out, final HandlerConfiguration handler,
-                                                  final Set<String> implicitHandlers, final Set<String> implicitFilters,
-                                                  final Set<String> implicitFormatters, final Set<String> implicitErrorManagers,
-                                                  final boolean writeExpressions) {
+    private void writeHandlerConfiguration(final PrintStream out, final HandlerConfiguration handler,
+                                           final Set<String> implicitHandlers, final Set<String> implicitFilters,
+                                           final Set<String> implicitFormatters, final Set<String> implicitErrorManagers,
+                                           final boolean writeExpressions) {
         if (handler != null) {
             out.println();
             final String name = handler.getName();
@@ -263,20 +269,35 @@ public final class PropertyConfigurator implements Configurator {
             }
             final String formatterName = (writeExpressions ? handler.getFormatterNameValueExpression().getValue() : handler.getFormatterName());
             if (formatterName != null) {
-                writeProperty(out, prefix, "formatter", formatterName);
-                implicitFormatters.add(handler.getFormatterName());
+                // Make sure the formatter exists
+                if (config.getFormatterNames().contains(handler.getFormatterName())) {
+                    writeProperty(out, prefix, "formatter", formatterName);
+                    implicitFormatters.add(handler.getFormatterName());
+                } else {
+                    printError("Formatter %s is not defined and will not be written to the configuration for handler %s%n", formatterName, name);
+                }
             }
             final String errorManagerName = (writeExpressions ? handler.getErrorManagerNameValueExpression().getValue() : handler.getErrorManagerName());
             if (errorManagerName != null) {
-                writeProperty(out, prefix, "errorManager", errorManagerName);
-                implicitErrorManagers.add(handler.getErrorManagerName());
-            }
-            final List<String> handlerNames = handler.getHandlerNames();
-            if (! handlerNames.isEmpty()) {
-                writeProperty(out, prefix, "handlers", toCsvString(handlerNames));
-                for (String handlerName : handlerNames) {
-                    implicitHandlers.add(handlerName);
+                // Make sure the error manager exists
+                if (config.getErrorManagerNames().contains(handler.getErrorManagerName())) {
+                    writeProperty(out, prefix, "errorManager", errorManagerName);
+                    implicitErrorManagers.add(handler.getErrorManagerName());
+                } else {
+                    printError("Error manager %s is not defined and will not be written to the configuration for handler %s%n", errorManagerName, name);
                 }
+            }
+            final List<String> handlerNames = new ArrayList<String>();
+            for (String handlerName : handler.getHandlerNames()) {
+                if (config.getHandlerNames().contains(handlerName)) {
+                    implicitHandlers.add(handlerName);
+                    handlerNames.add(handlerName);
+                } else {
+                    printError("Handler %s is not defined and will not be written to the configuration for handler %s%n", handlerName, name);
+                }
+            }
+            if (!handlerNames.isEmpty()) {
+                writeProperty(out, prefix, "handlers", toCsvString(handlerNames));
             }
             final List<String> postConfigurationMethods = handler.getPostConfigurationMethods();
             if (! postConfigurationMethods.isEmpty()) {
@@ -524,6 +545,8 @@ public final class PropertyConfigurator implements Configurator {
         // Get logger filter
         final String filterName = getStringProperty(properties, getKey("logger", loggerName, "filter"));
         if (filterName != null) {
+            // TODO (jrp) this is not really the best way to handle filters -
+            // the trouble is the filter could be an expression, match("value"), or a defined filter
             loggerConfiguration.setFilter(filterName);
             final String resolvedFilter = loggerConfiguration.getFilterValueExpression().getResolvedValue();
             // Check for a filter class
@@ -536,9 +559,10 @@ public final class PropertyConfigurator implements Configurator {
 
         // Get logger handlers
         final String[] handlerNames = getStringCsvArray(properties, getKey("logger", loggerName, "handlers"));
-        loggerConfiguration.setHandlerNames(handlerNames);
         for (String name : handlerNames) {
-            configureHandler(properties, name);
+            if (configureHandler(properties, name)) {
+                loggerConfiguration.addHandlerName(name);
+            }
         }
 
         // Get logger properties
@@ -553,63 +577,88 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private void configureFilter(final Properties properties, final String filterName) {
+    private boolean configureFilter(final Properties properties, final String filterName) {
         if (config.getFilterConfiguration(filterName) != null) {
             // already configured!
-            return;
+            return true;
+        }
+        final String className = getStringProperty(properties, getKey("filter", filterName));
+        if (className == null) {
+            printError("Filter %s is not defined%n", filterName);
+            return false;
         }
         final FilterConfiguration configuration = config.addFilterConfiguration(
                 getStringProperty(properties, getKey("filter", filterName, "module")),
-                getStringProperty(properties, getKey("filter", filterName)),
+                className,
                 filterName,
                 getStringCsvArray(properties, getKey("filter", filterName, "constructorProperties")));
         final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("filter", filterName, "postConfiguration"));
         configuration.setPostConfigurationMethods(postConfigurationMethods);
         configureProperties(properties, configuration, getKey("filter", filterName));
+        return true;
     }
 
-    private void configureFormatter(final Properties properties, final String formatterName) {
+    private boolean configureFormatter(final Properties properties, final String formatterName) {
         if (config.getFormatterConfiguration(formatterName) != null) {
             // already configured!
-            return;
+            return true;
+        }
+        final String className = getStringProperty(properties, getKey("formatter", formatterName));
+        if (className == null) {
+            printError("Formatter %s is not defined%n", formatterName);
+            return false;
         }
         final FormatterConfiguration configuration = config.addFormatterConfiguration(
                 getStringProperty(properties, getKey("formatter", formatterName, "module")),
-                getStringProperty(properties, getKey("formatter", formatterName)),
+                className,
                 formatterName,
                 getStringCsvArray(properties, getKey("formatter", formatterName, "constructorProperties")));
         final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("formatter", formatterName, "postConfiguration"));
         configuration.setPostConfigurationMethods(postConfigurationMethods);
         configureProperties(properties, configuration, getKey("formatter", formatterName));
+        return true;
     }
 
-    private void configureErrorManager(final Properties properties, final String errorManagerName) {
+    private boolean configureErrorManager(final Properties properties, final String errorManagerName) {
         if (config.getErrorManagerConfiguration(errorManagerName) != null) {
             // already configured!
-            return;
+            return true;
+        }
+        final String className = getStringProperty(properties, getKey("errorManager", errorManagerName));
+        if (className == null) {
+            printError("Error manager %s is not defined%n", errorManagerName);
+            return false;
         }
         final ErrorManagerConfiguration configuration = config.addErrorManagerConfiguration(
                 getStringProperty(properties, getKey("errorManager", errorManagerName, "module")),
-                getStringProperty(properties, getKey("errorManager", errorManagerName)),
+                className,
                 errorManagerName,
                 getStringCsvArray(properties, getKey("errorManager", errorManagerName, "constructorProperties")));
         final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("errorManager", errorManagerName, "postConfiguration"));
         configuration.setPostConfigurationMethods(postConfigurationMethods);
         configureProperties(properties, configuration, getKey("errorManager", errorManagerName));
+        return true;
     }
 
-    private void configureHandler(final Properties properties, final String handlerName) {
+    private boolean configureHandler(final Properties properties, final String handlerName) {
         if (config.getHandlerConfiguration(handlerName) != null) {
             // already configured!
-            return;
+            return true;
+        }
+        final String className = getStringProperty(properties, getKey("handler", handlerName));
+        if (className == null) {
+            printError("Handler %s is not defined%n", handlerName);
+            return false;
         }
         final HandlerConfiguration configuration = config.addHandlerConfiguration(
                 getStringProperty(properties, getKey("handler", handlerName, "module")),
-                getStringProperty(properties, getKey("handler", handlerName)),
+                className,
                 handlerName,
                 getStringCsvArray(properties, getKey("handler", handlerName, "constructorProperties")));
         final String filter = getStringProperty(properties, getKey("handler", handlerName, "filter"));
         if (filter != null) {
+            // TODO (jrp) this is not really the best way to handle filters -
+            // the trouble is the filter could be an expression, match("value"), or a defined filter
             configuration.setFilter(filter);
             final String resolvedFilter = configuration.getFilterValueExpression().getResolvedValue();
             // Check for a filter class
@@ -625,8 +674,12 @@ public final class PropertyConfigurator implements Configurator {
         }
         final String formatterName = getStringProperty(properties, getKey("handler", handlerName, "formatter"));
         if (formatterName != null) {
-            configuration.setFormatterName(formatterName);
-            configureFormatter(properties, configuration.getFormatterNameValueExpression().getResolvedValue());
+            if (getStringProperty(properties, getKey("formatter", ValueExpression.STRING_RESOLVER.resolve(formatterName).getResolvedValue())) == null) {
+                printError("Formatter %s is not defined%n", formatterName);
+            } else {
+                configuration.setFormatterName(formatterName);
+                configureFormatter(properties, configuration.getFormatterNameValueExpression().getResolvedValue());
+            }
         }
         final String encoding = getStringProperty(properties, getKey("handler", handlerName, "encoding"));
         if (encoding != null) {
@@ -634,23 +687,34 @@ public final class PropertyConfigurator implements Configurator {
         }
         final String errorManagerName = getStringProperty(properties, getKey("handler", handlerName, "errorManager"));
         if (errorManagerName != null) {
-            configuration.setErrorManagerName(errorManagerName);
-            configureErrorManager(properties, configuration.getErrorManagerNameValueExpression().getResolvedValue());
+            if (getStringProperty(properties, getKey("errorManager", ValueExpression.STRING_RESOLVER.resolve(errorManagerName).getResolvedValue())) == null) {
+                printError("Error manager %s is not defined%n", errorManagerName);
+            } else {
+                configuration.setErrorManagerName(errorManagerName);
+                configureErrorManager(properties, configuration.getErrorManagerNameValueExpression().getResolvedValue());
+            }
         }
         final String[] handlerNames = getStringCsvArray(properties, getKey("handler", handlerName, "handlers"));
-        configuration.setHandlerNames(handlerNames);
         for (String name : handlerNames) {
-            configureHandler(properties, name);
+            if (configureHandler(properties, name)) {
+                configuration.addHandlerName(name);
+            }
         }
         final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("handler", handlerName, "postConfiguration"));
         configuration.setPostConfigurationMethods(postConfigurationMethods);
         configureProperties(properties, configuration, getKey("handler", handlerName));
+        return true;
     }
 
-    private void configurePojos(final Properties properties, final String pojoName) {
+    private boolean configurePojos(final Properties properties, final String pojoName) {
         if (config.getPojoConfiguration(pojoName) != null) {
             // already configured!
-            return;
+            return true;
+        }
+        final String className = getStringProperty(properties, getKey("pojo", pojoName));
+        if (className == null) {
+            printError("POJO %s is not defined%n", pojoName);
+            return false;
         }
         final PojoConfiguration configuration = config.addPojoConfiguration(
                 getStringProperty(properties, getKey("pojo", pojoName, "module")),
@@ -660,6 +724,7 @@ public final class PropertyConfigurator implements Configurator {
         final String[] postConfigurationMethods = getStringCsvArray(properties, getKey("pojo", pojoName, "postConfiguration"));
         configuration.setPostConfigurationMethods(postConfigurationMethods);
         configureProperties(properties, configuration, getKey("pojo", pojoName));
+        return true;
     }
 
     private void configureProperties(final Properties properties, final PropertyConfigurable configurable, final String prefix) {
@@ -741,6 +806,24 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
+    /**
+     * Prints the message to stderr.
+     *
+     * @param msg the message to print
+     */
+    static void printError(final String msg) {
+        System.err.println(msg);
+    }
+
+    /**
+     * Prints the message to stderr.
+     *
+     * @param format the format of the message
+     * @param args   the format arguments
+     */
+    static void printError(final String format, final Object... args) {
+        System.err.printf(format, args);
+    }
 
 
     private static void safeClose(final Closeable stream) {
