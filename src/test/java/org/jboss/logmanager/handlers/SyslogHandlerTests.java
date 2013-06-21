@@ -68,6 +68,21 @@ public class SyslogHandlerTests {
         Assert.assertEquals(expectedMessage, formattedMessage);
     }
 
+    @Test
+    public void testRFC31644FormatWithMultiByte() throws Exception {
+        // Japanese aiueo chars, 15 bytes, 3 bytes each
+        // 15 * 66 = 990 bytes
+        StringBuilder multiByteMessage = new StringBuilder(990);
+        for (int i = 0; i < 66; i++) {
+            multiByteMessage.append("\u3042\u3044\u3046\u3048\u304a");
+        }
+        final Calendar cal = getCalendar();
+        String formattedMessage = SyslogType.RFC3164.format(createRecord(cal, multiByteMessage.toString()), null, Facility.USER_LEVEL, "test", "12345", "java");
+        // 38 bytes + 990 bytes = 1028 bytes, last 2 chars should be gone
+        String expectedMessage = "<14>Jan  9 04:39:22 test java[12345]: " + multiByteMessage.substring(0, multiByteMessage.length() - 2);
+        Assert.assertEquals(expectedMessage, formattedMessage);
+    }
+
     private static ExtLogRecord createRecord(final Calendar cal, final String message) {
         final String loggerName = SyslogHandlerTests.class.getName();
         final ExtLogRecord record = new ExtLogRecord(Level.INFO, message, loggerName);
