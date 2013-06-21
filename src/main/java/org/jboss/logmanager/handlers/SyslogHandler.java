@@ -30,6 +30,12 @@ import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.CharacterCodingException;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.UnsupportedCharsetException;
 import java.text.DateFormatSymbols;
 import java.util.Calendar;
 import java.util.Locale;
@@ -170,7 +176,7 @@ public class SyslogHandler extends ExtHandler {
          */
         RFC5424 {
             @Override
-            protected String format(final ExtLogRecord record, final String encoding, final Facility facility, final String hostname, final String pid, final String appName) throws UnsupportedEncodingException {
+            protected String format(final ExtLogRecord record, final String encoding, final Facility facility, final String hostname, final String pid, final String appName) {
                 final StringBuilder message = new StringBuilder();
                 // Set the property
                 message.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
@@ -212,9 +218,7 @@ public class SyslogHandler extends ExtHandler {
                 // Set the structured data
                 message.append(NILVALUE).append(' ');
                 // Set the message
-                // TODO (jrp) probably a better way to do this.
-                final String enc = (encoding == null ? "UTF-8" : encoding);
-                message.append(new String(record.getFormattedMessage().getBytes(enc), enc));
+                message.append(record.getFormattedMessage());
                 return message.toString();
             }
         },
@@ -224,7 +228,7 @@ public class SyslogHandler extends ExtHandler {
          */
         RFC3164 {
             @Override
-            protected String format(final ExtLogRecord record, final String encoding, final Facility facility, final String hostname, final String pid, final String appName) throws UnsupportedEncodingException {
+            protected String format(final ExtLogRecord record, final String encoding, final Facility facility, final String hostname, final String pid, final String appName) throws IOException {
                 final StringBuilder message = new StringBuilder();
                 // Set the property
                 message.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
@@ -248,17 +252,32 @@ public class SyslogHandler extends ExtHandler {
                     message.append("[").append(pid).append("]").append(": ");
                 }
                 // Set the message
-                // TODO (jrp) probably a better way to do this.
+                message.append(record.getFormattedMessage());
                 final String enc = (encoding == null ? "UTF-8" : encoding);
-                message.append(new String(record.getFormattedMessage().getBytes(enc), enc));
-                if (message.length() > 1024) {
-                    return message.substring(0, 1024);
-                }
-                return message.toString();
+                return truncateByByteLength(message.toString(), 1024, enc);
             }
+
+            private String truncateByByteLength(String s, int byteLength, String encoding) throws UnsupportedCharsetException, CharacterCodingException {
+                if (s == null || s.length() == 0) {
+                    return s;
+                }
+                Charset charset = Charset.forName(encoding);
+                CharsetEncoder encoder = charset.newEncoder();
+                // return if it's short enough
+                if (encoder.maxBytesPerChar() * s.length() <= byteLength) {
+                    return s;
+                }
+                // encode it with limited "out" max bytes
+                CharBuffer in = CharBuffer.wrap(s);
+                ByteBuffer out = ByteBuffer.allocate(byteLength);
+                encoder.encode(in, out, true);
+                // get chars from CharBuffer between 0 to current position
+                return in.flip().toString();
+            }
+
         };
 
-        protected abstract String format(ExtLogRecord record, final String encoding, Facility facility, String hostname, String pid, String appName) throws UnsupportedEncodingException;
+        protected abstract String format(ExtLogRecord record, final String encoding, Facility facility, String hostname, String pid, String appName) throws IOException;
 
         protected static int calculatePriority(final Level level, final Facility facility) {
             final Severity severity = Severity.fromLevel(level);
@@ -530,7 +549,8 @@ public class SyslogHandler extends ExtHandler {
                 throw new IllegalStateException("The syslog handler has been closed.");
             }
             try {
-                final byte[] message = syslogType.format(record, getEncoding(), facility, hostname, pid, appName).getBytes();
+                final String enc = (getEncoding() == null ? "UTF-8" : getEncoding());
+                final byte[] message = syslogType.format(record, enc, facility, hostname, pid, appName).getBytes(enc);
                 out.write(message);
             } catch (IOException e) {
                 reportError("Could not write to syslog", e, ErrorManager.WRITE_FAILURE);
