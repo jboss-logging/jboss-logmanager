@@ -249,6 +249,33 @@ public class PropertyConfiguratorTests {
 
     }
 
+    @Test
+    public void testSpacedProperties() throws Exception {
+        final Properties defaultProperties = new Properties();
+        defaultProperties.load(PropertyConfiguratorTests.class.getResourceAsStream("spaced-value-logging.properties"));
+        final LogContext logContext = LogContext.create();
+        final PropertyConfigurator configurator = new PropertyConfigurator(logContext);
+        configurator.configure(defaultProperties);
+
+        // Load the expected properties, all values should be trimmed with the exception of type.NAME.properties
+        final Properties expectedProperties = new Properties();
+        expectedProperties.load(PropertyConfiguratorTests.class.getResourceAsStream("expected-spaced-value-logging.properties"));
+
+        // Write out the configuration
+        final ByteArrayOutputStream propsOut = new ByteArrayOutputStream();
+        expectedProperties.store(new OutputStreamWriter(propsOut, "utf-8"), null);
+        final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
+        configurator.writeConfiguration(configOut);
+
+        // Reload output streams into properties
+        final Properties configProps = new Properties();
+        final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
+        configProps.load(new InputStreamReader(configIn, "utf-8"));
+        final Properties dftProps = new Properties();
+        dftProps.load(new InputStreamReader(new ByteArrayInputStream(propsOut.toByteArray()), "utf-8"));
+        compare(dftProps, configProps);
+    }
+
     // TODO (jrp) Note that in the future this test could break as a handler really shouldn't be allowed to be removed if it's attached to a logger
     @Test
     public void testWriteInvalidConfig() throws Exception {
