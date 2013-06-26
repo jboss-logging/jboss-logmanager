@@ -491,6 +491,22 @@ public final class PropertyConfigurator implements Configurator {
 
     /**
      * Configure the log manager from the given properties.
+     * <p/>
+     * The following values read in from a configuration will be trimmed of prefixed and trailing whitespace:
+     * <pre>
+     *     <ul>
+     *         <li>logger.NAME.filter</li>
+     *         <li>logger.NAME.level</li>
+     *         <li>logger.NAME.useParentHandlers</li>
+     *         <li>handler.NAME.filter</li>
+     *         <li>handler.NAME.formatter</li>
+     *         <li>handler.NAME.level</li>
+     *         <li>handler.NAME.encoding</li>
+     *         <li>handler.NAME.errorManager</li>
+     *     </ul>
+     * </pre>
+     *
+     * If the values are {@link #writeConfiguration(java.io.OutputStream) written} the trimmed values will be written for the above properties.
      *
      * @param properties the properties
      * @throws IOException if an error occurs
@@ -730,7 +746,7 @@ public final class PropertyConfigurator implements Configurator {
     private void configureProperties(final Properties properties, final PropertyConfigurable configurable, final String prefix) {
         final List<String> propertyNames = getStringCsvList(properties, getKey(prefix, "properties"));
         for (String propertyName : propertyNames) {
-            final String valueString = getStringProperty(properties, getKey(prefix, propertyName));
+            final String valueString = getStringProperty(properties, getKey(prefix, propertyName), false);
             if (valueString != null) configurable.setPropertyValueString(propertyName, valueString);
         }
     }
@@ -744,7 +760,12 @@ public final class PropertyConfigurator implements Configurator {
     }
 
     private static String getStringProperty(final Properties properties, final String key) {
-        return properties.getProperty(key);
+        return getStringProperty(properties, key, true);
+    }
+
+    private static String getStringProperty(final Properties properties, final String key, final boolean trim) {
+        final String value = properties.getProperty(key);
+        return (trim ? (value == null ? null : value.trim()) : value);
     }
 
     private static String[] getStringCsvArray(final Properties properties, final String key) {
