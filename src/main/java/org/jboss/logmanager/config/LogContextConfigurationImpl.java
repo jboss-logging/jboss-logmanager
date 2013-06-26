@@ -401,66 +401,68 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             }
             return ObjectProducer.NULL_PRODUCER;
         }
-        final String replaced = valueExpression.getResolvedValue();
+        final String resolvedValue = valueExpression.getResolvedValue();
+        final String trimmedValue = resolvedValue.trim();
         if (paramType == String.class) {
-            return new SimpleObjectProducer(replaced);
+            // Don't use the trimmed value for strings
+            return new SimpleObjectProducer(resolvedValue);
         } else if (paramType == Handler.class) {
-            if (! handlers.containsKey(replaced) || immediate && ! handlerRefs.containsKey(replaced)) {
-                throw new IllegalArgumentException(String.format("No handler named \"%s\" is defined", replaced));
+            if (! handlers.containsKey(trimmedValue) || immediate && ! handlerRefs.containsKey(trimmedValue)) {
+                throw new IllegalArgumentException(String.format("No handler named \"%s\" is defined", trimmedValue));
             }
             if (immediate) {
-                return new SimpleObjectProducer(handlerRefs.get(replaced));
+                return new SimpleObjectProducer(handlerRefs.get(trimmedValue));
             } else {
-                return new RefProducer(replaced, handlerRefs);
+                return new RefProducer(trimmedValue, handlerRefs);
             }
         } else if (paramType == Filter.class) {
-            return resolveFilter(replaced, immediate);
+            return resolveFilter(trimmedValue, immediate);
         } else if (paramType == Formatter.class) {
-            if (! formatters.containsKey(replaced) || immediate && ! formatterRefs.containsKey(replaced)) {
-                throw new IllegalArgumentException(String.format("No formatter named \"%s\" is defined", replaced));
+            if (! formatters.containsKey(trimmedValue) || immediate && ! formatterRefs.containsKey(trimmedValue)) {
+                throw new IllegalArgumentException(String.format("No formatter named \"%s\" is defined", trimmedValue));
             }
             if (immediate) {
-                return new SimpleObjectProducer(formatterRefs.get(replaced));
+                return new SimpleObjectProducer(formatterRefs.get(trimmedValue));
             } else {
-                return new RefProducer(replaced, formatterRefs);
+                return new RefProducer(trimmedValue, formatterRefs);
             }
         } else if (paramType == ErrorManager.class) {
-            if (! errorManagers.containsKey(replaced) || immediate && ! errorManagerRefs.containsKey(replaced)) {
-                throw new IllegalArgumentException(String.format("No error manager named \"%s\" is defined", replaced));
+            if (! errorManagers.containsKey(trimmedValue) || immediate && ! errorManagerRefs.containsKey(trimmedValue)) {
+                throw new IllegalArgumentException(String.format("No error manager named \"%s\" is defined", trimmedValue));
             }
             if (immediate) {
-                return new SimpleObjectProducer(errorManagerRefs.get(replaced));
+                return new SimpleObjectProducer(errorManagerRefs.get(trimmedValue));
             } else {
-                return new RefProducer(replaced, errorManagerRefs);
+                return new RefProducer(trimmedValue, errorManagerRefs);
             }
         } else if (paramType == java.util.logging.Level.class) {
-            return new SimpleObjectProducer(LogContext.getSystemLogContext().getLevelForName(replaced));
+            return new SimpleObjectProducer(LogContext.getSystemLogContext().getLevelForName(trimmedValue));
         } else if (paramType == java.util.logging.Logger.class) {
-            return new SimpleObjectProducer(LogContext.getSystemLogContext().getLogger(replaced));
+            return new SimpleObjectProducer(LogContext.getSystemLogContext().getLogger(trimmedValue));
         } else if (paramType == boolean.class || paramType == Boolean.class) {
-            return new SimpleObjectProducer(Boolean.valueOf(replaced));
+            return new SimpleObjectProducer(Boolean.valueOf(trimmedValue));
         } else if (paramType == byte.class || paramType == Byte.class) {
-            return new SimpleObjectProducer(Byte.valueOf(replaced));
+            return new SimpleObjectProducer(Byte.valueOf(trimmedValue));
         } else if (paramType == short.class || paramType == Short.class) {
-            return new SimpleObjectProducer(Short.valueOf(replaced));
+            return new SimpleObjectProducer(Short.valueOf(trimmedValue));
         } else if (paramType == int.class || paramType == Integer.class) {
-            return new SimpleObjectProducer(Integer.valueOf(replaced));
+            return new SimpleObjectProducer(Integer.valueOf(trimmedValue));
         } else if (paramType == long.class || paramType == Long.class) {
-            return new SimpleObjectProducer(Long.valueOf(replaced));
+            return new SimpleObjectProducer(Long.valueOf(trimmedValue));
         } else if (paramType == float.class || paramType == Float.class) {
-            return new SimpleObjectProducer(Float.valueOf(replaced));
+            return new SimpleObjectProducer(Float.valueOf(trimmedValue));
         } else if (paramType == double.class || paramType == Double.class) {
-            return new SimpleObjectProducer(Double.valueOf(replaced));
+            return new SimpleObjectProducer(Double.valueOf(trimmedValue));
         } else if (paramType == char.class || paramType == Character.class) {
-            return new SimpleObjectProducer(Character.valueOf(replaced.length() > 0 ? replaced.charAt(0) : 0));
+            return new SimpleObjectProducer(Character.valueOf(trimmedValue.length() > 0 ? trimmedValue.charAt(0) : 0));
         } else if (paramType == TimeZone.class) {
-            return new SimpleObjectProducer(TimeZone.getTimeZone(replaced));
+            return new SimpleObjectProducer(TimeZone.getTimeZone(trimmedValue));
         } else if (paramType == Charset.class) {
-            return new SimpleObjectProducer(Charset.forName(replaced));
+            return new SimpleObjectProducer(Charset.forName(trimmedValue));
         } else if (paramType.isEnum()) {
-            return new SimpleObjectProducer(Enum.valueOf(paramType.asSubclass(Enum.class), replaced));
-        } else if (pojos.containsKey(replaced)) {
-            return new RefProducer(replaced, pojoRefs);
+            return new SimpleObjectProducer(Enum.valueOf(paramType.asSubclass(Enum.class), trimmedValue));
+        } else if (pojos.containsKey(trimmedValue)) {
+            return new RefProducer(trimmedValue, pojoRefs);
         } else {
             throw new IllegalArgumentException("Unknown parameter type for property " + propertyName + " on " + objClass);
         }
