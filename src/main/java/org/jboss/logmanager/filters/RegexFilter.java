@@ -27,6 +27,8 @@ import java.util.regex.Pattern;
 import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 
+import org.jboss.logmanager.ExtLogRecord;
+
 /**
  * A regular-expression-based filter.  Used to exclude log records which match or don't match the expression.  The
  * regular expression is checked against the raw (unformatted) message.
@@ -59,6 +61,13 @@ public final class RegexFilter implements Filter {
      * @return {@code true} if the log record is loggable
      */
     public boolean isLoggable(final LogRecord record) {
-        return pattern.matcher(record.getMessage()).find();
+        String message = null;
+        if (record instanceof ExtLogRecord) {
+            message = ((ExtLogRecord) record).getFormattedMessage();
+        }
+        if (message == null) {
+            message = record.getMessage();
+        }
+        return pattern.matcher(message).find();
     }
 }
