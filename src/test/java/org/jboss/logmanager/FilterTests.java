@@ -406,6 +406,40 @@ public final class FilterTests {
     }
 
     @Test
+    public void testRegexFilter2() {
+        final Filter filter = new RegexFilter("pest");
+        final AtomicBoolean ran = new AtomicBoolean();
+        final Handler handler = new CheckingHandler(ran);
+        final Logger logger = Logger.getLogger("filterTest");
+        final ExtLogRecord record = new ExtLogRecord(Level.INFO, "This is a test %s", FormatStyle.PRINTF, "filterTest");
+        record.setParameters(new String[] {"pest"});
+        logger.setUseParentHandlers(false);
+        logger.addHandler(handler);
+        logger.setLevel(Level.INFO);
+        logger.setFilter(filter);
+        handler.setLevel(Level.INFO);
+        logger.log(record);
+        assertTrue("Handler wasn't run", ran.get());
+    }
+
+    @Test
+    public void testRegexFilter3() {
+        final Filter filter = new RegexFilter("pest");
+        final AtomicBoolean ran = new AtomicBoolean();
+        final Handler handler = new CheckingHandler(ran);
+        final Logger logger = Logger.getLogger("filterTest");
+        final ExtLogRecord record = new ExtLogRecord(Level.INFO, "This is a test %s", FormatStyle.PRINTF, "filterTest");
+        record.setParameters(new String[] {"test"});
+        logger.setUseParentHandlers(false);
+        logger.addHandler(handler);
+        logger.setLevel(Level.INFO);
+        logger.setFilter(filter);
+        handler.setLevel(Level.INFO);
+        logger.log(record);
+        assertFalse("Handler was run", ran.get());
+    }
+
+    @Test
     public void testSubstitueFilter0() {
         final Filter filter = new SubstituteFilter(Pattern.compile("test"), "lunch", true);
         final AtomicReference<String> result = new AtomicReference<String>();
