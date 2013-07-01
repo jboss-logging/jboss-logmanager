@@ -22,38 +22,39 @@
 
 package org.jboss.logmanager;
 
-import static org.testng.AssertJUnit.assertEquals;
-import static org.testng.AssertJUnit.assertNull;
-import static org.testng.AssertJUnit.assertTrue;
+import static org.junit.Assert.*;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.Flushable;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
+import java.io.PrintStream;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.logging.Formatter;
 
 import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.config.LoggerConfiguration;
-import org.testng.annotations.Test;
+import org.jboss.logmanager.config.PojoConfiguration;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@Test
 public class PropertyConfiguratorTests {
 
     static {
-        System.setProperty("java.util.logging.manager", "org.jboss.logmanager.LogManager");
         System.setProperty("default.log.level", "DEBUG");
     }
 
+    @Test
     public void testReadWrite() throws Exception {
         final Properties defaultProperties = defaultProperties();
         final LogContext logContext = LogContext.create();
@@ -84,6 +85,7 @@ public class PropertyConfiguratorTests {
 
     }
 
+    @Test
     public void testPrepareAndRollback() throws Exception {
         final Properties defaultProperties = defaultProperties();
         final LogContext logContext = LogContext.create();
@@ -117,6 +119,7 @@ public class PropertyConfiguratorTests {
 
     }
 
+    @Test
     public void testExpressions() throws Exception {
         final Properties defaultProperties = new Properties();
         defaultProperties.load(PropertyConfiguratorTests.class.getResourceAsStream("expression-logging.properties"));
@@ -157,6 +160,61 @@ public class PropertyConfiguratorTests {
         assertEquals("UTF-8", configProps.getProperty("handler.FILE.encoding"));
     }
 
+    @Test
+    public void testAddAndRemove() throws Exception {
+        final StdErr stdErr = StdErr.create();
+        try {
+            final LogContext logContext = LogContext.create();
+
+            final LogContextConfiguration logContextConfiguration = LogContextConfiguration.Factory.create(logContext);
+            // Add a logger to add the pojo to
+            LoggerConfiguration fooConfiguration = logContextConfiguration.addLoggerConfiguration("foo");
+
+            HandlerConfiguration pojoHandler = logContextConfiguration.addHandlerConfiguration(null, PojoHandler.class.getName(), "pojo");
+            PojoConfiguration pojoConfiguration = logContextConfiguration.addPojoConfiguration(null, PojoObject.class.getName(), "pojo");
+            pojoHandler.setPropertyValueString("pojoObject", "pojo");
+
+            pojoConfiguration.setPropertyValueString("name", "pojo");
+
+            assertTrue(pojoConfiguration.addPostConfigurationMethod("init"));
+            assertTrue(pojoConfiguration.addPostConfigurationMethod("checkInitialized"));
+
+            assertTrue(fooConfiguration.addHandlerName("pojo"));
+
+            logContextConfiguration.prepare();
+            logContextConfiguration.commit();
+
+            // Remove the configurations
+            assertTrue(logContextConfiguration.removeHandlerConfiguration("pojo"));
+            assertTrue(logContextConfiguration.removePojoConfiguration("pojo"));
+            assertTrue(logContextConfiguration.removeLoggerConfiguration("foo"));
+            // logContextConfiguration.prepare();
+
+
+            // Re-add the configurations in the same transaction
+            fooConfiguration = logContextConfiguration.addLoggerConfiguration("foo");
+
+            pojoHandler = logContextConfiguration.addHandlerConfiguration(null, PojoHandler.class.getName(), "pojo");
+            pojoConfiguration = logContextConfiguration.addPojoConfiguration(null, PojoObject.class.getName(), "pojo");
+            pojoHandler.setPropertyValueString("pojoObject", "pojo");
+
+            pojoConfiguration.setPropertyValueString("name", "pojo");
+
+            assertTrue(pojoConfiguration.addPostConfigurationMethod("init"));
+            assertTrue(pojoConfiguration.addPostConfigurationMethod("checkInitialized"));
+
+            assertTrue(fooConfiguration.addHandlerName("pojo"));
+
+            logContextConfiguration.prepare();
+            logContextConfiguration.commit();
+
+            // No errors should be output
+            assertTrue("Error written to stderr", stdErr.getOutput().isEmpty());
+        } finally {
+            stdErr.close();
+        }
+    }
+
     private void compare(final Properties defaultProps, final Properties configProps) {
         final Set<String> dftNames = defaultProps.stringPropertyNames();
         final Set<String> configNames = configProps.stringPropertyNames();
@@ -188,5 +246,128 @@ public class PropertyConfiguratorTests {
         final Properties props = new Properties();
         props.load(PropertyConfiguratorTests.class.getResourceAsStream("default-logging.properties"));
         return props;
+    }
+
+    public static class PojoObject {
+        String name;
+        String value;
+        boolean initialized;
+
+        public PojoObject() {
+            initialized = false;
+        }
+
+        public void init() {
+            initialized = true;
+        }
+
+        public void checkInitialized() {
+            if (!initialized) {
+                throw new IllegalStateException("Not initialized");
+            }
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(final String name) {
+            this.name = name;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(final String value) {
+            this.value = value;
+        }
+    }
+
+    public static class PojoHandler extends ExtHandler {
+        PojoObject pojoObject;
+
+        @Override
+        protected void doPublish(final ExtLogRecord record) {
+            if (pojoObject != null) {
+                final Formatter formatter = getFormatter();
+                if (formatter != null) {
+                    pojoObject.setValue(formatter.format(record));
+                } else {
+                    pojoObject.setValue(record.getFormattedMessage());
+                }
+                System.out.println(pojoObject.getValue());
+            }
+            super.doPublish(record);
+        }
+
+        public PojoObject getPojoObject() {
+            return pojoObject;
+        }
+
+        public void setPojoObject(final PojoObject pojoObject) {
+            this.pojoObject = pojoObject;
+        }
+    }
+
+    static class StdErr extends PrintStream {
+        private final PrintStream defaultErr;
+        private final ByteArrayOutputStream out;
+
+        static StdErr create() {
+            final StdErr stdErr = new StdErr(new ByteArrayOutputStream());
+            System.setErr(stdErr);
+            return stdErr;
+        }
+
+        public StdErr(final ByteArrayOutputStream out) {
+            super(out);
+            this.out = out;
+            defaultErr = System.err;
+        }
+
+        public synchronized String getOutput() {
+            return out.toString();
+        }
+
+        @Override
+        public synchronized void write(final int b) {
+            super.write(b);
+            defaultErr.write(b);
+        }
+
+        @Override
+        public synchronized void write(final byte[] buf, final int off, final int len) {
+            super.write(buf, off, len);
+            defaultErr.write(buf, off, len);
+        }
+
+        @Override
+        public synchronized void write(final byte[] b) throws IOException {
+            super.write(b);
+            defaultErr.write(b);
+        }
+
+        @Override
+        public synchronized void flush() {
+            super.flush();
+            safeFlush(out);
+            safeFlush(defaultErr);
+        }
+
+        @Override
+        public synchronized void close() {
+            flush();
+            System.setErr(defaultErr);
+            super.close();
+        }
+
+        static void safeFlush(final Flushable flushable) {
+            if (flushable != null) try {
+                flushable.flush();
+            } catch (Exception ignore) {
+                // ignore
+            }
+        }
     }
 }
