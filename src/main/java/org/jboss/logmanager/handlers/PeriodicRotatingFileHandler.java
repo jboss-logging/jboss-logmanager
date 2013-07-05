@@ -215,7 +215,9 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             case DAY:
                 calendar.set(Calendar.HOUR_OF_DAY, 0);
             case HALF_DAY:
-                calendar.set(Calendar.HOUR, 0);
+                if (period == Period.HALF_DAY) {
+                    calendar.set(Calendar.HOUR, 0);
+                }
             case HOUR:
                 calendar.set(Calendar.MINUTE, 0);
             case MINUTE:
