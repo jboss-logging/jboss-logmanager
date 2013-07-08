@@ -207,7 +207,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
                 calendar.clear(Calendar.WEEK_OF_MONTH);
             case WEEK:
                 if (period == Period.WEEK) {
-                    calendar.set(Calendar.DAY_OF_WEEK, 0);
+                    calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
                 } else {
                     calendar.clear(Calendar.DAY_OF_WEEK);
                 }
@@ -215,7 +215,14 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             case DAY:
                 calendar.set(Calendar.HOUR_OF_DAY, 0);
             case HALF_DAY:
-                calendar.set(Calendar.HOUR, 0);
+                if (period == Period.HALF_DAY) {
+                    calendar.set(Calendar.HOUR, 0);
+                } else {
+                    //We want both HOUR_OF_DAY and (HOUR + AM_PM) to be zeroed out
+                    //This should ensure the hour is truly zeroed out
+                    calendar.set(Calendar.HOUR, 0);
+                    calendar.set(Calendar.AM_PM, 0);
+                }
             case HOUR:
                 calendar.set(Calendar.MINUTE, 0);
             case MINUTE:
