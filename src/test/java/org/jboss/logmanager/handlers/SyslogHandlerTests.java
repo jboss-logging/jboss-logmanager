@@ -41,16 +41,16 @@ public class SyslogHandlerTests {
     @Test
     public void testRFC5424Format() throws Exception {
         final Calendar cal = getCalendar();
-        String formattedMessage = SyslogType.RFC5424.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", "java");
+        String formattedMessage = new String(SyslogType.RFC5424.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", "java"));
         String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java 1234 - - " + MSG;
         Assert.assertEquals(expectedMessage, formattedMessage);
 
-        formattedMessage = SyslogType.RFC5424.format(createRecord(cal, MSG), Facility.USER_LEVEL, null, "1234", null);
+        formattedMessage = new String(SyslogType.RFC5424.format(createRecord(cal, MSG), Facility.USER_LEVEL, null, "1234", null));
         expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " - - 1234 - - " + MSG;
         Assert.assertEquals(expectedMessage, formattedMessage);
 
         cal.set(Calendar.DAY_OF_MONTH, 31);
-        formattedMessage = SyslogType.RFC5424.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", "java");
+        formattedMessage = new String(SyslogType.RFC5424.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", "java"));
         expectedMessage = "<14>1 2012-01-31T04:39:22.000" + calculateTimeZone(cal) + " test java 1234 - - " + MSG;
         Assert.assertEquals(expectedMessage, formattedMessage);
     }
@@ -58,12 +58,12 @@ public class SyslogHandlerTests {
     @Test
     public void testRFC31644Format() throws Exception {
         final Calendar cal = getCalendar();
-        String formattedMessage = SyslogType.RFC3164.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", "java");
+        String formattedMessage = new String(SyslogType.RFC3164.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", "java"));
         String expectedMessage = "<14>Jan  9 04:39:22 test java[1234]: " + MSG;
         Assert.assertEquals(expectedMessage, formattedMessage);
 
         cal.set(Calendar.DAY_OF_MONTH, 31);
-        formattedMessage = SyslogType.RFC3164.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", null);
+        formattedMessage = new String(SyslogType.RFC3164.format(createRecord(cal, MSG), Facility.USER_LEVEL, "test", "1234", null));
         expectedMessage = "<14>Jan 31 04:39:22 test [1234]: " + MSG;
         Assert.assertEquals(expectedMessage, formattedMessage);
     }
