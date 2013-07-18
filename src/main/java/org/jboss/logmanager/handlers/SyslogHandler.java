@@ -22,6 +22,7 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.management.ManagementFactory;
@@ -29,7 +30,12 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
 import java.text.DateFormatSymbols;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.logging.ErrorManager;
@@ -163,7 +169,7 @@ public class SyslogHandler extends ExtHandler {
          */
         RFC5424 {
             @Override
-            protected String format(final ExtLogRecord record, final Facility facility, final String hostname, final String pid, final String appName) throws UnsupportedEncodingException {
+            protected byte[] format(final ExtLogRecord record, final Facility facility, final String hostname, final String pid, final String appName) throws UnsupportedEncodingException {
                 final StringBuilder message = new StringBuilder();
                 // Set the property
                 message.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
@@ -204,9 +210,14 @@ public class SyslogHandler extends ExtHandler {
                 }
                 // Set the structured data
                 message.append(NILVALUE).append(' ');
-                // Set the message
-                message.append(new String(record.getFormattedMessage().getBytes(ENCODING), ENCODING));
-                return message.toString();
+                final ByteArrayOutputStream result = new ByteArrayOutputStream();
+                try {
+                    result.write(message.toString().getBytes());
+                    result.write(record.getFormattedMessage().getBytes(ENCODING));
+                } catch (IOException e) {
+                    throw new IllegalStateException("Could not write syslog message", e);
+                }
+                return result.toByteArray();
             }
         },
 
@@ -215,7 +226,7 @@ public class SyslogHandler extends ExtHandler {
          */
         RFC3164 {
             @Override
-            protected String format(final ExtLogRecord record, final Facility facility, final String hostname, final String pid, final String appName) throws UnsupportedEncodingException {
+            protected byte[] format(final ExtLogRecord record, final Facility facility, final String hostname, final String pid, final String appName) throws UnsupportedEncodingException {
                 final StringBuilder message = new StringBuilder();
                 // Set the property
                 message.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
@@ -241,14 +252,25 @@ public class SyslogHandler extends ExtHandler {
                 // Set the message
                 // The encoding is not specified in the spec, but UTF-8 is probably the safest bet
                 message.append(new String(record.getFormattedMessage().getBytes(ENCODING), ENCODING));
-                if (message.length() > 1024) {
-                    return message.substring(0, 1024);
+                final CharBuffer in = CharBuffer.wrap(message);
+                final ByteBuffer out = ByteBuffer.allocate(1024);
+                final CharsetEncoder encoder = Charset.forName(ENCODING).newEncoder();
+                encoder.encode(in, out, true);
+                encoder.flush(out);
+                if (out.hasArray()) {
+                    return Arrays.copyOf(out.array(), out.position());
                 }
-                return message.toString();
+
+                final byte[] result = new byte[out.position()];
+                out.flip();
+                for (int i = 0; i < result.length; i++) {
+                    result[i] = out.get();
+                }
+                return result;
             }
         };
 
-        protected abstract String format(ExtLogRecord record, Facility facility, String hostname, String pid, String appName) throws UnsupportedEncodingException;
+        protected abstract byte[] format(ExtLogRecord record, Facility facility, String hostname, String pid, String appName) throws UnsupportedEncodingException;
 
         protected static int calculatePriority(final Level level, final Facility facility) {
             final Severity severity = Severity.fromLevel(level);
@@ -412,7 +434,7 @@ public class SyslogHandler extends ExtHandler {
      * @param serverHostname the server to send the messages to
      * @param port           the port the syslogd is listening on
      * @param facility       the facility to use when calculating priority
-     * @param hostname  the name of the host the messages are being sent from
+     * @param hostname       the name of the host the messages are being sent from
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
@@ -427,7 +449,7 @@ public class SyslogHandler extends ExtHandler {
      * @param serverAddress the server to send the messages to
      * @param port          the port the syslogd is listening on
      * @param facility      the facility to use when calculating priority
-     * @param hostname the name of the host the messages are being sent from
+     * @param hostname      the name of the host the messages are being sent from
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
@@ -443,7 +465,7 @@ public class SyslogHandler extends ExtHandler {
      * @param port           the port the syslogd is listening on
      * @param facility       the facility to use when calculating priority
      * @param syslogType     the type of the syslog used to format the message
-     * @param hostname  the name of the host the messages are being sent from
+     * @param hostname       the name of the host the messages are being sent from
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
@@ -459,7 +481,7 @@ public class SyslogHandler extends ExtHandler {
      * @param port          the port the syslogd is listening on
      * @param facility      the facility to use when calculating priority
      * @param syslogType    the type of the syslog used to format the message
-     * @param hostname the name of the host the messages are being sent from
+     * @param hostname      the name of the host the messages are being sent from
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
@@ -485,9 +507,9 @@ public class SyslogHandler extends ExtHandler {
                 throw new IllegalStateException("The syslog handler has been closed.");
             }
             try {
-                final String message = syslogType.format(record, facility, hostname, pid, appName);
+                final byte[] message = syslogType.format(record, facility, hostname, pid, appName);
                 // TODO (jrp) allow TCP and other types
-                final DatagramPacket dp = new DatagramPacket(message.getBytes(), message.length(), serverAddress, port);
+                final DatagramPacket dp = new DatagramPacket(message, message.length, serverAddress, port);
                 datagramSocket.send(dp);
             } catch (IOException e) {
                 reportError("Could not write to syslog", e, ErrorManager.WRITE_FAILURE);
