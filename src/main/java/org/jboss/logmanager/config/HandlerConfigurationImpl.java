@@ -262,6 +262,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         if (handlerNames.contains(name)) {
             return false;
         }
+        handlerNames.add(name);
         configuration.addAction(new ConfigAction<Void>() {
             public Void validate() throws IllegalArgumentException {
                 if (configuration.getHandlerConfiguration(name) == null) {
