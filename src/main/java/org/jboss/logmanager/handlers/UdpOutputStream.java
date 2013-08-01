@@ -7,6 +7,8 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 
 /**
+ * An output stream that writes data to a {@link java.net.DatagramSocket DatagramSocket}.
+ *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class UdpOutputStream extends OutputStream implements FlushableCloseable {

@@ -7,6 +7,9 @@ import java.net.Socket;
 import javax.net.SocketFactory;
 
 /**
+ * An output stream that writes data to a {@link java.net.Socket socket}. Uses {@link
+ * javax.net.SocketFactory#getDefault()} to create the socket.
+ *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class TcpOutputStream extends OutputStream implements FlushableCloseable {
@@ -16,7 +19,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
         this(SocketFactory.getDefault().createSocket(address, port));
     }
 
-    TcpOutputStream(final Socket socket) {
+    protected TcpOutputStream(final Socket socket) {
         this.socket = socket;
     }
 

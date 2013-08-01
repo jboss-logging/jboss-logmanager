@@ -74,6 +74,9 @@
                     <includes>
                         <include>**/*Tests.java</include>
                     </includes>
+                    <excludes>
+                        <exclude>**/SyslogTest.java</exclude>
+                    </excludes>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <test.log.dir>${project.build.directory}${file.separator}logs${file.separator}</test.log.dir>
