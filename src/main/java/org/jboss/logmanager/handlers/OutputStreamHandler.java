@@ -88,8 +88,10 @@ public class OutputStreamHandler extends WriterHandler {
         // superclass checks access
         synchronized (outputLock) {
             super.setEncoding(encoding);
-            final OutputStream outputStream = this.outputStream;
-            updateWriter(outputStream, encoding);
+            if (this.outputStream != null) {
+                final OutputStream outputStream = this.outputStream;
+                updateWriter(outputStream, encoding);
+           }
         }
     }
 
