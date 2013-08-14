@@ -37,6 +37,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
+import java.util.logging.Handler;
 
 public final class HandlerTests {
 
@@ -57,7 +58,11 @@ public final class HandlerTests {
     }
 
     private void testPublish(ExtHandler handler) {
-        handler.publish(new ExtLogRecord(Level.INFO, "Test message", null));
+        testPublish(handler, Level.INFO);
+    }
+
+    private void testPublish(ExtHandler handler, Level level) {
+        handler.publish(new ExtLogRecord(level, "Test message", null));
     }
 
     @Test
@@ -125,5 +130,68 @@ public final class HandlerTests {
         handler.setEnabled(true);
         testPublish(handler);
         assertEquals(2, handler.size());
+    }
+
+    @Test
+    public void testHandlerDelegation() throws Throwable {
+        final StringListHandler debugHandler = new StringListHandler();
+        debugHandler.setLevel(Level.DEBUG);
+
+        final StringListHandler infoHandler = new StringListHandler();
+        infoHandler.setLevel(Level.INFO);
+
+        final StringListHandler errorHandler = new StringListHandler();
+        errorHandler.setLevel(Level.ERROR);
+
+        final MultiHandler handler = MultiHandler.of(debugHandler, infoHandler, errorHandler);
+        // Turn off the level for the handler
+        handler.setLevel(Level.OFF);
+
+        // Log a debug message
+        testPublish(handler, Level.DEBUG);
+        assertEquals(1, debugHandler.size());
+        assertEquals(0, infoHandler.size());
+        assertEquals(0, errorHandler.size());
+
+        // Log an info message
+        testPublish(handler, Level.INFO);
+        assertEquals(2, debugHandler.size());
+        assertEquals(1, infoHandler.size());
+        assertEquals(0, errorHandler.size());
+
+        // Log a warn message
+        testPublish(handler, Level.WARN);
+        assertEquals(3, debugHandler.size());
+        assertEquals(2, infoHandler.size());
+        assertEquals(0, errorHandler.size());
+
+        // Log an error message
+        testPublish(handler, Level.ERROR);
+        assertEquals(4, debugHandler.size());
+        assertEquals(3, infoHandler.size());
+        assertEquals(1, errorHandler.size());
+    }
+
+    static class MultiHandler extends ExtHandler {
+        protected MultiHandler() {
+            super(true);
+        }
+
+        static MultiHandler of(final ExtHandler... handlers) {
+            final MultiHandler result = new MultiHandler();
+            result.setHandlers(handlers);
+            return result;
+        }
+
+        @Override
+        protected void doPublish(final ExtLogRecord record) {
+            // Process child handlers
+            for (Handler handler : getHandlers()) {
+                if (handler.isLoggable(record)) {
+                    handler.publish(record);
+                }
+            }
+            super.doPublish(record);
+        }
     }
 }
