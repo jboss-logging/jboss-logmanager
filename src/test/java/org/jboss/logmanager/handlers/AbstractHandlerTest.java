@@ -95,11 +95,19 @@ public class AbstractHandlerTest {
         handler.setFormatter(FORMATTER);
     }
 
-    protected static ExtLogRecord createLogRecord(final String msg) {
-        return new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, null);
+    protected ExtLogRecord createLogRecord(final String msg) {
+        return createLogRecord(org.jboss.logmanager.Level.INFO, msg);
     }
 
-    protected static ExtLogRecord createLogRecord(final String format, final Object... args) {
-        return new ExtLogRecord(org.jboss.logmanager.Level.INFO, String.format(format, args), null);
+    protected ExtLogRecord createLogRecord(final String format, final Object... args) {
+        return createLogRecord(org.jboss.logmanager.Level.INFO, format, args);
+    }
+
+    protected ExtLogRecord createLogRecord(final org.jboss.logmanager.Level level, final String msg) {
+        return new ExtLogRecord(level, msg, getClass().getName());
+    }
+
+    protected ExtLogRecord createLogRecord(final org.jboss.logmanager.Level level, final String format, final Object... args) {
+        return new ExtLogRecord(level, String.format(format, args), getClass().getName());
     }
 }
