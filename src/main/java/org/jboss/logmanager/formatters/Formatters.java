@@ -25,7 +25,11 @@ package org.jboss.logmanager.formatters;
 import java.net.URL;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Deque;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import org.jboss.logmanager.ExtLogRecord;
 
@@ -44,6 +48,8 @@ import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.PrintWriter;
+import java.util.regex.Pattern;
+
 import org.jboss.logmanager.NDC;
 
 /**
@@ -51,7 +57,10 @@ import org.jboss.logmanager.NDC;
  */
 public final class Formatters {
 
+    public static final String THREAD_ID = "id";
+
     private static final String NEW_LINE = String.format("%n");
+    private static final Pattern PRECISION_INT_PATTERN = Pattern.compile("\\d+");
 
 
     private Formatters() {
@@ -109,6 +118,62 @@ public final class Formatters {
             }
         }
         return subject.substring(idx + 1);
+    }
+
+    /**
+     * Apply up to {@code precision} trailing segments of the given string to the given {@code builder}. If the
+     * precision contains non-integer values
+     *
+     * @param precision the precision used to
+     * @param subject   the subject string
+     *
+     * @return the substring
+     */
+    private static String applySegments(final String precision, final String subject) {
+        if (precision == null) {
+            return subject;
+        }
+
+        // Check for dots
+        if (PRECISION_INT_PATTERN.matcher(precision).matches()) {
+            return applySegments(Integer.parseInt(precision), subject);
+        }
+        // %c{1.} would be o.j.l.f.FormatStringParser
+        // %c{1.~} would be o.~.~.~.FormatStringParser
+        // %c{.} ....FormatStringParser
+        final Map<Integer, Segment> segments = parsePatternSegments(precision);
+        final Deque<String> categorySegments = parseCategorySegments(subject);
+        final StringBuilder result = new StringBuilder();
+        Segment segment = null;
+        int index = 0;
+        while (true) {
+            index++;
+            if (segments.containsKey(index)) {
+                segment = segments.get(index);
+            }
+            final String s = categorySegments.poll();
+            // Always print the last part of the category segments
+            if (categorySegments.peek() == null) {
+                result.append(s);
+                break;
+            }
+            if (segment == null) {
+                result.append(s).append('.');
+            } else {
+                if (segment.len > 0) {
+                    if (segment.len > s.length()) {
+                        result.append(s);
+                    } else {
+                        result.append(s.substring(0, segment.len));
+                    }
+                }
+                if (segment.text != null) {
+                    result.append(segment.text);
+                }
+                result.append('.');
+            }
+        }
+        return result.toString();
     }
 
     private abstract static class JustifyingFormatStep implements FormatStep {
@@ -181,14 +246,26 @@ public final class Formatters {
 
     private abstract static class SegmentedFormatStep extends JustifyingFormatStep {
         private final int count;
+        private final String precision;
 
         protected SegmentedFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final int count) {
             super(leftJustify, minimumWidth, maximumWidth);
             this.count = count;
+            precision = null;
+        }
+
+        protected SegmentedFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final String precision) {
+            super(leftJustify, minimumWidth, maximumWidth);
+            this.count = 0;
+            this.precision = precision;
         }
 
         public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
-            builder.append(applySegments(count, getSegmentedSubject(record)));
+            if (precision == null) {
+                builder.append(applySegments(count, getSegmentedSubject(record)));
+            } else {
+                builder.append(applySegments(precision, getSegmentedSubject(record)));
+            }
         }
 
         public abstract String getSegmentedSubject(final ExtLogRecord record);
@@ -200,11 +277,11 @@ public final class Formatters {
      * @param leftJustify {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
-     * @param count the maximum number of logger name segments to emit (counting from the right)
-     * @return the format step
+     * @param precision    the argument used for the logger name, may be {@code null} or contain dots to format the logger name
+     * @return the format
      */
-    public static FormatStep loggerNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final int count) {
-        return new SegmentedFormatStep(leftJustify, minimumWidth, maximumWidth, count) {
+    public static FormatStep loggerNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final String precision) {
+        return new SegmentedFormatStep(leftJustify, minimumWidth, maximumWidth, precision) {
             public String getSegmentedSubject(final ExtLogRecord record) {
                 return record.getLoggerName();
             }
@@ -218,11 +295,11 @@ public final class Formatters {
      * @param leftJustify {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
-     * @param count the maximum number of class name segments to emit (counting from the right)
+     * @param precision    the argument used for the class name, may be {@code null} or contain dots to format the class name
      * @return the format step
      */
-    public static FormatStep classNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final int count) {
-        return new SegmentedFormatStep(leftJustify, minimumWidth, maximumWidth, count) {
+    public static FormatStep classNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final String precision) {
+        return new SegmentedFormatStep(leftJustify, minimumWidth, maximumWidth, precision) {
             public String getSegmentedSubject(final ExtLogRecord record) {
                 return record.getSourceClassName();
             }
@@ -585,10 +662,10 @@ public final class Formatters {
         if (resource == null) {
             return null;
         }
-        
+
         final String path = resource.getPath();
         final String protocol = resource.getProtocol();
-        
+
         if ("jar".equals(protocol)) {
             // the last path segment before "!/" should be the JAR name
             final int sepIdx = path.lastIndexOf("!/");
@@ -602,7 +679,7 @@ public final class Formatters {
         } else if ("module".equals(protocol)) {
             return resource.getPath();
         }
-        
+
         // OK, that would have been too easy.  Next let's just grab the last piece before the class name
         for (int endIdx = path.lastIndexOf(classResourceName); endIdx >= 0; endIdx--) {
             char ch = path.charAt(endIdx);
@@ -612,7 +689,7 @@ public final class Formatters {
                 return firstPart.substring(lsIdx + 1);
             }
         }
-        
+
         // OK, just use the last segment
         final int endIdx = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
         return path.substring(endIdx + 1);
@@ -730,6 +807,41 @@ public final class Formatters {
     }
 
     /**
+     * Create a format step which emits the id if {@code id} is passed as the argument, otherwise the the thread name is
+     * used.
+     *
+     * @param argument     the argument which may be {@code id} to indicate the thread id or {@code null} to indicate
+     *                     the thread name
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     *
+     * @return the format step
+     */
+    public static FormatStep threadFormatStep(final String argument, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+        if (argument != null && THREAD_ID.equals(argument.toLowerCase(Locale.ROOT))) {
+            return threadIdFormatStep(leftJustify, minimumWidth, maximumWidth);
+        }
+        return threadNameFormatStep(leftJustify, minimumWidth, maximumWidth);
+    }
+
+    /**
+     * Create a format step which emits the id of the thread which originated the log record.
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @return the format step
+     */
+    public static FormatStep threadIdFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+        return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                builder.append(record.getThreadID());
+            }
+        };
+    }
+
+    /**
      * Create a format step which emits the name of the thread which originated the log record.
      *
      * @param leftJustify {@code true} to left justify, {@code false} to right justify
@@ -807,5 +919,97 @@ public final class Formatters {
             }
 
         };
+    }
+
+    /**
+     * Create a format step which emits a system property value associated with the given key.
+     *
+     * @param argument     the argument that may be a key or key with a default value separated by a colon, cannot be
+     *                     {@code null}
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     *
+     * @return the format step
+     *
+     * @throws IllegalArgumentException if the {@code argument} is {@code null}
+     * @throws SecurityException        if a security manager exists and its {@code checkPropertyAccess} method doesn't
+     *                                  allow access to the specified system property
+     */
+    public static FormatStep systemPropertyFormatStep(final String argument, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+        if (argument == null) {
+            throw new IllegalArgumentException("System property requires a key for the lookup");
+        }
+        return new JustifyingFormatStep(leftJustify, minimumWidth, maximumWidth) {
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                // Check for a default value
+                final String[] parts = argument.split("(?<!\\\\):");
+                final String key = parts[0];
+                String value = System.getProperty(key);
+                if (value == null && parts.length > 1) {
+                    value = parts[1];
+                }
+                builder.append(value);
+            }
+        };
+    }
+
+    static Map<Integer, Segment> parsePatternSegments(final String pattern) {
+        final Map<Integer, Segment> segments = new HashMap<Integer, Segment>();
+        StringBuilder len = new StringBuilder();
+        StringBuilder text = new StringBuilder();
+        int pos = 0;
+        // Process each character
+        for (char c : pattern.toCharArray()) {
+            if (c >= '0' && c <= '9') {
+                len.append(c);
+            } else if (c == '.') {
+                pos++;
+                final int i = (len.length() > 0 ? Integer.parseInt(len.toString()) : 0);
+                segments.put(pos, new Segment(i, text.length() > 0 ? text.toString() : null));
+                text = new StringBuilder();
+                len = new StringBuilder();
+            } else {
+                text.append(c);
+            }
+        }
+        if (len.length() > 0 || text.length() > 0) {
+            pos++;
+            final int i = (len.length() > 0 ? Integer.parseInt(len.toString()) : 0);
+            segments.put(pos, new Segment(i, text.length() > 0 ? text.toString() : null));
+        }
+        return Collections.unmodifiableMap(segments);
+    }
+
+    static Deque<String> parseCategorySegments(final String category) {
+        // The category needs to be split into segments
+        final Deque<String> categorySegments = new ArrayDeque<String>();
+        StringBuilder cat = new StringBuilder();
+        for (char c : category.toCharArray()) {
+            if (c == '.') {
+                if (cat.length() > 0) {
+                    categorySegments.add(cat.toString());
+                    cat = new StringBuilder();
+                } else {
+                    categorySegments.add("");
+                }
+            } else {
+                cat.append(c);
+            }
+        }
+        if (cat.length() > 0) {
+            categorySegments.add(cat.toString());
+        }
+        return categorySegments;
+    }
+
+    static class Segment {
+        final int len;
+        final String text;
+
+        Segment(final int len, final String text) {
+            this.len = len;
+            this.text = text;
+        }
     }
 }
