@@ -158,7 +158,7 @@ public final class NDC {
             final int sp = this.sp;
             for (int i = 0; i < sp; i++) {
                 b.append(data[i]);
-                if (i < sp) {
+                if ((i + 1) < sp) {
                     b.append('.');
                 }
             }
