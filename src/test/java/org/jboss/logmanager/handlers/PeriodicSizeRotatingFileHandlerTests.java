@@ -28,6 +28,7 @@ import java.util.Calendar;
 
 import org.jboss.logmanager.ExtLogRecord;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 import java.util.List;
 import java.util.ArrayList;
@@ -43,7 +44,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
     private final File logFile = new File(BASE_LOG_DIR, FILENAME);
 
     private static final List<Integer> supportedPeriods = new ArrayList<Integer>();
-    private static final Map<Integer, SimpleDateFormat> periodFormatMap = 
+    private static final Map<Integer, SimpleDateFormat> periodFormatMap =
         new HashMap<Integer, SimpleDateFormat>();
 
     static {
@@ -158,6 +159,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
     }
 
     @Test
+    @Ignore("LOGMGR-82")
     public void testPeriodicAndSizeRotate() throws Exception {
         for (int i=0; i < supportedPeriods.size(); i++) {
             //To cut down on unnecessary testing, let's only test
@@ -311,7 +313,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
               }
 
               builder.append("Handler: " + periodFormatMap.get(handlerPeriod).toPattern());
-              builder.append(" ; "); 
+              builder.append(" ; ");
               builder.append("Message: " + periodFormatMap.get(logMessagePeriod).toPattern());
               builder.append(" ; ");
               builder.append("testSize=" + testSize);
