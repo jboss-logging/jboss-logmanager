@@ -84,13 +84,11 @@ public final class FormatStringParser {
                 final char formatChar = formatCharString.charAt(0);
                 switch (formatChar) {
                     case 'c': {
-                        final int count = argument == null ? 0 : Integer.parseInt(argument);
-                        stepList.add(Formatters.loggerNameFormatStep(leftJustify, minimumWidth, maximumWidth, count));
+                        stepList.add(Formatters.loggerNameFormatStep(leftJustify, minimumWidth, maximumWidth, argument));
                         break;
                     }
                     case 'C': {
-                        final int count = argument == null ? 0 : Integer.parseInt(argument);
-                        stepList.add(Formatters.classNameFormatStep(leftJustify, minimumWidth, maximumWidth, count));
+                        stepList.add(Formatters.classNameFormatStep(leftJustify, minimumWidth, maximumWidth, argument));
                         break;
                     }
                     case 'd': {
@@ -157,7 +155,7 @@ public final class FormatStringParser {
                         break;
                     }
                     case 't': {
-                        stepList.add(Formatters.threadNameFormatStep(leftJustify, minimumWidth, maximumWidth));
+                        stepList.add(Formatters.threadFormatStep(argument, leftJustify, minimumWidth, maximumWidth));
                         break;
                     }
                     case 'x': {
@@ -171,6 +169,10 @@ public final class FormatStringParser {
                     }
                     case 'z': {
                         timeZone = TimeZone.getTimeZone(argument);
+                        break;
+                    }
+                    case '$': {
+                        stepList.add(Formatters.systemPropertyFormatStep(argument, leftJustify, minimumWidth, maximumWidth));
                         break;
                     }
                     case '%': {
