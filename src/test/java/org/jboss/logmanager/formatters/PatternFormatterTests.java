@@ -139,6 +139,34 @@ public class PatternFormatterTests {
         }
     }
 
+    @Test
+    public void truncation() throws Exception {
+        final ExtLogRecord record = createLogRecord("test");
+        PatternFormatter formatter = new PatternFormatter("'%-10.-21c' %m");
+        Assert.assertEquals("'PatternFormatterTests' test", formatter.format(record));
+
+        formatter = new PatternFormatter("'%10.-21c' %m");
+        Assert.assertEquals("'PatternFormatterTests' test", formatter.format(record));
+
+        formatter = new PatternFormatter("%.-21C %m");
+        Assert.assertEquals("PatternFormatterTests test", formatter.format(record));
+
+        formatter = new PatternFormatter("%.2m");
+        Assert.assertEquals("te", formatter.format(record));
+
+        formatter = new PatternFormatter("%.-2m");
+        Assert.assertEquals("st", formatter.format(record));
+
+        formatter = new PatternFormatter("%5m");
+        Assert.assertEquals(" test", formatter.format(record));
+
+        formatter = new PatternFormatter("%-5.-10m");
+        Assert.assertEquals("test ", formatter.format(record));
+
+        formatter = new PatternFormatter("%-5.10m");
+        Assert.assertEquals("test ", formatter.format(record));
+    }
+
     protected static ExtLogRecord createLogRecord(final String msg) {
         final ExtLogRecord result = new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, PatternFormatterTests.class.getName());
         result.setSourceClassName(PatternFormatterTests.class.getName());
