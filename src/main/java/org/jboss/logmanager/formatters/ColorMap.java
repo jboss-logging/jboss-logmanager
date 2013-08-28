@@ -120,8 +120,9 @@ public class ColorMap {
     static {
         // Turn color on by default for everything but Windows, unless ansicon is used
         String os = System.getProperty("os.name");
-        String nocolor = System.getProperty("org.jboss.logmanager.nocolor");
-        SUPPORTS_COLOR = os != null && nocolor == null && (!os.toLowerCase(Locale.ROOT).contains("win") || System.getenv("ANSICON") != null);
+        final boolean dft = os != null && (!os.toLowerCase(Locale.ROOT).contains("win") || System.getenv("ANSICON") != null);
+        final String nocolor = System.getProperty("org.jboss.logmanager.nocolor");
+        SUPPORTS_COLOR = (nocolor == null ? dft : "false".equalsIgnoreCase(nocolor));
 
         levels.put(SEVERE_NAME, SEVERE_NUM);
         levels.put(FATAL_NAME, FATAL_NUM);
