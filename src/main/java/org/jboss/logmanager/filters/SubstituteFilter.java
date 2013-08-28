@@ -22,13 +22,14 @@
 
 package org.jboss.logmanager.filters;
 
+import java.util.logging.LogRecord;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import java.util.logging.Filter;
-import java.util.logging.LogRecord;
 
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.ExtLogRecord.FormatStyle;
 
 /**
  * A filter which applies a text substitution on the message if the nested filter matches.
@@ -65,12 +66,22 @@ public final class SubstituteFilter implements Filter {
 
     /**
      * Apply the filter to the given log record.
+     * <p/>
+     * The {@link FormatStyle format style} will always be set to {@link FormatStyle#NO_FORMAT} as the formatted
+     * message will be the one used in the replacement.
      *
      * @param record the log record to inspect and modify
+     *
      * @return {@code true} always
      */
+    @Override
     public boolean isLoggable(final LogRecord record) {
-        final Matcher matcher = pattern.matcher(record.getMessage());
+        final Matcher matcher;
+        if (record instanceof ExtLogRecord) {
+            matcher = pattern.matcher(((ExtLogRecord) record).getFormattedMessage());
+        } else {
+            matcher = pattern.matcher(record.getMessage());
+        }
         final String msg;
         if (replaceAll) {
             msg = matcher.replaceAll(replacement);
@@ -78,8 +89,7 @@ public final class SubstituteFilter implements Filter {
             msg = matcher.replaceFirst(replacement);
         }
         if (record instanceof ExtLogRecord) {
-            final ExtLogRecord extRecord = (ExtLogRecord) record;
-            extRecord.setMessage(msg, extRecord.getFormatStyle());
+            ((ExtLogRecord) record).setMessage(msg, FormatStyle.NO_FORMAT);
         } else {
             record.setMessage(msg);
         }
