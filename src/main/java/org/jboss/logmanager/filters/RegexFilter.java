@@ -22,10 +22,10 @@
 
 package org.jboss.logmanager.filters;
 
+import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
 
 import java.util.logging.Filter;
-import java.util.logging.LogRecord;
 
 import org.jboss.logmanager.ExtLogRecord;
 
@@ -60,14 +60,11 @@ public final class RegexFilter implements Filter {
      * @param record the log record
      * @return {@code true} if the log record is loggable
      */
+    @Override
     public boolean isLoggable(final LogRecord record) {
-        String message = null;
         if (record instanceof ExtLogRecord) {
-            message = ((ExtLogRecord) record).getFormattedMessage();
+            return pattern.matcher(((ExtLogRecord) record).getFormattedMessage()).find();
         }
-        if (message == null) {
-            message = record.getMessage();
-        }
-        return pattern.matcher(message).find();
+        return pattern.matcher(record.getMessage()).find();
     }
 }
