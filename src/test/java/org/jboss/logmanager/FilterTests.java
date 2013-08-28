@@ -490,7 +490,7 @@ public final class FilterTests {
         final ExtLogRecord record = new ExtLogRecord(Level.INFO, "This is a test %s", FormatStyle.PRINTF, FilterTests.class.getName());
         record.setParameters(new String[] {"test"});
         filter.isLoggable(record);
-        assertEquals("Substitution was not correctly applied", "This is a lunches test", record.getFormattedMessage());
+        assertEquals("Substitution was not correctly applied", "This is a lunches lunches", record.getFormattedMessage());
     }
 
 
