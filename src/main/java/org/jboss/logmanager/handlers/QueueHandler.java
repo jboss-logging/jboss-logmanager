@@ -46,6 +46,7 @@ public class QueueHandler extends ExtHandler {
      * Construct a new instance with a default queue length.
      */
     public QueueHandler() {
+        super(true);
     }
 
     /**
@@ -54,6 +55,7 @@ public class QueueHandler extends ExtHandler {
      * @param limit the queue length to use
      */
     public QueueHandler(final int limit) {
+        super(true);
         if (limit < 1) {
             throw badQueueLength();
         }
@@ -63,8 +65,12 @@ public class QueueHandler extends ExtHandler {
     protected void doPublish(final ExtLogRecord record) {
         record.copyAll();
         synchronized (buffer) {
-            if (buffer.size() == limit) { buffer.removeFirst(); }
-            buffer.addLast(record);
+            if (isLoggable(record)) {
+                if (buffer.size() == limit) {
+                    buffer.removeFirst();
+                }
+                buffer.addLast(record);
+            }
             for (Handler handler : getHandlers()) {
                 handler.publish(record);
             }
