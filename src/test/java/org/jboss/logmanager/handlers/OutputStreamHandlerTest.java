@@ -26,6 +26,9 @@ import java.io.StringWriter;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 import static org.hamcrest.core.Is.is;
+
+import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.Level;
 import org.jboss.logmanager.handlers.ConsoleHandler.Target;
 import org.junit.After;
 import static org.junit.Assert.assertThat;
@@ -75,7 +78,7 @@ public class OutputStreamHandlerTest {
         handler.setWriter(out);
         handler.setEncoding("UTF-8");
         assertThat(handler.getEncoding(), is("UTF-8"));
-        handler.publish(AbstractHandlerTest.createLogRecord("Hello World"));
+       handler.publish(new ExtLogRecord(Level.INFO, "Hello World", getClass().getName()));
         assertThat(out.toString(), is("Hello World"));
     }
     
@@ -84,7 +87,7 @@ public class OutputStreamHandlerTest {
         handler = new OutputStreamHandler(NO_FORMATTER);
         handler.setWriter(out);
         handler.setEncoding(null);
-        handler.publish(AbstractHandlerTest.createLogRecord("Hello World"));
+        handler.publish(new ExtLogRecord(Level.INFO, "Hello World", getClass().getName()));
         assertThat(out.toString(), is("Hello World")); 
     }
     

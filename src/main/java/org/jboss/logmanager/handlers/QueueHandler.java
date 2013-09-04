@@ -30,6 +30,7 @@ import org.jboss.logmanager.ExtLogRecord;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 /**
  * A queue handler which retains the last few messages logged.  The handler can be used as-is to remember recent
@@ -46,7 +47,6 @@ public class QueueHandler extends ExtHandler {
      * Construct a new instance with a default queue length.
      */
     public QueueHandler() {
-        super(true);
     }
 
     /**
@@ -55,20 +55,29 @@ public class QueueHandler extends ExtHandler {
      * @param limit the queue length to use
      */
     public QueueHandler(final int limit) {
-        super(true);
         if (limit < 1) {
             throw badQueueLength();
         }
         this.limit = limit;
     }
 
+    public void publish(final ExtLogRecord record) {
+        if (isEnabled() && record != null) {
+            doPublish(record);
+        }
+    }
+
+    public void publish(final LogRecord record) {
+        if (isEnabled() && record != null) {
+            doPublish(ExtLogRecord.wrap(record));
+        }
+    }
+
     protected void doPublish(final ExtLogRecord record) {
         record.copyAll();
         synchronized (buffer) {
             if (isLoggable(record)) {
-                if (buffer.size() == limit) {
-                    buffer.removeFirst();
-                }
+                if (buffer.size() == limit) { buffer.removeFirst(); }
                 buffer.addLast(record);
             }
             for (Handler handler : getHandlers()) {

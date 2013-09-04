@@ -61,16 +61,6 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
     protected volatile Handler[] handlers;
 
     /**
-     * A value of {@code true} indicates the subclass is responsible for checking whether the {@link
-     * #publish(java.util.logging.LogRecord) published} record is {@link #isLoggable(java.util.logging.LogRecord)
-     * loggable}. A record is said to be loggable if the record is not {@code null} and {@link
-     * #isLoggable(java.util.logging.LogRecord)} returns {@code true}.
-     * <p/>
-     * Note the {@link #isEnabled() enabled flag} and a {@code null} check is done for you.
-     */
-    protected final boolean skipLevelFilterCheck;
-
-    /**
      * The atomic updater for the {@link #handlers} field.
      */
     protected static final AtomicArray<ExtHandler, Handler> handlersUpdater = AtomicArray.create(AtomicReferenceFieldUpdater.newUpdater(ExtHandler.class, Handler[].class, "handlers"), Handler.class);
@@ -79,30 +69,14 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
      * Construct a new instance.
      */
     protected ExtHandler() {
-        this(false);
-    }
-
-    /**
-     * Construct a new instance.
-     * <p/>
-     * If the {@code skipLevelFilterCheck} is set to {@code true} it's the responsibility of the subclass to check
-     * whether the record is {@link #isLoggable(java.util.logging.LogRecord) loggable} or not.
-     *
-     * @param skipLevelFilterCheck {@code true} if the {@link #isLoggable(java.util.logging.LogRecord)} should be
-     *                                 skipped, otherwise {@code false}
-     */
-    protected ExtHandler(final boolean skipLevelFilterCheck) {
         handlersUpdater.clear(this);
         super.setErrorManager(DEFAULT_ERROR_MANAGER);
-        this.skipLevelFilterCheck = skipLevelFilterCheck;
     }
 
     /** {@inheritDoc} */
-    public final void publish(final LogRecord record) {
-        if (enabled && record != null) {
-            if (skipLevelFilterCheck || isLoggable(record)) {
-                doPublish(ExtLogRecord.wrap(record));
-            }
+    public void publish(final LogRecord record) {
+        if (enabled && record != null && isLoggable(record)) {
+            doPublish(ExtLogRecord.wrap(record));
         }
     }
 
@@ -116,11 +90,9 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
      *
      * @param record the log record to publish
      */
-    public final void publish(final ExtLogRecord record) {
-        if (enabled && record != null) {
-            if (skipLevelFilterCheck || isLoggable(record)) {
-                doPublish(record);
-            }
+    public void publish(final ExtLogRecord record) {
+        if (enabled && record != null && isLoggable(record)) {
+            doPublish(record);
         }
     }
 
