@@ -38,6 +38,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.UnsupportedEncodingException;
 import java.util.logging.Handler;
+import java.util.logging.LogRecord;
 
 public final class HandlerTests {
 
@@ -174,7 +175,18 @@ public final class HandlerTests {
 
     static class MultiHandler extends ExtHandler {
         protected MultiHandler() {
-            super(true);
+        }
+
+        public void publish(final LogRecord record) {
+            if (isEnabled() && record != null) {
+                doPublish(ExtLogRecord.wrap(record));
+            }
+        }
+
+        public void publish(final ExtLogRecord record) {
+            if (isEnabled() && record != null) {
+                doPublish(record);
+            }
         }
 
         static MultiHandler of(final ExtHandler... handlers) {
