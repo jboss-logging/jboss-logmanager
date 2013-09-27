@@ -404,6 +404,23 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         return "handler";
     }
 
+    @Override
+    ConfigAction<Handler> getConstructAction() {
+        return new ConstructAction() {
+            @Override
+            public void rollback() {
+                final Handler handler = refs.remove(getName());
+                if (handler != null) {
+                    try {
+                        handler.close();
+                    } catch (Exception ignore) {
+                    }
+                }
+                super.rollback();
+            }
+        };
+    }
+
 
     @Override
     ConfigAction<Void> getRemoveAction() {
