@@ -24,8 +24,11 @@ package org.jboss.logmanager.handlers;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.logging.Formatter;
+import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import static org.hamcrest.core.Is.is;
+
+import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.handlers.ConsoleHandler.Target;
 import org.junit.After;
 import static org.junit.Assert.assertThat;
@@ -40,53 +43,57 @@ public class OutputStreamHandlerTest {
 
     private StringWriter out;
     private OutputStreamHandler handler;
-    
+
     private static final Formatter NO_FORMATTER = new Formatter() {
         public String format(final LogRecord record) {
             return record.getMessage();
         }
     };
-    
+
     public OutputStreamHandlerTest() {
     }
-    
+
     @Before
     public void prepareBuffer() {
         out = new StringWriter();
     }
-    
+
     @After
     public void cleanAll() throws IOException {
        handler.flush();
        handler.close();
        out.close();
     }
-    
+
     @Test
     public void testSetEncoding() throws Exception {
         handler = new OutputStreamHandler();
         handler.setEncoding("UTF-8");
         assertThat(handler.getEncoding(), is("UTF-8"));
     }
-    
+
    @Test
-    public void testSetEncodingOnOutputStream() throws Exception {  
-       handler = new ConsoleHandler(Target.CONSOLE, NO_FORMATTER);
+    public void testSetEncodingOnOutputStream() throws Exception {
+       handler = new ConsoleHandler(Target.SYSTEM_OUT, NO_FORMATTER);
         handler.setWriter(out);
         handler.setEncoding("UTF-8");
         assertThat(handler.getEncoding(), is("UTF-8"));
-        handler.publish(AbstractHandlerTest.createLogRecord("Hello World"));
+        handler.publish(createLogRecord("Hello World"));
         assertThat(out.toString(), is("Hello World"));
     }
-    
+
     @Test
     public void testSetNullEncodingOnOutputStream() throws Exception {
         handler = new OutputStreamHandler(NO_FORMATTER);
         handler.setWriter(out);
         handler.setEncoding(null);
-        handler.publish(AbstractHandlerTest.createLogRecord("Hello World"));
-        assertThat(out.toString(), is("Hello World")); 
+        handler.publish(createLogRecord("Hello World"));
+        assertThat(out.toString(), is("Hello World"));
     }
-    
-    
+
+    protected ExtLogRecord createLogRecord(final String msg) {
+        return new ExtLogRecord(Level.INFO, msg, getClass().getName());
+    }
+
+
 }
