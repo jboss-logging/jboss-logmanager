@@ -69,7 +69,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
             }
 
             public void rollback() {
-                filter = oldFilterName;
+                LoggerConfigurationImpl.this.filter = oldFilterName;
             }
         });
     }
