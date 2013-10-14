@@ -40,6 +40,17 @@ public final class MDC {
      * @return the value
      */
     public static String get(String key) {
+        final Object value = getObject(key);
+        return value == null ? null : value.toString();
+    }
+
+    /**
+     * Get the value for a key, or {@code null} if there is no mapping.
+     *
+     * @param key the key
+     * @return the value
+     */
+    public static Object getObject(String key) {
         return mdc.get().get(key);
     }
 
@@ -51,6 +62,18 @@ public final class MDC {
      * @return the old value or {@code null} if there was none
      */
     public static String put(String key, String value) {
+        final Object oldValue = putObject(key, value);
+        return oldValue == null ? null : oldValue.toString();
+    }
+
+    /**
+     * Set the value of a key, returning the old value (if any) or {@code null} if there was none.
+     *
+     * @param key the key
+     * @param value the new value
+     * @return the old value or {@code null} if there was none
+     */
+    public static Object putObject(String key, Object value) {
         if (key == null) {
             throw new NullPointerException("key is null");
         }
@@ -67,6 +90,17 @@ public final class MDC {
      * @return the old value or {@code null} if there was none
      */
     public static String remove(String key) {
+        final Object oldValue = removeObject(key);
+        return oldValue == null ? null : oldValue.toString();
+    }
+
+    /**
+     * Remove a key.
+     *
+     * @param key the key
+     * @return the old value or {@code null} if there was none
+     */
+    public static Object removeObject(String key) {
         return mdc.get().remove(key);
     }
 
@@ -76,10 +110,27 @@ public final class MDC {
      * @return a copy of the map
      */
     public static Map<String, String> copy() {
-        return mdc.get().clone();
+        return fastCopy();
     }
 
     static FastCopyHashMap<String, String> fastCopy() {
+        final FastCopyHashMap<String, String> result = new FastCopyHashMap<String, String>();
+        for (Map.Entry<String, Object> entry : mdc.get().entrySet()) {
+            result.put(entry.getKey(), entry.getValue().toString());
+        }
+        return result;
+    }
+
+    /**
+     * Get a copy of the MDC map.  This is a relatively expensive operation.
+     *
+     * @return a copy of the map
+     */
+    public static Map<String, Object> copyObject() {
+        return fastCopyObject();
+    }
+
+    static FastCopyHashMap<String, Object> fastCopyObject() {
         return mdc.get().clone();
     }
 
@@ -90,16 +141,16 @@ public final class MDC {
         mdc.get().clear();
     }
 
-    private static final class Holder extends InheritableThreadLocal<FastCopyHashMap<String, String>> {
+    private static final class Holder extends InheritableThreadLocal<FastCopyHashMap<String, Object>> {
 
         @Override
-        protected FastCopyHashMap<String, String> childValue(final FastCopyHashMap<String, String> parentValue) {
-            return new FastCopyHashMap<String, String>(parentValue);
+        protected FastCopyHashMap<String, Object> childValue(final FastCopyHashMap<String, Object> parentValue) {
+            return new FastCopyHashMap<String, Object>(parentValue);
         }
 
         @Override
-        protected FastCopyHashMap<String, String> initialValue() {
-            return new FastCopyHashMap<String, String>();
+        protected FastCopyHashMap<String, Object> initialValue() {
+            return new FastCopyHashMap<String, Object>();
         }
     }
 }
