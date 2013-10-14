@@ -138,7 +138,7 @@ public class ExtLogRecord extends LogRecord {
 
     private String ndc;
     private FormatStyle formatStyle = FormatStyle.MESSAGE_FORMAT;
-    private FastCopyHashMap<String, String> mdcCopy;
+    private FastCopyHashMap<String, Object> mdcCopy;
     private int sourceLineNumber = -1;
     private String sourceFileName;
     private String resourceKey;
@@ -176,7 +176,7 @@ public class ExtLogRecord extends LogRecord {
      */
     public void copyMdc() {
         if (mdcCopy == null) {
-            mdcCopy = MDC.fastCopy();
+            mdcCopy = MDC.fastCopyObject();
         }
     }
 
@@ -187,8 +187,12 @@ public class ExtLogRecord extends LogRecord {
      * @return the property value
      */
     public String getMdc(String key) {
-        final Map<String, String> mdcCopy = this.mdcCopy;
-        return mdcCopy != null ? mdcCopy.get(key) : MDC.get(key);
+        final Map<String, Object> mdcCopy = this.mdcCopy;
+        if (mdcCopy == null) {
+            return MDC.get(key);
+        }
+        final Object value =  mdcCopy.get(key);
+        return value == null ? null : value.toString();
     }
 
     /**
@@ -198,9 +202,16 @@ public class ExtLogRecord extends LogRecord {
      */
     public Map<String, String> getMdcCopy() {
         if (mdcCopy == null) {
-            mdcCopy = MDC.fastCopy();
+            mdcCopy = MDC.fastCopyObject();
         }
-        return mdcCopy.clone();
+        // Create a new map with string values
+        final FastCopyHashMap<String, String> newMdc = new FastCopyHashMap<String, String>();
+        for (Map.Entry<String, Object> entry : mdcCopy.entrySet()) {
+            final String key = entry.getKey();
+            final Object value = entry.getValue();
+            newMdc.put(key, (value == null ? null : value.toString()));
+        }
+        return newMdc;
     }
 
     /**
@@ -212,7 +223,8 @@ public class ExtLogRecord extends LogRecord {
      */
     public String putMdc(String key, String value) {
         copyMdc();
-        return mdcCopy.put(key, value);
+        final Object oldValue = mdcCopy.put(key, value);
+        return oldValue == null ? null : oldValue.toString();
     }
 
     /**
@@ -223,7 +235,8 @@ public class ExtLogRecord extends LogRecord {
      */
     public String removeMdc(String key) {
         copyMdc();
-        return mdcCopy.remove(key);
+        final Object oldValue = mdcCopy.remove(key);
+        return oldValue == null ? null : oldValue.toString();
     }
 
     /**
@@ -232,12 +245,12 @@ public class ExtLogRecord extends LogRecord {
      * @param sourceMap the source man, must not be {@code null}
      */
     public void setMdc(Map<?, ?> sourceMap) {
-        final FastCopyHashMap<String, String> newMdc = new FastCopyHashMap<String, String>();
+        final FastCopyHashMap<String, Object> newMdc = new FastCopyHashMap<String, Object>();
         for (Map.Entry<?, ?> entry : sourceMap.entrySet()) {
             final Object key = entry.getKey();
             final Object value = entry.getValue();
             if (key != null && value != null) {
-                newMdc.put(key.toString(), value.toString());
+                newMdc.put(key.toString(), value);
             }
         }
         mdcCopy = newMdc;
