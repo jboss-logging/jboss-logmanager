@@ -44,8 +44,7 @@ public final class LogContext implements Protectable {
     static final Permission SET_CONTEXT_SELECTOR_PERMISSION = new RuntimePermission("setLogContextSelector", null);
     static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
 
-    @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
-    private final LoggerNode rootLogger = new LoggerNode(this);
+    private final LoggerNode rootLogger;
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
     private final boolean strong;
@@ -104,6 +103,7 @@ public final class LogContext implements Protectable {
     LogContext(final boolean strong) {
         this.strong = strong;
         levelMapReference = new AtomicReference<Map<String, LevelRef>>(LazyHolder.INITIAL_LEVEL_MAP);
+        rootLogger = new LoggerNode(this);
     }
 
     /**
