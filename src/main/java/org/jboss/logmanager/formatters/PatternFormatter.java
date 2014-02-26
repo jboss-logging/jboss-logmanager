@@ -30,11 +30,15 @@ public class PatternFormatter extends MultistepFormatter {
     private volatile String pattern;
 
     private volatile ColorMap colors;
+
+    private volatile FormatStringParser parser;
+
     /**
      * Construct a new instance.
      */
     public PatternFormatter() {
         this.colors = ColorMap.DEFAULT_COLOR_MAP;
+        this.parser = new FormatStringParser();
     }
 
     /**
@@ -43,9 +47,10 @@ public class PatternFormatter extends MultistepFormatter {
      * @param pattern the initial pattern
      */
     public PatternFormatter(String pattern) {
-        super(FormatStringParser.getSteps(pattern, ColorMap.DEFAULT_COLOR_MAP));
         this.colors = ColorMap.DEFAULT_COLOR_MAP;
         this.pattern = pattern;
+        this.parser = new FormatStringParser();
+        setSteps(parser.getSteps(pattern, colors));
     }
 
     /**
@@ -58,7 +63,19 @@ public class PatternFormatter extends MultistepFormatter {
         ColorMap colorMap = ColorMap.create(colors);
         this.colors = colorMap;
         this.pattern = pattern;
-        setSteps(FormatStringParser.getSteps(pattern, colorMap));
+        setSteps(parser.getSteps(pattern, colorMap));
+    }
+
+    public PatternFormatter(String pattern, String colors, FormatStringParser parser) {
+        if (colors != null) {
+            ColorMap colorMap = ColorMap.create(colors);
+            this.colors = colorMap;
+        } else {
+            this.colors = ColorMap.DEFAULT_COLOR_MAP;
+        }
+        this.pattern = pattern;
+        this.parser = parser;
+        setSteps(parser.getSteps(pattern, this.colors));
     }
 
     /**
@@ -76,7 +93,7 @@ public class PatternFormatter extends MultistepFormatter {
      * @param pattern the pattern
      */
     public void setPattern(final String pattern) {
-        setSteps(FormatStringParser.getSteps(pattern, colors));
+        setSteps(parser.getSteps(pattern, colors));
         this.pattern = pattern;
     }
 
@@ -130,11 +147,22 @@ public class PatternFormatter extends MultistepFormatter {
         ColorMap colorMap = ColorMap.create(colors);
         this.colors = colorMap;
         if (pattern != null) {
-            setSteps(FormatStringParser.getSteps(pattern, colorMap));
+            setSteps(parser.getSteps(pattern, colorMap));
         }
     }
 
     public String getColors() {
         return this.colors.toString();
+    }
+    
+    public FormatStringParser getParser() {
+        return this.parser;
+    }
+    
+    public void setParser(FormatStringParser parser) {
+        this.parser = parser;
+        if (pattern != null) {
+            setSteps(parser.getSteps(pattern, colors));
+        }
     }
 }
