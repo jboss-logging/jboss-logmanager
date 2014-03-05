@@ -23,6 +23,7 @@
 package org.jboss.logmanager.formatters;
 
 import java.net.URL;
+import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.ArrayDeque;
@@ -44,7 +45,6 @@ import java.util.TimeZone;
 import static java.lang.Math.min;
 import static java.lang.Math.max;
 import static java.lang.System.getSecurityManager;
-import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.PrintWriter;
@@ -62,6 +62,22 @@ public final class Formatters {
     private static final boolean DEFAULT_TRUNCATE_BEGINNING = false;
     private static final String NEW_LINE = String.format("%n");
     private static final Pattern PRECISION_INT_PATTERN = Pattern.compile("\\d+");
+
+    private static final class Gateway extends SecurityManager {
+        protected Class[] getClassContext() {
+            return super.getClassContext();
+        }
+    }
+
+    private static final Gateway GATEWAY;
+
+    static {
+        GATEWAY = AccessController.doPrivileged(new PrivilegedAction<Gateway>() {
+            public Gateway run() {
+                return new Gateway();
+            }
+        });
+    }
 
 
     private Formatters() {
@@ -746,19 +762,14 @@ public final class Formatters {
 
             private Class<?> guessClass(final String name) {
                 try {
-                    try {
-                        final ClassLoader tccl = currentThread().getContextClassLoader();
-                        if (tccl != null) return Class.forName(name, false, tccl);
-                    } catch (ClassNotFoundException e) {
-                        // ok, try something else...
+                    final Class<?>[] callStack = GATEWAY.getClassContext();
+                    for (Class<?> c : callStack) {
+                        if (c.getName().equals(name)) {
+                            return c;
+                        }
                     }
-                    try {
-                        return Class.forName(name);
-                    } catch (ClassNotFoundException e) {
-                        // ok, try something else...
-                    }
-                    return Class.forName(name, false, null);
-                } catch (Throwable t) {
+                    return null;
+                } catch (Throwable ignore) {
                     return null;
                 }
             }
