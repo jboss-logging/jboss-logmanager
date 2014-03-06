@@ -1039,7 +1039,7 @@ public class SyslogHandler extends ExtHandler {
         final int index = name.indexOf("@");
         if (index > -1) {
             try {
-                result = Integer.toString(Integer.valueOf(name.substring(0, index - 1)));
+                result = Integer.toString(Integer.valueOf(name.substring(0, index)));
             } catch (NumberFormatException ignore) {
                 // ignore
             }
