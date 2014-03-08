@@ -169,7 +169,7 @@ public class SyslogHandlerTests {
         final Calendar cal = getCalendar();
         // Create the record
         handler.setHostname("test");
-        final String part1 = "This is a longer message and should be truncated after this.";
+        final String part1 = "This is a longer message and should be truncated after this. even with 4 byte UTF-8 charactors too: 𥹖";
         final String part2 = "Truncated portion of the message that will not be shown in.";
         final String message = part1 + " " + part2;
 
