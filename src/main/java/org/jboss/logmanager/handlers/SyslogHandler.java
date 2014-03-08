@@ -541,7 +541,7 @@ public class SyslogHandler extends ExtHandler {
                     logMsg = record.getFormattedMessage();
                 }
                 // Create a message buffer
-                final ByteOutputStream message = new ByteOutputStream();
+                final ByteOutputStream message = new ByteOutputStream(getEncoding());
                 // Write the message to the buffer, the offset is the next character available if there is overflow
                 int offset = message.writeString(logMsg, escapeEnabled, maxMsgLen);
                 sendMessage(header, message.toByteArray(), trailer);
@@ -574,7 +574,7 @@ public class SyslogHandler extends ExtHandler {
      * @throws IOException if there is an error writing the message
      */
     private void sendMessage(final byte[] header, final byte[] message, final byte[] trailer) throws IOException {
-        final ByteOutputStream payload = new ByteOutputStream();
+        final ByteOutputStream payload = new ByteOutputStream(getEncoding());
         // Prefix the size of the message if counting framing is being used
         if (useCountingFraming) {
             int len = header.length + message.length + (useDelimiter ? trailer.length : 0);
@@ -1082,7 +1082,7 @@ public class SyslogHandler extends ExtHandler {
     }
 
     protected byte[] createRFC5424Header(final ExtLogRecord record) throws IOException {
-        final ByteOutputStream buffer = new ByteOutputStream();
+        final ByteOutputStream buffer = new ByteOutputStream(getEncoding());
         // Set the property
         buffer.writeChar('<').writeInt(calculatePriority(record.getLevel(), facility)).writeChar('>');
         // Set the version
@@ -1194,7 +1194,7 @@ public class SyslogHandler extends ExtHandler {
     }
 
     protected byte[] createRFC3164Header(final ExtLogRecord record) throws IOException {
-        final ByteOutputStream buffer = new ByteOutputStream();
+        final ByteOutputStream buffer = new ByteOutputStream(getEncoding());
         // Set the property
         buffer.writeChar('<').writeInt(calculatePriority(record.getLevel(), facility)).writeChar('>');
 
@@ -1247,6 +1247,15 @@ public class SyslogHandler extends ExtHandler {
 
     static class ByteOutputStream extends ByteArrayOutputStream {
         static final Charset US_ASCII_CHARSET = Charset.forName("US-ASCII");
+        private Charset charset;
+        
+        public ByteOutputStream(String charset){
+        	this(Charset.forName(charset != null ? charset : DEFAULT_ENCODING ));
+        }
+        
+        public ByteOutputStream(Charset charset){
+        	this.charset = charset;
+        }
 
         public ByteOutputStream writeUSASCII(final String s, int maxLen) throws IOException {
             final byte[] bytes = s.getBytes(US_ASCII_CHARSET);
@@ -1262,13 +1271,21 @@ public class SyslogHandler extends ExtHandler {
         public int writeString(final String s, final boolean escape, final int maxLen) throws IOException {
             int offset = 0;
             int count = 0;
-            for (char c : s.toCharArray()) {
+            for (int i = 0; i < s.length(); i++) {
+                final char c = s.charAt(i);
+                final byte[] b;
+                boolean isSurrogatePair = false;
+                if (i < s.length() - 1 && (isSurrogatePair = Character.isSurrogatePair(c, s.charAt(i + 1)))) {
+                    final int codePoint = s.codePointAt(i++);
+                    b = new String(new int[]{codePoint}, 0, 1).getBytes(charset); 
+                }else{
+                    b = encode(c, escape);
+                }
                 // Process each character, if maxLen is hit we break and return the offset
-                final byte[] b = encode(c, escape);
                 count += b.length;
                 if (count <= maxLen) {
                     write(b);
-                    offset++;
+                    offset += isSurrogatePair ? 2 : 1;
                 } else {
                     return offset;
                 }
@@ -1290,7 +1307,7 @@ public class SyslogHandler extends ExtHandler {
             return this;
         }
 
-        private static byte[] encode(final char c, final boolean escape) {
+        private byte[] encode(final char c, final boolean escape) {
             final byte[] result;
             if (c >= 0 && c <= 0x7f) {
                 if (escape && c >= 0 && c < 32) {
@@ -1312,10 +1329,8 @@ public class SyslogHandler extends ExtHandler {
                 } else {
                     result = new byte[] {(byte) c};
                 }
-            } else if (c <= 0x07ff) {
-                result = new byte[] {(byte) (0xc0 | 0x1f & c >> 6), (byte) (0x80 | 0x3f & c)};
             } else {
-                result = new byte[] {(byte) (0xe0 | 0x0f & c >> 12), (byte) (0xc0 | 0x1f & c >> 6), (byte) (0x80 | 0x3f & c)};
+                result = String.valueOf(c).getBytes(charset);
             }
             return result;
         }
