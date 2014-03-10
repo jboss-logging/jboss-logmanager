@@ -1,9 +1,13 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.util.concurrent.TimeUnit;
 
+import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.Logger;
 import org.jboss.logmanager.formatters.PatternFormatter;
+import org.jboss.logmanager.handlers.AsyncHandler.OverflowAction;
 import org.jboss.logmanager.handlers.SyslogHandler.Protocol;
 import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
 import org.junit.Before;
@@ -39,6 +43,39 @@ public class SyslogTest {
     }
 
     @Test
+    public void tcpLocal() throws Exception {
+        port = 10514;
+        // Setup the handler
+        final SyslogHandler handler = createHandler();
+        handler.setSyslogType(SyslogType.RFC5424);
+        handler.setProtocol(Protocol.TCP);
+        handler.setAutoFlush(true);
+
+        // Run the tests
+        tcpLocal(handler);
+    }
+
+    @Test
+    public void tcpLocalAsync() throws Exception {
+        port = 10514;
+        // Setup the handler
+        final SyslogHandler syslogHandler = createHandler();
+        syslogHandler.setSyslogType(SyslogType.RFC5424);
+        syslogHandler.setProtocol(Protocol.TCP);
+        syslogHandler.setAutoFlush(true);
+
+        final AsyncHandler asyncHandler = new AsyncHandler();
+        asyncHandler.setAutoFlush(true);
+        asyncHandler.addHandler(syslogHandler);
+        asyncHandler.setOverflowAction(OverflowAction.BLOCK);
+        // Block until connected
+        syslogHandler.setBlockOnReconnect(true);
+
+        // Run the tests
+        tcpLocal(asyncHandler);
+    }
+
+    @Test
     public void tcpSyslog() throws Exception {
         // Setup the handler
         final SyslogHandler handler = createHandler();
@@ -71,10 +108,48 @@ public class SyslogTest {
         handler.close();
     }
 
-    private void doLog(final SyslogHandler handler) throws Exception {
+    private void tcpLocal(final ExtHandler handler) throws Exception {
+        SimpleLogServer server = SimpleLogServer.createTcp(System.out, InetAddress.getLocalHost(), port);
+        try {
+
+            doLog(handler);
+            // Sleep just to make sure all is written before we close down the server
+            TimeUnit.SECONDS.sleep(5L);
+
+            // Close the server and spin up a new one
+            server.close();
+            // Allow a failure
+            try {
+                doLog(handler, 3);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            // Spin up a new server
+            server = SimpleLogServer.createTcp(System.out, InetAddress.getLocalHost(), port);
+            // Sleep again for a moment just to give it chance to reconnect, 6 seconds should do as it should reconnect in 5
+            TimeUnit.SECONDS.sleep(6L);
+
+            doLog(handler, 6);
+        } finally {
+            handler.flush();
+            // Async handlers might require a second to flush
+            TimeUnit.SECONDS.sleep(1L);
+            handler.close();
+            // Allow everything to finish before we close dow the server
+            TimeUnit.SECONDS.sleep(2L);
+            server.close();
+        }
+    }
+
+    private void doLog(final ExtHandler handler) throws Exception {
+        doLog(handler, 0);
+    }
+
+    private void doLog(final ExtHandler handler, final int start) throws Exception {
+        final int end = start + logCount;
         final Logger logger = Logger.getLogger(SyslogTest.class.getName());
         logger.addHandler(handler);
-        for (int i = 0; i < logCount; i++) {
+        for (int i = start; i < end; i++) {
             if (message == null) {
                 logger.warning(String.format("This is a test syslog message. \n Iteration: %d", i));
             } else {
