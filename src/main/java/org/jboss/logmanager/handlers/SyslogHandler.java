@@ -33,6 +33,7 @@ import java.text.DateFormatSymbols;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Locale;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
@@ -322,6 +323,7 @@ public class SyslogHandler extends ExtHandler {
     private boolean useDelimiter;
     private boolean truncate;
     private int maxLen;
+    private boolean blockOnReconnect;
 
     /**
      * The default class constructor.
@@ -487,6 +489,7 @@ public class SyslogHandler extends ExtHandler {
         } else if (this.syslogType == SyslogType.RFC5424) {
             maxLen = 2048;
         }
+        blockOnReconnect = false;
     }
 
     @Override
@@ -577,6 +580,13 @@ public class SyslogHandler extends ExtHandler {
         payload.append(message);
         if (useDelimiter) payload.append(trailer);
         out.write(payload.toArray());
+        // If this is a TcpOutputStream print any errors that may have occurred
+        if (out instanceof TcpOutputStream) {
+            final Collection<Exception> errors = ((TcpOutputStream) out).getErrors();
+            for (Exception error : errors) {
+                reportError("Error writing to TCP stream", error, ErrorManager.WRITE_FAILURE);
+            }
+        }
     }
 
     @Override
@@ -619,6 +629,39 @@ public class SyslogHandler extends ExtHandler {
         checkAccess(this);
         synchronized (outputLock) {
             this.appName = appName;
+        }
+    }
+
+    /**
+     * Indicates whether or not a {@link org.jboss.logmanager.handlers.SyslogHandler.Protocol#TCP TCP} or {@link
+     * org.jboss.logmanager.handlers.SyslogHandler.Protocol#SSL_TCP SSL TCP} connection should block when attempting to
+     * reconnect.
+     *
+     * @return {@code true} if blocking is enabled, otherwise {@code false}
+     */
+    public boolean isBlockOnReconnect() {
+        synchronized (outputLock) {
+            return blockOnReconnect;
+        }
+    }
+
+    /**
+     * Enables or disables blocking when attempting to reconnect a {@link org.jboss.logmanager.handlers.SyslogHandler.Protocol#TCP
+     * TCP} or {@link org.jboss.logmanager.handlers.SyslogHandler.Protocol#SSL_TCP SSL TCP} protocol.
+     * <p/>
+     * If set to {@code true} the {@code publish} methods will block when attempting to reconnect. This is only
+     * advisable to be set to {@code true} if using an asynchronous handler.
+     *
+     * @param blockOnReconnect {@code true} to block when reconnecting or {@code false} to reconnect asynchronously
+     *                         discarding any new messages coming in
+     */
+    public void setBlockOnReconnect(final boolean blockOnReconnect) {
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.blockOnReconnect = blockOnReconnect;
+            if (out instanceof TcpOutputStream) {
+                ((TcpOutputStream) out).setBlockOnReconnect(blockOnReconnect);
+            }
         }
     }
 
@@ -1057,11 +1100,11 @@ public class SyslogHandler extends ExtHandler {
             // Check the sockets
             try {
                 if (protocol == Protocol.TCP) {
-                    out = new TcpOutputStream(serverAddress, port);
+                    out = new TcpOutputStream(serverAddress, port, blockOnReconnect);
                 } else if (protocol == Protocol.UDP) {
                     out = new UdpOutputStream(serverAddress, port);
                 } else if (protocol == Protocol.SSL_TCP) {
-                    out = new SslTcpOutputStream(serverAddress, port);
+                    out = new SslTcpOutputStream(serverAddress, port, blockOnReconnect);
                 } else {
                     throw new IllegalStateException("Invalid protocol: " + protocol);
                 }
