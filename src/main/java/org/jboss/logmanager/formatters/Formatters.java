@@ -22,7 +22,10 @@
 
 package org.jboss.logmanager.formatters;
 
+import java.net.InetAddress;
 import java.net.URL;
+import java.net.UnknownHostException;
+import java.security.AccessController;
 import java.security.CodeSource;
 import java.security.ProtectionDomain;
 import java.util.ArrayDeque;
@@ -33,6 +36,7 @@ import java.util.Locale;
 import java.util.Map;
 import org.jboss.logmanager.ExtLogRecord;
 
+import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
@@ -430,6 +434,44 @@ public final class Formatters {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceFileName());
+            }
+        };
+    }
+
+    /**
+     * Create a format step which emits the hostname.
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param qualified {@code true} to use the fully qualified host name, {@code false} to only use the
+     * @return the format step
+     */
+    public static FormatStep hostnameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final boolean qualified) {
+        final Properties props;
+        final Map<String, String> env;
+        if (System.getSecurityManager() == null) {
+            props = System.getProperties();
+            env = System.getenv();
+        } else {
+            props = AccessController.doPrivileged(new PrivilegedAction<Properties>() {
+                @Override
+                public Properties run() {
+                    return System.getProperties();
+                }
+            });
+            env = AccessController.doPrivileged(new PrivilegedAction<Map<String, String>>() {
+                @Override
+                public Map<String, String> run() {
+                    return System.getenv();
+                }
+            });
+        }
+        final String hostname = findHostname(props, env, qualified);
+        return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                builder.append(hostname);
             }
         };
     }
@@ -1253,6 +1295,38 @@ public final class Formatters {
             categorySegments.add(cat.toString());
         }
         return categorySegments;
+    }
+
+    private static String findHostname(final Properties props, final Map<String, String> env, final boolean qualified) {
+        if (qualified) {
+            return findQualifiedHostname(props, env);
+        }
+        String hostname = props.getProperty("jboss.host.name");
+        if (hostname == null) {
+            final String qualifiedHostname = findQualifiedHostname(props, env);
+            final int index = qualifiedHostname.indexOf('.');
+            hostname = (index == -1 ? qualifiedHostname : qualifiedHostname.substring(0, index));
+        }
+        return hostname;
+    }
+
+    private static String findQualifiedHostname(final Properties props, final Map<String, String> env) {
+        // First check the system property
+        String qualifiedHostname = props.getProperty("jboss.qualified.host.name");
+        if (qualifiedHostname == null) {
+            qualifiedHostname = env.get("HOSTNAME");
+            if (qualifiedHostname == null) {
+                env.get("COMPUTERNAME");
+            }
+            if (qualifiedHostname == null) {
+                try {
+                    qualifiedHostname = InetAddress.getLocalHost().getHostName();
+                } catch (UnknownHostException ignore) {
+                    qualifiedHostname = "unknown-host.unknown-domain";
+                }
+            }
+        }
+        return qualifiedHostname;
     }
 
     static class Segment {
