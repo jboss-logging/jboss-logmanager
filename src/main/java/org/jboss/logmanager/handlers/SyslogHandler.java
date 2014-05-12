@@ -1313,9 +1313,9 @@ public class SyslogHandler extends ExtHandler {
                     result = new byte[] {(byte) c};
                 }
             } else if (c <= 0x07ff) {
-                result = new byte[] {(byte) (0xc0 | 0x1f & c >> 6), (byte) (0x80 | 0x3f & c)};
+                result = new byte[] {(byte) (0xc0 | (0x1f & (c >> 6))), (byte) (0x80 | (0x3f & c))};
             } else {
-                result = new byte[] {(byte) (0xe0 | 0x0f & c >> 12), (byte) (0xc0 | 0x1f & c >> 6), (byte) (0x80 | 0x3f & c)};
+                result = new byte[] {(byte) (0xe0 | (0x0f & (c >> 12))), (byte) (0x80 | (0x3f & (c >> 6))), (byte) (0x80 | (0x3f & c))};
             }
             return result;
         }
