@@ -192,6 +192,40 @@ public class SyslogHandlerTests {
         Assert.assertEquals(expectedMessage, out.toString());
     }
 
+    @Test
+    public void testMultibyteCharacters() throws Exception {
+        // Setup the handler
+        handler.setSyslogType(SyslogType.RFC5424);
+        handler.setUseMessageDelimiter(false);
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        handler.setOutputStream(out);
+
+        final Calendar cal = getCalendar();
+        // Create the record
+        handler.setHostname("test");
+        final String part1 = "This is a message with multibyte characters. À あ";
+        final String part2 = "あ À Truncates should be work correctly.";
+        final String message = part1 + " " + part2;
+
+        final String header = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM;
+
+        handler.setMaxLength(header.getBytes().length + part1.getBytes().length);
+        handler.setTruncate(true);
+
+        ExtLogRecord record = createRecord(cal, message);
+        String expectedMessage = header + part1;
+        handler.publish(record);
+        Assert.assertEquals(expectedMessage, out.toString());
+
+        out.reset();
+        // Wrap a message
+        handler.setTruncate(false);
+        handler.publish(record);
+        // Extra space from message
+        expectedMessage = header + part1 + header + " " + part2;
+        Assert.assertEquals(expectedMessage, out.toString());
+    }
+
     private static ExtLogRecord createRecord(final Calendar cal, final String message) {
         final String loggerName = SyslogHandlerTests.class.getName();
         final ExtLogRecord record = new ExtLogRecord(Level.INFO, message, loggerName);

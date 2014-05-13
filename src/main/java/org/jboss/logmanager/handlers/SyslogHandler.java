@@ -1262,9 +1262,10 @@ public class SyslogHandler extends ExtHandler {
         public int writeString(final String s, final boolean escape, final int maxLen) throws IOException {
             int offset = 0;
             int count = 0;
-            for (char c : s.toCharArray()) {
+            final int len = s.length();
+            for (int i = 0; i < len; i++) {
                 // Process each character, if maxLen is hit we break and return the offset
-                final byte[] b = encode(c, escape);
+                final byte[] b = encode(s.charAt(i), escape);
                 count += b.length;
                 if (count <= maxLen) {
                     write(b);
@@ -1313,9 +1314,9 @@ public class SyslogHandler extends ExtHandler {
                     result = new byte[] {(byte) c};
                 }
             } else if (c <= 0x07ff) {
-                result = new byte[] {(byte) (0xc0 | 0x1f & c >> 6), (byte) (0x80 | 0x3f & c)};
+                result = new byte[] {(byte) (0xc0 | (0x1f & (c >> 6))), (byte) (0x80 | (0x3f & c))};
             } else {
-                result = new byte[] {(byte) (0xe0 | 0x0f & c >> 12), (byte) (0xc0 | 0x1f & c >> 6), (byte) (0x80 | 0x3f & c)};
+                result = new byte[] {(byte) (0xe0 | (0x0f & (c >> 12))), (byte) (0x80 | (0x3f & (c >> 6))), (byte) (0x80 | (0x3f & c))};
             }
             return result;
         }
