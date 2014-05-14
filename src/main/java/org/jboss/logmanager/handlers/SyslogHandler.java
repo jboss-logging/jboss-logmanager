@@ -22,7 +22,6 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.io.ByteArrayOutputStream;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
@@ -30,8 +29,9 @@ import java.io.OutputStream;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.charset.Charset;
 import java.text.DateFormatSymbols;
+import java.text.Normalizer;
+import java.text.Normalizer.Form;
 import java.util.Calendar;
 import java.util.Locale;
 import java.util.logging.ErrorManager;
@@ -129,12 +129,6 @@ import org.jboss.logmanager.ExtLogRecord;
  * for more details on framing types.</td>
  *          <td>{@code boolean}</td>
  *          <td>{@code false}</td>
- *      </tr>
- *      <tr>
- *          <td>escapeEnabled</td>
- *          <td>Whether or not values below decimal 32 should be escaped within the log message</td>
- *          <td>{@code boolean}</td>
- *          <td>{@code true}</td>
  *      </tr>
  *      <tr>
  *          <td>truncate</td>
@@ -311,8 +305,6 @@ public class SyslogHandler extends ExtHandler {
         }
     }
 
-    private static final byte[] UTF_8_BOM = {(byte) 0xef, (byte) 0xbb, (byte) 0xbf};
-
     private final Object outputLock = new Object();
     private InetAddress serverAddress;
     private int port;
@@ -328,7 +320,6 @@ public class SyslogHandler extends ExtHandler {
     private boolean outputStreamSet;
     private String delimiter;
     private boolean useDelimiter;
-    private boolean escapeEnabled;
     private boolean truncate;
     private int maxLen;
 
@@ -490,7 +481,6 @@ public class SyslogHandler extends ExtHandler {
         useCountingFraming = false;
         initializeConnection = true;
         outputStreamSet = false;
-        escapeEnabled = true;
         truncate = true;
         if (this.syslogType == SyslogType.RFC3164) {
             maxLen = 1024;
@@ -540,23 +530,26 @@ public class SyslogHandler extends ExtHandler {
                 } else {
                     logMsg = record.getFormattedMessage();
                 }
+                if (!Normalizer.isNormalized(logMsg, Form.NFKC)) {
+                    logMsg = Normalizer.normalize(logMsg, Form.NFKC);
+                }
                 // Create a message buffer
-                final ByteOutputStream message = new ByteOutputStream();
-                // Write the message to the buffer, the offset is the next character available if there is overflow
-                int offset = message.writeString(logMsg, escapeEnabled, maxMsgLen);
-                sendMessage(header, message.toByteArray(), trailer);
+                ByteStringBuilder message = new ByteStringBuilder(maxMsgLen);
+                // Write the message to the buffer, the len is the number of characters written
+                int len = message.write(logMsg, maxMsgLen);
+                sendMessage(header, message, trailer);
                 // If not truncating, chunk the message and send separately
-                if (!truncate && offset > 0) {
-                    while (offset > 0) {
-                        // Reset the message
-                        message.reset();
+                if (!truncate && len < logMsg.length()) {
+                    while (len > 0) {
                         // Get the next part of the message to write
-                        logMsg = logMsg.substring(offset);
+                        logMsg = logMsg.substring(len + 1);
                         if (logMsg.isEmpty()) {
                             break;
                         }
-                        offset = message.writeString(logMsg, escapeEnabled, maxMsgLen);
-                        sendMessage(header, message.toByteArray(), trailer);
+                        message = new ByteStringBuilder(maxMsgLen);
+                        // Write the message to the buffer, the len is the number of characters written
+                        len = message.write(logMsg, maxMsgLen);
+                        sendMessage(header, message, trailer);
                     }
                 }
             } catch (IOException e) {
@@ -573,17 +566,17 @@ public class SyslogHandler extends ExtHandler {
      *
      * @throws IOException if there is an error writing the message
      */
-    private void sendMessage(final byte[] header, final byte[] message, final byte[] trailer) throws IOException {
-        final ByteOutputStream payload = new ByteOutputStream();
+    private void sendMessage(final byte[] header, final ByteStringBuilder message, final byte[] trailer) throws IOException {
+        final ByteStringBuilder payload = new ByteStringBuilder(header.length + message.length());
         // Prefix the size of the message if counting framing is being used
         if (useCountingFraming) {
-            int len = header.length + message.length + (useDelimiter ? trailer.length : 0);
-            payload.writeInt(len).writeChar(' ');
+            int len = header.length + message.length() + (useDelimiter ? trailer.length : 0);
+            payload.append(len).append(' ');
         }
-        payload.write(header);
-        payload.write(message);
-        if (useDelimiter) payload.write(trailer);
-        out.write(payload.toByteArray());
+        payload.append(header);
+        payload.append(message);
+        if (useDelimiter) payload.append(trailer);
+        out.write(payload.toArray());
     }
 
     @Override
@@ -633,27 +626,31 @@ public class SyslogHandler extends ExtHandler {
      * Checks whether or not characters below decimal 32, traditional US-ASCII control values expect {@code DEL}, are
      * being escaped or not.
      *
-     * @return {@code true} if characters are being expected in a {@code #xxx} pattern where {@code xxx} is the octal
-     *         representation of the value.
+     * @return {@code false}
+     *
+     * @deprecated escaping message values is not required per <a href="http://tools.ietf.org/html/rfc5424#section-6.2">RFC5424</a>
+     * and is no longer supported in this handler
      */
+    @Deprecated
     public boolean isEscapeEnabled() {
-        synchronized (outputLock) {
-            return escapeEnabled;
-        }
+        return false;
     }
 
     /**
+     * <b>Note:</b> This method no longer does anything.
+     * <p/>
      * Set to {@code true} to escape characters within the message string that are below decimal 32. These values are
      * tradition US-ASCII control values. The values will be replaced in a {@code #xxx} format where {@code xxx} is the
      * octal value of the character being replaced.
      *
      * @param escapeEnabled {@code true} to escape characters, {@code false} to not escape characters
+     *
+     * @deprecated escaping message values is not required per <a href="http://tools.ietf.org/html/rfc5424#section-6.2">RFC5424</a>
+     * and is no longer supported in this handler
      */
+    @Deprecated
     public void setEscapeEnabled(final boolean escapeEnabled) {
         checkAccess(this);
-        synchronized (outputLock) {
-            this.escapeEnabled = escapeEnabled;
-        }
     }
 
     /**
@@ -1082,15 +1079,15 @@ public class SyslogHandler extends ExtHandler {
     }
 
     protected byte[] createRFC5424Header(final ExtLogRecord record) throws IOException {
-        final ByteOutputStream buffer = new ByteOutputStream();
+        final ByteStringBuilder buffer = new ByteStringBuilder(256);
         // Set the property
-        buffer.writeChar('<').writeInt(calculatePriority(record.getLevel(), facility)).writeChar('>');
+        buffer.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
         // Set the version
-        buffer.writeString("1 ");
+        buffer.appendUSASCII("1 ");
         // Set the time
         final long millis = record.getMillis();
         if (millis <= 0) {
-            buffer.writeString(NILVALUE_SP);
+            buffer.appendUSASCII(NILVALUE_SP);
         } else {
             // The follow can be changed to use a formatter with Java 7 pattern is yyyy-MM-dd'T'hh:mm:ss.SSSXXX
             final Calendar cal = Calendar.getInstance();
@@ -1100,103 +1097,103 @@ public class SyslogHandler extends ExtHandler {
             final int hours = cal.get(Calendar.HOUR_OF_DAY);
             final int minutes = cal.get(Calendar.MINUTE);
             final int seconds = cal.get(Calendar.SECOND);
-            buffer.writeInt(cal.get(Calendar.YEAR)).writeChar('-');
+            buffer.append(cal.get(Calendar.YEAR)).append('-');
             if (month < 10) {
-                buffer.writeInt(0);
+                buffer.append(0);
             }
-            buffer.writeInt(month + 1).writeChar('-');
+            buffer.append(month + 1).append('-');
             if (day < 10) {
-                buffer.writeInt(0);
+                buffer.append(0);
             }
-            buffer.writeInt(day).writeChar('T');
+            buffer.append(day).append('T');
             if (hours < 10) {
-                buffer.writeInt(0);
+                buffer.append(0);
             }
-            buffer.writeInt(hours).writeChar(':');
+            buffer.append(hours).append(':');
             if (minutes < 10) {
-                buffer.writeInt(0);
+                buffer.append(0);
             }
-            buffer.writeInt(minutes).writeChar(':');
+            buffer.append(minutes).append(':');
             if (seconds < 10) {
-                buffer.writeInt(0);
+                buffer.append(0);
             }
-            buffer.writeInt(seconds).writeChar('.');
+            buffer.append(seconds).append('.');
             final int milliseconds = cal.get(Calendar.MILLISECOND);
             if (milliseconds < 10) {
-                buffer.writeInt(0).writeInt(0);
+                buffer.append(0).append(0);
             } else if (milliseconds < 100) {
-                buffer.writeInt(0);
+                buffer.append(0);
             }
-            buffer.writeInt(milliseconds);
+            buffer.append(milliseconds);
             final int tz = cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET);
             if (tz == 0) {
-                buffer.writeString("+00:00");
+                buffer.append("+00:00");
             } else {
                 int tzMinutes = tz / 60000; // milliseconds to minutes
                 if (tzMinutes < 0) {
                     tzMinutes = -tzMinutes;
-                    buffer.writeChar('-');
+                    buffer.append('-');
                 } else {
-                    buffer.writeChar('+');
+                    buffer.append('+');
                 }
                 final int tzHour = tzMinutes / 60; // minutes to hours
                 tzMinutes -= tzHour * 60; // subtract hours from minutes in minutes
                 if (tzHour < 10) {
-                    buffer.writeInt(0);
+                    buffer.append(0);
                 }
-                buffer.writeInt(tzHour).writeChar(':');
+                buffer.append(tzHour).append(':');
                 if (tzMinutes < 10) {
-                    buffer.writeInt(0);
+                    buffer.append(0);
                 }
-                buffer.writeInt(tzMinutes);
+                buffer.append(tzMinutes);
             }
-            buffer.writeChar(' ');
+            buffer.append(' ');
         }
         // Set the host name
         if (hostname == null) {
-            buffer.writeString(NILVALUE_SP);
+            buffer.append(NILVALUE_SP);
         } else {
-            buffer.writeUSASCII(hostname, 255).writeChar(' ');
+            buffer.appendUSASCII(hostname, 255).append(' ');
         }
         // Set the app name
         if (appName == null) {
-            buffer.writeString(NILVALUE_SP);
+            buffer.appendUSASCII(NILVALUE_SP);
         } else {
-            buffer.writeUSASCII(appName, 48);
-            buffer.writeChar(' ');
+            buffer.appendUSASCII(appName, 48);
+            buffer.append(' ');
         }
         // Set the procid
         if (pid == null) {
-            buffer.writeString(NILVALUE_SP);
+            buffer.appendUSASCII(NILVALUE_SP);
         } else {
-            buffer.writeUSASCII(pid, 128);
-            buffer.writeChar(' ');
+            buffer.appendUSASCII(pid, 128);
+            buffer.append(' ');
         }
         // Set the msgid
         final String msgid = record.getLoggerName();
         if (msgid == null) {
-            buffer.writeString(NILVALUE_SP);
+            buffer.appendUSASCII(NILVALUE_SP);
         } else if (msgid.isEmpty()) {
-            buffer.writeUSASCII("root-logger");
-            buffer.writeChar(' ');
+            buffer.appendUSASCII("root-logger");
+            buffer.append(' ');
         } else {
-            buffer.writeUSASCII(msgid, 32);
-            buffer.writeChar(' ');
+            buffer.appendUSASCII(msgid, 32);
+            buffer.append(' ');
         }
         // Set the structured data
-        buffer.writeString(NILVALUE_SP);
+        buffer.appendUSASCII(NILVALUE_SP);
         // TODO (jrp) review structured data http://tools.ietf.org/html/rfc5424#section-6.3
         final String encoding = getEncoding();
         if (encoding == null || DEFAULT_ENCODING.equalsIgnoreCase(encoding)) {
-            buffer.write(UTF_8_BOM);
+            buffer.appendUtf8Raw(0xFEFF);
         }
-        return buffer.toByteArray();
+        return buffer.toArray();
     }
 
     protected byte[] createRFC3164Header(final ExtLogRecord record) throws IOException {
-        final ByteOutputStream buffer = new ByteOutputStream();
+        final ByteStringBuilder buffer = new ByteStringBuilder(256);
         // Set the property
-        buffer.writeChar('<').writeInt(calculatePriority(record.getLevel(), facility)).writeChar('>');
+        buffer.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
 
         // Set the time
         final long millis = record.getMillis();
@@ -1208,116 +1205,40 @@ public class SyslogHandler extends ExtHandler {
         final int minutes = cal.get(Calendar.MINUTE);
         final int seconds = cal.get(Calendar.SECOND);
         final DateFormatSymbols formatSymbols = DateFormatSymbols.getInstance(Locale.ENGLISH);
-        buffer.writeString(formatSymbols.getShortMonths()[month]).writeChar(' ');
+        buffer.appendUSASCII(formatSymbols.getShortMonths()[month]).append(' ');
         if (day < 10) {
-            buffer.writeChar(' ');
+            buffer.append(' ');
         }
-        buffer.writeInt(day).writeChar(' ');
+        buffer.append(day).append(' ');
         if (hours < 10) {
-            buffer.writeInt(0);
+            buffer.append(0);
         }
-        buffer.writeInt(hours).writeChar(':');
+        buffer.append(hours).append(':');
         if (minutes < 10) {
-            buffer.writeInt(0);
+            buffer.append(0);
         }
-        buffer.writeInt(minutes).writeChar(':');
+        buffer.append(minutes).append(':');
         if (seconds < 10) {
-            buffer.writeInt(0);
+            buffer.append(0);
         }
-        buffer.writeInt(seconds);
-        buffer.writeChar(' ');
+        buffer.append(seconds);
+        buffer.append(' ');
 
         // Set the host name
         if (hostname == null) {
             // TODO might not be the best solution
-            buffer.writeString("UNKNOWN_HOSTNAME").writeChar(' ');
+            buffer.appendUSASCII("UNKNOWN_HOSTNAME").append(' ');
         } else {
-            buffer.writeString(hostname).writeChar(' ');
+            buffer.appendUSASCII(hostname).append(' ');
         }
         // Set the app name and the proc id
         if (appName != null && pid != null) {
-            buffer.writeString(appName).writeChar('[').writeString(pid).writeChar(']').writeString(": ");
+            buffer.appendUSASCII(appName).append('[').appendUSASCII(pid).append(']').appendUSASCII(": ");
         } else if (appName != null) {
-            buffer.writeString(appName).writeString(": ");
+            buffer.append(appName).append(": ");
         } else if (pid != null) {
-            buffer.writeChar('[').writeString(pid).writeChar(']').writeString(": ");
+            buffer.append('[').appendUSASCII(pid).append(']').append(": ");
         }
-        return buffer.toByteArray();
-    }
-
-    static class ByteOutputStream extends ByteArrayOutputStream {
-        static final Charset US_ASCII_CHARSET = Charset.forName("US-ASCII");
-
-        public ByteOutputStream writeUSASCII(final String s, int maxLen) throws IOException {
-            final byte[] bytes = s.getBytes(US_ASCII_CHARSET);
-            write(bytes, 0, Math.min(maxLen, bytes.length));
-            return this;
-        }
-
-        public ByteOutputStream writeUSASCII(final String s) throws IOException {
-            write(s.getBytes(US_ASCII_CHARSET));
-            return this;
-        }
-
-        public int writeString(final String s, final boolean escape, final int maxLen) throws IOException {
-            int offset = 0;
-            int count = 0;
-            for (char c : s.toCharArray()) {
-                // Process each character, if maxLen is hit we break and return the offset
-                final byte[] b = encode(c, escape);
-                count += b.length;
-                if (count <= maxLen) {
-                    write(b);
-                    offset++;
-                } else {
-                    return offset;
-                }
-            }
-            return -1;
-        }
-
-        public ByteOutputStream writeString(final String s) throws IOException {
-            writeString(s, false, s.length());
-            return this;
-        }
-
-        public ByteOutputStream writeInt(final int i) throws IOException {
-            return writeString(Integer.toString(i));
-        }
-
-        public ByteOutputStream writeChar(final char c) throws IOException {
-            write(encode(c, false));
-            return this;
-        }
-
-        private static byte[] encode(final char c, final boolean escape) {
-            final byte[] result;
-            if (c >= 0 && c <= 0x7f) {
-                if (escape && c >= 0 && c < 32) {
-                    result = new byte[4];
-                    result[0] = 0x23; // #
-                    result[1] = 0x30; // 0
-                    if (c < 8) {
-                        result[2] = 0x30; // 0
-                        // add 48 to get the numeric value
-                        result[3] = (byte) ((((int) c) & 0xff) + 48);
-                    } else {
-                        // add 48 to get the numeric value, e.g \n is decimal 10,
-                        // 10 >> 3 == 1, 1 + 48 == 49 which in decimal is the character 1
-                        // 10 & 0x07 == 2, 2 + 48 == 508 which in decimal is the character 2
-                        // end result for the byte array in text is #012 for \n
-                        result[2] = (byte) ((c >> 3) + 48);
-                        result[3] = (byte) ((c & 0x07) + 48);
-                    }
-                } else {
-                    result = new byte[] {(byte) c};
-                }
-            } else if (c <= 0x07ff) {
-                result = new byte[] {(byte) (0xc0 | 0x1f & c >> 6), (byte) (0x80 | 0x3f & c)};
-            } else {
-                result = new byte[] {(byte) (0xe0 | 0x0f & c >> 12), (byte) (0xc0 | 0x1f & c >> 6), (byte) (0x80 | 0x3f & c)};
-            }
-            return result;
-        }
+        return buffer.toArray();
     }
 }
