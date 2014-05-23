@@ -32,9 +32,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -84,6 +87,63 @@ public final class LogManager extends java.util.logging.LogManager {
                 } catch (Throwable e) {
                     // ignore; just don't install
                 }
+
+                // OpenJDK uses a KnownLevel inner class with two static maps
+                try {
+                    final Class<?> knownLevelClass = Class.forName("java.util.logging.Level$KnownLevel");
+                    synchronized (knownLevelClass) {
+                        boolean doBuild = false;
+                        boolean setNameToLevel = false;
+                        boolean setIntToLevel = false;
+                        // namesToLevels
+                        final Field nameToLevels = knownLevelClass.getDeclaredField("nameToLevels");
+                        nameToLevels.setAccessible(true);
+                        // Current
+                        final Map<String, List<java.util.logging.Level>> oldNameToLevels = (Map<String, List<java.util.logging.Level>>) nameToLevels.get(null);
+                        if (!(oldNameToLevels instanceof ReadOnlyHashMap)) {
+                            doBuild = true;
+                            setNameToLevel = true;
+                        }
+
+                        final Field intToLevels = knownLevelClass.getDeclaredField("intToLevels");
+                        intToLevels.setAccessible(true);
+                        final Map<Integer, List<java.util.logging.Level>> oldIntToLevels = (Map<Integer, List<java.util.logging.Level>>) intToLevels.get(null);
+                        if (!(oldIntToLevels instanceof ReadOnlyHashMap)) {
+                            doBuild = true;
+                            setIntToLevel = true;
+                        }
+
+                        if (doBuild) {
+                            final KnownLevelBuilder builder = new KnownLevelBuilder()
+                                    .add(Level.TRACE)
+                                    .add(Level.DEBUG)
+                                    .add(Level.INFO)
+                                    .add(Level.WARN)
+                                    .add(Level.ERROR)
+                                    .add(Level.FATAL)
+                                    .add(java.util.logging.Level.ALL)
+                                    .add(java.util.logging.Level.FINEST)
+                                    .add(java.util.logging.Level.FINER)
+                                    .add(java.util.logging.Level.FINE)
+                                    .add(java.util.logging.Level.INFO)
+                                    .add(java.util.logging.Level.CONFIG)
+                                    .add(java.util.logging.Level.WARNING)
+                                    .add(java.util.logging.Level.SEVERE)
+                                    .add(java.util.logging.Level.OFF);
+
+                            if (setNameToLevel) {
+                                nameToLevels.set(null, builder.toNameMap());
+                            }
+                            if (setIntToLevel) {
+                                intToLevels.set(null, builder.toIntMap());
+                            }
+                        }
+                    }
+
+                } catch (Throwable e) {
+                    // ignore
+                }
+
                 /* Next hack: the default Sun JMX implementation has a horribly inefficient log implementation which
                    kills performance if a custom logmanager is used.  We'll just blot that out.
                  */
@@ -118,6 +178,10 @@ public final class LogManager extends java.util.logging.LogManager {
 
         private ReadOnlyArrayList(final Collection<? extends T> c) {
             super(c);
+        }
+
+        static <T> ReadOnlyArrayList<T> of(final Collection<? extends T> c) {
+            return new ReadOnlyArrayList<T>(c);
         }
 
         public T set(final int index, final T element) {
@@ -209,6 +273,132 @@ public final class LogManager extends java.util.logging.LogManager {
         public boolean retainAll(final Collection<?> c) {
             // ignore
             return false;
+        }
+    }
+
+    private static final class ReadOnlyHashMap<K, V> extends HashMap<K, V> {
+
+        private static final long serialVersionUID = -6048215349511680936L;
+
+        ReadOnlyHashMap(final int size) {
+            super(size);
+        }
+
+        static <K, V> ReadOnlyHashMap<K, V> of(final List<ReadOnlyMapEntry<K, V>> entries) {
+            final ReadOnlyHashMap<K, V> result = new ReadOnlyHashMap<K, V>(entries.size());
+            for (ReadOnlyMapEntry<K, V> entry : entries) {
+                result.add(entry.getKey(), entry.getValue());
+            }
+            return result;
+        }
+
+        private void add(final K key, final V value) {
+            super.put(key, value);
+        }
+
+        @Override
+        public V put(final K key, final V value) {
+            // ignore
+            return null;
+        }
+
+        @Override
+        public void putAll(final Map<? extends K, ? extends V> m) {
+            // ignore
+        }
+
+        @Override
+        public V remove(final Object key) {
+            // ignore
+            return null;
+        }
+
+        @Override
+        public void clear() {
+            // ignore
+        }
+
+        @Override
+        public Collection<V> values() {
+            return new ReadOnlyArrayList<V>(super.values());
+        }
+    }
+
+    private static final class ReadOnlyMapEntry<K, V> implements Entry<K, V> {
+
+        private final K key;
+        private final V value;
+
+        private ReadOnlyMapEntry(final K key, final V value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        static <K, V> ReadOnlyMapEntry<K, V> of(final K key, final V value) {
+            return new ReadOnlyMapEntry<K, V>(key, value);
+        }
+
+        @Override
+        public K getKey() {
+            return key;
+        }
+
+        @Override
+        public V getValue() {
+            return value;
+        }
+
+        @Override
+        public V setValue(final V value) {
+            // ignore
+            return null;
+        }
+    }
+
+    private static class KnownLevelBuilder {
+        private final Map<String, List<java.util.logging.Level>> nameMap;
+        private final Map<Integer, List<java.util.logging.Level>> intMap;
+
+        private KnownLevelBuilder() {
+            nameMap = new HashMap<String, List<java.util.logging.Level>>();
+            intMap = new HashMap<Integer, List<java.util.logging.Level>>();
+        }
+
+        public KnownLevelBuilder add(final java.util.logging.Level level) {
+            final String name = level.getName();
+            List<java.util.logging.Level> nl = nameMap.get(name);
+            if (nl == null) {
+                nl = new ArrayList<java.util.logging.Level>();
+                nameMap.put(name, nl);
+            }
+            nl.add(level);
+
+            final int intValue = level.intValue();
+            List<java.util.logging.Level> il = intMap.get(intValue);
+            if (il == null) {
+                il = new ArrayList<java.util.logging.Level>();
+                intMap.put(intValue, il);
+            }
+            il.add(level);
+            return this;
+        }
+
+        public ReadOnlyHashMap<String, ReadOnlyArrayList<java.util.logging.Level>> toNameMap() {
+            final List<ReadOnlyMapEntry<String, ReadOnlyArrayList<java.util.logging.Level>>> list =
+                    new ArrayList<ReadOnlyMapEntry<String, ReadOnlyArrayList<java.util.logging.Level>>>(nameMap.size());
+            for (String key : nameMap.keySet()) {
+                list.add(ReadOnlyMapEntry.of(key, ReadOnlyArrayList.of(nameMap.get(key))));
+            }
+            return ReadOnlyHashMap.of(list);
+        }
+
+        public ReadOnlyHashMap<Integer, ReadOnlyArrayList<java.util.logging.Level>> toIntMap() {
+            final List<ReadOnlyMapEntry<Integer, ReadOnlyArrayList<java.util.logging.Level>>> list =
+                    new ArrayList<ReadOnlyMapEntry<Integer, ReadOnlyArrayList<java.util.logging.Level>>>(intMap.size());
+            for (Integer key : intMap.keySet()) {
+                list.add(ReadOnlyMapEntry.of(key, ReadOnlyArrayList.of(intMap.get(key))));
+            }
+            return ReadOnlyHashMap.of(list);
         }
     }
 
