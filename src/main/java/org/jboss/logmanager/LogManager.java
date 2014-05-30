@@ -40,7 +40,6 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -561,21 +560,9 @@ public final class LogManager extends java.util.logging.LogManager {
         // no operation!
     }
 
-    /**
-     * Does nothing.  Logger names are not available.
-     *
-     * @return an empty enumeration
-     */
+    @Override
     public Enumeration<String> getLoggerNames() {
-        return new Enumeration<String>() {
-            public boolean hasMoreElements() {
-                return false;
-            }
-
-            public String nextElement() {
-                throw new NoSuchElementException("No elements");
-            }
-        };
+        return LogContext.getLogContext().getLoggerNames();
     }
 
     /**

@@ -201,13 +201,22 @@ final class LoggerNode {
             return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
                 public Logger run() {
                     final Logger logger = new Logger(LoggerNode.this, fullName);
+                    context.incrementRef(fullName);
                     return logger;
                 }
             });
         } else {
             final Logger logger = new Logger(this, fullName);
+            context.incrementRef(fullName);
             return logger;
         }
+    }
+
+    /**
+     * Removes one from the reference count.
+     */
+    void decrementRef() {
+        context.decrementRef(fullName);
     }
 
     /**

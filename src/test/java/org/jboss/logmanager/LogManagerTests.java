@@ -23,6 +23,10 @@
 package org.jboss.logmanager;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -30,7 +34,7 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class LogManagerTests {
+public class LogManagerTests extends AbstractTest {
     static {
         // Access a logger in initialize the logmanager
         java.util.logging.Logger.getAnonymousLogger();
@@ -73,5 +77,26 @@ public class LogManagerTests {
                 Assert.assertEquals(l, level);
             }
         }
+    }
+
+    @Test
+    public void checkLoggerNames() {
+        // Get the log manager
+        final java.util.logging.LogManager logManager = java.util.logging.LogManager.getLogManager();
+        // Should be a org.jboss.logmanager.LogManager
+        Assert.assertEquals(LogManager.class, logManager.getClass());
+
+        final List<String> expectedNames = Arrays.asList("", "test1", "org.jboss", "org.jboss.logmanager", "other", "stdout");
+
+        // Create the loggers
+        for (String name : expectedNames) {
+            Logger.getLogger(name);
+        }
+        compare(expectedNames, Collections.list(logManager.getLoggerNames()));
+    }
+
+    private <T> void compare(final Collection<T> expected, final Collection<T> actual) {
+        Assert.assertTrue("Expected: " + expected.toString() + " Actual: " + actual.toString(), expected.containsAll(actual));
+        Assert.assertTrue("Expected: " + expected.toString() + " Actual: " + actual.toString(), actual.containsAll(expected));
     }
 }
