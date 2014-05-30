@@ -24,9 +24,15 @@ package org.jboss.logmanager;
 
 import java.lang.ref.WeakReference;
 import java.security.Permission;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListMap;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 
@@ -48,6 +54,7 @@ public final class LogContext implements Protectable {
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
     private final boolean strong;
+    private final ConcurrentSkipListMap<String, AtomicInteger> loggerNames;
 
     @SuppressWarnings("unused")
     private volatile Object protectKey;
@@ -104,6 +111,7 @@ public final class LogContext implements Protectable {
         this.strong = strong;
         levelMapReference = new AtomicReference<Map<String, LevelRef>>(LazyHolder.INITIAL_LEVEL_MAP);
         rootLogger = new LoggerNode(this);
+        loggerNames = new ConcurrentSkipListMap<String, AtomicInteger>();
     }
 
     /**
@@ -333,6 +341,66 @@ public final class LogContext implements Protectable {
     @Override
     public void disableAccess() {
         granted.remove();
+    }
+
+    /**
+     * Returns an enumeration of the logger names that have been created. This does not return names of loggers that
+     * may have been garbage collected. Logger names added after the enumeration has been retrieved may also be added to
+     * the enumeration.
+     *
+     * @return an enumeration of the logger names
+     *
+     * @see java.util.logging.LogManager#getLoggerNames()
+     */
+    public Enumeration<String> getLoggerNames() {
+        final Iterator<Entry<String, AtomicInteger>> iter = loggerNames.entrySet().iterator();
+        return new Enumeration<String>() {
+            String next = null;
+            @Override
+            public boolean hasMoreElements() {
+                while (next == null) {
+                    if (iter.hasNext()) {
+                        final Entry<String, AtomicInteger> entry = iter.next();
+                        if (entry.getValue().get() > 0) {
+                            next = entry.getKey();
+                            return true;
+                        }
+                    } else {
+                        return false;
+                    }
+                }
+                return next != null;
+            }
+
+            @Override
+            public String nextElement() {
+                if (!hasMoreElements()) {
+                    throw new NoSuchElementException();
+                }
+                try {
+                    return next;
+                } finally {
+                    next = null;
+                }
+            }
+        };
+    }
+
+    protected void incrementRef(final String name) {
+        AtomicInteger counter = loggerNames.get(name);
+        if (counter == null) {
+            final AtomicInteger appearing = loggerNames.putIfAbsent(name, counter = new AtomicInteger());
+            if (appearing != null) {
+                counter = appearing;
+            }
+        }
+        counter.incrementAndGet();
+    }
+
+    protected void decrementRef(final String name) {
+        AtomicInteger counter = loggerNames.get(name);
+        assert (counter != null && counter.get() > 0);
+        counter.decrementAndGet();
     }
 
     private static SecurityException accessDenied() {
