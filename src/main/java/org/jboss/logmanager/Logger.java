@@ -313,6 +313,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void setUseParentHandlers(boolean useParentHandlers) {
+        LogContext.checkAccess(loggerNode.getContext());
         loggerNode.setUseParentHandlers(useParentHandlers);
     }
 
