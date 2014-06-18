@@ -64,7 +64,7 @@ import org.jboss.logmanager.ExtLogRecord;
  *          <th>Default</th>
  *      </tr>
  *      <tr>
- *          <td>serverAddress</td>
+ *          <td>serverHostname</td>
  *          <td>The address of the syslog server</td>
  *          <td>{@link java.lang.String String}</td>
  *          <td>localhost</td>
