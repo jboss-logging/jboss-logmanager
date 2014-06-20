@@ -472,6 +472,20 @@ public class SyslogHandler extends ExtHandler {
         this.pid = findPid();
         this.appName = "java";
         this.hostname = hostname;
+        // try and discover our hostname
+        if(hostname == null) {
+            try {
+                // Note: if somebody changes hostname at runtime, we
+                // are likely to keep using the original value until the
+                // application is restarted
+                InetAddress addr = InetAddress.getLocalHost();
+                this.hostname = addr.getHostName();
+            } catch (UnknownHostException ex) {
+                // TODO: we could also try to find an IP address and use that
+                // as the hostname in syslog messages
+                this.hostname = "UNKNOWN_HOSTNAME";
+            }
+        }
         this.syslogType = (syslogType == null ? SyslogType.RFC5424 : syslogType);
         if (protocol == null) {
             this.protocol = Protocol.UDP;
