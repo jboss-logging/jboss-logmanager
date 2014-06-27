@@ -301,7 +301,8 @@ public class SyslogHandler extends ExtHandler {
     public static final int DEFAULT_SECURE_PORT = 6514;
     public static final String DEFAULT_ENCODING = "UTF-8";
     public static final Facility DEFAULT_FACILITY = Facility.USER_LEVEL;
-    public static final String NILVALUE_SP = "- ";
+    public static final String NILVALUE = "-";
+    public static final String NILVALUE_SP = NILVALUE + " ";
 
     static {
         try {
@@ -317,7 +318,8 @@ public class SyslogHandler extends ExtHandler {
     private InetAddress serverAddress;
     private int port;
     private String appName;
-    private String hostname;
+    private String hostname;              // configured value
+    private String deducedHostname;       // resolved value (if not configured)
     private Facility facility;
     private SyslogType syslogType;
     private final String pid;
@@ -472,6 +474,7 @@ public class SyslogHandler extends ExtHandler {
         this.pid = findPid();
         this.appName = "java";
         this.hostname = hostname;
+        this.deducedHostname = null;
         this.syslogType = (syslogType == null ? SyslogType.RFC5424 : syslogType);
         if (protocol == null) {
             this.protocol = Protocol.UDP;
@@ -930,6 +933,7 @@ public class SyslogHandler extends ExtHandler {
         checkAccess(this);
         synchronized (outputLock) {
             this.syslogType = syslogType;
+            this.deducedHostname = null;
         }
     }
 
@@ -1153,11 +1157,7 @@ public class SyslogHandler extends ExtHandler {
             buffer.writeChar(' ');
         }
         // Set the host name
-        if (hostname == null) {
-            buffer.writeString(NILVALUE_SP);
-        } else {
-            buffer.writeUSASCII(hostname, 255).writeChar(' ');
-        }
+        buffer.writeUSASCII(getHostnameField(SyslogType.RFC5424), 255).writeChar(' ');
         // Set the app name
         if (appName == null) {
             buffer.writeString(NILVALUE_SP);
@@ -1228,12 +1228,7 @@ public class SyslogHandler extends ExtHandler {
         buffer.writeChar(' ');
 
         // Set the host name
-        if (hostname == null) {
-            // TODO might not be the best solution
-            buffer.writeString("UNKNOWN_HOSTNAME").writeChar(' ');
-        } else {
-            buffer.writeString(hostname).writeChar(' ');
-        }
+        buffer.writeString(getHostnameField(SyslogType.RFC3164)).writeChar(' ');
         // Set the app name and the proc id
         if (appName != null && pid != null) {
             buffer.writeString(appName).writeChar('[').writeString(pid).writeChar(']').writeString(": ");
@@ -1243,6 +1238,37 @@ public class SyslogHandler extends ExtHandler {
             buffer.writeChar('[').writeString(pid).writeChar(']').writeString(": ");
         }
         return buffer.toByteArray();
+    }
+
+    protected String getHostnameField(SyslogType type) {
+        if(hostname != null) {
+            return hostname;
+        }
+        if(deducedHostname == null) {
+            // deduce hostname for given type
+            // RFC3164 uses short name (not FQDN)
+            // RFC5424 prefers FQDN
+            try {
+                // Note: if somebody changes hostname at runtime, we
+                // are likely to keep using the original value until the
+                // application is restarted
+                InetAddress addr = InetAddress.getLocalHost();
+                if(type == SyslogType.RFC3164) {
+                    deducedHostname = addr.getHostName();
+                } else {
+                    deducedHostname = addr.getCanonicalHostName();
+                }
+            } catch (UnknownHostException ex) {
+                // TODO: we could also try to find an IP address and use that
+                // as the hostname in syslog messages
+                if(type == SyslogType.RFC3164) {
+                    deducedHostname = "UNKNOWN_HOSTNAME";
+                } else {
+                    deducedHostname = NILVALUE;
+                }
+            }
+        }
+        return deducedHostname;
     }
 
     static class ByteOutputStream extends ByteArrayOutputStream {
