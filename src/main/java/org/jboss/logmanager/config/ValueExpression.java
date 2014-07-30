@@ -163,7 +163,10 @@ public interface ValueExpression<T> {
                                     continue;
                                 }
                                 isExpression = true;
-                                final String val = System.getProperty(name);
+                                String val = System.getProperty(name);
+                                if (val == null && name.startsWith("env.")) {
+                                    val = System.getenv(name);
+                                }
                                 if (val != null) {
                                     builder.append(val);
                                     state = ch == '}' ? INITIAL : RESOLVED;
