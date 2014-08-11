@@ -779,7 +779,7 @@ public final class Formatters {
     public static FormatStep ndcFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final int count) {
         return new SegmentedFormatStep(leftJustify, minimumWidth, maximumWidth, count) {
             public String getSegmentedSubject(final ExtLogRecord record) {
-                return NDC.get();
+                return record.getNdc();
             }
         };
     }
