@@ -79,10 +79,10 @@ public class PatternFormatterTests {
 
     @Test
     public void ndc() throws Exception {
-        final ExtLogRecord record = createLogRecord("test");
         NDC.push("value1");
         NDC.push("value2");
         NDC.push("value3");
+        final ExtLogRecord record = createLogRecord("test");
 
         PatternFormatter formatter = new PatternFormatter("%x");
         Assert.assertEquals("value1.value2.value3", formatter.format(record));

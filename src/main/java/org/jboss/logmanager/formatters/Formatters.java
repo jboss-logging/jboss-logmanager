@@ -50,8 +50,6 @@ import static java.security.AccessController.doPrivileged;
 import java.io.PrintWriter;
 import java.util.regex.Pattern;
 
-import org.jboss.logmanager.NDC;
-
 /**
  * Formatter utility methods.
  */
@@ -1120,7 +1118,7 @@ public final class Formatters {
     public static FormatStep ndcFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final int count) {
         return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, count) {
             public String getSegmentedSubject(final ExtLogRecord record) {
-                return NDC.get();
+                return record.getNdc();
             }
         };
     }
