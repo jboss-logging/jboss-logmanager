@@ -585,10 +585,10 @@ public final class Formatters {
         if (resource == null) {
             return null;
         }
-        
+
         final String path = resource.getPath();
         final String protocol = resource.getProtocol();
-        
+
         if ("jar".equals(protocol)) {
             // the last path segment before "!/" should be the JAR name
             final int sepIdx = path.lastIndexOf("!/");
@@ -602,7 +602,7 @@ public final class Formatters {
         } else if ("module".equals(protocol)) {
             return resource.getPath();
         }
-        
+
         // OK, that would have been too easy.  Next let's just grab the last piece before the class name
         for (int endIdx = path.lastIndexOf(classResourceName); endIdx >= 0; endIdx--) {
             char ch = path.charAt(endIdx);
@@ -612,7 +612,7 @@ public final class Formatters {
                 return firstPart.substring(lsIdx + 1);
             }
         }
-        
+
         // OK, just use the last segment
         final int endIdx = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
         return path.substring(endIdx + 1);
@@ -769,7 +769,7 @@ public final class Formatters {
     public static FormatStep ndcFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final int count) {
         return new SegmentedFormatStep(leftJustify, minimumWidth, maximumWidth, count) {
             public String getSegmentedSubject(final ExtLogRecord record) {
-                return NDC.get();
+                return record.getNdc();
             }
         };
     }
