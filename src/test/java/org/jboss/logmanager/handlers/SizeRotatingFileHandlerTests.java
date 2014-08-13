@@ -24,9 +24,8 @@ package org.jboss.logmanager.handlers;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
-import java.util.Calendar;
+import java.util.Date;
 
-import org.jboss.logmanager.ExtLogRecord;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -56,6 +55,38 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
         // We should end up with 3 files, 2 rotated and the default log
         final File file1 = new File(BASE_LOG_DIR, FILENAME + ".1");
         final File file2 = new File(BASE_LOG_DIR, FILENAME + ".2");
+        Assert.assertTrue(logFile.exists());
+        Assert.assertTrue(file1.exists());
+        Assert.assertTrue(file2.exists());
+
+        // Clean up files
+        file1.delete();
+        file2.delete();
+    }
+
+    @Test
+    public void testSuffixSizeRotate() throws Exception {
+        final SizeRotatingFileHandler handler = new SizeRotatingFileHandler();
+        configureHandlerDefaults(handler);
+        handler.setRotateSize(1024L);
+        handler.setMaxBackupIndex(2);
+        handler.setFile(logFile);
+        handler.setSuffix(".yyyy-MM-dd");
+
+        // Allow a few rotates
+        for (int i = 0; i < 100; i++) {
+            handler.publish(createLogRecord("Test message: %d", i));
+        }
+
+        handler.close();
+
+        final SimpleDateFormat sdf = new SimpleDateFormat(".yyyy-MM-dd");
+        // Note that it is possible the suffix won't match the pattern if a rotation happens after midnight.
+        final String suffix = sdf.format(new Date());
+
+        // We should end up with 3 files, 2 rotated and the default log
+        final File file1 = new File(BASE_LOG_DIR, FILENAME + suffix + ".1");
+        final File file2 = new File(BASE_LOG_DIR, FILENAME + suffix + ".2");
         Assert.assertTrue(logFile.exists());
         Assert.assertTrue(file1.exists());
         Assert.assertTrue(file2.exists());
