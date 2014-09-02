@@ -44,14 +44,44 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
      * @param defaultSelector the selector to consult if no matching log context is found
      */
     public ClassLoaderLogContextSelector(final LogContextSelector defaultSelector) {
+        this(defaultSelector, false);
+    }
+
+    /**
+     * Construct a new instance.  If no matching log context is found, the provided default selector is consulted.
+     * <p/>
+     * If the {@code checkParentClassLoaders} is set to {@code true} this selector recursively searches the class loader
+     * parents until a match is found or a {@code null} parent is found.
+     *
+     * @param defaultSelector         the selector to consult if no matching log context is found
+     * @param checkParentClassLoaders {@code true} if the {@link org.jboss.logmanager.LogContext log context} could not
+     *                                found for the class loader and the {@link ClassLoader#getParent() parent class
+     *                                loader} should be checked
+     */
+    public ClassLoaderLogContextSelector(final LogContextSelector defaultSelector, final boolean checkParentClassLoaders) {
         this.defaultSelector = defaultSelector;
+        this.checkParentClassLoaders = checkParentClassLoaders;
     }
 
     /**
      * Construct a new instance.  If no matching log context is found, the system context is used.
      */
     public ClassLoaderLogContextSelector() {
-        this(LogContext.DEFAULT_LOG_CONTEXT_SELECTOR);
+        this(false);
+    }
+
+    /**
+     * Construct a new instance.  If no matching log context is found, the system context is used.
+     * <p/>
+     * If the {@code checkParentClassLoaders} is set to {@code true} this selector recursively searches the class loader
+     * parents until a match is found or a {@code null} parent is found.
+     *
+     * @param checkParentClassLoaders {@code true} if the {@link org.jboss.logmanager.LogContext log context} could not
+     *                                found for the class loader and the {@link ClassLoader#getParent() parent class
+     *                                loader} should be checked
+     */
+    public ClassLoaderLogContextSelector(final boolean checkParentClassLoaders) {
+        this(LogContext.DEFAULT_LOG_CONTEXT_SELECTOR, checkParentClassLoaders);
     }
 
     private static final class Gateway extends SecurityManager {
@@ -74,19 +104,31 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
 
     private final ConcurrentMap<ClassLoader, LogContext> contextMap = new CopyOnWriteMap<ClassLoader, LogContext>();
     private final Set<ClassLoader> logApiClassLoaders = Collections.newSetFromMap(new CopyOnWriteMap<ClassLoader, Boolean>());
+    private final boolean checkParentClassLoaders;
 
     private final PrivilegedAction<LogContext> logContextAction = new PrivilegedAction<LogContext>() {
         public LogContext run() {
-            for (Class caller : GATEWAY.getClassContext()) {
+            for (Class<?> caller : GATEWAY.getClassContext()) {
                 final ClassLoader classLoader = caller.getClassLoader();
-                if (classLoader != null && ! logApiClassLoaders.contains(classLoader)) {
-                    final LogContext context = contextMap.get(classLoader);
-                    if (context != null) {
-                        return context;
-                    }
+                final LogContext result = check(classLoader);
+                if (result != null) {
+                    return result;
                 }
             }
             return defaultSelector.getLogContext();
+        }
+
+        private LogContext check(final ClassLoader classLoader) {
+            if (classLoader != null && !logApiClassLoaders.contains(classLoader)) {
+                final LogContext context = contextMap.get(classLoader);
+                if (context != null) {
+                    return context;
+                }
+                if (checkParentClassLoaders) {
+                    return check(classLoader.getParent());
+                }
+            }
+            return null;
         }
     };
 
