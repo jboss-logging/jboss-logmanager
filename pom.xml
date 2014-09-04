@@ -39,6 +39,12 @@
         <version>11</version>
     </parent>
 
+    <properties>
+        <!-- maven-compiler-plugin -->
+        <maven.compiler.target>1.6</maven.compiler.target>
+        <maven.compiler.source>1.6</maven.compiler.source>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.jboss.modules</groupId>
@@ -57,9 +63,6 @@
 
     <build>
         <plugins>
-            <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-            </plugin>
             <plugin>
                 <artifactId>maven-source-plugin</artifactId>
             </plugin>
