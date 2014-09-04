@@ -114,6 +114,16 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
                 if (result != null) {
                     return result;
                 }
+                if (classLoader != null) {
+                    final ClassLoader parentClassLoader = classLoader.getParent();
+                    if (parentClassLoader != null && ! logApiClassLoaders.contains(parentClassLoader)) {
+                        final LogContext context = contextMap.get(parentClassLoader);
+                        if (context != null) {
+                            return context;
+                        }
+                    }
+                }
+
             }
             return defaultSelector.getLogContext();
         }
