@@ -1035,7 +1035,7 @@ public class SyslogHandler extends ExtHandler {
 
     private static String findPid() {
         final String name = ManagementFactory.getRuntimeMXBean().getName();
-        String result = name;
+        String result = null;
         final int index = name.indexOf("@");
         if (index > -1) {
             try {
