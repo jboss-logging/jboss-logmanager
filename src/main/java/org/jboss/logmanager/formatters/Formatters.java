@@ -676,6 +676,7 @@ public final class Formatters {
                 }
                 final int dotIdx = className.lastIndexOf('.');
                 if (dotIdx == -1) {
+                    builder.append(NEW_LINE);
                     return;
                 }
                 final String packageName = className.substring(0, dotIdx);
