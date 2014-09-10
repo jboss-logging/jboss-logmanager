@@ -81,6 +81,22 @@ public abstract class SimpleLogServer implements Runnable {
         }
     }
 
+    static void safeClose(final Socket socket) {
+        if (socket != null) try {
+            socket.close();
+        } catch (Exception ignore) {
+
+        }
+    }
+
+    static void safeClose(final ServerSocket socket) {
+        if (socket != null) try {
+            socket.close();
+        } catch (Exception ignore) {
+
+        }
+    }
+
     private static class Udp extends SimpleLogServer {
 
         private final DatagramSocket socket;
