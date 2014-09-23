@@ -631,7 +631,7 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final boolean extended) {
-        final ThreadLocal<Boolean> entered = new ThreadLocal<>() ;
+        final ThreadLocal<Boolean> entered = new ThreadLocal<Boolean>() ;
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 doPrivileged(new PrivilegedAction<Void>() {
