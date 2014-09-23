@@ -631,6 +631,7 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final boolean extended) {
+        final ThreadLocal<Boolean> entered = new ThreadLocal<>() ;
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 doPrivileged(new PrivilegedAction<Void>() {
@@ -783,6 +784,8 @@ public final class Formatters {
             }
 
             private Class<?> guessClass(final String name) {
+                if (entered.get() != null) return null;
+                entered.set(Boolean.TRUE);
                 try {
                     try {
                         final ClassLoader tccl = currentThread().getContextClassLoader();
@@ -798,6 +801,8 @@ public final class Formatters {
                     return Class.forName(name, false, null);
                 } catch (Throwable t) {
                     return null;
+                } finally {
+                    entered.remove();
                 }
             }
 
