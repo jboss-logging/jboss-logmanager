@@ -44,6 +44,13 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     private static final String LOGGER_CLASS_NAME = Logger.class.getName();
 
+    public static final ThreadLocal<Boolean> TRACING_ON = new InheritableThreadLocal<Boolean>() {
+        @Override
+        protected Boolean initialValue() {
+            return false;
+        }
+    };
+
     /**
      * Static logger factory method which returns a JBoss LogManager logger.
      *
@@ -356,10 +363,18 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     static final int FINER_INT = Level.FINER.intValue();
     static final int FINEST_INT = Level.FINEST.intValue();
 
+    private boolean forceLogging() {
+        final Boolean value = TRACING_ON.get();
+        if (value == null) {
+            return false;
+        }
+        return TRACING_ON.get();
+    }
+
     /** {@inheritDoc} */
     public void log(LogRecord record) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (record.getLevel().intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((record.getLevel().intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         logRaw(record);
@@ -367,7 +382,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod) {
-        if (FINER_INT < loggerNode.getEffectiveLevel()) {
+        if (FINER_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY", LOGGER_CLASS_NAME);
@@ -378,7 +393,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod, final Object param1) {
-        if (FINER_INT < loggerNode.getEffectiveLevel()) {
+        if (FINER_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY {0}", LOGGER_CLASS_NAME);
@@ -390,7 +405,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod, final Object[] params) {
-        if (FINER_INT < loggerNode.getEffectiveLevel()) {
+        if (FINER_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         final StringBuilder builder = new StringBuilder("ENTRY");
@@ -406,7 +421,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void exiting(final String sourceClass, final String sourceMethod) {
-        if (FINER_INT < loggerNode.getEffectiveLevel()) {
+        if (FINER_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN", LOGGER_CLASS_NAME);
@@ -417,7 +432,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void exiting(final String sourceClass, final String sourceMethod, final Object result) {
-        if (FINER_INT < loggerNode.getEffectiveLevel()) {
+        if (FINER_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN {0}", LOGGER_CLASS_NAME);
@@ -429,7 +444,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void throwing(final String sourceClass, final String sourceMethod, final Throwable thrown) {
-        if (FINER_INT < loggerNode.getEffectiveLevel()) {
+        if (FINER_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "THROW", LOGGER_CLASS_NAME);
@@ -441,7 +456,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void severe(final String msg) {
-        if (SEVERE_INT < loggerNode.getEffectiveLevel()) {
+        if (SEVERE_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.SEVERE, msg, LOGGER_CLASS_NAME));
@@ -449,7 +464,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void warning(final String msg) {
-        if (WARNING_INT < loggerNode.getEffectiveLevel()) {
+        if (WARNING_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.WARNING, msg, LOGGER_CLASS_NAME));
@@ -457,7 +472,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void info(final String msg) {
-        if (INFO_INT < loggerNode.getEffectiveLevel()) {
+        if (INFO_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.INFO, msg, LOGGER_CLASS_NAME));
@@ -465,7 +480,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void config(final String msg) {
-        if (CONFIG_INT < loggerNode.getEffectiveLevel()) {
+        if (CONFIG_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.CONFIG, msg, LOGGER_CLASS_NAME));
@@ -473,7 +488,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void fine(final String msg) {
-        if (FINE_INT < loggerNode.getEffectiveLevel()) {
+        if (FINE_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.FINE, msg, LOGGER_CLASS_NAME));
@@ -481,7 +496,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void finer(final String msg) {
-        if (FINER_INT < loggerNode.getEffectiveLevel()) {
+        if (FINER_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.FINER, msg, LOGGER_CLASS_NAME));
@@ -489,7 +504,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public void finest(final String msg) {
-        if (FINEST_INT < loggerNode.getEffectiveLevel()) {
+        if (FINEST_INT < loggerNode.getEffectiveLevel() && !forceLogging()) {
             return;
         }
         logRaw(new ExtLogRecord(Level.FINEST, msg, LOGGER_CLASS_NAME));
@@ -498,7 +513,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void log(final Level level, final String msg) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         logRaw(new ExtLogRecord(level, msg, LOGGER_CLASS_NAME));
@@ -507,7 +522,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Object param1) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -518,7 +533,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Object[] params) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -529,7 +544,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Throwable thrown) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -540,7 +555,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -552,7 +567,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object param1) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -565,7 +580,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object[] params) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -578,7 +593,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Throwable thrown) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -591,7 +606,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         super.logrb(level, sourceClass, sourceMethod, bundleName, msg);
@@ -600,7 +615,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object param1) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         super.logrb(level, sourceClass, sourceMethod, bundleName, msg, param1);
@@ -609,7 +624,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object[] params) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         super.logrb(level, sourceClass, sourceMethod, bundleName, msg, params);
@@ -618,7 +633,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Throwable thrown) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging()) {
             return;
         }
         super.logrb(level, sourceClass, sourceMethod, bundleName, msg, thrown);
@@ -639,7 +654,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     public void log(final String fqcn, final Level level, final String message, final String bundleName, final ExtLogRecord.FormatStyle style, final Object[] params, final Throwable t) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level == null || fqcn == null || message == null || level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if (level == null || fqcn == null || message == null || ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, message, style, fqcn);
@@ -661,7 +676,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     public void log(final String fqcn, final Level level, final String message, final ExtLogRecord.FormatStyle style, final Object[] params, final Throwable t) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (level == null || fqcn == null || message == null || level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) {
+        if (level == null || fqcn == null || message == null || ((level.intValue() < effectiveLevel || effectiveLevel == OFF_INT) && !forceLogging())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, message, style, fqcn);
@@ -707,7 +722,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         }
         final Filter filter = loggerNode.getFilter();
         try {
-            if (filter != null && ! filter.isLoggable(record)) {
+            if (filter != null && ! filter.isLoggable(record) && !forceLogging()) {
                 return;
             }
         } catch (VirtualMachineError e) {
