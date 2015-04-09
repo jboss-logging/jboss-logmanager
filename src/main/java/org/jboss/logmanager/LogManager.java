@@ -45,6 +45,26 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class LogManager extends java.util.logging.LogManager {
 
+    public static final String PER_THREAD_LOG_LEVEL_KEY = "org.jboss.logmanager.useThreadLocalLevel";
+    static final boolean PER_THREAD_LOG_LEVEL;
+
+    static {
+        if (System.getSecurityManager() == null) {
+            PER_THREAD_LOG_LEVEL = Boolean.getBoolean(PER_THREAD_LOG_LEVEL_KEY);
+        } else {
+            PER_THREAD_LOG_LEVEL = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                @Override
+                public Boolean run() {
+                    return Boolean.getBoolean(PER_THREAD_LOG_LEVEL_KEY);
+                }
+            });
+        }
+    }
+
+    private static class LocalLevelHolder {
+        static final ThreadLocal<java.util.logging.Level> LOCAL_LEVEL = new ThreadLocal<>();
+    }
+
     /**
      * Construct a new logmanager instance.  Attempts to plug a known memory leak in {@link java.util.logging.Level} as
      * well.
@@ -580,5 +600,31 @@ public final class LogManager extends java.util.logging.LogManager {
      */
     public Logger getLogger(String name) {
         return LogContext.getLogContext().getLogger(name);
+    }
+
+    /**
+     * Returns the currently set log level for this thread or {@code null} if one has not been set.
+     * <p>
+     * If the {@link #PER_THREAD_LOG_LEVEL_KEY} is not set to {@code true} then {@code null} will always be returned.
+     * </p>
+     *
+     * @return the level set for the thread or {@code null} if no level was set
+     */
+    public static java.util.logging.Level getThreadLocalLogLevel() {
+        return PER_THREAD_LOG_LEVEL ? LocalLevelHolder.LOCAL_LEVEL.get() : null;
+    }
+
+    /**
+     * Sets the level for the thread for all loggers.
+     * <p>
+     * This feature only works if the {@link #PER_THREAD_LOG_LEVEL} was set to {@code true}
+     * </p>
+     *
+     * @param level the level to set for all loggers on this thread
+     */
+    public static void setThreadLocalLogLevel(final java.util.logging.Level level) {
+        if (PER_THREAD_LOG_LEVEL) {
+            LocalLevelHolder.LOCAL_LEVEL.set(level);
+        }
     }
 }

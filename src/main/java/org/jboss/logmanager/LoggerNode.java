@@ -260,6 +260,10 @@ final class LoggerNode {
     }
 
     int getEffectiveLevel() {
+        if (LogManager.PER_THREAD_LOG_LEVEL) {
+            final java.util.logging.Level level = LogManager.getThreadLocalLogLevel();
+            return level == null ? effectiveLevel : level.intValue();
+        }
         return effectiveLevel;
     }
 
