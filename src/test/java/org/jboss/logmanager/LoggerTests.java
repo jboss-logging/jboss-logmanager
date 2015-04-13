@@ -19,6 +19,7 @@
 
 package org.jboss.logmanager;
 
+import org.jboss.logmanager.filters.RegexFilter;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -26,6 +27,7 @@ import static org.junit.Assert.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
@@ -163,6 +165,42 @@ public final class LoggerTests {
         logger.log(Level.INFO, "test", new IllegalArgumentException());
         assertEquals(null, handler.messages.get(0));
         assertEquals("Test message", handler.messages.get(1));
+    }
+
+    @Test
+    public void testInheritedFilter() {
+        final ListHandler handler = new ListHandler();
+        final Logger parent = Logger.getLogger("parent", getClass().getName());
+        parent.setLevel(Level.INFO);
+        handler.setLevel(Level.INFO);
+        parent.addHandler(handler);
+        parent.setFilter(new RegexFilter(".*(?i)test.*"));
+
+        final Logger child = Logger.getLogger("parent.child", getClass().getName());
+        child.setUseParentFilters(true);
+        child.setLevel(Level.INFO);
+
+        child.info("This is a test message");
+        child.info("This is another test message");
+        child.info("One more message");
+
+        assertEquals("Handler should have only contained two messages", 2, handler.messages.size());
+
+        // Clear the handler, reset the inherit filters
+        handler.messages.clear();
+        child.setUseParentFilters(false);
+
+        child.info("This is a test message");
+        child.info("This is another test message");
+        child.info("One more message");
+
+        assertEquals("Handler should have only contained three messages", 3, handler.messages.size());
+
+        parent.info("This is a test message");
+        parent.info("This is another test message");
+        parent.info("One more message");
+
+        assertEquals("Handler should have only contained five messages", 5, handler.messages.size());
     }
 
     private static final class ListHandler extends ExtHandler {
