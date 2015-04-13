@@ -19,16 +19,15 @@
 
 package org.jboss.logmanager;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -72,6 +71,11 @@ final class LoggerNode {
      * The filter for this logger instance.
      */
     private volatile Filter filter;
+
+    /**
+     * Flag to specify whether parent filters are used.
+     */
+    private volatile boolean useParentFilter = false;
 
     /**
      * The attachments map.
@@ -257,6 +261,14 @@ final class LoggerNode {
 
     Filter getFilter() {
         return filter;
+    }
+
+    boolean getUseParentFilters() {
+        return useParentFilter;
+    }
+
+    void setUseParentFilters(final boolean useParentFilter) {
+        this.useParentFilter = useParentFilter;
     }
 
     int getEffectiveLevel() {
@@ -445,6 +457,34 @@ final class LoggerNode {
 
     LoggerNode getParent() {
         return parent;
+    }
+
+    /**
+     * Checks the filter to see if the record is loggable. If the {@link #getUseParentFilters()} is set to {@code true}
+     * the parent loggers are checked.
+     *
+     * @param record the log record to check against the filter
+     *
+     * @return {@code true} if the record is loggable, otherwise {@code false}
+     */
+    boolean isLoggable(final ExtLogRecord record) {
+        if (!useParentFilter) {
+            final Filter filter = this.filter;
+            return filter == null || filter.isLoggable(record);
+        }
+        final LogContext context = this.context;
+        final Object lock = context.treeLock;
+        synchronized (lock) {
+            return isLoggable(this, record);
+        }
+    }
+
+    private static boolean isLoggable(final LoggerNode loggerNode, final ExtLogRecord record) {
+        if (loggerNode == null) {
+            return true;
+        }
+        final Filter filter = loggerNode.filter;
+        return !(filter != null && !filter.isLoggable(record)) && (!loggerNode.useParentFilter || isLoggable(loggerNode.getParent(), record));
     }
 
     // GC

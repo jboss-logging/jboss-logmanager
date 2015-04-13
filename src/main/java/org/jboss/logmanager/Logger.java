@@ -23,7 +23,6 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.ResourceBundle;
-
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -317,6 +316,28 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public boolean getUseParentHandlers() {
         return loggerNode.getUseParentHandlers();
+    }
+
+    /**
+     * Specify whether or not filters should be inherited from parent loggers.
+     * <p>
+     * Setting this value to {@code false} has the same behaviour as {@linkplain java.util.logging.Logger}.
+     * </p>
+     *
+     * @param useParentFilter {@code true} to inherit a parents filter, otherwise {@code false}
+     */
+    public void setUseParentFilters(final boolean useParentFilter) {
+        LogContext.checkAccess(loggerNode.getContext());
+        loggerNode.setUseParentFilters(useParentFilter);
+    }
+
+    /**
+     * Indicates whether or not this logger inherits filters from it's parent logger.
+     *
+     * @return {@code true} if filters are inherited, otherwise {@code false}
+     */
+    public boolean getUseParentFilters() {
+        return loggerNode.getUseParentFilters();
     }
 
     // Parent/child
@@ -705,9 +726,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             record.setResourceBundleName(bundleName);
             record.setResourceBundle(bundle);
         }
-        final Filter filter = loggerNode.getFilter();
         try {
-            if (filter != null && ! filter.isLoggable(record)) {
+            if (!loggerNode.isLoggable(record)) {
                 return;
             }
         } catch (VirtualMachineError e) {
