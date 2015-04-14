@@ -186,6 +186,64 @@ public class PatternFormatterTests {
         Assert.assertEquals("test ", formatter.format(record));
     }
 
+    @Test
+    public void extendedThrowable() throws Exception {
+        ExtLogRecord record = createLogRecord("test");
+
+        Throwable cause = new IllegalArgumentException("cause");
+        Throwable level1 = new RuntimeException("level1", cause);
+        Throwable suppressedLevel1 = new IllegalStateException("suppressedLevel1");
+        Throwable suppressedLevel1a = new RuntimeException("suppressedLevel1a");
+        Throwable suppressedLevel2 = new IllegalThreadStateException("suppressedLevel2");
+        suppressedLevel1.addSuppressed(suppressedLevel2);
+
+        level1.addSuppressed(suppressedLevel1);
+        level1.addSuppressed(suppressedLevel1a);
+
+        record.setThrown(level1);
+
+        // All exceptions
+        PatternFormatter formatter = new PatternFormatter("%e");
+
+        String formatted = formatter.format(record);
+
+        // Should contain, level1, cause, level1a, suppressedLevel1 and suppressedLevel2
+        Assert.assertTrue(formatted.contains("cause"));
+        Assert.assertTrue(formatted.contains("level1"));
+        Assert.assertTrue(formatted.contains("suppressedLevel1"));
+        Assert.assertTrue(formatted.contains("suppressedLevel1a"));
+        Assert.assertTrue(formatted.contains("suppressedLevel2"));
+
+        // No suppressed exceptions
+        formatter = new PatternFormatter("%e{0}");
+        formatted = formatter.format(record);
+
+        // Should only contain cause and level1
+        Assert.assertTrue(formatted.contains("cause"));
+        Assert.assertTrue(formatted.contains("level1"));
+        Assert.assertFalse(formatted.contains("suppressedLevel1"));
+        Assert.assertFalse(formatted.contains("suppressedLevel1a"));
+        Assert.assertFalse(formatted.contains("suppressedLevel2"));
+
+        // One level suppressed exceptions
+        formatter = new PatternFormatter("%E{1}");
+        formatted = formatter.format(record);
+
+        // Should only contain cause and level1
+        Assert.assertTrue(formatted.contains("cause"));
+        Assert.assertTrue(formatted.contains("level1"));
+        Assert.assertTrue(formatted.contains("suppressedLevel1"));
+        Assert.assertTrue(formatted.contains("suppressedLevel1a"));
+        Assert.assertFalse(formatted.contains("suppressedLevel2"));
+
+        // Add a circular reference to the cause. This should test both that the caused suppressed exceptions are being
+        // printed and that circular exceptions aren't being processed again.
+        formatter = new PatternFormatter("%e");
+        cause.addSuppressed(suppressedLevel1);
+        formatted = formatter.format(record);
+        Assert.assertTrue(formatted.contains("CIRCULAR REFERENCE:java.lang.IllegalStateException: suppressedLevel1"));
+    }
+
     protected static ExtLogRecord createLogRecord(final String msg) {
         final ExtLogRecord result = new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, PatternFormatterTests.class.getName());
         result.setSourceClassName(PatternFormatterTests.class.getName());
