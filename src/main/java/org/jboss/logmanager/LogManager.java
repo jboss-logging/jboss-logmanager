@@ -39,7 +39,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.logging.Filter;
 
 /**
  * Simplified log manager.  Designed to work around the (many) design flaws of the JDK platform log manager.
@@ -63,7 +62,7 @@ public final class LogManager extends java.util.logging.LogManager {
     }
 
     private static class LocalFilterHolder {
-        static final ThreadLocal<Filter> LOCAL_FILTER = new ThreadLocal<>();
+        static final ThreadLocal<java.util.logging.Level> LOCAL_FILTER = new ThreadLocal<>();
     }
 
     /**
@@ -609,9 +608,9 @@ public final class LogManager extends java.util.logging.LogManager {
      * If the {@link #PER_THREAD_LOG_FILTER_KEY} is not set to {@code true} then {@code null} will always be returned.
      * </p>
      *
-     * @return the filter set for the thread or {@code null} if no level was set
+     * @return the level used as effective level by all loggers inside the current thread or {@code null} if no level was set
      */
-    public static Filter getThreadLocalLogFilter() {
+    public static java.util.logging.Level getThreadLocalEffectiveLevel() {
         return PER_THREAD_LOG_FILTER ? LocalFilterHolder.LOCAL_FILTER.get() : null;
     }
 
@@ -621,11 +620,11 @@ public final class LogManager extends java.util.logging.LogManager {
      * This feature only works if the {@link #PER_THREAD_LOG_FILTER} was set to {@code true}
      * </p>
      *
-     * @param filter the filter to set for all loggers on this thread
+     * @param level used as effective level by all loggers used by the current thread.
      */
-    public static void setThreadLocalLogLevel(final Filter filter) {
+    public static void setThreadLocalEffectiveLevel(final java.util.logging.Level level) {
         if (PER_THREAD_LOG_FILTER) {
-            LocalFilterHolder.LOCAL_FILTER.set(filter);
+            LocalFilterHolder.LOCAL_FILTER.set(level);
         }
     }
 }
