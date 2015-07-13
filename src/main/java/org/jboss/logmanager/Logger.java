@@ -377,14 +377,6 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     static final int FINER_INT = Level.FINER.intValue();
     static final int FINEST_INT = Level.FINEST.intValue();
 
-    private boolean forceLogging() {
-        final Boolean value = TRACING_ON.get();
-        if (value == null) {
-            return false;
-        }
-        return TRACING_ON.get();
-    }
-
     /** {@inheritDoc} */
     public void log(LogRecord record) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
