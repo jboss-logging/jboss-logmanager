@@ -19,37 +19,38 @@
 
 package org.jboss.logmanager.formatters;
 
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import org.jboss.logmanager.ExtLogRecord;
-
-import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Formatter;
-import java.util.logging.LogRecord;
-
-import java.security.PrivilegedAction;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-import static java.lang.Math.min;
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.System.getSecurityManager;
 import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
+import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.IdentityHashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.logging.Formatter;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
+
+import org.jboss.logmanager.ExtLogRecord;
 
 /**
  * Formatter utility methods.
@@ -617,7 +618,7 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final boolean extended) {
-        return exceptionFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, extended);
+        return exceptionFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, null, extended);
     }
 
     /**
@@ -630,7 +631,7 @@ public final class Formatters {
      * @param extended {@code true} if the stack trace should attempt to include extended JAR version information
      * @return the format step
      */
-    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final boolean extended) {
+    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String argument, final boolean extended) {
         final ThreadLocal<Boolean> entered = new ThreadLocal<>() ;
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
@@ -638,26 +639,120 @@ public final class Formatters {
                     public Void run() {
                         final Throwable t = record.getThrown();
                         if (t != null) {
-                            builder.append(": ").append(t).append(NEW_LINE);
-                            final StackTraceElement[] stackTrace = t.getStackTrace();
+                            int depth = -1;
+                            if (argument != null) {
+                                try {
+                                    depth = Integer.parseInt(argument);
+                                } catch (NumberFormatException ignore) {
+                                }
+                            }
                             final Map<String, String> cache = extended ? new HashMap<String, String>() : null;
-                            if (extended) {
-                                for (StackTraceElement element : stackTrace) {
-                                    renderExtended(builder, element, cache);
-                                }
-                            } else {
-                                for (StackTraceElement element : stackTrace) {
-                                    renderTrivial(builder, element);
-                                }
-                            }
-                            final Throwable cause = t.getCause();
-                            if (cause != null) {
-                                renderCause(builder, t, cause, cache, extended);
-                            }
+                            renderStackTrace(builder, t, cache, extended, depth);
                         }
                         return null;
                     }
                 });
+            }
+
+            private void renderStackTrace(final StringBuilder builder, final Throwable t, final Map<String, String> cache, final boolean extended, final int depth) {
+                builder.append(": ").append(t).append(NEW_LINE);
+                final StackTraceElement[] stackTrace = t.getStackTrace();
+                if (extended) {
+                    for (StackTraceElement element : stackTrace) {
+                        renderExtended(builder, element, cache);
+                    }
+                } else {
+                    for (StackTraceElement element : stackTrace) {
+                        renderTrivial(builder, element);
+                    }
+                }
+                // Use the identity of the throwable to determine uniqueness
+                final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
+                seen.add(t);
+
+                // Render suppressed if desired
+                if (depth != 0) {
+                    renderSuppressed(builder, t, t.getSuppressed(), cache, extended, depth, 0, seen);
+                }
+
+                // Render the cause
+                final Throwable cause = t.getCause();
+                if (cause != null) {
+                    renderCause(builder, t, cause, cache, extended, depth, 0, seen);
+                }
+            }
+
+            private void renderStackTrace(final StringBuilder builder, final String text, final Throwable parent, final Throwable child,
+                                          final Map<String, String> cache, final boolean extended, final int depth, final int count, final Set<Throwable> seen) {
+                // Add the child to the seen list, the parent should already have been added
+                seen.add(child);
+
+                final StackTraceElement[] causeStack = child.getStackTrace();
+                final StackTraceElement[] currentStack = parent.getStackTrace();
+
+                int m = causeStack.length - 1;
+                int n = currentStack.length - 1;
+
+                // Walk the stacks backwards from the end, until we find an element that is different
+                while (m >= 0 && n >= 0 && causeStack[m].equals(currentStack[n])) {
+                    m--; n--;
+                }
+                int framesInCommon = causeStack.length - 1 - m;
+
+                indent(builder, count);
+                builder.append(text).append(child).append(NEW_LINE);
+
+                if (extended) {
+                    for (int i=0; i <= m; i++) {
+                        // Add the prefix for each line
+                        indent(builder, count);
+                        renderExtended(builder, causeStack[i], cache);
+                    }
+                } else {
+                    for (int i=0; i <= m; i++) {
+                        // Add the prefix for each line
+                        indent(builder, count);
+                        renderTrivial(builder, causeStack[i]);
+                    }
+                }
+                if (framesInCommon != 0) {
+                    indent(builder, count);
+                    builder.append("\t... ").append(framesInCommon).append(" more").append(NEW_LINE);
+                }
+
+                if (depth != 0) {
+                    renderSuppressed(builder, child, child.getSuppressed(), cache, extended, depth, count, seen);
+                }
+
+                // Recurse if we have a cause
+                final Throwable ourCause = child.getCause();
+                if (ourCause != null) {
+                    renderCause(builder, child, ourCause, cache, extended, depth, count, seen);
+                }
+            }
+
+            private void renderCause(final StringBuilder builder, final Throwable t, final Throwable cause, final Map<String, String> cache,
+                                     final boolean extended, final int depth, final int count, final Set<Throwable> seen) {
+                renderStackTrace(builder, "Caused by: ", t, cause, cache, extended, depth, count, seen);
+            }
+
+            private void renderSuppressed(final StringBuilder builder, final Throwable t, final Throwable[] suppressed, final Map<String, String> cache,
+                                          final boolean extended, final int depth, final int count, final Set<Throwable> seen) {
+                if (suppressed != null && (depth < 0 || depth > count)) {
+                    for (Throwable s : suppressed) {
+                        if (seen.contains(s)) {
+                            builder.append("\t[CIRCULAR REFERENCE:").append(s).append(']').append(NEW_LINE);
+                        } else {
+                            renderStackTrace(builder, "Suppressed: ", t, s, cache, extended, depth, (count + 1), seen);
+                        }
+                    }
+                }
+            }
+
+            private void indent(final StringBuilder builder, final int count) {
+                for (int i = 0; i < count; i++) {
+                    builder.append('\t');
+                }
             }
 
             private void renderTrivial(final StringBuilder builder, final StackTraceElement element) {
@@ -803,42 +898,6 @@ public final class Formatters {
                     return null;
                 } finally {
                     entered.remove();
-                }
-            }
-
-            private void renderCause(final StringBuilder builder, final Throwable t, final Throwable cause, final Map<String, String> cache, final boolean extended) {
-
-                final StackTraceElement[] causeStack = cause.getStackTrace();
-                final StackTraceElement[] currentStack = t.getStackTrace();
-
-                int m = causeStack.length - 1;
-                int n = currentStack.length - 1;
-
-                // Walk the stacks backwards from the end, until we find an element that is different
-                while (m >= 0 && n >= 0 && causeStack[m].equals(currentStack[n])) {
-                    m--; n--;
-                }
-                int framesInCommon = causeStack.length - 1 - m;
-
-                builder.append("Caused by: ").append(cause).append(NEW_LINE);
-
-                if (extended) {
-                    for (int i=0; i <= m; i++) {
-                        renderExtended(builder, causeStack[i], cache);
-                    }
-                } else {
-                    for (int i=0; i <= m; i++) {
-                        renderTrivial(builder, causeStack[i]);
-                    }
-                }
-                if (framesInCommon != 0) {
-                    builder.append("\t... ").append(framesInCommon).append(" more").append(NEW_LINE);
-                }
-
-                // Recurse if we have a cause
-                final Throwable ourCause = cause.getCause();
-                if (ourCause != null) {
-                    renderCause(builder, cause, ourCause, cache, extended);
                 }
             }
         };
