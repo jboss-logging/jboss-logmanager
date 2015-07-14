@@ -273,7 +273,7 @@ final class LoggerNode {
 
     int getEffectiveLevel() {
         final Level overriddenLevel;
-        if(LogManager.PER_THREAD_LOG_FILTER
+        if(LogManager.PER_THREAD_LOG_EFECTIVE_LEVEL
                 && (overriddenLevel = LogManager.getThreadLocalEffectiveLevel()) != null) {
             return overriddenLevel.intValue();
         }
@@ -474,7 +474,7 @@ final class LoggerNode {
      */
     boolean isLoggable(final ExtLogRecord record) {
         final Level overriddenLevel;
-        if(LogManager.PER_THREAD_LOG_FILTER
+        if(LogManager.PER_THREAD_LOG_EFECTIVE_LEVEL
                 && (overriddenLevel = LogManager.getThreadLocalEffectiveLevel()) != null) {
             return record.getLevel().intValue() >= overriddenLevel.intValue();
         }

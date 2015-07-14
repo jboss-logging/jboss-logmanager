@@ -45,17 +45,17 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class LogManager extends java.util.logging.LogManager {
 
-    public static final String PER_THREAD_LOG_FILTER_KEY = "org.jboss.logmanager.useThreadLocalEfectiveLevel";
-    static final boolean PER_THREAD_LOG_FILTER;
+    public static final String PER_THREAD_LOG_LEVEL_KEY = "org.jboss.logmanager.useThreadLocalEfectiveLevel";
+    static final boolean PER_THREAD_LOG_EFECTIVE_LEVEL;
 
     static {
         if (System.getSecurityManager() == null) {
-            PER_THREAD_LOG_FILTER = Boolean.getBoolean(PER_THREAD_LOG_FILTER_KEY);
+            PER_THREAD_LOG_EFECTIVE_LEVEL = Boolean.getBoolean(PER_THREAD_LOG_LEVEL_KEY);
         } else {
-            PER_THREAD_LOG_FILTER = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+            PER_THREAD_LOG_EFECTIVE_LEVEL = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                 @Override
                 public Boolean run() {
-                    return Boolean.getBoolean(PER_THREAD_LOG_FILTER_KEY);
+                    return Boolean.getBoolean(PER_THREAD_LOG_LEVEL_KEY);
                 }
             });
         }
@@ -605,25 +605,25 @@ public final class LogManager extends java.util.logging.LogManager {
     /**
      * Returns the currently set filter for this thread or {@code null} if one has not been set.
      * <p>
-     * If the {@link #PER_THREAD_LOG_FILTER_KEY} is not set to {@code true} then {@code null} will always be returned.
+     * If the {@link #PER_THREAD_LOG_LEVEL_KEY} is not set to {@code true} then {@code null} will always be returned.
      * </p>
      *
      * @return the level used as effective level by all loggers inside the current thread or {@code null} if no level was set
      */
     public static java.util.logging.Level getThreadLocalEffectiveLevel() {
-        return PER_THREAD_LOG_FILTER ? LocalEfectiveLevelHolder.LOCAL_FILTER.get() : null;
+        return PER_THREAD_LOG_EFECTIVE_LEVEL ? LocalEfectiveLevelHolder.LOCAL_FILTER.get() : null;
     }
 
     /**
      * Sets the filter on the thread for all loggers.
      * <p>
-     * This feature only works if the {@link #PER_THREAD_LOG_FILTER} was set to {@code true}
+     * This feature only works if the {@link #PER_THREAD_LOG_EFECTIVE_LEVEL} was set to {@code true}
      * </p>
      *
      * @param level used as effective level by all loggers used by the current thread.
      */
     public static void setThreadLocalEffectiveLevel(final java.util.logging.Level level) {
-        if (PER_THREAD_LOG_FILTER) {
+        if (PER_THREAD_LOG_EFECTIVE_LEVEL) {
             LocalEfectiveLevelHolder.LOCAL_FILTER.set(level);
         }
     }
