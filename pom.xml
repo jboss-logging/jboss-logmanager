@@ -84,7 +84,7 @@
                     </excludes>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-                        <org.jboss.logmanager.useThreadLocalFilter>true</org.jboss.logmanager.useThreadLocalFilter>
+                        <org.jboss.logmanager.useThreadLocalEfectiveLevel>true</org.jboss.logmanager.useThreadLocalEfectiveLevel>
                         <test.log.dir>${project.build.directory}${file.separator}logs${file.separator}</test.log.dir>
                     </systemPropertyVariables>
                 </configuration>

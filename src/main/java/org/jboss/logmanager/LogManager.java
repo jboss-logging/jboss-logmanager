@@ -45,7 +45,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class LogManager extends java.util.logging.LogManager {
 
-    public static final String PER_THREAD_LOG_FILTER_KEY = "org.jboss.logmanager.useThreadLocalFilter";
+    public static final String PER_THREAD_LOG_FILTER_KEY = "org.jboss.logmanager.useThreadLocalEfectiveLevel";
     static final boolean PER_THREAD_LOG_FILTER;
 
     static {
@@ -61,7 +61,7 @@ public final class LogManager extends java.util.logging.LogManager {
         }
     }
 
-    private static class LocalFilterHolder {
+    private static class LocalEfectiveLevelHolder {
         static final ThreadLocal<java.util.logging.Level> LOCAL_FILTER = new ThreadLocal<>();
     }
 
@@ -611,7 +611,7 @@ public final class LogManager extends java.util.logging.LogManager {
      * @return the level used as effective level by all loggers inside the current thread or {@code null} if no level was set
      */
     public static java.util.logging.Level getThreadLocalEffectiveLevel() {
-        return PER_THREAD_LOG_FILTER ? LocalFilterHolder.LOCAL_FILTER.get() : null;
+        return PER_THREAD_LOG_FILTER ? LocalEfectiveLevelHolder.LOCAL_FILTER.get() : null;
     }
 
     /**
@@ -624,7 +624,7 @@ public final class LogManager extends java.util.logging.LogManager {
      */
     public static void setThreadLocalEffectiveLevel(final java.util.logging.Level level) {
         if (PER_THREAD_LOG_FILTER) {
-            LocalFilterHolder.LOCAL_FILTER.set(level);
+            LocalEfectiveLevelHolder.LOCAL_FILTER.set(level);
         }
     }
 }
