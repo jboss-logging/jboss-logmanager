@@ -1138,7 +1138,7 @@ public class SyslogHandler extends ExtHandler {
             final int minutes = cal.get(Calendar.MINUTE);
             final int seconds = cal.get(Calendar.SECOND);
             buffer.append(cal.get(Calendar.YEAR)).append('-');
-            if (month < 10) {
+            if (month < Calendar.OCTOBER) {
                 buffer.append(0);
             }
             buffer.append(month + 1).append('-');
