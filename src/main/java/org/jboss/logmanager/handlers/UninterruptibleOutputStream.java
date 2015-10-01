@@ -19,7 +19,6 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
@@ -32,7 +31,8 @@ import static java.lang.Thread.interrupted;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public final class UninterruptibleOutputStream extends FilterOutputStream {
+public final class UninterruptibleOutputStream extends OutputStream {
+    private final OutputStream out;
 
     /**
      * Construct a new instance.
@@ -40,7 +40,7 @@ public final class UninterruptibleOutputStream extends FilterOutputStream {
      * @param out the delegate stream
      */
     public UninterruptibleOutputStream(final OutputStream out) {
-        super(out);
+        this.out = out;
     }
 
     /**
@@ -53,7 +53,7 @@ public final class UninterruptibleOutputStream extends FilterOutputStream {
         boolean intr = false;
         try {
             for (;;) try {
-                super.write(b);
+                out.write(b);
                 return;
             } catch (InterruptedIOException e) {
                 final int transferred = e.bytesTransferred;
@@ -81,7 +81,7 @@ public final class UninterruptibleOutputStream extends FilterOutputStream {
         boolean intr = false;
         try {
             while (len > 0) try {
-                super.write(b, off, len);
+                out.write(b, off, len);
                 return;
             } catch (InterruptedIOException e) {
                 final int transferred = e.bytesTransferred;
@@ -107,7 +107,7 @@ public final class UninterruptibleOutputStream extends FilterOutputStream {
         boolean intr = false;
         try {
             for (;;) try {
-                super.flush();
+                out.flush();
                 return;
             } catch (InterruptedIOException e) {
                 intr |= interrupted();
@@ -128,7 +128,7 @@ public final class UninterruptibleOutputStream extends FilterOutputStream {
         boolean intr = false;
         try {
             for (;;) try {
-                super.close();
+                out.close();
                 return;
             } catch (InterruptedIOException e) {
                 intr |= interrupted();
