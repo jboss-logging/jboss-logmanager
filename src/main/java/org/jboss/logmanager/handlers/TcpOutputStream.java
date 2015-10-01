@@ -55,9 +55,10 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
     private final SocketFactory socketFactory;
     private final InetAddress address;
     private final int port;
-    private final Thread reconnectThread;
     private final Deque<Exception> errors = new ArrayDeque<Exception>(maxErrors);
 
+    // Guarded by outputLock
+    private Thread reconnectThread;
     // Guarded by outputLock
     private boolean blockOnReconnect;
     // Guarded by outputLock
@@ -81,8 +82,14 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
 
     /**
      * Creates a TCP output stream.
-     * <p/>
+     * <p>
      * Uses the {@link javax.net.SocketFactory#getDefault() default socket factory} to create the socket.
+     * </p>
+     * <p>
+     * Note that if {@code blockOnReconnect} is set to {@code false} and the socket fails to connect in the constructor
+     * reconnection won't be attempted. If set to {@code true} and the socket couldn't be connected during construction
+     * a new reconnect thread will be launched in an attempt to reconnect.
+     * </p>
      *
      * @param address          the address to connect to
      * @param port             the port to connect to
@@ -131,8 +138,14 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
 
     /**
      * Creates a new TCP output stream.
-     * <p/>
+     * <p>
      * Creates a {@link java.net.Socket socket} from the {@code socketFactory} argument.
+     * </p>
+     * <p>
+     * Note that if {@code blockOnReconnect} is set to {@code false} and the socket fails to connect in the constructor
+     * reconnection won't be attempted. If set to {@code true} and the socket couldn't be connected during construction
+     * a new reconnect thread will be launched in an attempt to reconnect.
+     * </p>
      *
      * @param socketFactory    the factory used to create the socket
      * @param address          the address to connect to
@@ -147,11 +160,17 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
         this.address = address;
         this.port = port;
         this.blockOnReconnect = blockOnReconnect;
-        socket = socketFactory.createSocket(address, port);
+        if (blockOnReconnect) {
+            socket = socketFactory.createSocket(address, port);
+        } else {
+            try {
+                socket = socketFactory.createSocket(address, port);
+            } catch (IOException e) {
+                reconnectThread = createThread();
+                reconnectThread.start();
+            }
+        }
         connected = true;
-        reconnectThread = new Thread(new RetryConnector());
-        reconnectThread.setDaemon(true);
-        reconnectThread.setName("LogManager Socket Reconnect Thread");
     }
 
     @Override
@@ -172,12 +191,13 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
                     socket.getOutputStream().write(b, off, len);
                 }
             } catch (SocketException e) {
-                if (reconnectThread != null) {
+                if (socketFactory != null && reconnectThread == null) {
+                    reconnectThread = createThread();
                     addError(e);
                     connected = false;
-                    // Close the previous output delegate
+                    // Close the previous socket
                     try {
-                        socket.getOutputStream().close();
+                        socket.close();
                     } catch (IOException ignore) {
                     }
                     if (blockOnReconnect) {
@@ -197,14 +217,35 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
     @Override
     public void flush() throws IOException {
         synchronized (outputLock) {
-            socket.getOutputStream().flush();
+            try {
+                socket.getOutputStream().flush();
+            } catch (SocketException e) {
+                // This should likely never be hit, but should attempt to reconnect if it does happen
+                if (socketFactory != null && reconnectThread == null) {
+                    reconnectThread = createThread();
+                    addError(e);
+                    connected = false;
+                    // Close the previous socket
+                    try {
+                        socket.close();
+                    } catch (IOException ignore) {
+                    }
+                    if (blockOnReconnect) {
+                        reconnectThread.run();
+                    } else {
+                        reconnectThread.start();
+                    }
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
     @Override
     public void close() throws IOException {
         synchronized (outputLock) {
-            socket.getOutputStream().close();
+            socket.close();
         }
     }
 
@@ -274,6 +315,13 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
         }
     }
 
+    private Thread createThread() {
+        final Thread thread = new Thread(new RetryConnector());
+        thread.setDaemon(true);
+        thread.setName("LogManager Socket Reconnect Thread");
+        return thread;
+    }
+
     private class RetryConnector implements Runnable {
         private int attempts = 0;
 
@@ -285,6 +333,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
                     synchronized (outputLock) {
                         TcpOutputStream.this.socket = socket;
                         connected = true;
+                        reconnectThread = null;
                     }
                 } catch (IOException e) {
                     addError(e);
