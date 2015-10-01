@@ -291,7 +291,7 @@ public class SyslogHandler extends ExtHandler {
                 // yyyy-MM-dd'T'HH:mm:ss.SSSXXX
                 case RFC5424: {
                     buffer.append(cal.get(Calendar.YEAR)).append('-');
-                    if (month < 10) {
+                    if (month < Calendar.OCTOBER) {
                         buffer.append(0);
                     }
                     buffer.append(month + 1).append('-');
