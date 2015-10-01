@@ -19,12 +19,15 @@
 
 package org.jboss.logmanager;
 
+import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.PrintStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -50,8 +53,8 @@ import org.jboss.logmanager.config.ValueExpression;
 public final class PropertyConfigurator implements Configurator {
 
     private static final String[] EMPTY_STRINGS = new String[0];
-    private static final String ENCODING = "utf-8";
     private static final Pattern EXPRESSION_PATTERN = Pattern.compile(".*\\$\\{.*\\}.*");
+    private static final String NEW_LINE = System.lineSeparator();
 
     private final LogContextConfiguration config;
 
@@ -86,7 +89,7 @@ public final class PropertyConfigurator implements Configurator {
     public void configure(final InputStream inputStream) throws IOException {
         final Properties properties = new Properties();
         try {
-            properties.load(new InputStreamReader(inputStream, ENCODING));
+            properties.load(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
             inputStream.close();
         } finally {
             safeClose(inputStream);
@@ -118,7 +121,7 @@ public final class PropertyConfigurator implements Configurator {
      */
     public void writeConfiguration(final OutputStream outputStream, final boolean writeExpressions) throws IOException {
         try {
-            final PrintStream out = new PrintStream(outputStream, true, ENCODING);
+            final BufferedWriter out = new BufferedWriter(new OutputStreamWriter(outputStream, StandardCharsets.UTF_8));
             try {
                 final Set<String> implicitHandlers = new HashSet<String>();
                 final Set<String> implicitFilters = new HashSet<String>();
@@ -140,7 +143,7 @@ public final class PropertyConfigurator implements Configurator {
                 if (!explicitHandlerNames.isEmpty()) {
                     writePropertyComment(out, "Additional handlers to configure");
                     writeProperty(out, "handlers", toCsvString(explicitHandlerNames));
-                    out.println();
+                    out.write(NEW_LINE);
                 }
                 for (String handlerName : allHandlerNames) {
                     writeHandlerConfiguration(out, config.getHandlerConfiguration(handlerName), implicitHandlers, implicitFilters,
@@ -152,7 +155,7 @@ public final class PropertyConfigurator implements Configurator {
                 if (!explicitFilterNames.isEmpty()) {
                     writePropertyComment(out, "Additional filters to configure");
                     writeProperty(out, "filters", toCsvString(explicitFilterNames));
-                    out.println();
+                    out.write(NEW_LINE);
                 }
                 for (String filterName : allFilterNames) {
                     writeFilterConfiguration(out, config.getFilterConfiguration(filterName), writeExpressions);
@@ -163,7 +166,7 @@ public final class PropertyConfigurator implements Configurator {
                 if (!explicitFormatterNames.isEmpty()) {
                     writePropertyComment(out, "Additional formatters to configure");
                     writeProperty(out, "formatters", toCsvString(explicitFormatterNames));
-                    out.println();
+                    out.write(NEW_LINE);
                 }
                 for (String formatterName : allFormatterNames) {
                     writeFormatterConfiguration(out, config.getFormatterConfiguration(formatterName), writeExpressions);
@@ -174,7 +177,7 @@ public final class PropertyConfigurator implements Configurator {
                 if (!explicitErrorManagerNames.isEmpty()) {
                     writePropertyComment(out, "Additional errorManagers to configure");
                     writeProperty(out, "errorManagers", toCsvString(explicitErrorManagerNames));
-                    out.println();
+                    out.write(NEW_LINE);
                 }
                 for (String errorManagerName : allErrorManagerNames) {
                     writeErrorManagerConfiguration(out, config.getErrorManagerConfiguration(errorManagerName), writeExpressions);
@@ -190,6 +193,7 @@ public final class PropertyConfigurator implements Configurator {
                     }
                 }
 
+                out.flush();
                 out.close();
             } finally {
                 safeClose(out);
@@ -200,11 +204,11 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private void writeLoggerConfiguration(final PrintStream out, final LoggerConfiguration logger,
+    private void writeLoggerConfiguration(final Writer out, final LoggerConfiguration logger,
                                           final Set<String> implicitHandlers, final Set<String> implicitFilters,
-                                          final boolean writeExpressions) {
+                                          final boolean writeExpressions) throws IOException {
         if (logger != null) {
-            out.println();
+            out.write(NEW_LINE);
             final String name = logger.getName();
             final String prefix = name.isEmpty() ? "logger." : "logger." + name + ".";
             final String level = (writeExpressions ? logger.getLevelValueExpression().getValue() : logger.getLevel());
@@ -237,12 +241,12 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private void writeHandlerConfiguration(final PrintStream out, final HandlerConfiguration handler,
+    private void writeHandlerConfiguration(final Writer out, final HandlerConfiguration handler,
                                            final Set<String> implicitHandlers, final Set<String> implicitFilters,
                                            final Set<String> implicitFormatters, final Set<String> implicitErrorManagers,
-                                           final boolean writeExpressions) {
+                                           final boolean writeExpressions) throws IOException {
         if (handler != null) {
-            out.println();
+            out.write(NEW_LINE);
             final String name = handler.getName();
             final String prefix = "handler." + name + ".";
             final String className = handler.getClassName();
@@ -304,9 +308,9 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeFilterConfiguration(final PrintStream out, final FilterConfiguration filter, final boolean writeExpressions) {
+    private static void writeFilterConfiguration(final Writer out, final FilterConfiguration filter, final boolean writeExpressions) throws IOException {
         if (filter != null) {
-            out.println();
+            out.write(NEW_LINE);
             final String name = filter.getName();
             final String prefix = "filter." + name + ".";
             final String className = filter.getClassName();
@@ -323,9 +327,9 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeFormatterConfiguration(final PrintStream out, final FormatterConfiguration formatter, final boolean writeExpressions) {
+    private static void writeFormatterConfiguration(final Writer out, final FormatterConfiguration formatter, final boolean writeExpressions) throws IOException {
         if (formatter != null) {
-            out.println();
+            out.write(NEW_LINE);
             final String name = formatter.getName();
             final String prefix = "formatter." + name + ".";
             final String className = formatter.getClassName();
@@ -342,9 +346,9 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writeErrorManagerConfiguration(final PrintStream out, final ErrorManagerConfiguration errorManager, final boolean writeExpressions) {
+    private static void writeErrorManagerConfiguration(final Writer out, final ErrorManagerConfiguration errorManager, final boolean writeExpressions) throws IOException {
         if (errorManager != null) {
-            out.println();
+            out.write(NEW_LINE);
             final String name = errorManager.getName();
             final String prefix = "errorManager." + name + ".";
             final String className = errorManager.getClassName();
@@ -361,9 +365,9 @@ public final class PropertyConfigurator implements Configurator {
         }
     }
 
-    private static void writePojoConfiguration(final PrintStream out, final PojoConfiguration pojo, final boolean writeExpressions) {
+    private static void writePojoConfiguration(final Writer out, final PojoConfiguration pojo, final boolean writeExpressions) throws IOException {
         if (pojo != null) {
-            out.println();
+            out.write(NEW_LINE);
             final String name = pojo.getName();
             final String prefix = "pojo." + name + ".";
             final String className = pojo.getClassName();
@@ -386,8 +390,11 @@ public final class PropertyConfigurator implements Configurator {
      * @param out     the print stream to write to.
      * @param comment the comment to write.
      */
-    private static void writePropertyComment(final PrintStream out, final String comment) {
-        out.printf("%n# %s%n", comment);
+    private static void writePropertyComment(final Writer out, final String comment) throws IOException {
+        out.write(NEW_LINE);
+        out.write("# ");
+        out.write(comment);
+        out.write(NEW_LINE);
     }
 
     /**
@@ -397,7 +404,7 @@ public final class PropertyConfigurator implements Configurator {
      * @param name   the name of the property.
      * @param value  the value of the property.
      */
-    private static void writeProperty(final PrintStream out, final String name, final String value) {
+    private static void writeProperty(final Writer out, final String name, final String value) throws IOException {
         writeProperty(out, null, name, value);
     }
 
@@ -409,14 +416,14 @@ public final class PropertyConfigurator implements Configurator {
      * @param name   the name of the property.
      * @param value  the value of the property.
      */
-    private static void writeProperty(final PrintStream out, final String prefix, final String name, final String value) {
+    private static void writeProperty(final Writer out, final String prefix, final String name, final String value) throws IOException {
         if (prefix == null) {
             writeKey(out, name);
         } else {
             writeKey(out, String.format("%s%s", prefix, name));
         }
         writeValue(out, value);
-        out.println();
+        out.write(NEW_LINE);
     }
 
     /**
@@ -429,7 +436,7 @@ public final class PropertyConfigurator implements Configurator {
      * @param writeExpression      {@code true} if expressions should be written, {@code false} if the resolved value
      *                             should be written
      */
-    private static void writeProperties(final PrintStream out, final String prefix, final PropertyConfigurable propertyConfigurable, final boolean writeExpression) {
+    private static void writeProperties(final Writer out, final String prefix, final PropertyConfigurable propertyConfigurable, final boolean writeExpression) throws IOException {
         final List<String> names = propertyConfigurable.getPropertyNames();
         if (!names.isEmpty()) {
             final List<String> ctorProps = propertyConfigurable.getConstructorProperties();
@@ -781,20 +788,20 @@ public final class PropertyConfigurator implements Configurator {
         return new ArrayList<String>(Arrays.asList(getStringCsvArray(properties, key)));
     }
 
-    private static void writeValue(final PrintStream out, final String value) {
+    private static void writeValue(final Appendable out, final String value) throws IOException {
         writeSanitized(out, value, false);
     }
 
-    private static void writeKey(final PrintStream out, final String key) {
+    private static void writeKey(final Appendable out, final String key) throws IOException {
         writeSanitized(out, key, true);
         out.append('=');
     }
 
-    private static void writeSanitized(final PrintStream out, final String string, final boolean escapeSpaces) {
+    private static void writeSanitized(final Appendable out, final String string, final boolean escapeSpaces) throws IOException {
         for (int x = 0; x < string.length(); x++) {
             final char c = string.charAt(x);
             switch (c) {
-                case ' ' :
+                case ' ':
                     if (x == 0 || escapeSpaces)
                         out.append('\\');
                     out.append(c);
