@@ -20,6 +20,12 @@
 package org.jboss.logmanager.handlers;
 
 import org.jboss.logmanager.ExtLogRecord;
+
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Calendar;
@@ -177,10 +183,11 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             // first, close the original file (some OSes won't let you move/rename a file that is open)
             setFile(null);
             // next, rotate it
-            file.renameTo(new File(file.getAbsolutePath() + nextSuffix));
+            final Path target = Paths.get(file.getAbsolutePath() + nextSuffix);
+            Files.move(file.toPath(), target, StandardCopyOption.REPLACE_EXISTING);
             // start new file
             setFile(file);
-        } catch (FileNotFoundException e) {
+        } catch (IOException e) {
             reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
         }
     }
