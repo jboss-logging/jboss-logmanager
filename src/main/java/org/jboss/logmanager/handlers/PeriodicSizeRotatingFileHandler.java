@@ -243,11 +243,10 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
         Files.deleteIfExists(Paths.get(fileWithSuffix + "." + maxBackupIndex));
         for (int i = maxBackupIndex - 1; i >= 1; i--) {
             final Path src = Paths.get(fileWithSuffix + "." + i);
-            if (Files.notExists(src)) {
-                break;
+            if (Files.exists(src)) {
+                final Path target = Paths.get(fileWithSuffix + "." + (i + 1));
+                Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
             }
-            final Path target = Paths.get(fileWithSuffix + "." + (i + 1));
-            Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
         }
         Files.move(file.toPath(), Paths.get(fileWithSuffix + ".1"), StandardCopyOption.REPLACE_EXISTING);
     }
