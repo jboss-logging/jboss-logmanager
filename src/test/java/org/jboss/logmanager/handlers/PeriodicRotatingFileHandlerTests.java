@@ -61,20 +61,22 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
 
     @Test
     public void testRotate() throws Exception {
-        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(createCalendar().getTime()));
-        testRotate(createCalendar(), rotatedFile);
+        final Calendar cal = Calendar.getInstance();
+        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
+        testRotate(cal, rotatedFile);
     }
 
     @Test
     public void testOverwriteRotate() throws Exception {
-        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(createCalendar().getTime()));
+        final Calendar cal = Calendar.getInstance();
+        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
 
         // Create the rotated file to ensure at some point it gets overwritten
         Files.deleteIfExists(rotatedFile);
         try (final BufferedWriter writer = Files.newBufferedWriter(rotatedFile, StandardCharsets.UTF_8)) {
             writer.write("Adding data to the file");
         }
-        testRotate(createCalendar(), rotatedFile);
+        testRotate(cal, rotatedFile);
     }
 
 
@@ -97,7 +99,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
 
         // Create a new record, increment the day by one and validate
-        cal.set(Calendar.DAY_OF_MONTH, nextDay);
+        cal.add(Calendar.DAY_OF_MONTH, nextDay);
         final String nextDate = sdf.format(cal.getTime());
         record = createLogRecord(Level.INFO, "Date: %s", nextDate);
         record.setMillis(cal.getTimeInMillis());
@@ -105,6 +107,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
 
         // Read the contents of the log file and ensure there's only one line and that like
         lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
+        System.out.println(lines);
         Assert.assertEquals("More than 1 line found", 1, lines.size());
         Assert.assertTrue("Expected the line to contain the date: " + nextDate, lines.get(0).contains(nextDate));
 
@@ -113,13 +116,5 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         lines = Files.readAllLines(rotatedFile, StandardCharsets.UTF_8);
         Assert.assertEquals("More than 1 line found", 1, lines.size());
         Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
-    }
-
-    private Calendar createCalendar() {
-        final Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.YEAR, 2015);
-        calendar.set(Calendar.MONTH, Calendar.OCTOBER);
-        calendar.set(Calendar.DAY_OF_MONTH, 21);
-        return calendar;
     }
 }
