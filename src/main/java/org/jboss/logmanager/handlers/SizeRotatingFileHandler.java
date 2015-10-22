@@ -260,11 +260,10 @@ public class SizeRotatingFileHandler extends FileHandler {
             Files.deleteIfExists(Paths.get(file.getAbsolutePath() + "." + maxBackupIndex));
             for (int i = maxBackupIndex - 1; i >= 1; i--) {
                 final Path src = Paths.get(file.getAbsolutePath() + "." + i);
-                if (Files.notExists(src)) {
-                    break;
+                if (Files.exists(src)) {
+                    final Path target = Paths.get(file.getAbsolutePath() + "." + (i + 1));
+                    Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
                 }
-                final Path target = Paths.get(file.getAbsolutePath() + "." + (i + 1));
-                Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
             }
             Files.move(file.toPath(), Paths.get(file.getAbsolutePath() + ".1"), StandardCopyOption.REPLACE_EXISTING);
         } else {
@@ -277,11 +276,10 @@ public class SizeRotatingFileHandler extends FileHandler {
             Files.deleteIfExists(Paths.get(newBaseFilename + "." + maxBackupIndex));
             for (int i = maxBackupIndex - 1; i >= 1; i--) {
                 final Path src = Paths.get(newBaseFilename + "." + i);
-                if (Files.notExists(src)) {
-                    break;
+                if (Files.exists(src)) {
+                    final Path target = Paths.get(newBaseFilename + "." + (i + 1));
+                    Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
                 }
-                final Path target = Paths.get(newBaseFilename + "." + (i + 1));
-                Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
             }
             // Rename the current file
             Files.move(file.toPath(), Paths.get(newBaseFilename + ".1"), StandardCopyOption.REPLACE_EXISTING);
