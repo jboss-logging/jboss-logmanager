@@ -19,11 +19,11 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.IOException;
 import java.io.OutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import org.jboss.logmanager.ExtLogRecord;
-
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.ErrorManager;
@@ -131,12 +131,20 @@ public class SizeRotatingFileHandler extends FileHandler {
         }
     }
 
-    /** {@inheritDoc} */
+    /**
+     * {@inheritDoc}
+     *
+     * @throws RuntimeException if there is an attempt to rotate file and the rotation fails
+     */
     public void setFile(final File file) throws FileNotFoundException {
         synchronized (outputLock) {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
-                rotate(file);
+                try {
+                    rotate(file);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
             super.setFile(file);
             if (outputStream != null)
@@ -235,32 +243,43 @@ public class SizeRotatingFileHandler extends FileHandler {
                 rotate(file);
                 // start with new file.
                 setFile(file);
-            } catch (FileNotFoundException e) {
+            } catch (IOException e) {
                 reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
             }
         }
     }
 
-    private void rotate(final File file) {
+    private void rotate(final File file) throws IOException {
         if (suffix == null) {
             // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
-            new File(file.getAbsolutePath() + "." + maxBackupIndex).delete();
+            String filePath = file.getAbsolutePath();
+            new File(filePath + "." + maxBackupIndex).delete();
             for (int i = maxBackupIndex - 1; i >= 1; i--) {
-                new File(file.getAbsolutePath() + "." + i).renameTo(new File(file.getAbsolutePath() + "." + (i + 1)));
+                final File src = new File(filePath + "." + i);
+                if (src.exists()) {
+                    final File target = new File(filePath + "." + (i + 1));
+                    FileMove.move(src, target);
+                }
             }
-            file.renameTo(new File(file.getAbsolutePath() + ".1"));
+            FileMove.move(file, new File(filePath + ".1"));
         } else {
             // This is not efficient, but performance risks were noted on the setSuffix() method
             final String suffix = new SimpleDateFormat(this.suffix).format(new Date());
             // Create the file name
             final String newBaseFilename = file.getAbsolutePath() + suffix;
 
-            // Rename any incremental files found
+            // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
+            File newBaseFile = new File(newBaseFilename + "." + maxBackupIndex);
+            if (newBaseFile.exists())
+                newBaseFile.delete();
             for (int i = maxBackupIndex - 1; i >= 1; i--) {
-                new File(newBaseFilename + "." + i).renameTo(new File(newBaseFilename + "." + (i + 1)));
+                final File src = new File(newBaseFilename + "." + i);
+                if (src.exists()) {
+                    final File target = new File(newBaseFilename + "." + (i + 1));
+                    FileMove.move(src, target);
+                }
             }
-            // Rename the current file
-            file.renameTo(new File(newBaseFilename + ".1"));
+            FileMove.move(file, new File(newBaseFilename + ".1"));
         }
     }
 }

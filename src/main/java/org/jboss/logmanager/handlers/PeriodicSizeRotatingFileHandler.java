@@ -21,6 +21,7 @@ package org.jboss.logmanager.handlers;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.OutputStream;
 import java.util.logging.ErrorManager;
 
@@ -140,12 +141,21 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
         }
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @throws RuntimeException if there is an attempt to rotate file and the rotation fails
+     */
     @Override
     public void setFile(final File file) throws FileNotFoundException {
         synchronized (outputLock) {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
-                rotate(file);
+                try {
+                    rotate(file);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
             super.setFile(file);
             if (outputStream != null)
@@ -218,19 +228,24 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
                 rotate(file);
                 // start with new file.
                 setFile(file);
-            } catch (FileNotFoundException e) {
+            } catch (IOException e) {
                 reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
             }
         }
     }
 
-    private void rotate(final File file) {
-        final File fileWithSuffix = new File(file.getAbsolutePath() + getNextSuffix());
-        // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
-        new File(fileWithSuffix.getAbsolutePath() + "." + maxBackupIndex).delete();
+    private void rotate(final File file) throws IOException {
+        final String pathWithSuffix = file.getAbsolutePath() + getNextSuffix();
+        File fileWithSuffix = new File(pathWithSuffix + "." + maxBackupIndex);
+        if (fileWithSuffix.exists())
+            fileWithSuffix.delete();
         for (int i = maxBackupIndex - 1; i >= 1; i--) {
-            new File(fileWithSuffix.getAbsolutePath() + "." + i).renameTo(new File(fileWithSuffix.getAbsolutePath() + "." + (i + 1)));
+            final File src = new File(pathWithSuffix + "." + i);
+            if (src.exists()) {
+                final File target = new File(pathWithSuffix + "." + (i + 1));
+                FileMove.move(src, target);
+            }
         }
-        file.renameTo(new File(fileWithSuffix.getAbsolutePath() + ".1"));
+        FileMove.move(file, new File(pathWithSuffix + ".1"));
     }
 }
