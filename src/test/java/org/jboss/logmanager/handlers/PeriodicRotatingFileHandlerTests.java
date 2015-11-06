@@ -49,7 +49,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     @Before
     public void createHandler() throws FileNotFoundException {
         // Create the handler
-        File logFile = new File(this.logFile);
+        final File logFile = new File(this.logFile);
         handler = new PeriodicRotatingFileHandler(logFile, rotateFormatter.toPattern(), false);
         handler.setFormatter(FORMATTER);
     }
@@ -64,7 +64,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     public void testRotate() throws Exception {
         final Calendar cal = Calendar.getInstance();
         final String rotatedPath = BASE_LOG_DIR.toString() + File.separator + FILENAME + rotateFormatter.format(cal.getTime());
-        File rotatedFile = new File(rotatedPath);
+        final File rotatedFile = new File(rotatedPath);
         testRotate(cal, rotatedFile);
     }
 
@@ -74,27 +74,25 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         final String rotatedPath = BASE_LOG_DIR.toString() + File.separator + FILENAME + rotateFormatter.format(cal.getTime());
 
         // Create the rotated file to ensure at some point it gets overwritten
-        File rotatedFile = new File(rotatedPath);
+        final File rotatedFile = new File(rotatedPath);
 
         if (rotatedFile.exists()) {
             rotatedFile.delete();
         }
 
-        FileWriter fwriter = null;
         BufferedWriter writer = null;
         try {
-            fwriter = new FileWriter(rotatedFile.getAbsolutePath());
-            writer = new BufferedWriter(fwriter);
+            writer = new BufferedWriter(new FileWriter(rotatedFile.getAbsoluteFile()));
             writer.write("Adding data to the file");
         } finally {
-            writer.close();
+            safeClose(writer);
         }
         testRotate(cal, rotatedFile);
     }
 
     private void testRotate(final Calendar cal, final File rotatedFile) throws Exception {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        File logFile = new File(this.logFile);
+        final File logFile = new File(this.logFile);
 
         final String currentDate = sdf.format(cal.getTime());
 
@@ -128,13 +126,18 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
     }
 
-    private List<String> readAllLines(File f) throws FileNotFoundException, IOException {
-        List<String> list = new ArrayList();
+    private List<String> readAllLines(final File f) throws IOException {
+        final List<String> list = new ArrayList<String>();
 
-        BufferedReader br = new BufferedReader(new FileReader(f));
-        String line;
-        while ((line = br.readLine()) != null) {
-            list.add(line);
+        BufferedReader br = null;
+        try {
+            br = new BufferedReader(new FileReader(f));
+            String line;
+            while ((line = br.readLine()) != null) {
+                list.add(line);
+            }
+        } finally {
+            safeClose(br);
         }
 
         return list;

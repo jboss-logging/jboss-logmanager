@@ -19,6 +19,7 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.Closeable;
 import java.io.File;
 
 import org.jboss.logmanager.ExtHandler;
@@ -85,6 +86,13 @@ public class AbstractHandlerTest {
             }
         }
         return true;
+    }
+
+    static void safeClose(final Closeable closeable) {
+        if (closeable != null) try {
+            closeable.close();
+        } catch (Exception ignore) {
+        }
     }
 
     protected static void configureHandlerDefaults(final ExtHandler handler) {
