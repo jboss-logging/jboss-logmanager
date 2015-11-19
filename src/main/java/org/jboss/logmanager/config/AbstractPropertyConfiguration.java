@@ -464,7 +464,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             if (moduleLoader == null) {
                 moduleLoader = Module.getBootModuleLoader();
             }
-            return moduleLoader.loadModule(ModuleIdentifier.create(moduleName)).getClassLoader();
+            return moduleLoader.loadModule(ModuleIdentifier.fromString(moduleName)).getClassLoader();
         }
     }
 }
