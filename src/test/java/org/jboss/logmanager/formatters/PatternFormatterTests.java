@@ -24,6 +24,11 @@ import org.jboss.logmanager.NDC;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.TimeZone;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
@@ -208,19 +213,19 @@ public class PatternFormatterTests {
         String formatted = formatter.format(record);
 
         // Should contain, level1, cause, level1a, suppressedLevel1 and suppressedLevel2
-        Assert.assertTrue(formatted.contains("cause"));
-        Assert.assertTrue(formatted.contains("level1"));
-        Assert.assertTrue(formatted.contains("suppressedLevel1"));
-        Assert.assertTrue(formatted.contains("suppressedLevel1a"));
-        Assert.assertTrue(formatted.contains("suppressedLevel2"));
+        assertTrue(formatted.contains("cause"));
+        assertTrue(formatted.contains("level1"));
+        assertTrue(formatted.contains("suppressedLevel1"));
+        assertTrue(formatted.contains("suppressedLevel1a"));
+        assertTrue(formatted.contains("suppressedLevel2"));
 
         // No suppressed exceptions
         formatter = new PatternFormatter("%e{0}");
         formatted = formatter.format(record);
 
         // Should only contain cause and level1
-        Assert.assertTrue(formatted.contains("cause"));
-        Assert.assertTrue(formatted.contains("level1"));
+        assertTrue(formatted.contains("cause"));
+        assertTrue(formatted.contains("level1"));
         Assert.assertFalse(formatted.contains("suppressedLevel1"));
         Assert.assertFalse(formatted.contains("suppressedLevel1a"));
         Assert.assertFalse(formatted.contains("suppressedLevel2"));
@@ -230,10 +235,10 @@ public class PatternFormatterTests {
         formatted = formatter.format(record);
 
         // Should only contain cause and level1
-        Assert.assertTrue(formatted.contains("cause"));
-        Assert.assertTrue(formatted.contains("level1"));
-        Assert.assertTrue(formatted.contains("suppressedLevel1"));
-        Assert.assertTrue(formatted.contains("suppressedLevel1a"));
+        assertTrue(formatted.contains("cause"));
+        assertTrue(formatted.contains("level1"));
+        assertTrue(formatted.contains("suppressedLevel1"));
+        assertTrue(formatted.contains("suppressedLevel1a"));
         Assert.assertFalse(formatted.contains("suppressedLevel2"));
 
         // Add a circular reference to the cause. This should test both that the caused suppressed exceptions are being
@@ -241,7 +246,22 @@ public class PatternFormatterTests {
         formatter = new PatternFormatter("%e");
         cause.addSuppressed(suppressedLevel1);
         formatted = formatter.format(record);
-        Assert.assertTrue(formatted.contains("CIRCULAR REFERENCE:java.lang.IllegalStateException: suppressedLevel1"));
+        assertTrue(formatted.contains("CIRCULAR REFERENCE:java.lang.IllegalStateException: suppressedLevel1"));
+    }
+
+    @Test
+    public void timezoneFormatParsing() throws Exception {
+        final ExtLogRecord record = createLogRecord("test");
+
+        try {
+            new PatternFormatter("%z");
+            Assert.fail("Should have failed if the format contains %z without timezone argument");
+        } catch (IllegalArgumentException e) {
+
+        }
+
+        final PatternFormatter formatter = new PatternFormatter("%z{GMT-2}%d{z}");
+        assertEquals("GMT-02:00", formatter.format(record));
     }
 
     protected static ExtLogRecord createLogRecord(final String msg) {

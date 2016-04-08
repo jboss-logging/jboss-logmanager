@@ -19,6 +19,7 @@
 
 package org.jboss.logmanager.formatters;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ import java.util.TimeZone;
  * A parser which can translate a log4j-style format string into a series of {@code FormatStep} instances.
  */
 public final class FormatStringParser {
+
+    private static final OnlyOnceParserConfigurationLogger logger = new OnlyOnceParserConfigurationLogger();
 
     /**
      * The regular expression for format strings.  Ain't regex grand?
@@ -65,6 +68,7 @@ public final class FormatStringParser {
         TimeZone timeZone = TimeZone.getDefault();
 
         boolean colorUsed = false;
+        boolean dateUsed = false;
         while (matcher.find()) {
             final String otherText = matcher.group(1);
             if (otherText != null) {
@@ -92,6 +96,7 @@ public final class FormatStringParser {
                     }
                     case 'd': {
                         stepList.add(Formatters.dateFormatStep(timeZone, argument, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        dateUsed = true;
                         break;
                     }
                     case 'e': {
@@ -175,6 +180,13 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'z': {
+                        if (argument == null || argument.isEmpty()) {
+                            throw new IllegalArgumentException(String.format("Timezone name has to be provided when using '%z' eg. '%z{GMT}'[%s]", formatString));
+                        }
+                        if (dateUsed) {
+                            logger.timezoneDateOrderingWarning(formatString);
+                        }
+
                         timeZone = TimeZone.getTimeZone(argument);
                         break;
                     }
@@ -196,5 +208,18 @@ public final class FormatStringParser {
             stepList.add(Formatters.formatColor(colors, ColorMap.CLEAR_NAME));
         }
         return stepList.toArray(new FormatStep[stepList.size()]);
+    }
+
+
+    private static class OnlyOnceParserConfigurationLogger {
+
+        private final AtomicBoolean timezoneDateOrderingCalled = new AtomicBoolean(false);
+
+        public void timezoneDateOrderingWarning(String formatString) {
+            if (timezoneDateOrderingCalled.getAndSet(true)) {
+                return;
+            }
+            System.err.println(String.format("Timezone parameter must be specified before date format to take effect [%s]", formatString));
+        }
     }
 }
