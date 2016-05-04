@@ -39,6 +39,7 @@ final class LoggingMXBeanImpl implements LoggingMXBean {
         }
     }
 
+    @Override
     public List<String> getLoggerNames() {
         final LoggerNode node = context.getRootLoggerNode();
         final ArrayList<String> names = new ArrayList<String>();
@@ -46,12 +47,14 @@ final class LoggingMXBeanImpl implements LoggingMXBean {
         return names;
     }
 
+    @Override
     public String getLoggerLevel(final String loggerName) {
         final LoggerNode loggerNode = context.getRootLoggerNode().getIfExists(loggerName);
         final Level level = loggerNode == null ? null : loggerNode.getLevel();
         return level == null ? "" : level.getName();
     }
 
+    @Override
     public void setLoggerLevel(final String loggerName, final String levelName) {
         final LoggerNode loggerNode = context.getRootLoggerNode().getIfExists(loggerName);
         if (loggerNode == null) {
@@ -60,6 +63,7 @@ final class LoggingMXBeanImpl implements LoggingMXBean {
         loggerNode.setLevel(levelName == null ? null : context.getLevelForName(levelName));
     }
 
+    @Override
     public String getParentLoggerName(final String loggerName) {
         final int dotIdx = loggerName.lastIndexOf('.');
         if (dotIdx == -1) {

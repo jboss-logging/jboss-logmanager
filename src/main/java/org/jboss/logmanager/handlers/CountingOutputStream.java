@@ -34,25 +34,30 @@ final class CountingOutputStream extends OutputStream {
         currentSize = 0;
     }
 
+    @Override
     public void write(final int b) throws IOException {
         delegate.write(b);
         currentSize++;
     }
 
+    @Override
     public void write(final byte[] b) throws IOException {
         delegate.write(b);
         currentSize += b.length;
     }
 
+    @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
         delegate.write(b, off, len);
         currentSize += len;
     }
 
+    @Override
     public void flush() throws IOException {
         delegate.flush();
     }
 
+    @Override
     public void close() throws IOException {
         delegate.close();
     }

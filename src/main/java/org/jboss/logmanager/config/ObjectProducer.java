@@ -39,6 +39,7 @@ class SimpleObjectProducer implements ObjectProducer {
         this.value = value;
     }
 
+    @Override
     public Object getObject() {
         return value;
     }
@@ -54,6 +55,7 @@ class RefProducer implements ObjectProducer {
         this.refs = refs;
     }
 
+    @Override
     public Object getObject() {
         return refs.get(name);
     }

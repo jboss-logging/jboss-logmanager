@@ -39,6 +39,7 @@ public class WriterHandler extends ExtHandler {
     private Writer writer;
 
     /** {@inheritDoc} */
+    @Override
     protected void doPublish(final ExtLogRecord record) {
         final String formatted;
         final Formatter formatter = getFormatter();
@@ -133,6 +134,7 @@ public class WriterHandler extends ExtHandler {
     /**
      * Flush this logger.
      */
+    @Override
     public void flush() {
         // todo - maybe this synch is not really needed... if there's a perf detriment, drop it
         synchronized (outputLock) {
@@ -146,6 +148,7 @@ public class WriterHandler extends ExtHandler {
      *
      * @throws SecurityException if the caller does not have sufficient permission
      */
+    @Override
     public void close() throws SecurityException {
         checkAccess(this);
         setWriter(null);

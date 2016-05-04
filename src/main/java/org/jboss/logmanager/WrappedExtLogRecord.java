@@ -37,51 +37,62 @@ class WrappedExtLogRecord extends ExtLogRecord {
         this.orig = orig;
     }
 
+    @Override
     public String getLoggerName() {
         return orig.getLoggerName();
     }
 
+    @Override
     public void setLoggerName(final String name) {
         super.setLoggerName(name);
         orig.setLoggerName(name);
     }
 
+    @Override
     public ResourceBundle getResourceBundle() {
         return orig.getResourceBundle();
     }
 
+    @Override
     public void setResourceBundle(final ResourceBundle bundle) {
         super.setResourceBundle(bundle);
         orig.setResourceBundle(bundle);
     }
 
+    @Override
     public String getResourceBundleName() {
         return orig.getResourceBundleName();
     }
 
+    @Override
     public void setResourceBundleName(final String name) {
         super.setResourceBundleName(name);
         orig.setResourceBundleName(name);
     }
 
+    @Override
     public Level getLevel() {
         return orig.getLevel();
     }
 
+    @Override
     public void setLevel(final Level level) {
         super.setLevel(level);
         orig.setLevel(level);
     }
 
+    @Override
     public long getSequenceNumber() {
         return orig.getSequenceNumber();
     }
 
+    @Override
     public void setSequenceNumber(final long seq) {
         super.setSequenceNumber(seq);
         orig.setSequenceNumber(seq);
     }
 
+    @Override
     public String getSourceClassName() {
         if (! resolved) {
             resolve();
@@ -89,12 +100,14 @@ class WrappedExtLogRecord extends ExtLogRecord {
         return super.getSourceClassName();
     }
 
+    @Override
     public void setSourceClassName(final String sourceClassName) {
         resolved = true;
         super.setSourceClassName(sourceClassName);
         orig.setSourceClassName(sourceClassName);
     }
 
+    @Override
     public String getSourceMethodName() {
         if (! resolved) {
             resolve();
@@ -102,6 +115,7 @@ class WrappedExtLogRecord extends ExtLogRecord {
         return super.getSourceMethodName();
     }
 
+    @Override
     public void setSourceMethodName(final String sourceMethodName) {
         resolved = true;
         super.setSourceMethodName(sourceMethodName);
@@ -124,6 +138,7 @@ class WrappedExtLogRecord extends ExtLogRecord {
         }
     }
 
+    @Override
     public int getSourceLineNumber() {
         if (! resolved) {
             resolve();
@@ -131,11 +146,13 @@ class WrappedExtLogRecord extends ExtLogRecord {
         return super.getSourceLineNumber();
     }
 
+    @Override
     public void setSourceLineNumber(final int sourceLineNumber) {
         resolved = true;
         super.setSourceLineNumber(sourceLineNumber);
     }
 
+    @Override
     public String getSourceFileName() {
         if (! resolved) {
             resolve();
@@ -143,48 +160,59 @@ class WrappedExtLogRecord extends ExtLogRecord {
         return super.getSourceFileName();
     }
 
+    @Override
     public void setSourceFileName(final String sourceFileName) {
         resolved = true;
         super.setSourceFileName(sourceFileName);
     }
 
+    @Override
     public String getMessage() {
         return orig.getMessage();
     }
 
+    @Override
     public void setMessage(final String message) {
         super.setMessage(message);
         orig.setMessage(message);
     }
 
+    @Override
     public Object[] getParameters() {
         return orig.getParameters();
     }
 
+    @Override
     public void setParameters(final Object[] parameters) {
         orig.setParameters(parameters);
     }
 
+    @Override
     public int getThreadID() {
         return orig.getThreadID();
     }
 
+    @Override
     public void setThreadID(final int threadID) {
         orig.setThreadID(threadID);
     }
 
+    @Override
     public long getMillis() {
         return orig.getMillis();
     }
 
+    @Override
     public void setMillis(final long millis) {
         orig.setMillis(millis);
     }
 
+    @Override
     public Throwable getThrown() {
         return orig.getThrown();
     }
 
+    @Override
     public void setThrown(final Throwable thrown) {
         orig.setThrown(thrown);
     }

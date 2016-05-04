@@ -79,6 +79,7 @@ public final class AllFilter implements Filter {
      * @param record the log record
      * @return {@code true} if all the constituent filters return {@code true}
      */
+    @Override
     public boolean isLoggable(final LogRecord record) {
         for (Filter filter : filters) {
             if (! filter.isLoggable(record)) {

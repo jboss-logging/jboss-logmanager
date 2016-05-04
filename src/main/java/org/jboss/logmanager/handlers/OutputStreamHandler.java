@@ -68,6 +68,7 @@ public class OutputStreamHandler extends WriterHandler {
      *
      * @return the target encoding, or {@code null} if the platform default is being used
      */
+    @Override
     public String getEncoding() {
         synchronized (outputLock) {
             return super.getEncoding();
@@ -81,6 +82,7 @@ public class OutputStreamHandler extends WriterHandler {
      * @throws SecurityException if you do not have sufficient permission to invoke this operation
      * @throws java.io.UnsupportedEncodingException if the specified encoding is not supported
      */
+    @Override
     public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
         // superclass checks access
         synchronized (outputLock) {
@@ -93,6 +95,7 @@ public class OutputStreamHandler extends WriterHandler {
     }
 
     /** {@inheritDoc}  Setting a writer will replace any target output stream. */
+    @Override
     public void setWriter(final Writer writer) {
         synchronized (outputLock) {
             super.setWriter(writer);

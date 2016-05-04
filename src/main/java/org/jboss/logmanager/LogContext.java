@@ -279,6 +279,7 @@ public final class LogContext implements Protectable {
      * The default log context selector, which always returns the system log context.
      */
     public static final LogContextSelector DEFAULT_LOG_CONTEXT_SELECTOR = new LogContextSelector() {
+        @Override
         public LogContext getLogContext() {
             return SYSTEM_CONTEXT;
         }
@@ -443,6 +444,7 @@ public final class LogContext implements Protectable {
             this.level = level;
         }
 
+        @Override
         public Level get() {
             return level;
         }

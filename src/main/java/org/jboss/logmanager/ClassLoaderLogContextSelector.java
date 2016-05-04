@@ -82,6 +82,7 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
     }
 
     private static final class Gateway extends SecurityManager {
+        @Override
         protected Class[] getClassContext() {
             return super.getClassContext();
         }
@@ -91,6 +92,7 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
 
     static {
         GATEWAY = AccessController.doPrivileged(new PrivilegedAction<Gateway>() {
+            @Override
             public Gateway run() {
                 return new Gateway();
             }
@@ -104,6 +106,7 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
     private final boolean checkParentClassLoaders;
 
     private final PrivilegedAction<LogContext> logContextAction = new PrivilegedAction<LogContext>() {
+        @Override
         public LogContext run() {
             for (Class<?> caller : GATEWAY.getClassContext()) {
                 final ClassLoader classLoader = caller.getClassLoader();
@@ -133,6 +136,7 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
      * {@inheritDoc}  This instance will consult the call stack to see if any calling classloader is associated
      * with any log context.
      */
+    @Override
     public LogContext getLogContext() {
         return AccessController.doPrivileged(logContextAction);
     }

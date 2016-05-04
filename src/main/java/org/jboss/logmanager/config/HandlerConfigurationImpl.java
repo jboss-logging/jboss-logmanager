@@ -51,6 +51,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         super(Handler.class, configuration, configuration.getHandlerRefs(), configuration.getHandlerConfigurations(), name, moduleName, className, constructorProperties);
     }
 
+    @Override
     public String getFormatterName() {
         return getFormatterNameValueExpression().getResolvedValue();
     }
@@ -60,6 +61,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         return formatterName == null ? ValueExpression.NULL_STRING_EXPRESSION : formatterName;
     }
 
+    @Override
     public void setFormatterName(final String formatterName) {
         setFormatterName(ValueExpression.STRING_RESOLVER.resolve(formatterName));
     }
@@ -75,6 +77,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         final String formatterName = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 if (formatterName != null && configuration.getFormatterConfiguration(formatterName) == null) {
                     throw new IllegalArgumentException(String.format("Formatter \"%s\" is not found", formatterName));
@@ -82,20 +85,24 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
                 addPostConfigurationActions();
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 configuration.getHandlerRefs().get(getName()).setFormatter(formatterName == null ? null : configuration.getFormatterRefs().get(formatterName));
             }
 
+            @Override
             public void rollback() {
                 HandlerConfigurationImpl.this.formatterName = oldFormatterName;
             }
         });
     }
 
+    @Override
     public String getLevel() {
         return getLevelValueExpression().getResolvedValue();
     }
@@ -105,6 +112,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         return level == null ? ValueExpression.NULL_STRING_EXPRESSION : level;
     }
 
+    @Override
     public void setLevel(final String level) {
         setLevelValueExpression(ValueExpression.STRING_RESOLVER.resolve(level));
     }
@@ -120,24 +128,29 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         final String resolvedLevel = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Level>() {
+            @Override
             public Level validate() throws IllegalArgumentException {
                 return resolvedLevel == null ? null : configuration.getLogContext().getLevelForName(resolvedLevel);
             }
 
+            @Override
             public void applyPreCreate(final Level param) {
                 addPostConfigurationActions();
             }
 
+            @Override
             public void applyPostCreate(final Level param) {
                 configuration.getHandlerRefs().get(getName()).setLevel(param);
             }
 
+            @Override
             public void rollback() {
                 HandlerConfigurationImpl.this.level = oldLevel;
             }
         });
     }
 
+    @Override
     public String getFilter() {
         return getFilterValueExpression().getResolvedValue();
     }
@@ -147,6 +160,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         return filter == null ? ValueExpression.NULL_STRING_EXPRESSION : filter;
     }
 
+    @Override
     public void setFilter(final String filter) {
         setFilter(ValueExpression.STRING_RESOLVER.resolve(filter));
     }
@@ -162,24 +176,29 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         final String filterName = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<ObjectProducer>() {
+            @Override
             public ObjectProducer validate() throws IllegalArgumentException {
                 return configuration.resolveFilter(filterName);
             }
 
+            @Override
             public void applyPreCreate(final ObjectProducer param) {
                 addPostConfigurationActions();
             }
 
+            @Override
             public void applyPostCreate(final ObjectProducer param) {
                 configuration.getHandlerRefs().get(getName()).setFilter((Filter) param.getObject());
             }
 
+            @Override
             public void rollback() {
                 HandlerConfigurationImpl.this.filter = oldFilterName;
             }
         });
     }
 
+    @Override
     public String getEncoding() {
         return getEncodingValueExpression().getResolvedValue();
     }
@@ -189,6 +208,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         return encoding == null ? ValueExpression.NULL_STRING_EXPRESSION : encoding;
     }
 
+    @Override
     public void setEncoding(final String encoding) {
         setEncoding(ValueExpression.STRING_RESOLVER.resolve(encoding));
     }
@@ -204,6 +224,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         final String encoding = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 if (encoding != null) {
                     try {
@@ -215,10 +236,12 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
                 addPostConfigurationActions();
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 try {
                     configuration.getHandlerRefs().get(getName()).setEncoding(encoding);
@@ -227,12 +250,14 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
                 }
             }
 
+            @Override
             public void rollback() {
                 HandlerConfigurationImpl.this.encoding = oldEncoding;
             }
         });
     }
 
+    @Override
     public String getErrorManagerName() {
         return getErrorManagerNameValueExpression().getResolvedValue();
     }
@@ -242,6 +267,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         return errorManagerName == null ? ValueExpression.NULL_STRING_EXPRESSION : errorManagerName;
     }
 
+    @Override
     public void setErrorManagerName(final String errorManagerName) {
         setErrorManagerName(ValueExpression.STRING_RESOLVER.resolve(errorManagerName));
     }
@@ -257,6 +283,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         final String errorManagerName = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 if (errorManagerName != null && configuration.getErrorManagerConfiguration(errorManagerName) == null) {
                     throw new IllegalArgumentException(String.format("errorManager \"%s\" is not found", errorManagerName));
@@ -264,24 +291,29 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
                 addPostConfigurationActions();
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 configuration.getHandlerRefs().get(getName()).setErrorManager(errorManagerName == null ? null : configuration.getErrorManagerRefs().get(errorManagerName));
             }
 
+            @Override
             public void rollback() {
                 HandlerConfigurationImpl.this.errorManagerName = oldErrorManagerName;
             }
         });
     }
 
+    @Override
     public List<String> getHandlerNames() {
         return new ArrayList<String>(handlerNames);
     }
 
+    @Override
     public void setHandlerNames(final String... names) {
         final String[] oldHandlerNames = handlerNames.toArray(new String[handlerNames.size()]);
         handlerNames.clear();
@@ -296,6 +328,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             throw new IllegalArgumentException("Nested handlers not supported for handler " + getActualClass());
         }
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 for (String name : stringsArray) {
                     if (configuration.getHandlerConfiguration(name) == null) {
@@ -305,10 +338,12 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
                 addPostConfigurationActions();
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 final Map<String, Handler> handlerRefs = configuration.getHandlerRefs();
                 final ExtHandler handler = (ExtHandler) handlerRefs.get(getName());
@@ -320,6 +355,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
                 handler.setHandlers(handlers);
             }
 
+            @Override
             public void rollback() {
                 handlerNames.clear();
                 handlerNames.addAll(asList(oldHandlerNames));
@@ -327,10 +363,12 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         });
     }
 
+    @Override
     public void setHandlerNames(final Collection<String> names) {
         setHandlerNames(names.toArray(new String[names.size()]));
     }
 
+    @Override
     public boolean addHandlerName(final String name) {
         final LogContextConfigurationImpl configuration = getConfiguration();
         if (! ExtHandler.class.isAssignableFrom(getActualClass())) {
@@ -341,6 +379,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         }
         handlerNames.add(name);
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 if (configuration.getHandlerConfiguration(name) == null) {
                     throw new IllegalArgumentException(String.format("Handler \"%s\" is not found", name));
@@ -348,16 +387,19 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
                 addPostConfigurationActions();
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 final Map<String, Handler> handlerRefs = configuration.getHandlerRefs();
                 final ExtHandler handler = (ExtHandler) handlerRefs.get(getName());
                 handler.addHandler(handlerRefs.get(name));
             }
 
+            @Override
             public void rollback() {
                 handlerNames.remove(name);
             }
@@ -365,6 +407,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         return true;
     }
 
+    @Override
     public boolean removeHandlerName(final String name) {
         final LogContextConfigurationImpl configuration = getConfiguration();
         if (! ExtHandler.class.isAssignableFrom(getActualClass())) {
@@ -376,20 +419,24 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         final int index = handlerNames.indexOf(name);
         handlerNames.remove(index);
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
                 addPostConfigurationActions();
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 final Map<String, Handler> handlerRefs = configuration.getHandlerRefs();
                 final ExtHandler handler = (ExtHandler) handlerRefs.get(getName());
                 handler.removeHandler(handlerRefs.get(name));
             }
 
+            @Override
             public void rollback() {
                 handlerNames.add(index, name);
             }
@@ -397,6 +444,7 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         return true;
     }
 
+    @Override
     String getDescription() {
         return "handler";
     }

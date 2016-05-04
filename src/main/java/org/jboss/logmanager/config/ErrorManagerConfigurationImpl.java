@@ -30,6 +30,7 @@ final class ErrorManagerConfigurationImpl extends AbstractPropertyConfiguration<
         super(ErrorManager.class, configuration, configuration.getErrorManagerRefs(), configuration.getErrorManagerConfigurations(), name, moduleName, className, constructorProperties);
     }
 
+    @Override
     String getDescription() {
         return "error manager";
     }

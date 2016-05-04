@@ -58,18 +58,21 @@ public class QueueHandler extends ExtHandler {
         this.limit = limit;
     }
 
+    @Override
     public void publish(final ExtLogRecord record) {
         if (isEnabled() && record != null) {
             doPublish(record);
         }
     }
 
+    @Override
     public void publish(final LogRecord record) {
         if (isEnabled() && record != null) {
             doPublish(ExtLogRecord.wrap(record));
         }
     }
 
+    @Override
     protected void doPublish(final ExtLogRecord record) {
         record.copyAll();
         synchronized (buffer) {

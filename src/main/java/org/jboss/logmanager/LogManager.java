@@ -72,6 +72,7 @@ public final class LogManager extends java.util.logging.LogManager {
      */
     public LogManager() {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
             @SuppressWarnings ({"unchecked"})
             public Void run() {
                 /* This mysterious-looking hack is designed to trick JDK logging into not leaking classloaders and
@@ -205,92 +206,113 @@ public final class LogManager extends java.util.logging.LogManager {
             return new ReadOnlyArrayList<T>(c);
         }
 
+        @Override
         public T set(final int index, final T element) {
             // ignore
             return null;
         }
 
+        @Override
         public T remove(final int index) {
             // ignore
             return null;
         }
 
+        @Override
         public boolean remove(final Object o) {
             // ignore
             return false;
         }
 
+        @Override
         public void clear() {
             // ignore
         }
 
+        @Override
         protected void removeRange(final int fromIndex, final int toIndex) {
             // ignore
         }
 
+        @Override
         public Iterator<T> iterator() {
             final Iterator<T> superIter = super.iterator();
             return new Iterator<T>() {
+                @Override
                 public boolean hasNext() {
                     return superIter.hasNext();
                 }
 
+                @Override
                 public T next() {
                     return superIter.next();
                 }
 
+                @Override
                 public void remove() {
                     // ignore
                 }
             };
         }
 
+        @Override
         public ListIterator<T> listIterator(final int index) {
             final ListIterator<T> superIter = super.listIterator(index);
             return new ListIterator<T>() {
+                @Override
                 public boolean hasNext() {
                     return superIter.hasNext();
                 }
 
+                @Override
                 public T next() {
                     return superIter.next();
                 }
 
+                @Override
                 public boolean hasPrevious() {
                     return superIter.hasPrevious();
                 }
 
+                @Override
                 public T previous() {
                     return superIter.previous();
                 }
 
+                @Override
                 public int nextIndex() {
                     return superIter.nextIndex();
                 }
 
+                @Override
                 public int previousIndex() {
                     return superIter.previousIndex();
                 }
 
+                @Override
                 public void remove() {
                     // ignore
                 }
 
+                @Override
                 public void set(final T o) {
                     // ignore
                 }
 
+                @Override
                 public void add(final T o) {
                     // ignore
                 }
             };
         }
 
+        @Override
         public boolean removeAll(final Collection<?> c) {
             // ignore
             return false;
         }
 
+        @Override
         public boolean retainAll(final Collection<?> c) {
             // ignore
             return false;
@@ -442,6 +464,7 @@ public final class LogManager extends java.util.logging.LogManager {
      * Configure the log manager one time.  An implementation of {@link ConfigurationLocator} is created by constructing an
      * instance of the class name specified in the {@code org.jboss.logmanager.configurationLocator} system property.
      */
+    @Override
     public void readConfiguration() throws IOException, SecurityException {
         checkAccess();
         if (configured.getAndSet(true)) {
@@ -483,6 +506,7 @@ public final class LogManager extends java.util.logging.LogManager {
      *
      * @param inputStream the input stream from which the logmanager should be configured
      */
+    @Override
     public void readConfiguration(InputStream inputStream) throws IOException, SecurityException {
         try {
             checkAccess();
@@ -547,6 +571,7 @@ public final class LogManager extends java.util.logging.LogManager {
      *
      * @param l ignored
      */
+    @Override
     public void addPropertyChangeListener(PropertyChangeListener l) {
         // no operation - properties are never changed
     }
@@ -556,6 +581,7 @@ public final class LogManager extends java.util.logging.LogManager {
      *
      * @param l ignored
      */
+    @Override
     public void removePropertyChangeListener(PropertyChangeListener l) {
         // no operation - properties are never changed
     }
@@ -566,6 +592,7 @@ public final class LogManager extends java.util.logging.LogManager {
      * @param name ignored
      * @return {@code null}
      */
+    @Override
     public String getProperty(String name) {
         // no properties
         return null;
@@ -574,6 +601,7 @@ public final class LogManager extends java.util.logging.LogManager {
     /**
      * Does nothing.  This method only causes trouble.
      */
+    @Override
     public void reset() {
         // no operation!
     }
@@ -589,6 +617,7 @@ public final class LogManager extends java.util.logging.LogManager {
      * @param logger ignored
      * @return {@code false}
      */
+    @Override
     public boolean addLogger(java.util.logging.Logger logger) {
         return false;
     }
@@ -599,6 +628,7 @@ public final class LogManager extends java.util.logging.LogManager {
      * @param name the logger name
      * @return the corresponding logger
      */
+    @Override
     public Logger getLogger(String name) {
         return LogContext.getLogContext().getLogger(name);
     }

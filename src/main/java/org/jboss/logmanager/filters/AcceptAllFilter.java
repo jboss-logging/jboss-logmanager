@@ -36,6 +36,7 @@ public final class AcceptAllFilter implements Filter {
      * @param record ignored
      * @return {@code true}
      */
+    @Override
     public boolean isLoggable(final LogRecord record) {
         return true;
     }

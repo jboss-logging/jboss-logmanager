@@ -32,22 +32,27 @@ public final class UncloseableOutputStream extends OutputStream {
         this.delegate = delegate;
     }
 
+    @Override
     public void write(final int b) throws IOException {
         delegate.write(b);
     }
 
+    @Override
     public void write(final byte[] b) throws IOException {
         delegate.write(b);
     }
 
+    @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
         delegate.write(b, off, len);
     }
 
+    @Override
     public void flush() throws IOException {
         delegate.flush();
     }
 
+    @Override
     public void close() {
         // ignore
     }

@@ -200,6 +200,7 @@ final class LoggerNode {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
+                @Override
                 public Logger run() {
                     final Logger logger = new Logger(LoggerNode.this, fullName);
                     context.incrementRef(fullName);
@@ -494,6 +495,7 @@ final class LoggerNode {
      * with the parent's effective loglevel.  As such, a lock is acquired from this method which might cause delays in
      * garbage collection.
      */
+    @Override
     protected void finalize() throws Throwable {
         try {
             // clear out level so that it spams out to all children

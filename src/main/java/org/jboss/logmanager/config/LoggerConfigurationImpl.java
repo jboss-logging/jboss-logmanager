@@ -45,6 +45,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         super(name, configuration, configuration.getLoggerRefs(), configuration.getLoggerConfigurations());
     }
 
+    @Override
     public String getFilter() {
         return getFilterValueExpression().getResolvedValue();
     }
@@ -54,6 +55,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         return filter == null ? ValueExpression.NULL_STRING_EXPRESSION : filter;
     }
 
+    @Override
     public void setFilter(final String filter) {
         setFilter(ValueExpression.STRING_RESOLVER.resolve(filter));
     }
@@ -69,17 +71,21 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         final String filterName = valueExpression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<ObjectProducer>() {
+            @Override
             public ObjectProducer validate() throws IllegalArgumentException {
                 return configuration.resolveFilter(filterName);
             }
 
+            @Override
             public void applyPreCreate(final ObjectProducer param) {
             }
 
+            @Override
             public void applyPostCreate(final ObjectProducer param) {
                 configuration.getLoggerRefs().get(getName()).setFilter((Filter) param.getObject());
             }
 
+            @Override
             public void rollback() {
                 filter = oldFilterName;
             }
@@ -87,6 +93,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
     }
 
 
+    @Override
     public Boolean getUseParentHandlers() {
         return getUseParentHandlersValueExpression().getResolvedValue();
     }
@@ -96,6 +103,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         return useParentHandlers == null ? ValueExpression.NULL_BOOLEAN_EXPRESSION : useParentHandlers;
     }
 
+    @Override
     public void setUseParentHandlers(final Boolean useParentHandlers) {
         setUseParentHandlers(new ValueExpressionImpl<Boolean>(null, useParentHandlers));
     }
@@ -116,24 +124,29 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         final Boolean useParentHandlers = valueExpression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 if (useParentHandlers != null)
                     configuration.getLoggerRefs().get(getName()).setUseParentHandlers(useParentHandlers.booleanValue());
             }
 
+            @Override
             public void rollback() {
                 LoggerConfigurationImpl.this.useParentHandlers = oldUseParentHandlers;
             }
         });
     }
 
+    @Override
     public String getLevel() {
         return getLevelValueExpression().getResolvedValue();
     }
@@ -143,6 +156,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         return level == null ? ValueExpression.NULL_STRING_EXPRESSION : level;
     }
 
+    @Override
     public void setLevel(final String level) {
         setLevelValueExpression(ValueExpression.STRING_RESOLVER.resolve(level));
     }
@@ -158,27 +172,33 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         final String resolvedLevel = expression.getResolvedValue();
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Level>() {
+            @Override
             public Level validate() throws IllegalArgumentException {
                 return resolvedLevel == null ? null : configuration.getLogContext().getLevelForName(resolvedLevel);
             }
 
+            @Override
             public void applyPreCreate(final Level param) {
             }
 
+            @Override
             public void applyPostCreate(final Level param) {
                 configuration.getLoggerRefs().get(getName()).setLevel(param);
             }
 
+            @Override
             public void rollback() {
                 LoggerConfigurationImpl.this.level = oldLevel;
             }
         });
     }
 
+    @Override
     public List<String> getHandlerNames() {
         return new ArrayList<String>(handlerNames);
     }
 
+    @Override
     public void setHandlerNames(final String... names) {
         final String[] oldHandlerNames = handlerNames.toArray(new String[handlerNames.size()]);
         handlerNames.clear();
@@ -187,6 +207,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         final String[] stringsArray = strings.toArray(new String[strings.size()]);
         final LogContextConfigurationImpl configuration = getConfiguration();
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 for (String name : stringsArray) {
                     if (configuration.getHandlerConfiguration(name) == null) {
@@ -196,9 +217,11 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 final Map<String, Handler> handlerRefs = configuration.getHandlerRefs();
                 final Map<String, Logger> loggerRefs = configuration.getLoggerRefs();
@@ -211,6 +234,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
                 logger.setHandlers(handlers);
             }
 
+            @Override
             public void rollback() {
                 handlerNames.clear();
                 handlerNames.addAll(asList(oldHandlerNames));
@@ -218,10 +242,12 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         });
     }
 
+    @Override
     public void setHandlerNames(final Collection<String> names) {
         setHandlerNames(names.toArray(new String[names.size()]));
     }
 
+    @Override
     public boolean addHandlerName(final String name) {
         final LogContextConfigurationImpl configuration = getConfiguration();
         if (handlerNames.contains(name)) {
@@ -229,6 +255,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         }
         handlerNames.add(name);
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 if (configuration.getHandlerConfiguration(name) == null) {
                     throw new IllegalArgumentException(String.format("Handler \"%s\" is not found", name));
@@ -236,9 +263,11 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 final Map<String, Handler> handlerRefs = configuration.getHandlerRefs();
                 final Map<String, Logger> loggerRefs = configuration.getLoggerRefs();
@@ -246,6 +275,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
                 logger.addHandler(handlerRefs.get(name));
             }
 
+            @Override
             public void rollback() {
                 handlerNames.remove(name);
             }
@@ -253,6 +283,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         return true;
     }
 
+    @Override
     public boolean removeHandlerName(final String name) {
         final LogContextConfigurationImpl configuration = getConfiguration();
         if (!handlerNames.contains(name)) {
@@ -261,13 +292,16 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         final int index = handlerNames.indexOf(name);
         handlerNames.remove(index);
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 final Map<String, Handler> handlerRefs = configuration.getHandlerRefs();
                 final Map<String, Logger> loggerRefs = configuration.getLoggerRefs();
@@ -275,6 +309,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
                 logger.removeHandler(handlerRefs.get(name));
             }
 
+            @Override
             public void rollback() {
                 handlerNames.add(index, name);
             }
@@ -302,14 +337,17 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
             useParentHandlers = refLogger.getUseParentHandlers();
         }
         return new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
                 refs.remove(name);
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
                 if (refLogger != null) {
                     refLogger.setFilter(null);
@@ -319,6 +357,7 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
                 }
             }
 
+            @Override
             @SuppressWarnings({"unchecked"})
             public void rollback() {
                 if (refLogger != null) {

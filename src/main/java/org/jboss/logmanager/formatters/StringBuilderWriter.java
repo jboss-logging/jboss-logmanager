@@ -30,29 +30,36 @@ final class StringBuilderWriter extends Writer {
         this.builder = builder;
     }
 
+    @Override
     public void write(final char[] cbuf, final int off, final int len) {
         builder.append(cbuf, off, len);
     }
 
+    @Override
     public void write(final int c) {
         builder.append(c);
     }
 
+    @Override
     public void write(final char[] cbuf) {
         builder.append(cbuf);
     }
 
+    @Override
     public void write(final String str) throws IOException {
         builder.append(str);
     }
 
+    @Override
     public void write(final String str, final int off, final int len) throws IOException {
         builder.append(str, off, len);
     }
 
+    @Override
     public void flush() throws IOException {
     }
 
+    @Override
     public void close() throws IOException {
     }
 }

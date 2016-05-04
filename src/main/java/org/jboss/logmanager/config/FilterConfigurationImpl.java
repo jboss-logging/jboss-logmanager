@@ -30,6 +30,7 @@ final class FilterConfigurationImpl extends AbstractPropertyConfiguration<Filter
         super(Filter.class, configuration, configuration.getFilterRefs(), configuration.getFilterConfigurations(), name, moduleName, className, constructorProperties);
     }
 
+    @Override
     String getDescription() {
         return "filter";
     }

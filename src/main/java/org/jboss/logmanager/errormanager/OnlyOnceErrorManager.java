@@ -34,6 +34,7 @@ public final class OnlyOnceErrorManager extends ErrorManager {
     private final AtomicBoolean called = new AtomicBoolean();
 
     /** {@inheritDoc} */
+    @Override
     public void error(final String msg, final Exception ex, final int code) {
         if (called.getAndSet(true)) {
             return;

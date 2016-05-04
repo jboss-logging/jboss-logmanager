@@ -56,6 +56,7 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
     private final ConcurrentMap<ClassLoader, LogContext> contextMap = new CopyOnWriteMap<ClassLoader, LogContext>();
 
     private final PrivilegedAction<LogContext> logContextAction = new PrivilegedAction<LogContext>() {
+        @Override
         public LogContext run() {
             ClassLoader cl = currentThread().getContextClassLoader();
             if (cl != null) {
@@ -68,6 +69,7 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
         }
     };
 
+    @Override
     public LogContext getLogContext() {
         return doPrivileged(logContextAction);
     }

@@ -35,27 +35,33 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
 
     private static final AtomicReferenceFieldUpdater<CopyOnWriteMap, FastCopyHashMap> mapUpdater = AtomicReferenceFieldUpdater.newUpdater(CopyOnWriteMap.class, FastCopyHashMap.class, "map");
 
+    @Override
     public V get(final Object key) {
         return map.get(key);
     }
 
+    @Override
     public boolean containsKey(final Object key) {
         return map.containsKey(key);
     }
 
+    @Override
     public int size() {
         return map.size();
     }
 
+    @Override
     public boolean containsValue(final Object value) {
         return map.containsValue(value);
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public void clear() {
         map = EMPTY;
     }
 
+    @Override
     public V put(final K key, final V value) {
         FastCopyHashMap<K, V> oldVal, newVal;
         V result;
@@ -67,6 +73,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
         return result;
     }
 
+    @Override
     public V remove(final Object key) {
         FastCopyHashMap<K, V> oldVal, newVal;
         V result;
@@ -81,6 +88,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
         return result;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public CopyOnWriteMap<K, V> clone() {
         try {
@@ -90,6 +98,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
         }
     }
 
+    @Override
     public V putIfAbsent(final K key, final V value) {
         FastCopyHashMap<K, V> oldVal, newVal;
         do {
@@ -103,6 +112,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
         return null;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public boolean remove(final Object key, final Object value) {
         FastCopyHashMap<K, V> oldVal, newVal;
@@ -122,6 +132,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
         return true;
     }
 
+    @Override
     public boolean replace(final K key, final V oldValue, final V newValue) {
         FastCopyHashMap<K, V> oldVal, newVal;
         do {
@@ -136,6 +147,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
         return true;
     }
 
+    @Override
     public V replace(final K key, final V value) {
         FastCopyHashMap<K, V> oldVal, newVal;
         V result;
@@ -151,14 +163,17 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
         return result;
     }
 
+    @Override
     public Set<K> keySet() {
         return Collections.unmodifiableSet(map.keySet());
     }
 
+    @Override
     public Collection<V> values() {
         return Collections.unmodifiableCollection(map.values());
     }
 
+    @Override
     public Set<Entry<K, V>> entrySet() {
         return Collections.unmodifiableSet(map.entrySet());
     }

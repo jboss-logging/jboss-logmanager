@@ -129,6 +129,7 @@ public class SizeRotatingFileHandler extends FileHandler {
     }
 
     /** {@inheritDoc} */
+    @Override
     public void setOutputStream(final OutputStream outputStream) {
         synchronized (outputLock) {
             this.outputStream = outputStream == null ? null : new CountingOutputStream(outputStream);
@@ -141,6 +142,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      *
      * @throws RuntimeException if there is an attempt to rotate file and the rotation fails
      */
+    @Override
     public void setFile(final File file) throws FileNotFoundException {
         synchronized (outputLock) {
             // Check for a rotate
@@ -233,6 +235,7 @@ public class SizeRotatingFileHandler extends FileHandler {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void preWrite(final ExtLogRecord record) {
         final int maxBackupIndex = this.maxBackupIndex;
         final long currentSize = (outputStream == null ? Long.MIN_VALUE : outputStream.currentSize);

@@ -87,10 +87,12 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         this.logContext = logContext;
     }
 
+    @Override
     public LogContext getLogContext() {
         return logContext;
     }
 
+    @Override
     public LoggerConfiguration addLoggerConfiguration(final String loggerName) {
         if (loggers.containsKey(loggerName)) {
             throw new IllegalArgumentException(String.format("Logger \"%s\" already exists", loggerName));
@@ -98,17 +100,21 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         final LoggerConfigurationImpl loggerConfiguration = new LoggerConfigurationImpl(loggerName, this);
         loggers.put(loggerName, loggerConfiguration);
         transactionState.addLast(new ConfigAction<Logger>() {
+            @Override
             public Logger validate() throws IllegalArgumentException {
                 return logContext.getLogger(loggerName);
             }
 
+            @Override
             public void applyPreCreate(final Logger param) {
                 loggerRefs.put(loggerName, param);
             }
 
+            @Override
             public void applyPostCreate(Logger param) {
             }
 
+            @Override
             public void rollback() {
                 loggers.remove(loggerName);
             }
@@ -116,6 +122,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return loggerConfiguration;
     }
 
+    @Override
     public boolean removeLoggerConfiguration(final String loggerName) {
         final LoggerConfigurationImpl removed = loggers.remove(loggerName);
         if (removed != null) {
@@ -127,14 +134,17 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         }
     }
 
+    @Override
     public LoggerConfiguration getLoggerConfiguration(final String loggerName) {
         return loggers.get(loggerName);
     }
 
+    @Override
     public List<String> getLoggerNames() {
         return new ArrayList<String>(loggers.keySet());
     }
 
+    @Override
     public HandlerConfiguration addHandlerConfiguration(final String moduleName, final String className, final String handlerName, final String... constructorProperties) {
         if (handlers.containsKey(handlerName)) {
             throw new IllegalArgumentException(String.format("Handler \"%s\" already exists", handlerName));
@@ -145,6 +155,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return handlerConfiguration;
     }
 
+    @Override
     public boolean removeHandlerConfiguration(final String handlerName) {
         final HandlerConfigurationImpl removed = handlers.remove(handlerName);
         if (removed != null) {
@@ -156,14 +167,17 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         }
     }
 
+    @Override
     public HandlerConfiguration getHandlerConfiguration(final String handlerName) {
         return handlers.get(handlerName);
     }
 
+    @Override
     public List<String> getHandlerNames() {
         return new ArrayList<String>(handlers.keySet());
     }
 
+    @Override
     public FormatterConfiguration addFormatterConfiguration(final String moduleName, final String className, final String formatterName, final String... constructorProperties) {
         if (formatters.containsKey(formatterName)) {
             throw new IllegalArgumentException(String.format("Formatter \"%s\" already exists", formatterName));
@@ -174,6 +188,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return formatterConfiguration;
     }
 
+    @Override
     public boolean removeFormatterConfiguration(final String formatterName) {
         final FormatterConfigurationImpl removed = formatters.remove(formatterName);
         if (removed != null) {
@@ -185,14 +200,17 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         }
     }
 
+    @Override
     public FormatterConfiguration getFormatterConfiguration(final String formatterName) {
         return formatters.get(formatterName);
     }
 
+    @Override
     public List<String> getFormatterNames() {
         return new ArrayList<String>(formatters.keySet());
     }
 
+    @Override
     public FilterConfiguration addFilterConfiguration(final String moduleName, final String className, final String filterName, final String... constructorProperties) {
         if (filters.containsKey(filterName)) {
             throw new IllegalArgumentException(String.format("Filter \"%s\" already exists", filterName));
@@ -203,6 +221,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return filterConfiguration;
     }
 
+    @Override
     public boolean removeFilterConfiguration(final String filterName) {
         final FilterConfigurationImpl removed = filters.remove(filterName);
         if (removed != null) {
@@ -214,14 +233,17 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         }
     }
 
+    @Override
     public FilterConfiguration getFilterConfiguration(final String filterName) {
         return filters.get(filterName);
     }
 
+    @Override
     public List<String> getFilterNames() {
         return new ArrayList<String>(filters.keySet());
     }
 
+    @Override
     public ErrorManagerConfiguration addErrorManagerConfiguration(final String moduleName, final String className, final String errorManagerName, final String... constructorProperties) {
         if (errorManagers.containsKey(errorManagerName)) {
             throw new IllegalArgumentException(String.format("ErrorManager \"%s\" already exists", errorManagerName));
@@ -232,6 +254,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return errorManagerConfiguration;
     }
 
+    @Override
     public boolean removeErrorManagerConfiguration(final String errorManagerName) {
         final ErrorManagerConfigurationImpl removed = errorManagers.remove(errorManagerName);
         if (removed != null) {
@@ -243,10 +266,12 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         }
     }
 
+    @Override
     public ErrorManagerConfiguration getErrorManagerConfiguration(final String errorManagerName) {
         return errorManagers.get(errorManagerName);
     }
 
+    @Override
     public List<String> getErrorManagerNames() {
         return new ArrayList<String>(errorManagers.keySet());
     }
@@ -292,6 +317,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         prepared = true;
     }
 
+    @Override
     public void commit() {
         if (!prepared) {
             prepare();
@@ -313,6 +339,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         } catch (Throwable ignored) {}
     }
 
+    @Override
     public void forget() {
         doForget(transactionState);
         doForget(preparedTransactions);
@@ -587,6 +614,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             final ObjectProducer nested = parseFilterExpression(iterator, false, immediate);
             expect(")", iterator);
             return new ObjectProducer() {
+                @Override
                 public Object getObject() {
                     return new InvertFilter((Filter) nested.getObject());
                 }
@@ -598,6 +626,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
                 producers.add(parseFilterExpression(iterator, false, immediate));
             } while (expect(",", ")", iterator));
             return new ObjectProducer() {
+                @Override
                 public Object getObject() {
                     final int length = producers.size();
                     final Filter[] filters = new Filter[length];
@@ -614,6 +643,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
                 producers.add(parseFilterExpression(iterator, false, immediate));
             } while (expect(",", ")", iterator));
             return new ObjectProducer() {
+                @Override
                 public Object getObject() {
                     final int length = producers.size();
                     final Filter[] filters = new Filter[length];

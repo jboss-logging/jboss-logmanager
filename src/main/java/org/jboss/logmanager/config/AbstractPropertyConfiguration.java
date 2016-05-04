@@ -83,6 +83,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
 
     class ConstructAction implements ConfigAction<T> {
 
+        @Override
         public T validate() throws IllegalArgumentException {
             final int length = constructorProperties.length;
             final Class<?>[] paramTypes = new Class<?>[length];
@@ -117,22 +118,27 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             }
         }
 
+        @Override
         public void applyPreCreate(final T param) {
             getRefs().put(getName(), param);
         }
 
+        @Override
         public void applyPostCreate(T param) {
         }
 
+        @Override
         public void rollback() {
             getConfigs().remove(getName());
         }
     }
 
+    @Override
     public String getModuleName() {
         return moduleName;
     }
 
+    @Override
     public String getClassName() {
         return className;
     }
@@ -144,6 +150,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         return false;
     }
 
+    @Override
     public void setPropertyValueString(final String propertyName, final String value) throws IllegalArgumentException {
         if (isRemoved()) {
             throw new IllegalArgumentException(String.format("Cannot set property \"%s\" on %s \"%s\" (removed)", propertyName, getDescription(), getName()));
@@ -154,6 +161,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         setPropertyValueExpression(propertyName, ValueExpression.STRING_RESOLVER.resolve(value));
     }
 
+    @Override
     public String getPropertyValueString(final String propertyName) {
         return getPropertyValueExpression(propertyName).getResolvedValue();
     }
@@ -194,6 +202,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         }
         final ValueExpression oldValue = properties.put(propertyName, expression);
         getConfiguration().addAction(new ConfigAction<ObjectProducer>() {
+            @Override
             public ObjectProducer validate() throws IllegalArgumentException {
                 if (setter == null) {
                     return ObjectProducer.NULL_PRODUCER;
@@ -205,10 +214,12 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 return getConfiguration().getValue(actualClass, propertyName, propertyType, expression, false);
             }
 
+            @Override
             public void applyPreCreate(final ObjectProducer param) {
                 addPostConfigurationActions();
             }
 
+            @Override
             public void applyPostCreate(final ObjectProducer param) {
                 if (setter != null) {
                     final T instance = getRefs().get(getName());
@@ -221,6 +232,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 }
             }
 
+            @Override
             public void rollback() {
                 if (replacement) {
                     properties.put(propertyName, oldValue);
@@ -231,10 +243,12 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         });
     }
 
+    @Override
     public boolean hasProperty(final String propertyName) {
         return properties.containsKey(propertyName);
     }
 
+    @Override
     public boolean removeProperty(final String propertyName) {
         if (isRemoved()) {
             throw new IllegalArgumentException(String.format("Cannot remove property \"%s\" on %s \"%s\" (removed)", propertyName, getDescription(), getName()));
@@ -246,6 +260,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         }
     }
 
+    @Override
     public List<String> getPropertyNames() {
         return new ArrayList<String>(properties.keySet());
     }
@@ -271,6 +286,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             return false;
         }
         configuration.addAction(new ConfigAction<Method>() {
+            @Override
             public Method validate() throws IllegalArgumentException {
                 try {
                     return actualClass.getMethod(methodName);
@@ -279,15 +295,18 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 }
             }
 
+            @Override
             public void applyPreCreate(final Method param) {
             }
 
+            @Override
             public void applyPostCreate(final Method param) {
                 postConfigurationMethods.put(methodName, param);
                 // TODO (jrp) this isn't the best for performance
                 addPostConfigurationActions(true);
             }
 
+            @Override
             public void rollback() {
                 postConfigurationMethods.remove(methodName);
                 addPostConfigurationActions(true);
@@ -355,16 +374,20 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         final Method method = postConfigurationMethods.get(methodName);
         postConfigurationMethods.remove(methodName);
         configuration.addAction(new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
             }
 
+            @Override
             public void rollback() {
                 postConfigurationMethods.put(methodName, method);
                 addPostConfigurationActions(true);
@@ -387,6 +410,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         for (final String methodName : postConfigurationMethods.keySet()) {
             final ConfigAction<Method> configAction = new ConfigAction<Method>() {
 
+                @Override
                 public Method validate() throws IllegalArgumentException {
                     final Method result = postConfigurationMethods.get(methodName);
                     if (result == null) {
@@ -395,9 +419,11 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                     return result;
                 }
 
+                @Override
                 public void applyPreCreate(final Method param) {
                 }
 
+                @Override
                 public void applyPostCreate(final Method param) {
                     final T instance = getRefs().get(getName());
                     try {
@@ -408,6 +434,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                     }
                 }
 
+                @Override
                 public void rollback() {
                     // ignore any rollbacks at this point
                 }
