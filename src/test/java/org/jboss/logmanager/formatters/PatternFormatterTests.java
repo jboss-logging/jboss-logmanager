@@ -184,6 +184,11 @@ public class PatternFormatterTests {
 
         formatter = new PatternFormatter("%-5.10m");
         Assert.assertEquals("test ", formatter.format(record));
+
+        // Exact length truncation
+        final String msg = "test message";
+        formatter = new PatternFormatter("%c %-5.-7m");
+        Assert.assertEquals(CATEGORY + " message", formatter.format(createLogRecord(msg)));
     }
 
     @Test
