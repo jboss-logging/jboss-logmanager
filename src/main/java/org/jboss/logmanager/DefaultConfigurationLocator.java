@@ -30,6 +30,7 @@ import java.net.URL;
 public final class DefaultConfigurationLocator implements ConfigurationLocator {
 
     /** {@inheritDoc} */
+    @Override
     public InputStream findConfiguration() throws IOException {
         final String propLoc = System.getProperty("logging.configuration");
         if (propLoc != null) try {

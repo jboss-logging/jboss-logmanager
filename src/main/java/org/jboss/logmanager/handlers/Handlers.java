@@ -37,10 +37,12 @@ public final class Handlers {
      */
     public static FlushableCloseable wrap(final Handler handler) {
         return handler instanceof FlushableCloseable ? (FlushableCloseable) handler : new FlushableCloseable() {
+            @Override
             public void close() {
                 handler.close();
             }
 
+            @Override
             public void flush() {
                 handler.flush();
             }
@@ -55,6 +57,7 @@ public final class Handlers {
      */
     public static Runnable flusher(final Handler handler) {
         return new Runnable() {
+            @Override
             public void run() {
                 handler.flush();
             }

@@ -46,6 +46,7 @@ public final class LevelChangingFilter implements Filter {
      * @param record the record to inspect and possibly update
      * @return {@code true} always
      */
+    @Override
     public boolean isLoggable(final LogRecord record) {
         record.setLevel(newLevel);
         return true;

@@ -71,6 +71,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
     }
 
     /** {@inheritDoc} */
+    @Override
     public void publish(final LogRecord record) {
         if (enabled && record != null && isLoggable(record)) {
             doPublish(ExtLogRecord.wrap(record));

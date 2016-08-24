@@ -30,6 +30,7 @@ final class FormatterConfigurationImpl extends AbstractPropertyConfiguration<For
         super(Formatter.class, configuration, configuration.getFormatterRefs(), configuration.getFormatterConfigurations(), name, moduleName, className, constructorProperties);
     }
 
+    @Override
     String getDescription() {
         return "formatter";
     }

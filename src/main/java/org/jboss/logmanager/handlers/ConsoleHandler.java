@@ -133,6 +133,7 @@ public class ConsoleHandler extends OutputStreamHandler {
     }
 
     /** {@inheritDoc} */
+    @Override
     public void setOutputStream(final OutputStream outputStream) {
         super.setOutputStream(wrap(outputStream));
     }

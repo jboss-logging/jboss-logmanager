@@ -85,6 +85,7 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         return newMap;
     }
 
+    @Override
     public V putIfAbsent(final K key, final V value) {
         if (key == null) {
             throw new IllegalArgumentException("key is null");
@@ -105,6 +106,7 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         }
     }
 
+    @Override
     public boolean remove(final Object key, final Object value) {
         synchronized (this) {
             final Node<K, V> oldNode = map.get(key);
@@ -119,6 +121,7 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         return false;
     }
 
+    @Override
     public boolean replace(final K key, final V oldValue, final V newValue) {
         if (newValue == null) {
             throw new IllegalArgumentException("newValue is null");
@@ -139,6 +142,7 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         return false;
     }
 
+    @Override
     public V replace(final K key, final V value) {
         if (value == null) {
             throw new IllegalArgumentException("value is null");
@@ -155,18 +159,22 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         }
     }
 
+    @Override
     public int size() {
         return map.size();
     }
 
+    @Override
     public boolean isEmpty() {
         return map.isEmpty();
     }
 
+    @Override
     public boolean containsKey(final Object key) {
         return map.containsKey(key);
     }
 
+    @Override
     public boolean containsValue(final Object value) {
         if (value == null) return false;
         for (Node<K, V> node : map.values()) {
@@ -177,11 +185,13 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         return false;
     }
 
+    @Override
     public V get(final Object key) {
         final Node<K, V> node = map.get(key);
         return node == null ? null : node.get();
     }
 
+    @Override
     public V put(final K key, final V value) {
         if (key == null) {
             throw new IllegalArgumentException("key is null");
@@ -197,6 +207,7 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         }
     }
 
+    @Override
     public V remove(final Object key) {
         if (key == null) return null;
         synchronized (this) {
@@ -207,12 +218,14 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         }
     }
 
+    @Override
     public void clear() {
         synchronized (this) {
             map = empty();
         }
     }
 
+    @Override
     public Set<Entry<K, V>> entrySet() {
         final FastCopyHashMap<K, Node<K, V>> snapshot = map;
         final Map<K, V> copyMap = new HashMap<K, V>();
@@ -240,6 +253,7 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
 
     private static final class Queue<K, V> extends ReferenceQueue<V> {
 
+        @Override
         public Node<K, V> poll() {
             return (Node<K, V>) super.poll();
         }

@@ -111,6 +111,7 @@ public final class NDC {
     }
 
     private static final class Holder extends ThreadLocal<Stack<String>> {
+        @Override
         protected Stack<String> initialValue() {
             return new Stack<String>();
         }

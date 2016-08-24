@@ -374,24 +374,28 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getSourceClassName() {
         calculateCaller();
         return super.getSourceClassName();
     }
 
     /** {@inheritDoc} */
+    @Override
     public void setSourceClassName(final String sourceClassName) {
         calculateCaller = false;
         super.setSourceClassName(sourceClassName);
     }
 
     /** {@inheritDoc} */
+    @Override
     public String getSourceMethodName() {
         calculateCaller();
         return super.getSourceMethodName();
     }
 
     /** {@inheritDoc} */
+    @Override
     public void setSourceMethodName(final String sourceMethodName) {
         calculateCaller = false;
         super.setSourceMethodName(sourceMethodName);
@@ -475,6 +479,7 @@ public class ExtLogRecord extends LogRecord {
      *
      * @param message the new raw message
      */
+    @Override
     public void setMessage(final String message) {
         setMessage(message, FormatStyle.MESSAGE_FORMAT);
     }
@@ -497,6 +502,7 @@ public class ExtLogRecord extends LogRecord {
      *
      * @param parameters the log message parameters. (may be null)
      */
+    @Override
     public void setParameters(final Object[] parameters) {
         formattedMessage = null;
         super.setParameters(parameters);
@@ -507,6 +513,7 @@ public class ExtLogRecord extends LogRecord {
      *
      * @param bundle localization bundle (may be null)
      */
+    @Override
     public void setResourceBundle(final ResourceBundle bundle) {
         formattedMessage = null;
         super.setResourceBundle(bundle);
@@ -517,6 +524,7 @@ public class ExtLogRecord extends LogRecord {
      *
      * @param name localization bundle name (may be null)
      */
+    @Override
     public void setResourceBundleName(final String name) {
         formattedMessage = null;
         super.setResourceBundleName(name);

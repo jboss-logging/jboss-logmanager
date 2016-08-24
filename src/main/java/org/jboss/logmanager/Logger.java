@@ -97,12 +97,14 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     // Filter mgmt
 
     /** {@inheritDoc} */
+    @Override
     public void setFilter(Filter filter) throws SecurityException {
         LogContext.checkAccess(loggerNode.getContext());
         loggerNode.setFilter(filter);
     }
 
     /** {@inheritDoc} */
+    @Override
     public Filter getFilter() {
         return loggerNode.getFilter();
     }
@@ -114,6 +116,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * logger at a time, in order to allow readers to never block (though there is a window where retrieving the
      * log level reflects an older effective level than the actual level).
      */
+    @Override
     public void setLevel(Level newLevel) throws SecurityException {
         LogContext.checkAccess(loggerNode.getContext());
         loggerNode.setLevel(newLevel);
@@ -140,11 +143,13 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public Level getLevel() {
         return loggerNode.getLevel();
     }
 
     /** {@inheritDoc} */
+    @Override
     public boolean isLoggable(Level level) {
         if (LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) {
             return true;
@@ -215,6 +220,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     // Handler mgmt
 
     /** {@inheritDoc} */
+    @Override
     public void addHandler(Handler handler) throws SecurityException {
         LogContext.checkAccess(loggerNode.getContext());
         if (handler == null) {
@@ -224,6 +230,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void removeHandler(Handler handler) throws SecurityException {
         LogContext.checkAccess(loggerNode.getContext());
         if (handler == null) {
@@ -233,6 +240,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public Handler[] getHandlers() {
         final Handler[] handlers = loggerNode.getHandlers();
         return handlers.length > 0 ? handlers.clone() : handlers;
@@ -311,12 +319,14 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void setUseParentHandlers(boolean useParentHandlers) {
         LogContext.checkAccess(loggerNode.getContext());
         loggerNode.setUseParentHandlers(useParentHandlers);
     }
 
     /** {@inheritDoc} */
+    @Override
     public boolean getUseParentHandlers() {
         return loggerNode.getUseParentHandlers();
     }
@@ -346,6 +356,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     // Parent/child
 
     /** {@inheritDoc} */
+    @Override
     public Logger getParent() {
         final LoggerNode parentNode = loggerNode.getParent();
         return parentNode == null ? null : parentNode.createLogger();
@@ -355,6 +366,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * <b>Not allowed.</b>  This method may never be called.
      * @throws SecurityException always
      */
+    @Override
     public void setParent(java.util.logging.Logger parent) {
         throw new SecurityException("setParent() disallowed");
     }
@@ -381,6 +393,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     static final int FINEST_INT = Level.FINEST.intValue();
 
     /** {@inheritDoc} */
+    @Override
     public void log(LogRecord record) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
@@ -394,6 +407,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void entering(final String sourceClass, final String sourceMethod) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && FINER_INT < loggerNode.getEffectiveLevel()) {
@@ -409,6 +423,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void entering(final String sourceClass, final String sourceMethod, final Object param1) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && FINER_INT < loggerNode.getEffectiveLevel()) {
@@ -425,6 +440,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void entering(final String sourceClass, final String sourceMethod, final Object[] params) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && FINER_INT < loggerNode.getEffectiveLevel()) {
@@ -445,6 +461,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void exiting(final String sourceClass, final String sourceMethod) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && FINER_INT < loggerNode.getEffectiveLevel()) {
@@ -460,6 +477,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void exiting(final String sourceClass, final String sourceMethod, final Object result) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && FINER_INT < loggerNode.getEffectiveLevel()) {
@@ -476,6 +494,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void throwing(final String sourceClass, final String sourceMethod, final Throwable thrown) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && FINER_INT < loggerNode.getEffectiveLevel()) {
@@ -492,6 +511,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void severe(final String msg) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && SEVERE_INT < loggerNode.getEffectiveLevel()) {
@@ -505,6 +525,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void warning(final String msg) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && WARNING_INT < loggerNode.getEffectiveLevel()) {
@@ -518,6 +539,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void info(final String msg) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && INFO_INT < loggerNode.getEffectiveLevel()) {
@@ -531,6 +553,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void config(final String msg) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && CONFIG_INT < loggerNode.getEffectiveLevel()) {
@@ -544,6 +567,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void fine(final String msg) {
         Filter filter = null;
         if ((FINE_INT < loggerNode.getEffectiveLevel()) && !(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)) {
@@ -557,6 +581,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void finer(final String msg) {
         Filter filter = null;
         if ((FINER_INT < loggerNode.getEffectiveLevel()) && !(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)) {
@@ -570,6 +595,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void finest(final String msg) {
         Filter filter = null;
         if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && FINEST_INT < loggerNode.getEffectiveLevel()) {
@@ -583,6 +609,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void log(final Level level, final String msg) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
@@ -597,6 +624,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void log(final Level level, final String msg, final Object param1) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
@@ -612,6 +640,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void log(final Level level, final String msg, final Object[] params) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
@@ -627,6 +656,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void log(final Level level, final String msg, final Throwable thrown) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
@@ -642,6 +672,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
@@ -658,6 +689,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object param1) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
@@ -675,6 +707,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object[] params) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
@@ -692,6 +725,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Throwable thrown) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
@@ -709,6 +743,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) && (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT)) {
@@ -719,6 +754,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object param1) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) && (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT)) {
@@ -729,6 +765,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object[] params) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) && (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT)) {
@@ -739,6 +776,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Override
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Throwable thrown) {
         final int effectiveLevel = loggerNode.getEffectiveLevel();
         if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) && (level.intValue() < effectiveLevel || effectiveLevel == OFF_INT)) {

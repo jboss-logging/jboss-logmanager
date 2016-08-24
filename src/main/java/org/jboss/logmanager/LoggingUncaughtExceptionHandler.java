@@ -42,6 +42,7 @@ public final class LoggingUncaughtExceptionHandler implements Thread.UncaughtExc
      * @param t the thread
      * @param e the exception
      */
+    @Override
     public void uncaughtException(final Thread t, final Throwable e) {
         log.log(Level.ERROR, "Uncaught exception", e);
     }

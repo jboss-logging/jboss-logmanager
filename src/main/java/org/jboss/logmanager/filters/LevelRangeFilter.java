@@ -56,6 +56,7 @@ public final class LevelRangeFilter implements Filter {
      * @param record the log record
      * @return {@code true} if the record's level falls within the range specified for this instance
      */
+    @Override
     public boolean isLoggable(final LogRecord record) {
         final int iv = record.getLevel().intValue();
         return (minInclusive ? min <= iv : min < iv) && (maxInclusive ? iv <= max : iv < max);

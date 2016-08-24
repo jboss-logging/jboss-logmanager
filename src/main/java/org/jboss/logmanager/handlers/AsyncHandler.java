@@ -121,6 +121,7 @@ public class AsyncHandler extends ExtHandler {
     }
 
     /** {@inheritDoc} */
+    @Override
     protected void doPublish(final ExtLogRecord record) {
         switch (state) {
             case 0: {
@@ -151,6 +152,7 @@ public class AsyncHandler extends ExtHandler {
     }
 
     /** {@inheritDoc} */
+    @Override
     public void close() throws SecurityException {
         checkAccess(this);
         if (stateUpdater.getAndSet(this, 2) != 2) {
@@ -160,6 +162,7 @@ public class AsyncHandler extends ExtHandler {
     }
 
     private final class AsyncTask implements Runnable {
+        @Override
         public void run() {
             final BlockingQueue<ExtLogRecord> recordQueue = AsyncHandler.this.recordQueue;
             final Handler[] handlers = AsyncHandler.this.handlers;

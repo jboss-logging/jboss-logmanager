@@ -86,6 +86,7 @@ public final class PropertyConfigurator implements Configurator {
     }
 
     /** {@inheritDoc} */
+    @Override
     public void configure(final InputStream inputStream) throws IOException {
         final Properties properties = new Properties();
         try {

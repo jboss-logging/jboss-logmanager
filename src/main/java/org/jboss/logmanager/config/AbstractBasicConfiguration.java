@@ -39,6 +39,7 @@ abstract class AbstractBasicConfiguration<T, C extends AbstractBasicConfiguratio
         this.configs = configs;
     }
 
+    @Override
     public String getName() {
         return name;
     }
@@ -61,17 +62,21 @@ abstract class AbstractBasicConfiguration<T, C extends AbstractBasicConfiguratio
 
     ConfigAction<Void> getRemoveAction() {
         return new ConfigAction<Void>() {
+            @Override
             public Void validate() throws IllegalArgumentException {
                 return null;
             }
 
+            @Override
             public void applyPreCreate(final Void param) {
                 refs.remove(name);
             }
 
+            @Override
             public void applyPostCreate(final Void param) {
             }
 
+            @Override
             @SuppressWarnings({ "unchecked" })
             public void rollback() {
                 configs.put(name, (C) AbstractBasicConfiguration.this);

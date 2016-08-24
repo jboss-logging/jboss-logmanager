@@ -49,6 +49,7 @@ public final class UninterruptibleOutputStream extends OutputStream {
      * @param b the byte to write
      * @throws IOException if an error occurs
      */
+    @Override
     public void write(final int b) throws IOException {
         boolean intr = false;
         try {
@@ -77,6 +78,7 @@ public final class UninterruptibleOutputStream extends OutputStream {
      * @param len the length of the array to write
      * @throws IOException if an error occurs
      */
+    @Override
     public void write(final byte[] b, int off, int len) throws IOException {
         boolean intr = false;
         try {
@@ -103,6 +105,7 @@ public final class UninterruptibleOutputStream extends OutputStream {
      *
      * @throws IOException if an error occurs
      */
+    @Override
     public void flush() throws IOException {
         boolean intr = false;
         try {
@@ -124,6 +127,7 @@ public final class UninterruptibleOutputStream extends OutputStream {
      *
      * @throws IOException if an error occurs
      */
+    @Override
     public void close() throws IOException {
         boolean intr = false;
         try {

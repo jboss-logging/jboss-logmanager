@@ -36,6 +36,7 @@ public final class DenyAllFilter implements Filter {
      * @param record ignored
      * @return {@code false}
      */
+    @Override
     public boolean isLoggable(final LogRecord record) {
         return false;
     }

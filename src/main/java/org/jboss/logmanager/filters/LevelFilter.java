@@ -58,6 +58,7 @@ public final class LevelFilter implements Filter {
      * @param record the log record
      * @return {@code true} if the level is in the inclusion list
      */
+    @Override
     public boolean isLoggable(final LogRecord record) {
         return includedLevels.contains(record.getLevel());
     }

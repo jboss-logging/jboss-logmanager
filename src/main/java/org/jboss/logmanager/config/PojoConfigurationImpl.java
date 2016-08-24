@@ -28,6 +28,7 @@ final class PojoConfigurationImpl extends AbstractPropertyConfiguration<Object, 
         super(Object.class, configuration, configuration.getPojoRefs(), configuration.getPojoConfigurations(), name, moduleName, className, constructorProperties);
     }
 
+    @Override
     String getDescription() {
         return "pojo";
     }

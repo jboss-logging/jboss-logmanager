@@ -50,6 +50,7 @@ public final class ThreadLocalLogContextSelector implements LogContextSelector {
         this.delegate = delegate;
     }
 
+    @Override
     public LogContext getLogContext() {
         final LogContext localContext = context.get();
         return localContext != null ? localContext : delegate.getLogContext();

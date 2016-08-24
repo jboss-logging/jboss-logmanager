@@ -28,6 +28,7 @@ import java.util.logging.LogRecord;
 public abstract class ExtFormatter extends Formatter {
 
     /** {@inheritDoc} */
+    @Override
     public final String format(final LogRecord record) {
         return format(ExtLogRecord.wrap(record));
     }

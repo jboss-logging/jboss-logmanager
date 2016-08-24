@@ -77,6 +77,7 @@ public class MultistepFormatter extends ExtFormatter {
     }
 
     /** {@inheritDoc} */
+    @Override
     public String format(final ExtLogRecord record) {
         final StringBuilder builder = new StringBuilder(builderLength);
         for (FormatStep step : steps) {

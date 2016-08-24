@@ -113,6 +113,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     }
 
     /** {@inheritDoc}  This implementation checks to see if the scheduled rollover time has yet occurred. */
+    @Override
     protected void preWrite(final ExtLogRecord record) {
         final long recordMillis = record.getMillis();
         if (recordMillis >= nextRollover) {
