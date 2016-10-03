@@ -209,7 +209,7 @@ public final class Formatters {
                 final int overflow = writtenLen - maximumWidth;
                 if (overflow > 0) {
                     if (truncateBeginning) {
-                        builder.delete(oldLen, overflow + 1);
+                        builder.delete(oldLen, overflow + oldLen);
                     }
                     builder.setLength(newLen - overflow);
                 } else {
