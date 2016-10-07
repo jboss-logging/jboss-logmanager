@@ -27,7 +27,7 @@ import java.util.TimeZone;
 /**
  * A parser which can translate a log4j-style format string into a series of {@code FormatStep} instances.
  */
-public final class FormatStringParser {
+public class FormatStringParser {
 
     /**
      * The regular expression for format strings.  Ain't regex grand?
@@ -49,16 +49,13 @@ public final class FormatStringParser {
                 ")"
     );
 
-    private FormatStringParser() {
-    }
-
     /**
      * Compile a format string into a series of format steps.
      *
      * @param formatString the format string
      * @return the format steps
      */
-    public static FormatStep[] getSteps(final String formatString, ColorMap colors) {
+    public FormatStep[] getSteps(final String formatString, ColorMap colors) {
         final long time = System.currentTimeMillis();
         final ArrayList<FormatStep> stepList = new ArrayList<FormatStep>();
         final Matcher matcher = pattern.matcher(formatString);
@@ -81,6 +78,15 @@ public final class FormatStringParser {
                 final boolean truncateBeginning = widthHyphen != null;
                 final int maximumWidth = maxWidthString == null ? 0 : Integer.parseInt(maxWidthString);
                 final char formatChar = formatCharString.charAt(0);
+
+                if (overridesFormatChar(formatChar)) {
+                    FormatStep step = handleFormatChar(formatChar);
+                    if (step != null) {
+                        stepList.add(step);
+                        continue;
+                    }
+                }
+
                 switch (formatChar) {
                     case 'c': {
                         stepList.add(Formatters.loggerNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument));
@@ -187,7 +193,12 @@ public final class FormatStringParser {
                         break;
                     }
                     default: {
-                        throw new IllegalArgumentException("Encountered an unknown format character");
+                        FormatStep step = handleFormatChar(formatChar);
+                        if (step == null) {
+                            throw new IllegalArgumentException("Encountered an unknown format character");
+                        } else {
+                            stepList.add(step);
+                        }
                     }
                 }
             }
@@ -196,5 +207,16 @@ public final class FormatStringParser {
             stepList.add(Formatters.formatColor(colors, ColorMap.CLEAR_NAME));
         }
         return stepList.toArray(new FormatStep[stepList.size()]);
+    }
+
+    /**
+     * Default implementation does not handle any unknown chars
+     */
+    public FormatStep handleFormatChar(char foramtChar) {
+        return null;
+    }
+
+    public boolean overridesFormatChar(char formatChar) {
+        return false;
     }
 }

@@ -19,6 +19,9 @@
 
 package org.jboss.logmanager.formatters;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.NDC;
 import org.junit.Assert;
@@ -247,6 +250,39 @@ public class PatternFormatterTests {
         cause.addSuppressed(suppressedLevel1);
         formatted = formatter.format(record);
         Assert.assertTrue(formatted.contains("CIRCULAR REFERENCE:java.lang.IllegalStateException: suppressedLevel1"));
+    }
+
+    public class HostNameParser extends FormatStringParser {
+        @Override
+        public FormatStep handleFormatChar(char formatChar) {
+            FormatStep step = null;
+            if (formatChar == 'h') {
+                try {
+                    step = new FormatStep() {
+                        private final String hostname = InetAddress.getLocalHost().getCanonicalHostName();
+
+                        public void render(final StringBuilder builder, final ExtLogRecord record) {
+                            builder.append(hostname);
+                        }
+
+                        public int estimateLength() {
+                            return hostname.length();
+                        }
+                    };
+                } catch (UnknownHostException e) {
+                    throw new RuntimeException("Cannot obtain hostname", e);
+                }
+            }
+            return step;
+        }
+    }
+
+    @Test
+    public void customFormatChar() throws Exception {
+        final ExtLogRecord record = createLogRecord("test");
+        PatternFormatter formatter = new PatternFormatter("[%h] %m", null, new HostNameParser());
+        String hostname = InetAddress.getLocalHost().getCanonicalHostName();
+        Assert.assertEquals("[" + hostname + "] test", formatter.format(record));
     }
 
     protected static ExtLogRecord createLogRecord(final String msg) {
