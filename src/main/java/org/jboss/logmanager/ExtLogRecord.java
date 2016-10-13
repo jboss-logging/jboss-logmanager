@@ -21,11 +21,13 @@ package org.jboss.logmanager;
 
 import java.io.IOException;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.LogRecord;
 
 /**
@@ -54,6 +56,10 @@ public class ExtLogRecord extends LogRecord {
          */
         NO_FORMAT,
     }
+
+    private volatile FastCopyHashMap<AttachmentKey<?>, Serializable> attachments = new FastCopyHashMap<AttachmentKey<?>, Serializable>();
+
+    private static final AtomicReferenceFieldUpdater<ExtLogRecord, FastCopyHashMap> attachmentUpdater = AtomicReferenceFieldUpdater.newUpdater(ExtLogRecord.class, FastCopyHashMap.class, "attachments");
 
     /**
      * Construct a new instance.  Grabs the current NDC immediately.  MDC is deferred.
@@ -111,6 +117,7 @@ public class ExtLogRecord extends LogRecord {
         threadName = original.threadName;
         resourceKey = original.resourceKey;
         formattedMessage = original.formattedMessage;
+        attachments = original.attachments.clone();
     }
 
     /**
@@ -520,5 +527,158 @@ public class ExtLogRecord extends LogRecord {
     public void setResourceBundleName(final String name) {
         formattedMessage = null;
         super.setResourceBundleName(name);
+    }
+
+    /**
+     * Attaches an arbitrary object to the record.
+     *
+     * @param key   the attachment key used to ensure uniqueness and used for retrieval of the value
+     * @param value the value to store
+     * @param <V>   the value type of the attachment
+     *
+     * @return he previous value associated with the key or {@code null} if there was no previous value
+     */
+    @SuppressWarnings("unchecked")
+    public <V extends Serializable> V attach(final AttachmentKey<V> key, final V value) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        FastCopyHashMap<AttachmentKey<?>, Serializable> oldAttachments;
+        FastCopyHashMap<AttachmentKey<?>, Serializable> newAttachments;
+        V result;
+        do {
+            oldAttachments = attachments;
+            newAttachments = oldAttachments.clone();
+            result = key.cast(newAttachments.put(key, value));
+        } while (!attachmentUpdater.compareAndSet(this, oldAttachments, newAttachments));
+        return result;
+    }
+
+    /**
+     * Attaches an arbitrary object to the record only if the object was not already attached. If a value has already
+     * been attached with the key provided, the current value associated with the key is returned.
+     *
+     * @param key   they attachment key used to ensure uniqueness and used for retrieval of the value
+     * @param value the value to store
+     * @param <V>   the value type of the attachment
+     *
+     * @return the previous value associated with the key or {@code null} if there was no previous value
+     */
+    public <V extends Serializable> V attachIfAbsent(final AttachmentKey<V> key, final V value) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        FastCopyHashMap<AttachmentKey<?>, Serializable> oldAttachments;
+        FastCopyHashMap<AttachmentKey<?>, Serializable> newAttachments;
+        do {
+            oldAttachments = attachments;
+            if (oldAttachments.containsKey(key)) {
+                return key.cast(oldAttachments.get(key));
+            }
+            newAttachments = oldAttachments.clone();
+            newAttachments.put(key, value);
+        } while (!attachmentUpdater.compareAndSet(this, oldAttachments, newAttachments));
+        return null;
+    }
+
+    /**
+     * Retrieves an object that has been attached to the record.
+     *
+     * @param key the key to the attachment
+     * @param <V> the value type of the attachment
+     *
+     * @return the attachment if found otherwise {@code null}
+     */
+    public <V extends Serializable> V getAttachment(final AttachmentKey<V> key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        return key.cast(attachments.get(key));
+    }
+
+    /**
+     * Detaches or removes the value from this context.
+     *
+     * @param key the key to the attachment
+     * @param <V> the value type of the attachment
+     *
+     * @return the attachment if found otherwise {@code null}
+     */
+    public <V extends Serializable> V detach(final AttachmentKey<V> key) {
+        if (key == null) {
+            throw new IllegalArgumentException("Key cannot be null");
+        }
+        FastCopyHashMap<AttachmentKey<?>, Serializable> oldAttachments;
+        FastCopyHashMap<AttachmentKey<?>, Serializable> newAttachments;
+        V result;
+        do {
+            oldAttachments = attachments;
+            if (!oldAttachments.containsKey(key)) {
+                return null;
+            }
+            newAttachments = oldAttachments.clone();
+            result = key.cast(newAttachments.remove(key));
+        } while (!attachmentUpdater.compareAndSet(this, oldAttachments, newAttachments));
+        return result;
+    }
+
+    /**
+     * An attachment key instance.
+     *
+     * @param <T> the attachment value type
+     */
+    @SuppressWarnings("UnusedDeclaration")
+    public static final class AttachmentKey<T extends Serializable> implements Serializable {
+        private final Class<T> valueClass;
+
+        /**
+         * Construct a new instance.
+         *
+         * @param valueClass the value type
+         */
+        private AttachmentKey(final Class<T> valueClass) {
+            this.valueClass = valueClass;
+        }
+
+        /**
+         * Cast the value to the type of this attachment key.
+         *
+         * @param value the value
+         *
+         * @return the cast value
+         */
+        public T cast(final Serializable value) {
+            return valueClass.cast(value);
+        }
+
+        /**
+         * Construct a new simple attachment key.
+         *
+         * @param valueClass the value class
+         * @param <T>        the attachment type
+         *
+         * @return the new instance
+         */
+        @SuppressWarnings("unchecked")
+        public static <T extends Serializable> AttachmentKey<T> create(final Class<? super T> valueClass) {
+            return new AttachmentKey(valueClass);
+        }
+
+        @Override
+        public int hashCode() {
+            return 31 * (17 + (valueClass == null ? 0 : valueClass.hashCode()));
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof AttachmentKey)) {
+                return false;
+            }
+            final AttachmentKey<?> other = (AttachmentKey<?>) obj;
+            return (valueClass == null ? other.valueClass == null : valueClass.equals(other.valueClass));
+        }
     }
 }
