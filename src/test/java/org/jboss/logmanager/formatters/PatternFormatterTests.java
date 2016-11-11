@@ -130,32 +130,8 @@ public class PatternFormatterTests {
 
     @Test
     public void systemProperties() throws Exception {
-        final ExtLogRecord record = createLogRecord("test");
-        PatternFormatter formatter = new PatternFormatter("%${org.jboss.logmanager.testProp}");
-        Assert.assertEquals("testValue", formatter.format(record));
-
-        formatter = new PatternFormatter("%${invalid:defaultValue}");
-        Assert.assertEquals("defaultValue", formatter.format(record));
-
-        formatter = new PatternFormatter("%${invalid}");
-        Assert.assertEquals("null", formatter.format(record));
-
-        // Test null arguments
-        try {
-            formatter = new PatternFormatter("%$");
-            formatter.format(record);
-            Assert.fail("Should not allow null arguments");
-        } catch (IllegalArgumentException ignore) {
-
-        }
-
-        try {
-            formatter = new PatternFormatter("%${}");
-            formatter.format(record);
-            Assert.fail("Should not allow null arguments");
-        } catch (IllegalArgumentException ignore) {
-
-        }
+        systemProperties("$");
+        systemProperties("#");
     }
 
     @Test
@@ -247,6 +223,36 @@ public class PatternFormatterTests {
         cause.addSuppressed(suppressedLevel1);
         formatted = formatter.format(record);
         Assert.assertTrue(formatted.contains("CIRCULAR REFERENCE:java.lang.IllegalStateException: suppressedLevel1"));
+    }
+
+
+    private void systemProperties(final String propertyPrefix) throws Exception {
+        final ExtLogRecord record = createLogRecord("test");
+        PatternFormatter formatter = new PatternFormatter("%" + propertyPrefix + "{org.jboss.logmanager.testProp}");
+        Assert.assertEquals("testValue", formatter.format(record));
+
+        formatter = new PatternFormatter("%" + propertyPrefix + "{invalid:defaultValue}");
+        Assert.assertEquals("defaultValue", formatter.format(record));
+
+        formatter = new PatternFormatter("%" + propertyPrefix + "{invalid}");
+        Assert.assertEquals("null", formatter.format(record));
+
+        // Test null arguments
+        try {
+            formatter = new PatternFormatter("%" + propertyPrefix);
+            formatter.format(record);
+            Assert.fail("Should not allow null arguments");
+        } catch (IllegalArgumentException ignore) {
+
+        }
+
+        try {
+            formatter = new PatternFormatter("%" + propertyPrefix + "{}");
+            formatter.format(record);
+            Assert.fail("Should not allow null arguments");
+        } catch (IllegalArgumentException ignore) {
+
+        }
     }
 
     protected static ExtLogRecord createLogRecord(final String msg) {

@@ -178,6 +178,7 @@ public final class FormatStringParser {
                         timeZone = TimeZone.getTimeZone(argument);
                         break;
                     }
+                    case '#':
                     case '$': {
                         stepList.add(Formatters.systemPropertyFormatStep(argument, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
