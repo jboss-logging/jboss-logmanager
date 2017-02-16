@@ -238,7 +238,7 @@ public class PatternFormatterTests {
         Assert.assertTrue(formatted.contains("cause"));
         Assert.assertTrue(formatted.contains("level1"));
         Assert.assertTrue(formatted.contains("suppressedLevel1"));
-        Assert.assertTrue(formatted.contains("suppressedLevel1a"));
+        Assert.assertFalse(formatted.contains("suppressedLevel1a"));
         Assert.assertFalse(formatted.contains("suppressedLevel2"));
 
         // Add a circular reference to the cause. This should test both that the caused suppressed exceptions are being

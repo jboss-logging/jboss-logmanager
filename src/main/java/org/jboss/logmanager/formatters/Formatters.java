@@ -21,29 +21,22 @@ package org.jboss.logmanager.formatters;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.lang.System.getSecurityManager;
-import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.PrintWriter;
 import java.net.InetAddress;
-import java.net.URL;
 import java.net.UnknownHostException;
 import java.security.AccessController;
-import java.security.CodeSource;
 import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
 import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -632,7 +625,6 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String argument, final boolean extended) {
-        final ThreadLocal<Boolean> entered = new ThreadLocal<>() ;
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 doPrivileged(new PrivilegedAction<Void>() {
@@ -646,298 +638,13 @@ public final class Formatters {
                                 } catch (NumberFormatException ignore) {
                                 }
                             }
-                            final Map<String, String> cache = extended ? new HashMap<String, String>() : null;
-                            renderStackTrace(builder, t, cache, extended, depth);
+                            StackTraceFormatter.renderStackTrace(builder, t, extended, depth);
                         }
                         return null;
                     }
                 });
             }
-
-            private void renderStackTrace(final StringBuilder builder, final Throwable t, final Map<String, String> cache, final boolean extended, final int depth) {
-                builder.append(": ").append(t).append(NEW_LINE);
-                final StackTraceElement[] stackTrace = t.getStackTrace();
-                if (extended) {
-                    for (StackTraceElement element : stackTrace) {
-                        renderExtended(builder, element, cache);
-                    }
-                } else {
-                    for (StackTraceElement element : stackTrace) {
-                        renderTrivial(builder, element);
-                    }
-                }
-                // Use the identity of the throwable to determine uniqueness
-                final Set<Throwable> seen = Collections.newSetFromMap(new IdentityHashMap<Throwable, Boolean>());
-                seen.add(t);
-
-                // Render suppressed if desired
-                if (depth != 0) {
-                    renderSuppressed(builder, t, t.getSuppressed(), cache, extended, depth, 0, seen);
-                }
-
-                // Render the cause
-                final Throwable cause = t.getCause();
-                if (cause != null) {
-                    renderCause(builder, t, cause, cache, extended, depth, 0, seen);
-                }
-            }
-
-            private void renderStackTrace(final StringBuilder builder, final String text, final Throwable parent, final Throwable child,
-                                          final Map<String, String> cache, final boolean extended, final int depth, final int count, final Set<Throwable> seen) {
-                // Add the child to the seen list, the parent should already have been added
-                seen.add(child);
-
-                final StackTraceElement[] causeStack = child.getStackTrace();
-                final StackTraceElement[] currentStack = parent.getStackTrace();
-
-                int m = causeStack.length - 1;
-                int n = currentStack.length - 1;
-
-                // Walk the stacks backwards from the end, until we find an element that is different
-                while (m >= 0 && n >= 0 && causeStack[m].equals(currentStack[n])) {
-                    m--; n--;
-                }
-                int framesInCommon = causeStack.length - 1 - m;
-
-                indent(builder, count);
-                builder.append(text).append(child).append(NEW_LINE);
-
-                if (extended) {
-                    for (int i=0; i <= m; i++) {
-                        // Add the prefix for each line
-                        indent(builder, count);
-                        renderExtended(builder, causeStack[i], cache);
-                    }
-                } else {
-                    for (int i=0; i <= m; i++) {
-                        // Add the prefix for each line
-                        indent(builder, count);
-                        renderTrivial(builder, causeStack[i]);
-                    }
-                }
-                if (framesInCommon != 0) {
-                    indent(builder, count);
-                    builder.append("\t... ").append(framesInCommon).append(" more").append(NEW_LINE);
-                }
-
-                if (depth != 0) {
-                    renderSuppressed(builder, child, child.getSuppressed(), cache, extended, depth, count, seen);
-                }
-
-                // Recurse if we have a cause
-                final Throwable ourCause = child.getCause();
-                if (ourCause != null) {
-                    renderCause(builder, child, ourCause, cache, extended, depth, count, seen);
-                }
-            }
-
-            private void renderCause(final StringBuilder builder, final Throwable t, final Throwable cause, final Map<String, String> cache,
-                                     final boolean extended, final int depth, final int count, final Set<Throwable> seen) {
-                renderStackTrace(builder, "Caused by: ", t, cause, cache, extended, depth, count, seen);
-            }
-
-            private void renderSuppressed(final StringBuilder builder, final Throwable t, final Throwable[] suppressed, final Map<String, String> cache,
-                                          final boolean extended, final int depth, final int count, final Set<Throwable> seen) {
-                if (suppressed != null && (depth < 0 || depth > count)) {
-                    for (Throwable s : suppressed) {
-                        if (seen.contains(s)) {
-                            builder.append("\t[CIRCULAR REFERENCE:").append(s).append(']').append(NEW_LINE);
-                        } else {
-                            renderStackTrace(builder, "Suppressed: ", t, s, cache, extended, depth, (count + 1), seen);
-                        }
-                    }
-                }
-            }
-
-            private void indent(final StringBuilder builder, final int count) {
-                for (int i = 0; i < count; i++) {
-                    builder.append('\t');
-                }
-            }
-
-            private void renderTrivial(final StringBuilder builder, final StackTraceElement element) {
-                builder.append("\tat ").append(element).append(NEW_LINE);
-            }
-
-            private void renderExtended(final StringBuilder builder, final StackTraceElement element, final Map<String, String> cache) {
-                builder.append("\tat ").append(element);
-                final String className = element.getClassName();
-                final String cached;
-                if ((cached = cache.get(className)) != null) {
-                    builder.append(cached).append(NEW_LINE);
-                    return;
-                }
-                final int dotIdx = className.lastIndexOf('.');
-                if (dotIdx == -1) {
-                    builder.append(NEW_LINE);
-                    return;
-                }
-                final String packageName = className.substring(0, dotIdx);
-
-                // try to guess the real Class object
-                final Class<?> exceptionClass = guessClass(className);
-
-                // now try to guess the real Package object
-                Package exceptionPackage = null;
-                if (exceptionClass != null) {
-                    exceptionPackage = exceptionClass.getPackage();
-                }
-                if (exceptionPackage == null) try {
-                    exceptionPackage = Package.getPackage(packageName);
-                } catch (Throwable t) {
-                    // ignore
-                }
-
-                // now try to extract the version from the Package
-                String packageVersion = null;
-                if (exceptionPackage != null) {
-                    try {
-                        packageVersion = exceptionPackage.getImplementationVersion();
-                    } catch (Throwable t) {
-                        // ignore
-                    }
-                    if (packageVersion == null) try {
-                        packageVersion = exceptionPackage.getSpecificationVersion();
-                    } catch (Throwable t) {
-                        // ignore
-                    }
-                }
-
-                // now try to find the originating resource of the class
-                URL resource = null;
-                final SecurityManager sm = getSecurityManager();
-                final String classResourceName = className.replace('.', '/') + ".class";
-                if (exceptionClass != null) {
-                    try {
-                        if (sm == null) {
-                            final ProtectionDomain protectionDomain = exceptionClass.getProtectionDomain();
-                            if (protectionDomain != null) {
-                                final CodeSource codeSource = protectionDomain.getCodeSource();
-                                if (codeSource != null) {
-                                    resource = codeSource.getLocation();
-                                }
-                            }
-                        } else {
-                            resource = doPrivileged(new PrivilegedAction<URL>() {
-                                public URL run() {
-                                    final ProtectionDomain protectionDomain = exceptionClass.getProtectionDomain();
-                                    if (protectionDomain != null) {
-                                        final CodeSource codeSource = protectionDomain.getCodeSource();
-                                        if (codeSource != null) {
-                                            return codeSource.getLocation();
-                                        }
-                                    }
-                                    return null;
-                                }
-                            });
-                        }
-                    } catch (Throwable t) {
-                        // ignore
-                    }
-                    if (resource == null) try {
-                        final ClassLoader exceptionClassLoader = exceptionClass.getClassLoader();
-                        if (sm == null) {
-                            resource = exceptionClassLoader == null ? ClassLoader.getSystemResource(classResourceName) : exceptionClassLoader.getResource(classResourceName);
-                        } else {
-                            resource = doPrivileged(new PrivilegedAction<URL>() {
-                                public URL run() {
-                                    return exceptionClassLoader == null ? ClassLoader.getSystemResource(classResourceName) : exceptionClassLoader.getResource(classResourceName);
-                                }
-                            });
-                        }
-                    } catch (Throwable t) {
-                        // ignore
-                    }
-                }
-
-                // now try to extract the JAR name from the resource URL
-                String jarName = getJarName(resource, classResourceName);
-
-                // finally, render the mess
-                boolean started = false;
-                final StringBuilder tagBuilder = new StringBuilder();
-                if (jarName != null) {
-                    started = true;
-                    tagBuilder.append(" [").append(jarName).append(':');
-                }
-                if (packageVersion != null) {
-                    if (! started) {
-                        tagBuilder.append(" [:");
-                        started = true;
-                    }
-                    tagBuilder.append(packageVersion);
-                }
-                if (started) {
-                    tagBuilder.append(']');
-                    final String tag = tagBuilder.toString();
-                    cache.put(className, tag);
-                    builder.append(tag);
-                } else {
-                    cache.put(className, "");
-                }
-                builder.append(NEW_LINE);
-            }
-
-            private Class<?> guessClass(final String name) {
-                if (entered.get() != null) return null;
-                entered.set(Boolean.TRUE);
-                try {
-                    try {
-                        final ClassLoader tccl = currentThread().getContextClassLoader();
-                        if (tccl != null) return Class.forName(name, false, tccl);
-                    } catch (ClassNotFoundException e) {
-                        // ok, try something else...
-                    }
-                    try {
-                        return Class.forName(name);
-                    } catch (ClassNotFoundException e) {
-                        // ok, try something else...
-                    }
-                    return Class.forName(name, false, null);
-                } catch (Throwable t) {
-                    return null;
-                } finally {
-                    entered.remove();
-                }
-            }
         };
-    }
-
-    static String getJarName(URL resource, String classResourceName) {
-        if (resource == null) {
-            return null;
-        }
-
-        final String path = resource.getPath();
-        final String protocol = resource.getProtocol();
-
-        if ("jar".equals(protocol)) {
-            // the last path segment before "!/" should be the JAR name
-            final int sepIdx = path.lastIndexOf("!/");
-            if (sepIdx != -1) {
-                // hit!
-                final String firstPart = path.substring(0, sepIdx);
-                // now find the last file separator before the JAR separator
-                final int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
-                return firstPart.substring(lsIdx + 1);
-            }
-        } else if ("module".equals(protocol)) {
-            return resource.getPath();
-        }
-
-        // OK, that would have been too easy.  Next let's just grab the last piece before the class name
-        for (int endIdx = path.lastIndexOf(classResourceName); endIdx >= 0; endIdx--) {
-            char ch = path.charAt(endIdx);
-            if (ch == '/' || ch == '\\' || ch == '?') {
-                String firstPart = path.substring(0, endIdx);
-                int lsIdx = Math.max(firstPart.lastIndexOf('/'), firstPart.lastIndexOf('\\'));
-                return firstPart.substring(lsIdx + 1);
-            }
-        }
-
-        // OK, just use the last segment
-        final int endIdx = Math.max(path.lastIndexOf('/'), path.lastIndexOf('\\'));
-        return path.substring(endIdx + 1);
     }
 
     /**
