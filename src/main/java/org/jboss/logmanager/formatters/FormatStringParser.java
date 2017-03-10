@@ -95,11 +95,11 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'e': {
-                        stepList.add(Formatters.exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, false));
+                        stepList.add(Formatters.exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument, false));
                         break;
                     }
                     case 'E': {
-                        stepList.add(Formatters.exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, true));
+                        stepList.add(Formatters.exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument, true));
                         break;
                     }
                     case 'F': {

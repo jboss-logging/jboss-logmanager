@@ -45,6 +45,7 @@
     </licenses>
 
     <properties>
+        <skip.enforcer>false</skip.enforcer>
         <!-- maven-compiler-plugin -->
         <maven.compiler.target>1.6</maven.compiler.target>
         <maven.compiler.source>1.6</maven.compiler.source>
@@ -87,7 +88,27 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <!-- Enforce Java 7 version -->
+                        <id>enforce-java-7-version</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skip.enforcer}</skip>
+                            <rules>
+                                <requireJavaVersion>
+                                    <!-- version >= 1.7 -->
+                                    <version>[1.7,)</version>
+                                    <message>Java 7 or higher required to build this project</message>
+                                </requireJavaVersion>
+                            </rules>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
             <plugin>

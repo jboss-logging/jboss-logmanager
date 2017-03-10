@@ -19,37 +19,36 @@
 
 package org.jboss.logmanager.formatters;
 
-import java.net.InetAddress;
-import java.net.URL;
-import java.net.UnknownHostException;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.ProtectionDomain;
-import java.util.ArrayDeque;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.Locale;
-import java.util.Map;
-import org.jboss.logmanager.ExtLogRecord;
-
-import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Formatter;
-import java.util.logging.LogRecord;
-
-import java.security.PrivilegedAction;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.TimeZone;
-import static java.lang.Math.min;
 import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.System.getSecurityManager;
 import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.PrintWriter;
+import java.net.InetAddress;
+import java.net.URL;
+import java.net.UnknownHostException;
+import java.security.AccessController;
+import java.security.CodeSource;
+import java.security.PrivilegedAction;
+import java.security.ProtectionDomain;
+import java.text.SimpleDateFormat;
+import java.util.ArrayDeque;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Properties;
+import java.util.TimeZone;
+import java.util.logging.Formatter;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
+
+import org.jboss.logmanager.ExtLogRecord;
 
 /**
  * Formatter utility methods.
@@ -61,6 +60,18 @@ public final class Formatters {
     private static final boolean DEFAULT_TRUNCATE_BEGINNING = false;
     private static final String NEW_LINE = String.format("%n");
     private static final Pattern PRECISION_INT_PATTERN = Pattern.compile("\\d+");
+    private static final boolean SUPPORTS_SUPPRESSED_EXCEPTIONS;
+
+    static {
+        boolean supportsSuppressedExceptions = false;
+
+        try {
+            supportsSuppressedExceptions = Throwable.class.getMethod("addSuppressed", Throwable.class) != null;
+        } catch (Throwable ignore) {
+        }
+
+        SUPPORTS_SUPPRESSED_EXCEPTIONS = supportsSuppressedExceptions;
+    }
 
 
     private Formatters() {
@@ -617,7 +628,7 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final boolean extended) {
-        return exceptionFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, extended);
+        return exceptionFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, null, extended);
     }
 
     /**
@@ -630,7 +641,29 @@ public final class Formatters {
      * @param extended {@code true} if the stack trace should attempt to include extended JAR version information
      * @return the format step
      */
-    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final boolean extended) {
+    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String argument, final boolean extended) {
+        if (SUPPORTS_SUPPRESSED_EXCEPTIONS) {
+            return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
+                public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                    doPrivileged(new PrivilegedAction<Void>() {
+                        public Void run() {
+                            final Throwable t = record.getThrown();
+                            if (t != null) {
+                                int depth = -1;
+                                if (argument != null) {
+                                    try {
+                                        depth = Integer.parseInt(argument);
+                                    } catch (NumberFormatException ignore) {
+                                    }
+                                }
+                                StackTraceFormatter.renderStackTrace(builder, t, extended, depth);
+                            }
+                            return null;
+                        }
+                    });
+                }
+            };
+        }
         final ThreadLocal<Boolean> entered = new ThreadLocal<Boolean>() ;
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
