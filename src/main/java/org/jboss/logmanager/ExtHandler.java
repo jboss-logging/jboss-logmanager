@@ -20,7 +20,6 @@
 package org.jboss.logmanager;
 
 import java.io.UnsupportedEncodingException;
-
 import java.security.Permission;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.ErrorManager;
@@ -43,6 +42,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
     private volatile boolean autoFlush = true;
     private volatile boolean enabled = true;
+    private volatile boolean closeChildren;
     private static final ErrorManager DEFAULT_ERROR_MANAGER = new OnlyOnceErrorManager();
 
     private volatile Object protectKey;
@@ -67,6 +67,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
      */
     protected ExtHandler() {
         handlersUpdater.clear(this);
+        closeChildren = true;
         super.setErrorManager(DEFAULT_ERROR_MANAGER);
     }
 
@@ -230,6 +231,28 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
         return enabled;
     }
 
+    /**
+     * Indicates whether or not children handlers should be closed when this handler is {@linkplain #close() closed}.
+     *
+     * @return {@code true} if the children handlers should be closed when this handler is closed, {@code false} if
+     * children handlers should not be closed when this handler is closed
+     */
+    public boolean isCloseChildren() {
+        return closeChildren;
+    }
+
+    /**
+     * Sets whether or not children handlers should be closed when this handler is {@linkplain #close() closed}.
+     *
+     * @param closeChildren {@code true} if all children handlers should be closed when this handler is closed,
+     *                      {@code false} if children handlers will <em>not</em> be closed when this handler
+     *                      is closed
+     */
+    public void setCloseChildren(final boolean closeChildren) {
+        checkAccess(this);
+        this.closeChildren = closeChildren;
+    }
+
     @Override
     public final void protect(Object protectionKey) throws SecurityException {
         if (protectKeyUpdater.compareAndSet(this, null, protectionKey)) {
@@ -313,11 +336,15 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
     @Override
     public void close() throws SecurityException {
         checkAccess(this);
-        for (Handler handler : handlers) try {
-            handler.close();
-        } catch (Exception ex) {
-            reportError("Failed to close child handler", ex, ErrorManager.CLOSE_FAILURE);
-        } catch (Throwable ignored) {}
+        if (closeChildren) {
+            for (Handler handler : handlers)
+                try {
+                    handler.close();
+                } catch (Exception ex) {
+                    reportError("Failed to close child handler", ex, ErrorManager.CLOSE_FAILURE);
+                } catch (Throwable ignored) {
+                }
+        }
     }
 
     @Override
