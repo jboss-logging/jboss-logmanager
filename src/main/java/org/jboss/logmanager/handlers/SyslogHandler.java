@@ -1006,6 +1006,7 @@ public class SyslogHandler extends ExtHandler {
      * @param out the output stream to write to
      */
     public void setOutputStream(final OutputStream out) {
+        checkAccess(this);
         setOutputStream(out, true);
     }
 
@@ -1037,7 +1038,6 @@ public class SyslogHandler extends ExtHandler {
     }
 
     private void setOutputStream(final OutputStream out, final boolean outputStreamSet) {
-        checkAccess(this);
         OutputStream oldOut = null;
         boolean ok = false;
         try {
