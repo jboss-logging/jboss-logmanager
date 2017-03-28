@@ -73,6 +73,11 @@ public final class SubstituteFilter implements Filter {
      */
     @Override
     public boolean isLoggable(final LogRecord record) {
+        if (record.getMessage() == null) {
+            // If this is called when a thread-local filter is set in the log manager,
+            // in Logger.isLoggable(Level)
+            return true;
+        }
         final Matcher matcher;
         if (record instanceof ExtLogRecord) {
             matcher = pattern.matcher(((ExtLogRecord) record).getFormattedMessage());

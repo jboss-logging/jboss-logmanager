@@ -20,6 +20,7 @@
 package org.jboss.logmanager;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -36,6 +37,10 @@ class StringListHandler extends ExtHandler {
 
     public String getMessage(final int index) {
         return messages.get(index);
+    }
+
+    public List<String> getMessages() {
+        return Collections.unmodifiableList(messages);
     }
 
     public int size() {

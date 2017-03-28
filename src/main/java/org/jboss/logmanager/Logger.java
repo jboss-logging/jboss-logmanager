@@ -21,8 +21,7 @@ package org.jboss.logmanager;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -42,6 +41,37 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     private final LoggerNode loggerNode;
 
     private static final String LOGGER_CLASS_NAME = Logger.class.getName();
+
+    /**
+     * Pre-instantiated LogRecords per map used in {@link #isLoggable(Level)}.
+     */
+    private static final Map<Level, LogRecord> levelLogMap = initLevelLogRecordMap();
+
+    /**
+     * Instantiate the LogRecords for each level to speed up isLoggable.;;
+     * @return
+     */
+    private static Map<Level,LogRecord> initLevelLogRecordMap() {
+        Map<java.util.logging.Level, LogRecord> map = new HashMap<>();
+
+        map.put(org.jboss.logmanager.Level.TRACE, new LogRecord(org.jboss.logmanager.Level.TRACE, null));
+        map.put(org.jboss.logmanager.Level.DEBUG, new LogRecord(org.jboss.logmanager.Level.DEBUG, null));
+        map.put(org.jboss.logmanager.Level.INFO, new LogRecord(org.jboss.logmanager.Level.INFO, null));
+        map.put(org.jboss.logmanager.Level.WARN, new LogRecord(org.jboss.logmanager.Level.WARN, null));
+        map.put(org.jboss.logmanager.Level.ERROR, new LogRecord(org.jboss.logmanager.Level.ERROR, null));
+        map.put(org.jboss.logmanager.Level.FATAL, new LogRecord(org.jboss.logmanager.Level.FATAL, null));
+        map.put(java.util.logging.Level.ALL, new LogRecord(java.util.logging.Level.ALL, null));
+        map.put(java.util.logging.Level.FINEST, new LogRecord(java.util.logging.Level.FINEST, null));
+        map.put(java.util.logging.Level.FINER, new LogRecord(java.util.logging.Level.FINER, null));
+        map.put(java.util.logging.Level.FINE, new LogRecord(java.util.logging.Level.FINE, null));
+        map.put(java.util.logging.Level.INFO, new LogRecord(java.util.logging.Level.INFO, null));
+        map.put(java.util.logging.Level.CONFIG, new LogRecord(java.util.logging.Level.CONFIG, null));
+        map.put(java.util.logging.Level.WARNING, new LogRecord(java.util.logging.Level.WARNING, null));
+        map.put(java.util.logging.Level.SEVERE, new LogRecord(java.util.logging.Level.SEVERE, null));
+        map.put(java.util.logging.Level.OFF, new LogRecord(java.util.logging.Level.OFF, null));
+
+        return Collections.unmodifiableMap(map);
+    }
 
     /**
      * Static logger factory method which returns a JBoss LogManager logger.
@@ -146,8 +176,9 @@ public final class Logger extends java.util.logging.Logger implements Serializab
 
     /** {@inheritDoc} */
     public boolean isLoggable(Level level) {
-        if (LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) {
-            return true;
+        final Filter threadLocalLogFilter = LogManager.getThreadLocalLogFilter();
+        if (threadLocalLogFilter != null) {
+            return threadLocalLogFilter.isLoggable(levelLogMap.get(level));
         }
         final int effectiveLevel = loggerNode.getEffectiveLevel();
         return level.intValue() >= effectiveLevel && effectiveLevel != OFF_INT;

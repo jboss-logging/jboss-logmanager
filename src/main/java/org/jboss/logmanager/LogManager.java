@@ -620,7 +620,11 @@ public final class LogManager extends java.util.logging.LogManager {
      * <p>
      * This feature only works if the {@link #PER_THREAD_LOG_FILTER} was set to {@code true}
      * </p>
-     *
+     * <p>
+     * The Filter added here must cope with the fact that the message in the LogRecord can be null.
+     * This is the case when Logger.isLoggable(Level) is called. If the Logger filter does not have
+     * enough information at this point it should return true.
+     * </p>
      * @param filter the filter to set for all loggers on this thread
      */
     public static void setThreadLocalLogLevel(final Filter filter) {

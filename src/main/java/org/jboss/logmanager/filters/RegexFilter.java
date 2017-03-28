@@ -59,6 +59,11 @@ public final class RegexFilter implements Filter {
      */
     @Override
     public boolean isLoggable(final LogRecord record) {
+        if (record.getMessage() == null) {
+            // If this is called when a thread-local filter is set in the log manager,
+            // in Logger.isLoggable(Level)
+            return true;
+        }
         if (record instanceof ExtLogRecord) {
             return pattern.matcher(((ExtLogRecord) record).getFormattedMessage()).find();
         }
