@@ -107,12 +107,15 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'h': {
-                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, false));
+                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument == null ? "1" : argument));
                         break;
                     }
                     case 'H': {
-                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, true));
+                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument));
                         break;
+                    }
+                    case 'i': {
+                        stepList.add(Formatters.processIdFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                     }
                     case 'k': {
                         stepList.add(Formatters.resourceKeyFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
@@ -143,6 +146,10 @@ public final class FormatStringParser {
                     }
                     case 'n': {
                         stepList.add(Formatters.lineSeparatorFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        break;
+                    }
+                    case 'N': {
+                        stepList.add(Formatters.processNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
                     case 'p': {
