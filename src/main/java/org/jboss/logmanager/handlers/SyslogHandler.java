@@ -1190,24 +1190,35 @@ public class SyslogHandler extends ExtHandler {
             buffer.append(' ');
         }
         // Set the host name
-        if (hostname == null) {
-            buffer.append(NILVALUE_SP);
-        } else {
+        final String recordHostName = record.getHostName();
+        if (hostname != null) {
             buffer.appendUSASCII(hostname, 255).append(' ');
+        } else if (recordHostName != null) {
+            buffer.appendUSASCII(recordHostName, 255).append(' ');
+        } else {
+            buffer.append(NILVALUE_SP);
         }
         // Set the app name
-        if (appName == null) {
-            buffer.appendUSASCII(NILVALUE_SP);
-        } else {
+        final String recordProcName = record.getProcessName();
+        if (appName != null) {
             buffer.appendUSASCII(appName, 48);
             buffer.append(' ');
+        } else if (recordProcName != null) {
+            buffer.appendUSASCII(recordProcName, 48);
+            buffer.append(' ');
+        } else {
+            buffer.appendUSASCII(NILVALUE_SP);
         }
         // Set the procid
-        if (pid == null) {
-            buffer.appendUSASCII(NILVALUE_SP);
-        } else {
+        final long recordProcId = record.getProcessId();
+        if (pid != null) {
             buffer.appendUSASCII(pid, 128);
             buffer.append(' ');
+        } else if (recordProcId != -1) {
+            buffer.append(recordProcId);
+            buffer.append(' ');
+        } else {
+            buffer.appendUSASCII(NILVALUE_SP);
         }
         // Set the msgid
         final String msgid = record.getLoggerName();
@@ -1265,19 +1276,34 @@ public class SyslogHandler extends ExtHandler {
         buffer.append(' ');
 
         // Set the host name
-        if (hostname == null) {
-            // TODO might not be the best solution
-            buffer.appendUSASCII("UNKNOWN_HOSTNAME").append(' ');
-        } else {
+        final String recordHostName = record.getHostName();
+        if (hostname != null) {
             buffer.appendUSASCII(hostname).append(' ');
+        } else if (recordHostName != null) {
+            buffer.appendUSASCII(recordHostName).append(' ');
+        } else {
+            buffer.appendUSASCII("UNKNOWN_HOSTNAME").append(' ');
         }
         // Set the app name and the proc id
-        if (appName != null && pid != null) {
-            buffer.appendUSASCII(appName).append('[').appendUSASCII(pid).append(']').appendUSASCII(": ");
-        } else if (appName != null) {
-            buffer.append(appName).append(": ");
-        } else if (pid != null) {
-            buffer.append('[').appendUSASCII(pid).append(']').append(": ");
+        final String recordProcName = record.getProcessName();
+        boolean colon = false;
+        if (appName != null) {
+            buffer.appendUSASCII(appName);
+            colon = true;
+        } else if (recordProcName != null) {
+            buffer.appendUSASCII(recordProcName);
+            colon = true;
+        }
+        final long recordProcId = record.getProcessId();
+        if (pid != null) {
+            buffer.append('[').appendUSASCII(pid).append(']');
+            colon = true;
+        } else if (recordProcId != -1) {
+            buffer.append('[').append(recordProcId).append(']');
+            colon = true;
+        }
+        if (colon) {
+            buffer.append(':').append(' ');
         }
         return buffer.toArray();
     }
