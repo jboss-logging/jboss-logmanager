@@ -24,9 +24,6 @@ import static java.lang.Math.min;
 import static java.security.AccessController.doPrivileged;
 
 import java.io.PrintWriter;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
 import java.util.ArrayDeque;
@@ -36,7 +33,6 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Properties;
 import java.util.TimeZone;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -430,6 +426,41 @@ public final class Formatters {
     }
 
     /**
+     * Create a format step which emits the source process name with the given justification rules.
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @return the format step
+     */
+    public static FormatStep processNameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+        return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                builder.append(record.getProcessName());
+            }
+        };
+    }
+
+    /**
+     * Create a format step which emits the source file line number with the given justification rules (NOTE: call stack
+     * introspection introduces a significant performance penalty).
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @return the format step
+     */
+    public static FormatStep processIdFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+        return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
+            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
+                builder.append(record.getProcessId());
+            }
+        };
+    }
+
+    /**
      * Create a format step which emits the hostname.
      *
      * @param leftJustify {@code true} to left justify, {@code false} to right justify
@@ -440,29 +471,23 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep hostnameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final boolean qualified) {
-        final Properties props;
-        final Map<String, String> env;
-        if (System.getSecurityManager() == null) {
-            props = System.getProperties();
-            env = System.getenv();
-        } else {
-            props = AccessController.doPrivileged(new PrivilegedAction<Properties>() {
-                @Override
-                public Properties run() {
-                    return System.getProperties();
-                }
-            });
-            env = AccessController.doPrivileged(new PrivilegedAction<Map<String, String>>() {
-                @Override
-                public Map<String, String> run() {
-                    return System.getenv();
-                }
-            });
-        }
-        final String hostname = findHostname(props, env, qualified);
-        return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
-            public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
-                builder.append(hostname);
+        return hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, qualified ? null : "1");
+    }
+
+    /**
+     * Create a format step which emits the hostname.
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param precision    the argument used for the class name, may be {@code null} or contain dots to format the class name
+     * @return the format step
+     */
+    public static FormatStep hostnameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String precision) {
+        return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, precision) {
+            public String getSegmentedSubject(final ExtLogRecord record) {
+                return record.getHostName();
             }
         };
     }
@@ -1064,38 +1089,6 @@ public final class Formatters {
             categorySegments.add(cat.toString());
         }
         return categorySegments;
-    }
-
-    private static String findHostname(final Properties props, final Map<String, String> env, final boolean qualified) {
-        if (qualified) {
-            return findQualifiedHostname(props, env);
-        }
-        String hostname = props.getProperty("jboss.host.name");
-        if (hostname == null) {
-            final String qualifiedHostname = findQualifiedHostname(props, env);
-            final int index = qualifiedHostname.indexOf('.');
-            hostname = (index == -1 ? qualifiedHostname : qualifiedHostname.substring(0, index));
-        }
-        return hostname;
-    }
-
-    private static String findQualifiedHostname(final Properties props, final Map<String, String> env) {
-        // First check the system property
-        String qualifiedHostname = props.getProperty("jboss.qualified.host.name");
-        if (qualifiedHostname == null) {
-            qualifiedHostname = env.get("HOSTNAME");
-            if (qualifiedHostname == null) {
-                env.get("COMPUTERNAME");
-            }
-            if (qualifiedHostname == null) {
-                try {
-                    qualifiedHostname = InetAddress.getLocalHost().getHostName();
-                } catch (UnknownHostException ignore) {
-                    qualifiedHostname = "unknown-host.unknown-domain";
-                }
-            }
-        }
-        return qualifiedHostname;
     }
 
     static class Segment {

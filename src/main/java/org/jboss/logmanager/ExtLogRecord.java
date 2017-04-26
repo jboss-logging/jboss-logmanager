@@ -20,6 +20,7 @@
 package org.jboss.logmanager;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.text.MessageFormat;
 import java.util.Map;
@@ -27,6 +28,9 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import java.util.logging.LogRecord;
+
+import org.wildfly.common.net.HostName;
+import org.wildfly.common.os.Process;
 
 /**
  * An extended log record, which includes additional information including MDC/NDC and correct
@@ -80,6 +84,9 @@ public class ExtLogRecord extends LogRecord {
         this.loggerClassName = loggerClassName;
         ndc = NDC.get();
         threadName = Thread.currentThread().getName();
+        hostName = HostName.getQualifiedHostName();
+        processName = Process.getProcessName();
+        processId = Process.getProcessId();
     }
 
     /**
@@ -111,6 +118,9 @@ public class ExtLogRecord extends LogRecord {
         threadName = original.threadName;
         resourceKey = original.resourceKey;
         formattedMessage = original.formattedMessage;
+        hostName = original.hostName;
+        processName = original.processName;
+        processId = original.processId;
     }
 
     /**
@@ -141,10 +151,29 @@ public class ExtLogRecord extends LogRecord {
     private String resourceKey;
     private String formattedMessage;
     private String threadName;
+    private String hostName;
+    private String processName;
+    private long processId = -1;
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
         copyAll();
         oos.defaultWriteObject();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
+        final ObjectInputStream.GetField fields = ois.readFields();
+        ndc = (String) fields.get("ndc", null);
+        formatStyle = (FormatStyle) fields.get("formatStyle", FormatStyle.MESSAGE_FORMAT);
+        mdcCopy = (FastCopyHashMap<String, Object>) fields.get("mdcCopy", new FastCopyHashMap<>());
+        sourceLineNumber = fields.get("sourceLineNumber", -1);
+        sourceFileName = (String) fields.get("sourceFileName", null);
+        resourceKey = (String) fields.get("resourceKey", null);
+        formattedMessage = (String) fields.get("formattedMessage", null);
+        threadName = (String) fields.get("threadName", null);
+        hostName = (String) fields.get("hostName", null);
+        processName = (String) fields.get("processName", null);
+        processId = fields.get("processId", -1L);
     }
 
     /**
@@ -467,6 +496,60 @@ public class ExtLogRecord extends LogRecord {
      */
     public void setThreadName(final String threadName) {
         this.threadName = threadName;
+    }
+
+    /**
+     * Get the host name of the record, if known.
+     *
+     * @return the host name of the record, if known
+     */
+    public String getHostName() {
+        return hostName;
+    }
+
+    /**
+     * Set the host name of the record.
+     *
+     * @param hostName the host name of the record
+     */
+    public void setHostName(final String hostName) {
+        this.hostName = hostName;
+    }
+
+    /**
+     * Get the process name of the record, if known.
+     *
+     * @return the process name of the record, if known
+     */
+    public String getProcessName() {
+        return processName;
+    }
+
+    /**
+     * Set the process name of the record.
+     *
+     * @param processName the process name of the record
+     */
+    public void setProcessName(final String processName) {
+        this.processName = processName;
+    }
+
+    /**
+     * Get the process ID of the record, if known.
+     *
+     * @return the process ID of the record, or -1 if not known
+     */
+    public long getProcessId() {
+        return processId;
+    }
+
+    /**
+     * Set the process ID of the record.
+     *
+     * @param processId the process ID of the record
+     */
+    public void setProcessId(final long processId) {
+        this.processId = processId;
     }
 
     /**

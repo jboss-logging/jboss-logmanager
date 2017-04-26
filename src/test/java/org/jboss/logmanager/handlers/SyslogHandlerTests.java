@@ -78,9 +78,7 @@ public class SyslogHandlerTests {
         // Create the record
         out.reset();
         record = createRecord(cal, MSG);
-        handler.setHostname(null);
-        handler.setAppName(null);
-        expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " - - " + handler.getPid() + " - - " + BOM + MSG + '\n';
+        expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + MSG + '\n';
         handler.publish(record);
         Assert.assertEquals(expectedMessage, createString(out));
 
