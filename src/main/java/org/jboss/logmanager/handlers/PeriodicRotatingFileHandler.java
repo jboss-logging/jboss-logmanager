@@ -19,21 +19,16 @@
 
 package org.jboss.logmanager.handlers;
 
-import org.jboss.logmanager.ExtLogRecord;
-
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Calendar;
-import java.util.TimeZone;
 import java.io.File;
 import java.io.FileNotFoundException;
-
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
 import java.util.logging.ErrorManager;
+
+import org.jboss.logmanager.ExtLogRecord;
 
 /**
  * A file handler which rotates the log at a preset time interval.  The interval is determined by the content of the
@@ -46,6 +41,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     private Period period = Period.NEVER;
     private long nextRollover = Long.MAX_VALUE;
     private TimeZone timeZone = TimeZone.getDefault();
+    private SuffixRotator suffixRotator = SuffixRotator.EMPTY;
 
     /**
      * Construct a new instance with no formatter and no output file.
@@ -124,17 +120,22 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     /**
      * Set the suffix string.  The string is in a format which can be understood by {@link java.text.SimpleDateFormat}.
      * The period of the rotation is automatically calculated based on the suffix.
+     * <p>
+     * If the suffix ends with {@code .gz} or {@code .zip} the file will be compressed on rotation.
+     * </p>
      *
      * @param suffix the suffix
      * @throws IllegalArgumentException if the suffix is not valid
      */
     public void setSuffix(String suffix) throws IllegalArgumentException {
-        final SimpleDateFormat format = new SimpleDateFormat(suffix);
+        final SuffixRotator suffixRotator = SuffixRotator.parse(suffix);
+        final String dateSuffix = suffixRotator.getDatePattern();
+        final SimpleDateFormat format = new SimpleDateFormat(dateSuffix);
         format.setTimeZone(timeZone);
-        final int len = suffix.length();
+        final int len = dateSuffix.length();
         Period period = Period.NEVER;
         for (int i = 0; i < len; i ++) {
-            switch (suffix.charAt(i)) {
+            switch (dateSuffix.charAt(i)) {
                 case 'y': period = min(period, Period.YEAR); break;
                 case 'M': period = min(period, Period.MONTH); break;
                 case 'w':
@@ -149,7 +150,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
                 case 'K':
                 case 'h': period = min(period, Period.HOUR); break;
                 case 'm': period = min(period, Period.MINUTE); break;
-                case '\'': while (suffix.charAt(++i) != '\''); break;
+                case '\'': while (dateSuffix.charAt(++i) != '\''); break;
                 case 's':
                 case 'S': throw new IllegalArgumentException("Rotating by second or millisecond is not supported");
             }
@@ -157,6 +158,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         synchronized (outputLock) {
             this.format = format;
             this.period = period;
+            this.suffixRotator = suffixRotator;
             final long now;
             final File file = getFile();
             if (file != null && file.lastModified() > 0) {
@@ -177,14 +179,22 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         return nextSuffix;
     }
 
+    /**
+     * Returns the file rotator for this handler.
+     *
+     * @return the file rotator
+     */
+    SuffixRotator getSuffixRotator() {
+        return suffixRotator;
+    }
+
     private void rollOver() {
         try {
             final File file = getFile();
             // first, close the original file (some OSes won't let you move/rename a file that is open)
             setFile(null);
             // next, rotate it
-            final Path target = Paths.get(file.getAbsolutePath() + nextSuffix);
-            Files.move(file.toPath(), target, StandardCopyOption.REPLACE_EXISTING);
+            suffixRotator.rotate(file.toPath(), nextSuffix);
             // start new file
             setFile(file);
         } catch (IOException e) {

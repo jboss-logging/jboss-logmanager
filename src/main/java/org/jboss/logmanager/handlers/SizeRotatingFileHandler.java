@@ -25,12 +25,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import org.jboss.logmanager.ExtLogRecord;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.logging.ErrorManager;
 
 public class SizeRotatingFileHandler extends FileHandler {
@@ -39,7 +33,7 @@ public class SizeRotatingFileHandler extends FileHandler {
     private int maxBackupIndex = 1;
     private CountingOutputStream outputStream;
     private boolean rotateOnBoot;
-    private String suffix;
+    private SuffixRotator suffixRotator = SuffixRotator.EMPTY;
 
     /**
      * Construct a new instance with no formatter and no output file.
@@ -146,7 +140,7 @@ public class SizeRotatingFileHandler extends FileHandler {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
                 try {
-                    rotate(file);
+                    suffixRotator.rotate(file.toPath(), maxBackupIndex);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -211,15 +205,22 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @return the suffix or {@code null} if no suffix should be used
      */
     public String getSuffix() {
-        return suffix;
+        if (suffixRotator == SuffixRotator.EMPTY) {
+            return null;
+        }
+        return suffixRotator.toString();
     }
 
     /**
      * Sets the suffix to be appended to the file name during the file rotation. The suffix does not play a role in
      * determining when the file should be rotated.
      * <p/>
-     * The suffix must be a string understood by the {@link java.text.SimpleDateFormat}.
+     * The suffix must be a string understood by the {@link java.text.SimpleDateFormat}. Optionally the suffix can end
+     * with {@code .gz} or {@code .zip} which will compress the file on rotation.
      * <p/>
+     * <p>
+     * If the suffix ends with {@code .gz} or {@code .zip} the file will be compressed on rotation.
+     * </p>
      * <b>Note:</b> Any files rotated with the suffix appended will not be deleted. The {@link #setMaxBackupIndex(int)
      * maxBackupIndex} is not used for files with a suffix.
      *
@@ -228,7 +229,7 @@ public class SizeRotatingFileHandler extends FileHandler {
     public void setSuffix(final String suffix) {
         checkAccess(this);
         synchronized (outputLock) {
-            this.suffix = suffix;
+            this.suffixRotator = SuffixRotator.parse(suffix);
         }
     }
 
@@ -245,44 +246,12 @@ public class SizeRotatingFileHandler extends FileHandler {
                 }
                 // close the old file.
                 setFile(null);
-                rotate(file);
+                suffixRotator.rotate(file.toPath(), maxBackupIndex);
                 // start with new file.
                 setFile(file);
             } catch (IOException e) {
                 reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
             }
-        }
-    }
-
-    private void rotate(final File file) throws IOException {
-        if (suffix == null) {
-            // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
-            Files.deleteIfExists(Paths.get(file.getAbsolutePath() + "." + maxBackupIndex));
-            for (int i = maxBackupIndex - 1; i >= 1; i--) {
-                final Path src = Paths.get(file.getAbsolutePath() + "." + i);
-                if (Files.exists(src)) {
-                    final Path target = Paths.get(file.getAbsolutePath() + "." + (i + 1));
-                    Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            }
-            Files.move(file.toPath(), Paths.get(file.getAbsolutePath() + ".1"), StandardCopyOption.REPLACE_EXISTING);
-        } else {
-            // This is not efficient, but performance risks were noted on the setSuffix() method
-            final String suffix = new SimpleDateFormat(this.suffix).format(new Date());
-            // Create the file name
-            final String newBaseFilename = file.getAbsolutePath() + suffix;
-
-            // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
-            Files.deleteIfExists(Paths.get(newBaseFilename + "." + maxBackupIndex));
-            for (int i = maxBackupIndex - 1; i >= 1; i--) {
-                final Path src = Paths.get(newBaseFilename + "." + i);
-                if (Files.exists(src)) {
-                    final Path target = Paths.get(newBaseFilename + "." + (i + 1));
-                    Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
-                }
-            }
-            // Rename the current file
-            Files.move(file.toPath(), Paths.get(newBaseFilename + ".1"), StandardCopyOption.REPLACE_EXISTING);
         }
     }
 }

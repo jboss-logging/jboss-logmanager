@@ -25,6 +25,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.List;
 
@@ -79,6 +81,16 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         testRotate(cal, rotatedFile);
     }
 
+    @Test
+    public void testArchiveRotateGzip() throws Exception {
+        testArchiveRotate(".gz");
+    }
+
+    @Test
+    public void testArchiveRotateZip() throws Exception {
+        testArchiveRotate(".zip");
+    }
+
 
     private void testRotate(final Calendar cal, final Path rotatedFile) throws Exception {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
@@ -116,5 +128,55 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         lines = Files.readAllLines(rotatedFile, StandardCharsets.UTF_8);
         Assert.assertEquals("More than 1 line found", 1, lines.size());
         Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
+    }
+
+    private void testArchiveRotate(final String archiveSuffix) throws Exception {
+        final String rotationFormat = ".dd";
+        final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        final DateTimeFormatter rotateFormatter = DateTimeFormatter.ofPattern(rotationFormat);
+        ZonedDateTime date = ZonedDateTime.now();
+
+        handler.setSuffix(rotationFormat + archiveSuffix);
+
+        final String currentDate = formatter.format(date);
+        final String firstDateSuffix = rotateFormatter.format(date);
+
+        // Create a log message to be logged
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        handler.publish(record);
+
+        // Create a new record, increment the day by one and validate
+        date = date.plusDays(1);
+        final String secondDateSuffix = rotateFormatter.format(date);
+        final String nextDate = formatter.format(date);
+        record = createLogRecord(Level.INFO, "Date: %s", nextDate);
+        record.setMillis(date.toInstant().toEpochMilli());
+        handler.publish(record);
+
+        // Create a new record, increment the day by one and validate
+        date = date.plusDays(1);
+        final String thirdDay = formatter.format(date);
+        record = createLogRecord(Level.INFO, "Date: %s", thirdDay);
+        record.setMillis(date.toInstant().toEpochMilli());
+        handler.publish(record);
+
+        // There should be three files
+        final Path logDir = BASE_LOG_DIR.toPath();
+        final Path rotated1 = logDir.resolve(FILENAME + firstDateSuffix + archiveSuffix);
+        final Path rotated2 = logDir.resolve(FILENAME + secondDateSuffix + archiveSuffix);
+        Assert.assertTrue("Missing file " + logFile, Files.exists(logFile));
+        Assert.assertTrue("Missing rotated file " + rotated1, Files.exists(rotated1));
+        Assert.assertTrue("Missing rotated file " + rotated2, Files.exists(rotated2));
+
+        // Validate the files are not empty and the compressed file contains at least one log record
+        if (archiveSuffix.endsWith(".gz")) {
+            validateGzipContents(rotated1, "Date: " + currentDate);
+            validateGzipContents(rotated2, "Date: " + nextDate);
+        } else if (archiveSuffix.endsWith(".zip")) {
+            validateZipContents(rotated1, logFile.getFileName().toString(), "Date: " + currentDate);
+            validateZipContents(rotated2, logFile.getFileName().toString(), "Date: " + nextDate);
+        } else {
+            Assert.fail("Unknown archive suffix: " + archiveSuffix);
+        }
     }
 }
