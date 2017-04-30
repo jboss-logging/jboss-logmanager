@@ -28,6 +28,9 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import org.wildfly.common.ref.Reference.Type;
+import org.wildfly.common.ref.References;
+
 /**
  * An actual logger instance.  This is the end-user interface into the logging system.
  */
@@ -80,12 +83,16 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @param loggerNode the node in the named logger tree
      * @param name the fully-qualified name of this node
      */
+    @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     Logger(final LoggerNode loggerNode, final String name) {
         // Don't set up the bundle in the parent...
         super(name, null);
         // We maintain our own level
         super.setLevel(Level.ALL);
         this.loggerNode = loggerNode;
+        References.create(Type.PHANTOM, this, loggerNode, reference -> {
+            reference.getAttachment().decrementRef();
+        });
     }
 
     // Serialization
@@ -879,12 +886,4 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         return "Logger '" + getName() + "' in context " + loggerNode.getContext();
     }
 
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            loggerNode.decrementRef();
-        } finally {
-            super.finalize();
-        }
-    }
 }
