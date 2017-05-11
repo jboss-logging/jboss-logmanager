@@ -23,10 +23,6 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.logging.ErrorManager;
 
 import org.jboss.logmanager.ExtLogRecord;
@@ -156,7 +152,11 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
                 try {
-                    rotate(file);
+                    final String suffix = getNextSuffix();
+                    final SuffixRotator suffixRotator = getSuffixRotator();
+                    if (suffixRotator != SuffixRotator.EMPTY && suffix != null) {
+                        suffixRotator.rotate(file.toPath(), suffix, maxBackupIndex);
+                    }
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -229,25 +229,12 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
                 }
                 // close the old file.
                 setFile(null);
-                rotate(file);
+                getSuffixRotator().rotate(file.toPath(), getNextSuffix(), maxBackupIndex);
                 // start with new file.
                 setFile(file);
             } catch (IOException e) {
                 reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
             }
         }
-    }
-
-    private void rotate(final File file) throws IOException {
-        final Path fileWithSuffix = Paths.get(file.getAbsolutePath() + getNextSuffix());
-        Files.deleteIfExists(Paths.get(fileWithSuffix + "." + maxBackupIndex));
-        for (int i = maxBackupIndex - 1; i >= 1; i--) {
-            final Path src = Paths.get(fileWithSuffix + "." + i);
-            if (Files.exists(src)) {
-                final Path target = Paths.get(fileWithSuffix + "." + (i + 1));
-                Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
-            }
-        }
-        Files.move(file.toPath(), Paths.get(fileWithSuffix + ".1"), StandardCopyOption.REPLACE_EXISTING);
     }
 }

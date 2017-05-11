@@ -20,17 +20,21 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.jboss.logmanager.ExtLogRecord;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -172,6 +176,66 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
                 testPeriodicAndSizeRotate0(handlerPeriod, logMessagePeriod, false);
             }
         }
+    }
+
+    @Test
+    public void testArchiveRotateGzip() throws Exception {
+        testArchiveRotate(".yyyy-MM-dd", ".gz");
+    }
+
+    @Test
+    public void testArchiveRotateZip() throws Exception {
+        testArchiveRotate(".yyyy-MM-dd", ".zip");
+    }
+
+    @Test
+    public void testArchiveRotateSizeOnlyGzip() throws Exception {
+        testArchiveRotate(null, ".gz");
+    }
+
+    @Test
+    public void testArchiveRotateSizeOnlyZip() throws Exception {
+        testArchiveRotate(null,".zip");
+    }
+
+    private void testArchiveRotate(final String dateSuffix, final String archiveSuffix) throws Exception {
+        final String currentDate = dateSuffix == null ? "" : LocalDate.now().format(DateTimeFormatter.ofPattern(dateSuffix));
+        PeriodicSizeRotatingFileHandler handler = new PeriodicSizeRotatingFileHandler();
+        configureHandlerDefaults(handler);
+        handler.setRotateSize(1024L);
+        handler.setMaxBackupIndex(2);
+        handler.setFile(logFile);
+        handler.setSuffix((dateSuffix == null ? "" : dateSuffix) + archiveSuffix);
+
+        // Allow a few rotates
+        for (int i = 0; i < 100; i++) {
+            handler.publish(createLogRecord("Test message: %d", i));
+        }
+
+        handler.close();
+
+        // We should end up with 3 files, 2 rotated and the default log
+        final Path logDir = BASE_LOG_DIR.toPath();
+        final Path path1 = logDir.resolve(FILENAME + currentDate + ".1" + archiveSuffix);
+        final Path path2 = logDir.resolve(FILENAME + currentDate + ".2" + archiveSuffix);
+        Assert.assertTrue(logFile.exists());
+        Assert.assertTrue(Files.exists(path1));
+        Assert.assertTrue(Files.exists(path2));
+
+        // Validate the files are not empty and the compressed file contains at least one log record
+        if (archiveSuffix.endsWith(".gz")) {
+            validateGzipContents(path1, "Test message:");
+            validateGzipContents(path2, "Test message:");
+        } else if (archiveSuffix.endsWith(".zip")) {
+            validateZipContents(path1, logFile.getName(), "Test message:");
+            validateZipContents(path2, logFile.getName(), "Test message:");
+        } else {
+            Assert.fail("Unknown archive suffix: " + archiveSuffix);
+        }
+
+        // Clean up files
+        Files.deleteIfExists(path1);
+        Files.deleteIfExists(path2);
     }
 
     private void testPeriodicAndSizeRotate0(int handlerPeriod, int logMessagePeriod, boolean testSize) throws Exception {

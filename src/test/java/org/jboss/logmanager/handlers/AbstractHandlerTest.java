@@ -19,12 +19,25 @@
 
 package org.jboss.logmanager.handlers;
 
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.junit.After;
+import org.junit.Assert;
 import org.junit.Before;
 
 /**
@@ -106,5 +119,45 @@ public class AbstractHandlerTest {
 
     protected ExtLogRecord createLogRecord(final org.jboss.logmanager.Level level, final String format, final Object... args) {
         return new ExtLogRecord(level, String.format(format, args), getClass().getName());
+    }
+
+    /**
+     * Validates that at least one line of the GZIP'd file contains the expected text.
+     *
+     * @param path             the path to the GZIP file
+     * @param expectedContains the expected text
+     *
+     * @throws IOException if an error occurs while reading the GZIP file
+     */
+    static void validateGzipContents(final Path path, final String expectedContains) throws IOException {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(Files.newInputStream(path))))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.contains(expectedContains)) {
+                    return;
+                }
+            }
+        }
+        Assert.fail(String.format("GZIP file %s missing contents: %s", path, expectedContains));
+    }
+
+    /**
+     * Validates that the ZIP file contains the expected file, the expected file is not empty and that the first line
+     * contains the expected text.
+     *
+     * @param path             the path to the zip file
+     * @param expectedFileName the name of the file inside the zip file
+     * @param expectedContains the expected text
+     *
+     * @throws IOException if an error occurs reading the zip file
+     */
+    static void validateZipContents(final Path path, final String expectedFileName, final String expectedContains) throws IOException {
+        try (final FileSystem zipFs = FileSystems.newFileSystem(URI.create("jar:" +  path.toUri().toASCIIString()), Collections.singletonMap("create", "true"))) {
+            final Path file = zipFs.getPath(zipFs.getSeparator(), expectedFileName);
+            Assert.assertTrue(String.format("Expected file %s not found.", expectedFileName), Files.exists(file));
+            final List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
+            Assert.assertFalse(String.format("File %s appears to be empty in zip file %s.", expectedFileName, path), lines.isEmpty());
+            Assert.assertTrue(String.format("ZIP file %s missing contents: %s", path, expectedContains), lines.get(0).contains(expectedContains));
+        }
     }
 }

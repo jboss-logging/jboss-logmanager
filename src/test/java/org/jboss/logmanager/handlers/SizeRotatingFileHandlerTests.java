@@ -20,6 +20,8 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -145,5 +147,53 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
 
         // Clean up files
         rotatedFile.delete();
+    }
+    @Test
+    public void testArchiveRotateGzip() throws Exception {
+        testArchiveRotate(".gz");
+    }
+
+    @Test
+    public void testArchiveRotateZip() throws Exception {
+        testArchiveRotate(".zip");
+    }
+
+    private void testArchiveRotate(final String archiveSuffix) throws Exception {
+        final SizeRotatingFileHandler handler = new SizeRotatingFileHandler();
+        configureHandlerDefaults(handler);
+        handler.setRotateSize(1024L);
+        handler.setMaxBackupIndex(2);
+        handler.setFile(logFile);
+        handler.setSuffix(archiveSuffix);
+
+        // Allow a few rotates
+        for (int i = 0; i < 100; i++) {
+            handler.publish(createLogRecord("Test message: %d", i));
+        }
+
+        handler.close();
+
+        // We should end up with 3 files, 2 rotated and the default log
+        final Path logDir = BASE_LOG_DIR.toPath();
+        final Path path1 = logDir.resolve(FILENAME + ".1" + archiveSuffix);
+        final Path path2 = logDir.resolve(FILENAME + ".2" + archiveSuffix);
+        Assert.assertTrue(logFile.exists());
+        Assert.assertTrue(Files.exists(path1));
+        Assert.assertTrue(Files.exists(path2));
+
+        // Validate the files are not empty and the compressed file contains at least one log record
+        if (archiveSuffix.endsWith(".gz")) {
+            validateGzipContents(path1, "Test message:");
+            validateGzipContents(path2, "Test message:");
+        } else if (archiveSuffix.endsWith(".zip")) {
+            validateZipContents(path1, logFile.getName(), "Test message:");
+            validateZipContents(path2, logFile.getName(), "Test message:");
+        } else {
+            Assert.fail("Unknown archive suffix: " + archiveSuffix);
+        }
+
+        // Clean up files
+        Files.deleteIfExists(path1);
+        Files.deleteIfExists(path2);
     }
 }
