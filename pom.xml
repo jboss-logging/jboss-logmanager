@@ -46,6 +46,8 @@
 
     <properties>
         <!-- Dependency versions -->
+        <version.javax.json>1.0</version.javax.json>
+        <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
         <version.org.jboss.modules.jboss-modules>1.5.2.Final</version.org.jboss.modules.jboss-modules>
         <version.org.wildfly.common.wildfly-common>1.2.0.Beta10</version.org.wildfly.common.wildfly-common>
         <version.junit.junit>4.12</version.junit.junit>
@@ -70,6 +72,24 @@
             <artifactId>wildfly-common</artifactId>
             <version>${version.org.wildfly.common.wildfly-common}</version>
         </dependency>
+
+        <dependency>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
+            <version>${version.javax.json}</version>
+            <!-- only required for the JsonFormatter -->
+            <optional>true</optional>
+        </dependency>
+        <!-- JSON implementation -->
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <version>${version.org.glassfish.javax.json}</version>
+            <!-- only required for the JsonFormatter, another implementation of the JSON-P API may be used as well -->
+            <optional>true</optional>
+        </dependency>
+
+        <!-- test dependencies -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
