@@ -39,11 +39,32 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.logging.Filter;
 
 /**
  * Simplified log manager.  Designed to work around the (many) design flaws of the JDK platform log manager.
  */
 public final class LogManager extends java.util.logging.LogManager {
+
+    public static final String PER_THREAD_LOG_FILTER_KEY = "org.jboss.logmanager.useThreadLocalFilter";
+    static final boolean PER_THREAD_LOG_FILTER;
+
+    static {
+        if (System.getSecurityManager() == null) {
+            PER_THREAD_LOG_FILTER = Boolean.getBoolean(PER_THREAD_LOG_FILTER_KEY);
+        } else {
+            PER_THREAD_LOG_FILTER = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
+                @Override
+                public Boolean run() {
+                    return Boolean.getBoolean(PER_THREAD_LOG_FILTER_KEY);
+                }
+            });
+        }
+    }
+
+    private static class LocalFilterHolder {
+        static final ThreadLocal<Filter> LOCAL_FILTER = new ThreadLocal<Filter>();
+    }
 
     /**
      * Construct a new logmanager instance.  Attempts to plug a known memory leak in {@link java.util.logging.Level} as
@@ -580,5 +601,31 @@ public final class LogManager extends java.util.logging.LogManager {
      */
     public Logger getLogger(String name) {
         return LogContext.getLogContext().getLogger(name);
+    }
+
+    /**
+     * Returns the currently set filter for this thread or {@code null} if one has not been set.
+     * <p>
+     * If the {@link #PER_THREAD_LOG_FILTER_KEY} is not set to {@code true} then {@code null} will always be returned.
+     * </p>
+     *
+     * @return the filter set for the thread or {@code null} if no level was set
+     */
+    public static Filter getThreadLocalLogFilter() {
+        return PER_THREAD_LOG_FILTER ? LocalFilterHolder.LOCAL_FILTER.get() : null;
+    }
+
+    /**
+     * Sets the filter on the thread for all loggers.
+     * <p>
+     * This feature only works if the {@link #PER_THREAD_LOG_FILTER} was set to {@code true}
+     * </p>
+     *
+     * @param filter the filter to set for all loggers on this thread
+     */
+    public static void setThreadLocalLogLevel(final Filter filter) {
+        if (PER_THREAD_LOG_FILTER) {
+            LocalFilterHolder.LOCAL_FILTER.set(filter);
+        }
     }
 }
