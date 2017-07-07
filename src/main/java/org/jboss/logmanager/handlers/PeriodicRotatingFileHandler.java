@@ -194,7 +194,8 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             case YEAR:
                 calendar.set(Calendar.MONTH, 0);
             case MONTH:
-                calendar.set(Calendar.DAY_OF_MONTH, 0);
+                // Needs to be set to the first day of the month
+                calendar.set(Calendar.DAY_OF_MONTH, 1);
                 calendar.clear(Calendar.WEEK_OF_MONTH);
             case WEEK:
                 if (period == Period.WEEK) {
