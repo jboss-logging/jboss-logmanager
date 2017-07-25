@@ -20,21 +20,28 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.jboss.byteman.contrib.bmunit.BMRule;
+import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.jboss.logmanager.ExtLogRecord;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
-import java.util.List;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import org.junit.runner.RunWith;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@RunWith(BMUnitRunner.class)
 public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
     private final static String FILENAME = "rotating-file-handler.log";
 
@@ -172,6 +179,38 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
                 testPeriodicAndSizeRotate0(handlerPeriod, logMessagePeriod, false);
             }
         }
+    }
+
+    @Test
+    @BMRule(name = "Test failed rotated",
+            targetClass = "java.nio.file.Files",
+            targetMethod = "move",
+            targetLocation = "AT ENTRY",
+            condition = "$2.getFileName().toString().equals(\"rotating-file-handler.log.2\")",
+            action = "throw new IOException(\"Fail on purpose\")")
+    public void testFailedRotate() throws Exception {
+        final PeriodicSizeRotatingFileHandler handler = new PeriodicSizeRotatingFileHandler();
+        configureHandlerDefaults(handler);
+        handler.setRotateSize(1024L);
+        handler.setMaxBackupIndex(5);
+        handler.setFile(logFile);
+
+        // Allow a few rotates
+        for (int i = 0; i < 100; i++) {
+            handler.publish(createLogRecord("Test message: %d", i));
+        }
+
+        handler.close();
+
+        // The log file should exist, as should one rotated file since we fail the rotation on the second rotate
+        Assert.assertTrue(String.format("Expected log file %s to exist", logFile), logFile.exists());
+        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + ".1");
+        Assert.assertTrue(String.format("Expected rotated file %s to exist", rotatedFile), Files.exists(rotatedFile));
+
+        // The last line of the log file should end with "99" as it should be the last record
+        final List<String> lines = Files.readAllLines(logFile.toPath(), StandardCharsets.UTF_8);
+        final String lastLine = lines.get(lines.size() - 1);
+        Assert.assertTrue("Expected the last line to end with 99: " + lastLine, lastLine.endsWith("99"));
     }
 
     private void testPeriodicAndSizeRotate0(int handlerPeriod, int logMessagePeriod, boolean testSize) throws Exception {

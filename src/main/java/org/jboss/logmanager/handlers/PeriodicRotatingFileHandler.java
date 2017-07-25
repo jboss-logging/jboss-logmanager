@@ -184,7 +184,11 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             setFile(null);
             // next, rotate it
             final Path target = Paths.get(file.getAbsolutePath() + nextSuffix);
-            Files.move(file.toPath(), target, StandardCopyOption.REPLACE_EXISTING);
+            try {
+                Files.move(file.toPath(), target, StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception e) {
+                reportError(String.format("Failed to rotate file %s", file), e, ErrorManager.GENERIC_FAILURE);
+            }
             // start new file
             setFile(file);
         } catch (IOException e) {

@@ -28,16 +28,20 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.List;
 
+import org.jboss.byteman.contrib.bmunit.BMRule;
+import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@RunWith(BMUnitRunner.class)
 public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     private final static String FILENAME = "periodic-rotating-file-handler.log";
 
@@ -77,6 +81,50 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
             writer.write("Adding data to the file");
         }
         testRotate(cal, rotatedFile);
+    }
+
+    @Test
+    @BMRule(name = "Test failed rotated",
+            targetClass = "java.nio.file.Files",
+            targetMethod = "move",
+            targetLocation = "AT ENTRY",
+            condition = "$2.getFileName().toString().matches(\"periodic-rotating-file-handler\\.log\\.\\d+\")",
+            action = "throw new IOException(\"Fail on purpose\")")
+    public void testFailedRotate() throws Exception {
+        final Calendar cal = Calendar.getInstance();
+        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        final int currentDay = cal.get(Calendar.DAY_OF_MONTH);
+        final int nextDay = currentDay + 1;
+
+        final String currentDate = sdf.format(cal.getTime());
+
+        // Create a log message to be logged
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        handler.publish(record);
+
+        Assert.assertTrue("File '" + logFile + "' does not exist", Files.exists(logFile));
+
+        // Read the contents of the log file and ensure there's only one line
+        List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
+        Assert.assertEquals("More than 1 line found", 1, lines.size());
+        Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
+
+        // Create a new record, increment the day by one. The file should fail rotating, but the contents of the
+        // log file should contain the new data
+        cal.add(Calendar.DAY_OF_MONTH, nextDay);
+        final String nextDate = sdf.format(cal.getTime());
+        record = createLogRecord(Level.INFO, "Date: %s", nextDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+
+        // Read the contents of the log file and ensure there's only one line
+        lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
+        Assert.assertEquals("More than 1 line found", 1, lines.size());
+        Assert.assertTrue("Expected the line to contain the date: " + nextDate, lines.get(0).contains(nextDate));
+
+        // The file should not have been rotated
+        Assert.assertTrue("The rotated file '" + rotatedFile.toString() + "' exists and should not", Files.notExists(rotatedFile));
     }
 
 

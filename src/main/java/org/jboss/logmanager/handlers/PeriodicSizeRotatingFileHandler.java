@@ -155,11 +155,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
         synchronized (outputLock) {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
-                try {
-                    rotate(file);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                rotate(file);
             }
             super.setFile(file);
             if (outputStream != null)
@@ -238,16 +234,30 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
         }
     }
 
-    private void rotate(final File file) throws IOException {
-        final Path fileWithSuffix = Paths.get(file.getAbsolutePath() + getNextSuffix());
-        Files.deleteIfExists(Paths.get(fileWithSuffix + "." + maxBackupIndex));
+    private void rotate(final File file) {
+        final String nextSuffix = getNextSuffix();
+        final Path fileWithSuffix = Paths.get(file.getAbsolutePath() + (nextSuffix == null ? "" : nextSuffix));
+        final Path lastFile = Paths.get(fileWithSuffix + "." + maxBackupIndex);
+        try {
+            Files.deleteIfExists(lastFile);
+        } catch (Exception e) {
+            reportError(String.format("Failed to delete file %s", lastFile), e, ErrorManager.GENERIC_FAILURE);
+        }
         for (int i = maxBackupIndex - 1; i >= 1; i--) {
             final Path src = Paths.get(fileWithSuffix + "." + i);
             if (Files.exists(src)) {
                 final Path target = Paths.get(fileWithSuffix + "." + (i + 1));
-                Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
+                move(src, target);
             }
         }
-        Files.move(file.toPath(), Paths.get(fileWithSuffix + ".1"), StandardCopyOption.REPLACE_EXISTING);
+        move(file.toPath(), Paths.get(fileWithSuffix + ".1"));
+    }
+
+    private void move(final Path src, final Path target) {
+        try {
+            Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            reportError(String.format("Failed to move file %s to %s.", src, target), e, ErrorManager.GENERIC_FAILURE);
+        }
     }
 }

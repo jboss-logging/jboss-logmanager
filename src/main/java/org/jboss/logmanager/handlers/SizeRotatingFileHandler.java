@@ -19,12 +19,10 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import org.jboss.logmanager.ExtLogRecord;
-
+import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -32,6 +30,8 @@ import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.ErrorManager;
+
+import org.jboss.logmanager.ExtLogRecord;
 
 public class SizeRotatingFileHandler extends FileHandler {
     // by default, rotate at 10MB
@@ -145,11 +145,7 @@ public class SizeRotatingFileHandler extends FileHandler {
         synchronized (outputLock) {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
-                try {
-                    rotate(file);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                rotate(file);
             }
             super.setFile(file);
             if (outputStream != null)
@@ -254,18 +250,23 @@ public class SizeRotatingFileHandler extends FileHandler {
         }
     }
 
-    private void rotate(final File file) throws IOException {
+    private void rotate(final File file) {
         if (suffix == null) {
             // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
-            Files.deleteIfExists(Paths.get(file.getAbsolutePath() + "." + maxBackupIndex));
+            final Path lastFile = Paths.get(file.getAbsolutePath() + "." + maxBackupIndex);
+            try {
+                Files.deleteIfExists(lastFile);
+            } catch (Exception e) {
+                reportError(String.format("Failed to delete file %s", lastFile), e, ErrorManager.GENERIC_FAILURE);
+            }
             for (int i = maxBackupIndex - 1; i >= 1; i--) {
                 final Path src = Paths.get(file.getAbsolutePath() + "." + i);
                 if (Files.exists(src)) {
                     final Path target = Paths.get(file.getAbsolutePath() + "." + (i + 1));
-                    Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
+                    move(src, target);
                 }
             }
-            Files.move(file.toPath(), Paths.get(file.getAbsolutePath() + ".1"), StandardCopyOption.REPLACE_EXISTING);
+            move(file.toPath(), Paths.get(file.getAbsolutePath() + ".1"));
         } else {
             // This is not efficient, but performance risks were noted on the setSuffix() method
             final String suffix = new SimpleDateFormat(this.suffix).format(new Date());
@@ -273,16 +274,29 @@ public class SizeRotatingFileHandler extends FileHandler {
             final String newBaseFilename = file.getAbsolutePath() + suffix;
 
             // rotate.  First, drop the max file (if any), then move each file to the next higher slot.
-            Files.deleteIfExists(Paths.get(newBaseFilename + "." + maxBackupIndex));
+            final Path lastFile = Paths.get(newBaseFilename + "." + maxBackupIndex);
+            try {
+                Files.deleteIfExists(lastFile);
+            } catch (Exception e) {
+                reportError(String.format("Failed to delete file %s", lastFile), e, ErrorManager.GENERIC_FAILURE);
+            }
             for (int i = maxBackupIndex - 1; i >= 1; i--) {
                 final Path src = Paths.get(newBaseFilename + "." + i);
                 if (Files.exists(src)) {
                     final Path target = Paths.get(newBaseFilename + "." + (i + 1));
-                    Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
+                    move(src, target);
                 }
             }
             // Rename the current file
-            Files.move(file.toPath(), Paths.get(newBaseFilename + ".1"), StandardCopyOption.REPLACE_EXISTING);
+            move(file.toPath(), Paths.get(newBaseFilename + ".1"));
+        }
+    }
+
+    private void move(final Path src, final Path target) {
+        try {
+            Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            reportError(String.format("Failed to move file %s to %s.", src, target), e, ErrorManager.GENERIC_FAILURE);
         }
     }
 }
