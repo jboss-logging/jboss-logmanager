@@ -19,12 +19,11 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
-import org.jboss.logmanager.ExtLogRecord;
-
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -33,13 +32,26 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.ErrorManager;
 
+import org.jboss.logmanager.ExtLogRecord;
+
 public class SizeRotatingFileHandler extends FileHandler {
+
+    // obtain System.err in static initializer as it is later set to a PrintStream that is not the initial one. (as is OnlyOnceErrorManager )
+    private static final PrintStream ERR = System.err;
+
+    // retry rotate step 640k, a floppy disk :)
+    private static final long ROTATE_RETRY_STEP = 0xa0000L;
+    private static final int MAX_ROTATE_SIZE_MULTIPLIER = 2;
+
     // by default, rotate at 10MB
     private long rotateSize = 0xa0000L;
     private int maxBackupIndex = 1;
     private CountingOutputStream outputStream;
     private boolean rotateOnBoot;
     private String suffix;
+
+    // rotate size that takes into account the retry rotate step
+    private long currentRotateSize;
 
     /**
      * Construct a new instance with no formatter and no output file.
@@ -97,8 +109,13 @@ public class SizeRotatingFileHandler extends FileHandler {
      * Construct a new instance with no formatter and no output file.
      */
     public SizeRotatingFileHandler(final long rotateSize, final int maxBackupIndex) {
-        this.rotateSize = rotateSize;
+        setRotationSize(rotateSize);
         this.maxBackupIndex = maxBackupIndex;
+    }
+
+    private void setRotationSize(long rotateSize) {
+        this.rotateSize = rotateSize;
+        this.currentRotateSize = rotateSize;
     }
 
     /**
@@ -110,7 +127,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      */
     public SizeRotatingFileHandler(final File file, final long rotateSize, final int maxBackupIndex) throws FileNotFoundException {
         super(file);
-        this.rotateSize = rotateSize;
+        setRotationSize(rotateSize);
         this.maxBackupIndex = maxBackupIndex;
     }
 
@@ -124,7 +141,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      */
     public SizeRotatingFileHandler(final File file, final boolean append, final long rotateSize, final int maxBackupIndex) throws FileNotFoundException {
         super(file, append);
-        this.rotateSize = rotateSize;
+        setRotationSize(rotateSize);
         this.maxBackupIndex = maxBackupIndex;
     }
 
@@ -142,13 +159,17 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @throws RuntimeException if there is an attempt to rotate file and the rotation fails
      */
     public void setFile(final File file) throws FileNotFoundException {
+        setFile(file, this.rotateOnBoot);
+    }
+
+    private void setFile(File file, boolean checkForRotation) throws FileNotFoundException {
         synchronized (outputLock) {
             // Check for a rotate
-            if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
+            if (checkForRotation && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
                 try {
                     rotate(file);
                 } catch (IOException e) {
-                    throw new RuntimeException(e);
+                    reportError("Unable to rotate log file.", e, ErrorManager.OPEN_FAILURE);
                 }
             }
             super.setFile(file);
@@ -189,7 +210,7 @@ public class SizeRotatingFileHandler extends FileHandler {
     public void setRotateSize(final long rotateSize) {
         checkAccess(this);
         synchronized (outputLock) {
-            this.rotateSize = rotateSize;
+            setRotationSize(rotateSize);
         }
     }
 
@@ -236,7 +257,7 @@ public class SizeRotatingFileHandler extends FileHandler {
     protected void preWrite(final ExtLogRecord record) {
         final int maxBackupIndex = this.maxBackupIndex;
         final long currentSize = (outputStream == null ? Long.MIN_VALUE : outputStream.currentSize);
-        if (currentSize > rotateSize && maxBackupIndex > 0) {
+        if (currentSize > currentRotateSize && maxBackupIndex > 0) {
             try {
                 final File file = getFile();
                 if (file == null) {
@@ -245,9 +266,34 @@ public class SizeRotatingFileHandler extends FileHandler {
                 }
                 // close the old file.
                 setFile(null);
-                rotate(file);
-                // start with new file.
-                setFile(file);
+                try {
+                    rotate(file);
+                    if (currentRotateSize != rotateSize) {
+                        currentRotateSize = rotateSize;
+                        ERR.println("Rotation done for log file '" + file.getAbsolutePath() + "'");
+                    }
+
+                } catch (IOException e) {
+                    // rotation failure policy:
+                    // append until size reach 2 time the rotate size and then override the log
+                    final boolean append = currentSize < rotateSize * MAX_ROTATE_SIZE_MULTIPLIER;
+                    if (append) {
+                        while (currentSize >= currentRotateSize) {
+                            currentRotateSize += ROTATE_RETRY_STEP;
+                        }
+                        final long deltaSizeKiloBytes = (currentRotateSize - currentSize) / 1024;
+                        ERR.println("Unable to rotate log file '" + file.getAbsolutePath() + "'. Trying again in " + deltaSizeKiloBytes + "KB");
+                    }
+                    else {
+                        currentRotateSize = rotateSize;
+                        ERR.println("Unable to rotate log file '" + file.getAbsolutePath() + "'. Overriding content as current size doubled rotation size");
+                    }
+                    setAppend(append);
+                }
+                finally {
+                    // start with new file.
+                    setFile(file,false);
+                }
             } catch (IOException e) {
                 reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
             }
