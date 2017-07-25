@@ -29,6 +29,7 @@ import java.nio.file.StandardCopyOption;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.logging.ErrorManager;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -144,19 +145,29 @@ class SuffixRotator {
      * is not being used the file is just moved replacing the target file if it already exists.
      * </p>
      *
-     * @param source the file to be rotated
-     * @param suffix the suffix to append to the rotated file.
-     *
-     * @throws IOException if an error occurs rotating the file
+     * @param errorManager the error manager used to report errors to, if {@code null} an {@link IOException} will
+     *                     be thrown
+     * @param source       the file to be rotated
+     * @param suffix       the suffix to append to the rotated file.
      */
-    void rotate(final Path source, final String suffix) throws IOException {
+    void rotate(final ErrorManager errorManager, final Path source, final String suffix) {
         final Path target = Paths.get(source + suffix + compressionSuffix);
         if (compressionType == CompressionType.GZIP) {
-            archiveGzip(source, target);
+            try {
+                archiveGzip(source, target);
+            } catch (Exception e) {
+                errorManager.error(String.format("Failed to compress %s to %s. Compressed file may be left on the " +
+                        "filesystem corrupted.", source, target), e, ErrorManager.WRITE_FAILURE);
+            }
         } else if (compressionType == CompressionType.ZIP) {
-            archiveZip(source, target);
+            try {
+                archiveZip(source, target);
+            } catch (Exception e) {
+                errorManager.error(String.format("Failed to compress %s to %s. Compressed file may be left on the " +
+                        "filesystem corrupted.", source, target), e, ErrorManager.WRITE_FAILURE);
+            }
         } else {
-            Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+            move(errorManager, source, target);
         }
     }
 
@@ -168,20 +179,20 @@ class SuffixRotator {
      * incremented target. The compression suffix, if required, will be appended to this indexed file name.
      * </p>
      *
+     * @param errorManager   the error manager used to report errors to, if {@code null} an {@link IOException} will
+     *                       be thrown
      * @param source         the file to be rotated
      * @param maxBackupIndex the number of backups to keep
-     *
-     * @throws IOException if an error occurs rotating the file
      */
-    void rotate(final Path source, final int maxBackupIndex) throws IOException {
+    void rotate(final ErrorManager errorManager, final Path source, final int maxBackupIndex) {
         if (formatter == null) {
-            rotate(source, "", maxBackupIndex);
+            rotate(errorManager, source, "", maxBackupIndex);
         } else {
             final String suffix;
             synchronized (formatter) {
                 suffix = formatter.format(new Date());
             }
-            rotate(source, suffix, maxBackupIndex);
+            rotate(errorManager, source, suffix, maxBackupIndex);
         }
     }
 
@@ -192,33 +203,47 @@ class SuffixRotator {
      * incremented target. The compression suffix, if required, will be appended to this indexed file name.
      * </p>
      *
+     * @param errorManager   the error manager used to report errors to, if {@code null} an {@link IOException} will
+     *                       be thrown
      * @param source         the file to be rotated
      * @param suffix         the optional suffix to append to the file before the index and optional compression suffix
      * @param maxBackupIndex the number of backups to keep
-     *
-     * @throws IOException if an error occurs rotating the file
      */
-    void rotate(final Path source, final String suffix, final int maxBackupIndex) throws IOException {
+    void rotate(final ErrorManager errorManager, final Path source, final String suffix, final int maxBackupIndex) {
         if (maxBackupIndex > 0) {
             final String rotationSuffix = (suffix == null ? "" : suffix);
             final String fileWithSuffix = source.toAbsolutePath() + rotationSuffix;
-            Files.deleteIfExists(Paths.get(fileWithSuffix + "." + maxBackupIndex + compressionSuffix));
+            final Path lastFile = Paths.get(fileWithSuffix + "." + maxBackupIndex + compressionSuffix);
+            try {
+                Files.deleteIfExists(lastFile);
+            } catch (Exception e) {
+                errorManager.error(String.format("Failed to delete file %s", lastFile), e, ErrorManager.GENERIC_FAILURE);
+            }
             for (int i = maxBackupIndex - 1; i >= 1; i--) {
                 final Path src = Paths.get(fileWithSuffix + "." + i + compressionSuffix);
                 if (Files.exists(src)) {
                     final Path target = Paths.get(fileWithSuffix + "." + (i + 1) + compressionSuffix);
-                    Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
+                    move(errorManager, src, target);
                 }
             }
-            rotate(source, rotationSuffix + ".1");
+            rotate(errorManager, source, rotationSuffix + ".1");
         } else if (suffix != null && !suffix.isEmpty()) {
-            rotate(source, suffix);
+            rotate(errorManager, source, suffix);
         }
     }
 
     @Override
     public String toString() {
         return originalSuffix;
+    }
+
+    private void move(final ErrorManager errorManager, final Path src, final Path target) {
+        try {
+            Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
+        } catch (Exception e) {
+            // Report the error, but allow the rotation to continue
+            errorManager.error(String.format("Failed to move file %s to %s.", src, target), e, ErrorManager.GENERIC_FAILURE);
+        }
     }
 
 

@@ -20,17 +20,23 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
 
+import org.jboss.byteman.contrib.bmunit.BMRule;
+import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.junit.Assert;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@RunWith(BMUnitRunner.class)
 public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
     private final static String FILENAME = "rotating-file-handler.log";
 
@@ -148,6 +154,7 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
         // Clean up files
         rotatedFile.delete();
     }
+
     @Test
     public void testArchiveRotateGzip() throws Exception {
         testArchiveRotate(".gz");
@@ -156,6 +163,42 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
     @Test
     public void testArchiveRotateZip() throws Exception {
         testArchiveRotate(".zip");
+    }
+
+    /**
+     * Note we only test a failed rotation on the SizeRotatingFileHandler. The type of the rotation, e.g. periodic vs
+     * size, shouldn't matter as each uses the same rotation logic in the SuffixRotator.
+     */
+    @Test
+    @BMRule(name = "Test failed rotated",
+            targetClass = "java.nio.file.Files",
+            targetMethod = "move",
+            targetLocation = "AT ENTRY",
+            condition = "$2.getFileName().toString().equals(\"rotating-file-handler.log.2\")",
+            action = "throw new IOException(\"Fail on purpose\")")
+    public void testFailedRotate() throws Exception {
+        final SizeRotatingFileHandler handler = new SizeRotatingFileHandler();
+        configureHandlerDefaults(handler);
+        handler.setRotateSize(1024L);
+        handler.setMaxBackupIndex(5);
+        handler.setFile(logFile);
+
+        // Allow a few rotates
+        for (int i = 0; i < 100; i++) {
+            handler.publish(createLogRecord("Test message: %d", i));
+        }
+
+        handler.close();
+
+        // The log file should exist, as should one rotated file since we fail the rotation on the second rotate
+        Assert.assertTrue(String.format("Expected log file %s to exist", logFile), logFile.exists());
+        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + ".1");
+        Assert.assertTrue(String.format("Expected rotated file %s to exist", rotatedFile), Files.exists(rotatedFile));
+
+        // The last line of the log file should end with "99" as it should be the last record
+        final List<String> lines = Files.readAllLines(logFile.toPath(), StandardCharsets.UTF_8);
+        final String lastLine = lines.get(lines.size() - 1);
+        Assert.assertTrue("Expected the last line to end with 99: " + lastLine, lastLine.endsWith("99"));
     }
 
     private void testArchiveRotate(final String archiveSuffix) throws Exception {

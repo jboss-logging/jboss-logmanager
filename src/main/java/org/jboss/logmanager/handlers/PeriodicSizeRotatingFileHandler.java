@@ -151,14 +151,10 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
         synchronized (outputLock) {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
-                try {
-                    final String suffix = getNextSuffix();
-                    final SuffixRotator suffixRotator = getSuffixRotator();
-                    if (suffixRotator != SuffixRotator.EMPTY && suffix != null) {
-                        suffixRotator.rotate(file.toPath(), suffix, maxBackupIndex);
-                    }
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
+                final String suffix = getNextSuffix();
+                final SuffixRotator suffixRotator = getSuffixRotator();
+                if (suffixRotator != SuffixRotator.EMPTY && suffix != null) {
+                    suffixRotator.rotate(getErrorManager(), file.toPath(), suffix, maxBackupIndex);
                 }
             }
             super.setFile(file);
@@ -229,7 +225,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
                 }
                 // close the old file.
                 setFile(null);
-                getSuffixRotator().rotate(file.toPath(), getNextSuffix(), maxBackupIndex);
+                getSuffixRotator().rotate(getErrorManager(), file.toPath(), getNextSuffix(), maxBackupIndex);
                 // start with new file.
                 setFile(file);
             } catch (IOException e) {

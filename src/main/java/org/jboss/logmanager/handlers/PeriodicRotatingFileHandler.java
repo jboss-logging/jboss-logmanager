@@ -194,7 +194,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             // first, close the original file (some OSes won't let you move/rename a file that is open)
             setFile(null);
             // next, rotate it
-            suffixRotator.rotate(file.toPath(), nextSuffix);
+            suffixRotator.rotate(getErrorManager(), file.toPath(), nextSuffix);
             // start new file
             setFile(file);
         } catch (IOException e) {

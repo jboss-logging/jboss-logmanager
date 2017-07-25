@@ -139,11 +139,7 @@ public class SizeRotatingFileHandler extends FileHandler {
         synchronized (outputLock) {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
-                try {
-                    suffixRotator.rotate(file.toPath(), maxBackupIndex);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+                suffixRotator.rotate(getErrorManager(), file.toPath(), maxBackupIndex);
             }
             super.setFile(file);
             if (outputStream != null)
@@ -246,7 +242,7 @@ public class SizeRotatingFileHandler extends FileHandler {
                 }
                 // close the old file.
                 setFile(null);
-                suffixRotator.rotate(file.toPath(), maxBackupIndex);
+                suffixRotator.rotate(getErrorManager(), file.toPath(), maxBackupIndex);
                 // start with new file.
                 setFile(file);
             } catch (IOException e) {

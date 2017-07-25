@@ -47,6 +47,7 @@
     <properties>
         <!-- Dependency versions -->
         <version.javax.json>1.0</version.javax.json>
+        <version.org.byteman>3.0.10</version.org.byteman>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
         <version.org.jboss.modules.jboss-modules>1.5.2.Final</version.org.jboss.modules.jboss-modules>
         <version.org.wildfly.common.wildfly-common>1.2.0.Beta10</version.org.wildfly.common.wildfly-common>
@@ -90,6 +91,34 @@
         </dependency>
 
         <!-- test dependencies -->
+
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman</artifactId>
+            <version>${version.org.byteman}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-submit</artifactId>
+            <version>${version.org.byteman}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-install</artifactId>
+            <version>${version.org.byteman}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-bmunit</artifactId>
+            <version>${version.org.byteman}</version>
+            <scope>test</scope>
+        </dependency>
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -116,6 +145,7 @@
                         <exclude>**/SyslogTest.java</exclude>
                     </excludes>
                     <systemPropertyVariables>
+                        <jdk.attach.allowAttachSelf>true</jdk.attach.allowAttachSelf>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <test.log.dir>${project.build.directory}${file.separator}logs${file.separator}</test.log.dir>
                     </systemPropertyVariables>
