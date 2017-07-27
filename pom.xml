@@ -141,9 +141,6 @@
                     <includes>
                         <include>**/*Tests.java</include>
                     </includes>
-                    <excludes>
-                        <exclude>**/SyslogTest.java</exclude>
-                    </excludes>
                     <systemPropertyVariables>
                         <jdk.attach.allowAttachSelf>true</jdk.attach.allowAttachSelf>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
