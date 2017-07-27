@@ -21,6 +21,7 @@ package org.jboss.logmanager.handlers;
 
 import java.io.IOException;
 import java.net.InetAddress;
+import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
 /**
@@ -29,6 +30,7 @@ import javax.net.ssl.SSLSocketFactory;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class SslTcpOutputStream extends TcpOutputStream implements FlushableCloseable {
 
     /**
@@ -50,6 +52,21 @@ public class SslTcpOutputStream extends TcpOutputStream implements FlushableClos
      * <p/>
      * Uses the {@link javax.net.ssl.SSLSocketFactory#getDefault() default socket factory} to create the socket.
      *
+     * @param socketFactory the factory used to create the socket
+     * @param address       the address to connect to
+     * @param port          the port to connect to
+     *
+     * @throws IOException if an I/O error occurs when creating the socket
+     */
+    public SslTcpOutputStream(final SocketFactory socketFactory, final InetAddress address, final int port) throws IOException {
+        super(socketFactory, address, port);
+    }
+
+    /**
+     * Creates a SSL TCP output stream.
+     * <p/>
+     * Uses the {@link javax.net.ssl.SSLSocketFactory#getDefault() default socket factory} to create the socket.
+     *
      * @param address          the address to connect to
      * @param port             the port to connect to
      * @param blockOnReconnect {@code true} to block when attempting to reconnect the socket or {@code false} to
@@ -59,5 +76,22 @@ public class SslTcpOutputStream extends TcpOutputStream implements FlushableClos
      */
     public SslTcpOutputStream(final InetAddress address, final int port, final boolean blockOnReconnect) throws IOException {
         super(SSLSocketFactory.getDefault(), address, port, blockOnReconnect);
+    }
+
+    /**
+     * Creates a SSL TCP output stream.
+     * <p/>
+     * Uses the {@link javax.net.ssl.SSLSocketFactory#getDefault() default socket factory} to create the socket.
+     *
+     * @param socketFactory    the factory used to create the socket
+     * @param address          the address to connect to
+     * @param port             the port to connect to
+     * @param blockOnReconnect {@code true} to block when attempting to reconnect the socket or {@code false} to
+     *                         reconnect asynchronously
+     *
+     * @throws IOException if an I/O error occurs when creating the socket
+     */
+    public SslTcpOutputStream(final SocketFactory socketFactory, final InetAddress address, final int port, final boolean blockOnReconnect) throws IOException {
+        super(socketFactory, address, port, blockOnReconnect);
     }
 }

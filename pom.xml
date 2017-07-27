@@ -56,6 +56,11 @@
         <!-- Plugin versions -->
         <version.org.jboss.apiviz.plugin>1.3.2.GA</version.org.jboss.apiviz.plugin>
 
+        <!-- Test properties -->
+        <org.jboss.test.address>127.0.0.1</org.jboss.test.address>
+        <org.jboss.test.port>4560</org.jboss.test.port>
+        <org.jboss.test.alt.port>14560</org.jboss.test.alt.port>
+
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
     </properties>
@@ -145,6 +150,14 @@
                         <jdk.attach.allowAttachSelf>true</jdk.attach.allowAttachSelf>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
                         <test.log.dir>${project.build.directory}${file.separator}logs${file.separator}</test.log.dir>
+                        <!-- Configured for SocketHandler SSL test -->
+                        <javax.net.ssl.keyStore>${project.basedir}/src/test/resources/server-keystore.jks</javax.net.ssl.keyStore>
+                        <javax.net.ssl.keyStorePassword>testpassword</javax.net.ssl.keyStorePassword>
+                        <javax.net.ssl.trustStore>${project.basedir}/src/test/resources/client-keystore.jks</javax.net.ssl.trustStore>
+                        <javax.net.ssl.trustStorePassword>testpassword</javax.net.ssl.trustStorePassword>
+                        <org.jboss.test.address>${org.jboss.test.address}</org.jboss.test.address>
+                        <org.jboss.test.port>${org.jboss.test.port}</org.jboss.test.port>
+                        <org.jboss.test.alt.port>${org.jboss.test.alt.port}</org.jboss.test.alt.port>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
