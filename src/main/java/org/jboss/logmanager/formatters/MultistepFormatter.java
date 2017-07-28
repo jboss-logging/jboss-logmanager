@@ -29,6 +29,7 @@ import static java.lang.Math.max;
 public class MultistepFormatter extends ExtFormatter {
     private volatile FormatStep[] steps;
     private volatile int builderLength;
+    private volatile boolean callerCalculationRequired = false;
 
     private static final FormatStep[] EMPTY_STEPS = new FormatStep[0];
 
@@ -43,11 +44,16 @@ public class MultistepFormatter extends ExtFormatter {
     }
 
     private void calculateBuilderLength() {
+        boolean callerCalculatedRequired = false;
         int builderLength = 0;
         for (FormatStep step : steps) {
             builderLength += step.estimateLength();
+            if (step.isCallerInformationRequired()) {
+                callerCalculatedRequired = true;
+            }
         }
         this.builderLength = max(32, builderLength);
+        this.callerCalculationRequired = callerCalculatedRequired;
     }
 
     /**
@@ -83,5 +89,10 @@ public class MultistepFormatter extends ExtFormatter {
             step.render(builder, record);
         }
         return builder.toString();
+    }
+
+    @Override
+    public boolean isCallerCalculationRequired() {
+        return callerCalculationRequired;
     }
 }

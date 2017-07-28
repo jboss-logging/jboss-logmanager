@@ -271,6 +271,11 @@ public abstract class StructuredFormatter extends ExtFormatter {
         }
     }
 
+    @Override
+    public boolean isCallerCalculationRequired() {
+        return isPrintDetails();
+    }
+
     /**
      * Returns the character used to indicate the record has is complete. This defaults to {@code \n} and may be
      * {@code null} if no end of record character is desired.

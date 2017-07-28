@@ -335,6 +335,11 @@ public final class Formatters {
             public String getSegmentedSubject(final ExtLogRecord record) {
                 return record.getSourceClassName();
             }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
+            }
         };
     }
 
@@ -421,6 +426,11 @@ public final class Formatters {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceFileName());
+            }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
             }
         };
     }
@@ -529,6 +539,11 @@ public final class Formatters {
                 }
                 builder.append(')');
             }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
+            }
         };
     }
 
@@ -559,6 +574,11 @@ public final class Formatters {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceLineNumber());
+            }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
             }
         };
     }
@@ -729,6 +749,11 @@ public final class Formatters {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceMethodName());
+            }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
             }
         };
     }

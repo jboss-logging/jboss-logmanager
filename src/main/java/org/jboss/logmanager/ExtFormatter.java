@@ -39,4 +39,19 @@ public abstract class ExtFormatter extends Formatter {
      * @return the formatted message
      */
     public abstract String format(final ExtLogRecord extLogRecord);
+
+    /**
+     * Determines whether or not this formatter will require caller, source level, information when a log record is
+     * formatted.
+     *
+     * @return {@code true} if the formatter will need caller information, otherwise {@code false}
+     *
+     * @see LogRecord#getSourceClassName()
+     * @see ExtLogRecord#getSourceFileName()
+     * @see ExtLogRecord#getSourceLineNumber()
+     * @see LogRecord#getSourceMethodName()
+     */
+    public boolean isCallerCalculationRequired() {
+        return true;
+    }
 }
