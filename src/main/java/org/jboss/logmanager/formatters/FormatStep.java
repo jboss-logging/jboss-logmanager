@@ -41,4 +41,11 @@ public interface FormatStep {
      * @return an estimate
      */
     int estimateLength();
+
+    /**
+     * Indicates whether or not caller information is required for this format step.
+     *
+     * @return {@code true} if caller information is required, otherwise {@code false}
+     */
+    boolean isCallerInformationRequired();
 }
