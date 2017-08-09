@@ -90,6 +90,11 @@ public final class Formatters {
             public int estimateLength() {
                 return string.length();
             }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return false;
+            }
         };
     }
 
@@ -245,6 +250,11 @@ public final class Formatters {
         }
 
         public abstract void renderRaw(final StringBuilder builder, final ExtLogRecord record);
+
+        @Override
+        public boolean isCallerInformationRequired() {
+            return false;
+        }
     }
 
     private abstract static class SegmentedFormatStep extends JustifyingFormatStep {
@@ -339,6 +349,11 @@ public final class Formatters {
             public String getSegmentedSubject(final ExtLogRecord record) {
                 return record.getSourceClassName();
             }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
+            }
         };
     }
 
@@ -426,6 +441,11 @@ public final class Formatters {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceFileName());
             }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
+            }
         };
     }
 
@@ -504,6 +524,11 @@ public final class Formatters {
                 }
                 builder.append(')');
             }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
+            }
         };
     }
 
@@ -534,6 +559,11 @@ public final class Formatters {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceLineNumber());
+            }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
             }
         };
     }
@@ -704,6 +734,11 @@ public final class Formatters {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceMethodName());
+            }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
             }
         };
     }
@@ -979,7 +1014,11 @@ public final class Formatters {
                 return 7;
             }
 
-        };
+                @Override
+                public boolean isCallerInformationRequired() {
+                    return false;
+                }
+            };
     }
 
     /**

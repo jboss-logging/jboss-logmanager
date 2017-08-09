@@ -136,8 +136,18 @@ public class AsyncHandler extends ExtHandler {
             }
         }
         final BlockingQueue<ExtLogRecord> recordQueue = this.recordQueue;
-        // prepare record to move to another thread
-        record.copyAll();
+        // Determine if we need to calculate the caller information before we queue the record
+        if (isCallerCalculationRequired()) {
+            // prepare record to move to another thread
+            record.copyAll();
+        } else {
+            // Disable the caller calculation since it's been determined we won't be using it
+            record.disableCallerCalculation();
+            // Copy the MDC over
+            record.copyMdc();
+            // In case serialization is required by a child handler
+            record.getFormattedMessage();
+        }
         if (overflowAction == OverflowAction.DISCARD) {
             recordQueue.offer(record);
         } else {

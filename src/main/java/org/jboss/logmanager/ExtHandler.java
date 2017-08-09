@@ -376,4 +376,43 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
         checkAccess(this);
         super.setLevel(newLevel);
     }
+
+    /**
+     * Indicates whether or not the {@linkplain #getFormatter() formatter} associated with this handler or a formatter
+     * from a {@linkplain #getHandlers() child handler} requires the caller to be calculated.
+     * <p>
+     * Calculating the caller on a {@linkplain ExtLogRecord log record} can be an expensive operation. Some handlers
+     * may be required to copy some data from the log record, but may not need the caller information. If the
+     * {@linkplain #getFormatter() formatter} is a {@link ExtFormatter} the
+     * {@link ExtFormatter#isCallerCalculationRequired()} is used to determine if calculation of the caller is
+     * required.
+     * </p>
+     *
+     * @return {@code true} if the caller should be calculated, otherwise {@code false} if it can be skipped
+     *
+     * @see LogRecord#getSourceClassName()
+     * @see ExtLogRecord#getSourceFileName()
+     * @see ExtLogRecord#getSourceLineNumber()
+     * @see LogRecord#getSourceMethodName()
+     */
+    @SuppressWarnings("WeakerAccess")
+    public boolean isCallerCalculationRequired() {
+        Formatter formatter = getFormatter();
+        if (formatterRequiresCallerCalculation(formatter)) {
+            return true;
+        } else {
+            final Handler[] handlers = getHandlers();
+            for (Handler handler : handlers) {
+                formatter = handler.getFormatter();
+                if (formatterRequiresCallerCalculation(formatter)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private static boolean formatterRequiresCallerCalculation(final Formatter formatter) {
+        return formatter != null && (!(formatter instanceof ExtFormatter) || ((ExtFormatter) formatter).isCallerCalculationRequired());
+    }
 }
