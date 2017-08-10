@@ -36,7 +36,7 @@ import org.junit.Test;
  *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2013 Red Hat, inc.
  */
-public class OutputStreamHandlerTest {
+public class OutputStreamHandlerTests {
 
     private StringWriter out;
     private OutputStreamHandler handler;
@@ -47,7 +47,7 @@ public class OutputStreamHandlerTest {
         }
     };
     
-    public OutputStreamHandlerTest() {
+    public OutputStreamHandlerTests() {
     }
     
     @Before

@@ -26,7 +26,7 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class HandlerTest {
+public class HandlerTests {
 
     @Test
     public void testHandlerClose() throws Exception {
