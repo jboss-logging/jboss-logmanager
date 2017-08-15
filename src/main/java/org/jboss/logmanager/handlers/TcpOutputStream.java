@@ -46,6 +46,7 @@ import javax.net.SocketFactory;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class TcpOutputStream extends OutputStream implements FlushableCloseable {
     private static final long retryTimeout = 5L;
     private static final long maxRetryTimeout = 40L;
@@ -340,15 +341,21 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
 
         @Override
         public void run() {
-            if (socketFactory != null) {
+            boolean connected = false;
+            while (socketFactory != null && !connected) {
                 Socket socket = null;
-                boolean connected = true;
                 try {
                     socket = socketFactory.createSocket(address, port);
                     synchronized (outputLock) {
-                        TcpOutputStream.this.socket = socket;
-                        TcpOutputStream.this.connected = connected;
-                        reconnectThread = null;
+                        // Unlikely but if we've been interrupted due to a close, we should shutdown
+                        if (Thread.currentThread().isInterrupted()) {
+                            safeClose(socket);
+                            break;
+                        } else {
+                            TcpOutputStream.this.socket = socket;
+                            TcpOutputStream.this.connected = true;
+                            connected = true;
+                        }
                     }
                 } catch (IOException e) {
                     connected = false;
@@ -363,8 +370,11 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
                     try {
                         TimeUnit.SECONDS.sleep(Math.min(timeout, maxRetryTimeout));
                     } catch (InterruptedException ignore) {
+                        synchronized (outputLock) {
+                            TcpOutputStream.this.connected = false;
+                        }
+                        break;
                     }
-                    run();
                 } finally {
                     // It's possible the thread was interrupted, if we're not connected we should clean up the socket
                     if (!connected) {

@@ -55,8 +55,12 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         return server;
     }
 
-    String poll() throws InterruptedException {
+    String timeoutPoll() throws InterruptedException {
         return data.poll(10, TimeUnit.SECONDS);
+    }
+
+    String poll() throws InterruptedException {
+        return data.poll();
     }
 
     String peek() {
