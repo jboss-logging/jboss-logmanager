@@ -216,8 +216,11 @@ public class SizeRotatingFileHandler extends FileHandler {
      * <p/>
      * The suffix must be a string understood by the {@link java.text.SimpleDateFormat}.
      * <p/>
-     * <b>Note:</b> Any files rotated with the suffix appended will not be deleted. The {@link #setMaxBackupIndex(int)
-     * maxBackupIndex} is not used for files with a suffix.
+     * <p>
+     * <b>Note:</b> The {@link #setMaxBackupIndex(int) maxBackupIndex} only takes into account files rotated with same
+     * suffix. For example if the suffix pattern is {@code .yyyy-MM-dd} and the size rotation is reached only files
+     * with the same date suffix will be purged. A file the day before or after will not be purged.
+     * </p>
      *
      * @param suffix the suffix to place after the filename when the file is rotated
      */
