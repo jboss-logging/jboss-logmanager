@@ -837,7 +837,7 @@ public final class PropertyConfigurator implements Configurator {
      * @param msg the message to print
      */
     static void printError(final String msg) {
-        System.err.println(msg);
+        StandardOutputStreams.printError(msg);
     }
 
     /**
@@ -847,7 +847,7 @@ public final class PropertyConfigurator implements Configurator {
      * @param args   the format arguments
      */
     static void printError(final String format, final Object... args) {
-        System.err.printf(format, args);
+        StandardOutputStreams.printError(format, args);
     }
 
 

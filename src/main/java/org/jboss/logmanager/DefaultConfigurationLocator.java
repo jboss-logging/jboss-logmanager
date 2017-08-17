@@ -35,7 +35,7 @@ public final class DefaultConfigurationLocator implements ConfigurationLocator {
         if (propLoc != null) try {
             return new URL(propLoc).openStream();
         } catch (IOException e) {
-            System.err.printf("Unable to read the logging configuration from '%s' (%s)%n", propLoc, e);
+            StandardOutputStreams.printError("Unable to read the logging configuration from '%s' (%s)%n", propLoc, e);
         }
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
         if (tccl != null) try {

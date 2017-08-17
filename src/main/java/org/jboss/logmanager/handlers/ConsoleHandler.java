@@ -26,14 +26,13 @@ import java.io.Writer;
 
 import java.util.logging.Formatter;
 
+import org.jboss.logmanager.StandardOutputStreams;
 import org.jboss.logmanager.formatters.Formatters;
 
 /**
  * A console handler which writes to {@code System.out} by default.
  */
 public class ConsoleHandler extends OutputStreamHandler {
-    private static final OutputStream out = System.out;
-    private static final OutputStream err = System.err;
 
     /**
      * The target stream type.
@@ -95,8 +94,8 @@ public class ConsoleHandler extends OutputStreamHandler {
     public ConsoleHandler(final Target target, final Formatter formatter) {
         super(formatter);
         switch (target) {
-            case SYSTEM_OUT: setOutputStream(wrap(out)); break;
-            case SYSTEM_ERR: setOutputStream(wrap(err)); break;
+            case SYSTEM_OUT: setOutputStream(wrap(StandardOutputStreams.stdout)); break;
+            case SYSTEM_ERR: setOutputStream(wrap(StandardOutputStreams.stderr)); break;
             case CONSOLE: setWriter(wrap(console)); break;
             default: throw new IllegalArgumentException();
         }
@@ -109,8 +108,8 @@ public class ConsoleHandler extends OutputStreamHandler {
      */
     public void setTarget(Target target) {
         switch (target) {
-            case SYSTEM_OUT: setOutputStream(wrap(out)); break;
-            case SYSTEM_ERR: setOutputStream(wrap(err)); break;
+            case SYSTEM_OUT: setOutputStream(wrap(StandardOutputStreams.stdout)); break;
+            case SYSTEM_ERR: setOutputStream(wrap(StandardOutputStreams.stderr)); break;
             case CONSOLE: setWriter(wrap(console)); break;
             default: throw new IllegalArgumentException();
         }
