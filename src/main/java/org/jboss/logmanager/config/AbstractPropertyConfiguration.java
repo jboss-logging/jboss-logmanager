@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.jboss.logmanager.StandardOutputStreams;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleIdentifier;
 import org.jboss.modules.ModuleLoader;
@@ -215,8 +216,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                     try {
                         setter.invoke(instance, param.getObject());
                     } catch (Throwable e) {
-                        // todo log it properly...
-                        e.printStackTrace();
+                        StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), param.getObject());
                     }
                 }
             }
@@ -403,8 +403,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                     try {
                         param.invoke(instance);
                     } catch (Throwable e) {
-                        // todo log it properly...
-                        e.printStackTrace();
+                        StandardOutputStreams.printError(e, "Failed to invoke method %s%n.", param.getName());
                     }
                 }
 

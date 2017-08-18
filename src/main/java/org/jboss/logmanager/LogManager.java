@@ -50,6 +50,11 @@ public final class LogManager extends java.util.logging.LogManager {
     static final boolean PER_THREAD_LOG_FILTER;
 
     static {
+        try {
+            // Ensure the StandardOutputStreams are initialized early to capture the current System.out and System.err.
+            Class.forName(StandardOutputStreams.class.getName());
+        } catch (ClassNotFoundException ignore) {
+        }
         if (System.getSecurityManager() == null) {
             PER_THREAD_LOG_FILTER = Boolean.getBoolean(PER_THREAD_LOG_FILTER_KEY);
         } else {
@@ -514,7 +519,7 @@ public final class LogManager extends java.util.logging.LogManager {
                 configurator.configure(inputStream);
                 LogContext.getSystemLogContext().getLogger("").attach(Configurator.ATTACHMENT_KEY, configurator);
             } catch (Throwable t) {
-                t.printStackTrace();
+                StandardOutputStreams.printError(t, "Failed to read or configure the org.jboss.logmanager.LogManager");
             }
         } finally {
             try {

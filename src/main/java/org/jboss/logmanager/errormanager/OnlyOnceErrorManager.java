@@ -20,16 +20,16 @@
 package org.jboss.logmanager.errormanager;
 
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.io.PrintStream;
 
 import java.util.logging.ErrorManager;
+
+import org.jboss.logmanager.StandardOutputStreams;
 
 /**
  * An error manager which runs only once and writes a complete formatted error to {@code System.err}.  Caches
  * an early {@code System.err} in case it is replaced.
  */
 public final class OnlyOnceErrorManager extends ErrorManager {
-    private static final PrintStream ps = System.err;
 
     private final AtomicBoolean called = new AtomicBoolean();
 
@@ -48,9 +48,6 @@ public final class OnlyOnceErrorManager extends ErrorManager {
             case WRITE_FAILURE: codeStr = "WRITE_FAILURE"; break;
             default: codeStr = "INVALID (" + code + ")"; break;
         }
-        ps.printf("LogManager error of type %s: %s%n", codeStr, msg);
-        if (ex != null) {
-            ex.printStackTrace(ps);
-        }
+        StandardOutputStreams.printError(ex, "LogManager error of type %s: %s%n", codeStr, msg);
     }
 }
