@@ -346,10 +346,10 @@ public class ExtLogRecord extends LogRecord {
     }
 
     private void setUnknownCaller() {
-        setSourceClassName("<unknown>");
-        setSourceMethodName("<unknown>");
+        setSourceClassName(null);
+        setSourceMethodName(null);
         setSourceLineNumber(-1);
-        setSourceFileName("<unknown>");
+        setSourceFileName(null);
     }
 
     /**
