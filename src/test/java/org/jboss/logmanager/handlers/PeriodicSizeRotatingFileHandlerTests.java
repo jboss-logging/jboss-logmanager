@@ -36,7 +36,6 @@ import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.jboss.logmanager.ExtLogRecord;
 import org.junit.Assert;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -165,7 +164,6 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
     }
 
     @Test
-    @Ignore("LOGMGR-82")
     public void testPeriodicAndSizeRotate() throws Exception {
         for (int i=0; i < supportedPeriods.size(); i++) {
             //To cut down on unnecessary testing, let's only test
