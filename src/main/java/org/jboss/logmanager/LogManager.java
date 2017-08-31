@@ -50,18 +50,30 @@ public final class LogManager extends java.util.logging.LogManager {
     static final boolean PER_THREAD_LOG_FILTER;
 
     static {
-        try {
-            // Ensure the StandardOutputStreams are initialized early to capture the current System.out and System.err.
-            Class.forName(StandardOutputStreams.class.getName());
-        } catch (ClassNotFoundException ignore) {
-        }
         if (System.getSecurityManager() == null) {
+            try {
+                // Ensure the StandardOutputStreams are initialized early to capture the current System.out and System.err.
+                Class.forName(StandardOutputStreams.class.getName());
+            } catch (ClassNotFoundException ignore) {
+            }
             PER_THREAD_LOG_FILTER = Boolean.getBoolean(PER_THREAD_LOG_FILTER_KEY);
         } else {
             PER_THREAD_LOG_FILTER = AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                 @Override
                 public Boolean run() {
                     return Boolean.getBoolean(PER_THREAD_LOG_FILTER_KEY);
+                }
+            });
+
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
+                @Override
+                public Object run() {
+                    try {
+                        // Ensure the StandardOutputStreams are initialized early to capture the current System.out and System.err.
+                        Class.forName(StandardOutputStreams.class.getName());
+                    } catch (ClassNotFoundException ignore) {
+                    }
+                    return null;
                 }
             });
         }
