@@ -28,7 +28,7 @@
     <groupId>org.jboss.logmanager</groupId>
     <artifactId>jboss-logmanager</artifactId>
     <packaging>jar</packaging>
-    <version>2.1.0.Alpha3-SNAPSHOT</version>
+    <version>2.1.0.Alpha3</version>
 
     <parent>
         <groupId>org.jboss</groupId>
