@@ -354,6 +354,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
                         } else {
                             TcpOutputStream.this.socket = socket;
                             TcpOutputStream.this.connected = true;
+                            TcpOutputStream.this.reconnectThread = null;
                             connected = true;
                         }
                     }
