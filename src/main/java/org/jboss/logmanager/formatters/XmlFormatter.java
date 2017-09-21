@@ -20,13 +20,12 @@
 package org.jboss.logmanager.formatters;
 
 import java.io.Writer;
-import java.util.Collections;
 import java.util.Map;
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
 
-import org.wildfly.common.Assert;
+import org.jboss.logmanager.PropertyValues;
 
 /**
  * A formatter that outputs the record in XML format.
@@ -77,7 +76,7 @@ public class XmlFormatter extends StructuredFormatter {
      * Creates a new XML formatter.
      */
     public XmlFormatter() {
-        this(Collections.emptyMap());
+        namespaceUri = Namespace.LOGGING_1_0.getUriString();
     }
 
     /**
@@ -86,11 +85,30 @@ public class XmlFormatter extends StructuredFormatter {
      * If the {@code keyOverrides} is empty the default {@linkplain Namespace#LOGGING_1_0 namespace} will be used.
      * </p>
      *
-     * @param keyOverrides a map of the default keys to override
+     * @param keyOverrides a string representation of a map to override keys
+     *
+     * @see PropertyValues#stringToEnumMap(Class, String)
+     */
+    public XmlFormatter(final String keyOverrides) {
+        super(keyOverrides);
+        if (keyOverrides == null || keyOverrides.isEmpty()) {
+            namespaceUri = Namespace.LOGGING_1_0.getUriString();
+        } else {
+            namespaceUri = null;
+        }
+    }
+
+    /**
+     * Creates a new XML formatter.
+     * <p>
+     * If the {@code keyOverrides} is empty the default {@linkplain Namespace#LOGGING_1_0 namespace} will be used.
+     * </p>
+     *
+     * @param keyOverrides a map of overrides for the default keys
      */
     public XmlFormatter(final Map<Key, String> keyOverrides) {
-        super(Assert.checkNotNullParam("keyOverrides", keyOverrides));
-        if (keyOverrides.isEmpty()) {
+        super(keyOverrides);
+        if (keyOverrides == null || keyOverrides.isEmpty()) {
             namespaceUri = Namespace.LOGGING_1_0.getUriString();
         } else {
             namespaceUri = null;
@@ -217,6 +235,20 @@ public class XmlFormatter extends StructuredFormatter {
             } else {
                 writeStart(key);
                 xmlWriter.writeCharacters(value);
+                writeEnd();
+            }
+            return this;
+        }
+
+        @Override
+        public Generator addMetaData(final Map<String, String> metaData) throws Exception {
+            for (String key : metaData.keySet()) {
+                writeStart("metaData");
+                xmlWriter.writeAttribute("key", key);
+                final String value = metaData.get(key);
+                if (value != null) {
+                    xmlWriter.writeCharacters(metaData.get(key));
+                }
                 writeEnd();
             }
             return this;

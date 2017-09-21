@@ -20,9 +20,12 @@
 package org.jboss.logmanager.formatters;
 
 import java.util.Collections;
+import java.util.EnumMap;
+import java.util.Locale;
 import java.util.Map;
 
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.PropertyValues;
 
 /**
  * A {@link JsonFormatter JSON formatter} which adds the {@code @version} to the generated JSON and overrides the
@@ -33,25 +36,37 @@ import org.jboss.logmanager.ExtLogRecord;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class LogstashFormatter extends JsonFormatter {
 
     private volatile int version = 1;
 
+
     /**
-     * Create the lostash formatter.
+     * Creates a new logstash formatter.
      */
     public LogstashFormatter() {
         this(Collections.singletonMap(Key.TIMESTAMP, "@timestamp"));
     }
 
     /**
-     * Create the logstash formatter overriding any default keys
+     * Creates a new logstash formatter.
      *
-     * @param keyOverrides the keys used to override the defaults
+     * @param keyOverrides a string representation of a map to override keys
+     *
+     * @see PropertyValues#stringToEnumMap(Class, String)
+     */
+    public LogstashFormatter(final String keyOverrides) {
+        super(keyOverrides(keyOverrides));
+    }
+
+    /**
+     * Creates a new logstash formatter.
+     *
+     * @param keyOverrides a map of overrides for the default keys
      */
     public LogstashFormatter(final Map<Key, String> keyOverrides) {
-        super(keyOverrides);
+        super(keyOverrides(keyOverrides));
     }
 
     @Override
@@ -75,5 +90,25 @@ public class LogstashFormatter extends JsonFormatter {
      */
     public void setVersion(final int version) {
         this.version = version;
+    }
+
+    private static Map<Key, String> keyOverrides(final Map<Key, String> keyOverrides) {
+        if (keyOverrides.containsKey(Key.TIMESTAMP)) {
+            return keyOverrides;
+        }
+        final EnumMap<Key, String> result = new EnumMap<>(Key.class);
+        result.putAll(keyOverrides);
+        result.put(Key.TIMESTAMP, "@timestamp");
+        return result;
+    }
+
+    private static String keyOverrides(final String keyOverrides) {
+        if (keyOverrides == null || keyOverrides.trim().isEmpty()) {
+            return Key.TIMESTAMP.name() + "=@timestamp";
+        }
+        if (keyOverrides.toUpperCase(Locale.ROOT).contains(Key.TIMESTAMP.name())) {
+            return keyOverrides;
+        }
+        return keyOverrides + "," + Key.TIMESTAMP.name() + "=@timestamp";
     }
 }

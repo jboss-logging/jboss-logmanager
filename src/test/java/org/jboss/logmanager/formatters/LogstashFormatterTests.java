@@ -46,7 +46,7 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class JsonFormatterTests extends AbstractStructuredFormatterTest {
+public class LogstashFormatterTests extends AbstractStructuredFormatterTest {
     private static final Map<Key, String> KEY_OVERRIDES = new HashMap<>();
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
             .ISO_OFFSET_DATE_TIME
@@ -58,54 +58,29 @@ public class JsonFormatterTests extends AbstractStructuredFormatterTest {
     }
 
     @Test
-    public void testFormat() throws Exception {
-        final JsonFormatter formatter = new JsonFormatter();
+    public void testLogstashFormat() throws Exception {
+        KEY_OVERRIDES.put(Key.TIMESTAMP, "@timestamp");
+        final LogstashFormatter formatter = new LogstashFormatter();
         formatter.setPrintDetails(true);
         ExtLogRecord record = createLogRecord("Test formatted %s", "message");
-        compare(record, formatter);
+        compareLogstash(record, formatter, 1);
 
         record = createLogRecord("Test Message");
-        compare(record, formatter);
+        formatter.setVersion(2);
+        compareLogstash(record, formatter, 2);
 
         record = createLogRecord(Level.ERROR, "Test formatted %s", "message");
         record.setLoggerName("org.jboss.logmanager.ext.test");
         record.setMillis(System.currentTimeMillis());
-        final Throwable t = new RuntimeException("Test cause exception");
-        final Throwable dup = new IllegalStateException("Duplicate");
-        t.addSuppressed(dup);
-        final Throwable cause = new RuntimeException("Test Exception", t);
-        dup.addSuppressed(cause);
-        cause.addSuppressed(new IllegalArgumentException("Suppressed"));
-        cause.addSuppressed(dup);
-        record.setThrown(cause);
+        record.setThrown(new RuntimeException("Test Exception"));
         record.putMdc("testMdcKey", "testMdcValue");
         record.setNdc("testNdc");
-        formatter.setExceptionOutputType(JsonFormatter.ExceptionOutputType.DETAILED_AND_FORMATTED);
-        compare(record, formatter);
-    }
-
-    @Test
-    public void testMetaData() throws Exception {
-        final JsonFormatter formatter = new JsonFormatter();
-        formatter.setPrintDetails(true);
-        formatter.setMetaData("context-id=context1");
-        ExtLogRecord record = createLogRecord("Test formatted %s", "message");
-        Map<String, String> metaDataMap = MapBuilder.<String, String>create()
-                .add("context-id", "context1")
-                .build();
-        compare(record, formatter, metaDataMap);
-
-        formatter.setMetaData("vendor=Red Hat\\, Inc.,product-type=JBoss");
-        metaDataMap = MapBuilder.<String, String>create()
-                .add("vendor", "Red Hat, Inc.")
-                .add("product-type", "JBoss")
-                .build();
-        compare(record, formatter, metaDataMap);
+        compareLogstash(record, formatter, 2);
     }
 
     @Override
     Class<? extends StructuredFormatter> getFormatterType() {
-        return JsonFormatter.class;
+        return LogstashFormatter.class;
     }
 
     @Override
@@ -130,6 +105,16 @@ public class JsonFormatterTests extends AbstractStructuredFormatterTest {
             }
             Assert.assertTrue("Expected map to be empty " + expectedValues, expectedValues.isEmpty());
         }
+    }
+
+    @Override
+    Map<String, Consumer<String>> createExpectedValues() {
+        final Map<String, Consumer<String>> expectedValues = super.createExpectedValues();
+        expectedValues.put("@version", value -> {
+            final int version = Integer.parseInt(value);
+            Assert.assertEquals(1, version);
+        });
+        return expectedValues;
     }
 
     private static int getInt(final JsonObject json, final Key key) {
@@ -181,26 +166,24 @@ public class JsonFormatterTests extends AbstractStructuredFormatterTest {
         return key.getKey();
     }
 
-    private static void compare(final ExtLogRecord record, final ExtFormatter formatter) {
-        compare(record, formatter.format(record));
+    private static void compareLogstash(final ExtLogRecord record, final ExtFormatter formatter, final int version) {
+        compareLogstash(record, formatter.format(record), version);
     }
 
-    private static void compare(final ExtLogRecord record, final ExtFormatter formatter, final Map<String, String> metaData) {
-        compare(record, formatter.format(record), metaData);
-    }
-
-    private static void compare(final ExtLogRecord record, final String jsonString) {
-        compare(record, jsonString, null);
-    }
-
-    private static void compare(final ExtLogRecord record, final String jsonString, final Map<String, String> metaData) {
+    private static void compareLogstash(final ExtLogRecord record, final String jsonString, final int version) {
         try (JsonReader reader = Json.createReader(new StringReader(jsonString))) {
             final JsonObject json = reader.readObject();
-            compare(record, json, metaData);
+            compare(record, json);
+            final String name = "@version";
+            int foundVersion = 0;
+            if (json.containsKey(name) && !json.isNull(name)) {
+                foundVersion = json.getInt(name);
+            }
+            Assert.assertEquals(version, foundVersion);
         }
     }
 
-    private static void compare(final ExtLogRecord record, final JsonObject json, final Map<String, String> metaData) {
+    private static void compare(final ExtLogRecord record, final JsonObject json) {
         Assert.assertEquals(record.getLevel(), Level.parse(getString(json, Key.LEVEL)));
         Assert.assertEquals(record.getLoggerClassName(), getString(json, Key.LOGGER_CLASS_NAME));
         Assert.assertEquals(record.getLoggerName(), getString(json, Key.LOGGER_NAME));
@@ -219,36 +202,5 @@ public class JsonFormatterTests extends AbstractStructuredFormatterTest {
         Assert.assertEquals(record.getSourceMethodName(), getString(json, Key.SOURCE_METHOD_NAME));
         Assert.assertEquals(record.getThreadID(), getInt(json, Key.THREAD_ID));
         Assert.assertEquals(record.getThreadName(), getString(json, Key.THREAD_NAME));
-        if (metaData != null) {
-            for (String key : metaData.keySet()) {
-                Assert.assertEquals(metaData.get(key), json.getString(key));
-            }
-        }
-        final boolean hasFormatted = json.get(getKey(Key.STACK_TRACE)) != null;
-        final boolean hasStructured = json.get(getKey(Key.EXCEPTION)) != null;
-        validateStackTrace(json, hasFormatted, hasStructured);
-    }
-
-    private static void validateStackTrace(final JsonObject json, final boolean validateFormatted, final boolean validateStructured) {
-        if (validateFormatted) {
-            Assert.assertNotNull(json.get(getKey(Key.STACK_TRACE)));
-        }
-        if (validateStructured) {
-            validateStackTrace(json.getJsonObject(getKey(Key.EXCEPTION)));
-        }
-    }
-
-    private static void validateStackTrace(final JsonObject json) {
-        checkNonNull(json, Key.EXCEPTION_REFERENCE_ID);
-        checkNonNull(json, Key.EXCEPTION_TYPE);
-        checkNonNull(json, Key.EXCEPTION_MESSAGE);
-        checkNonNull(json, Key.EXCEPTION_FRAMES);
-        if (json.get(getKey(Key.EXCEPTION_CAUSED_BY)) != null) {
-            validateStackTrace(json.getJsonObject(getKey(Key.EXCEPTION_CAUSED_BY)).getJsonObject(getKey(Key.EXCEPTION)));
-        }
-    }
-
-    private static void checkNonNull(final JsonObject json, final Key key) {
-        Assert.assertNotNull(String.format("Missing %s in %s", key, json), json.get(getKey(key)));
     }
 }

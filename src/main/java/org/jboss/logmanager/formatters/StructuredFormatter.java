@@ -26,12 +26,13 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.EnumMap;
 import java.util.IdentityHashMap;
 import java.util.Map;
 
 import org.jboss.logmanager.ExtFormatter;
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.PropertyValues;
 
 /**
  * An abstract class that uses a generator to help generate structured data from a {@link
@@ -40,7 +41,7 @@ import org.jboss.logmanager.ExtLogRecord;
  * Note that including details can be expensive in terms of calculating the caller.
  * </p>
  * <p>
- * By default the {@linkplain #setEndOfRecordDelimiter(String) record delimiter} is set to {@code \n}.
+ * By default the {@linkplain #setRecordDelimiter(String) record delimiter} is set to {@code \n}.
  * </p>
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -121,6 +122,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
     }
 
     private final Map<Key, String> keyOverrides;
+    private final String keyOverridesValue;
     // Guarded by this
     private String metaData;
     // Guarded by this
@@ -137,14 +139,23 @@ public abstract class StructuredFormatter extends ExtFormatter {
     private int refId;
 
     protected StructuredFormatter() {
-        this(null);
+        this(null, null);
     }
 
     protected StructuredFormatter(final Map<Key, String> keyOverrides) {
+        this(keyOverrides, PropertyValues.mapToString(keyOverrides));
+    }
+
+    protected StructuredFormatter(final String keyOverrides) {
+        this(PropertyValues.stringToEnumMap(Key.class, keyOverrides), keyOverrides);
+    }
+
+    private StructuredFormatter(final Map<Key, String> keyOverrides, final String keyOverridesValue) {
+        this.keyOverridesValue = keyOverridesValue;
         this.printDetails = false;
         zoneId = ZoneId.systemDefault();
         dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(zoneId);
-        this.keyOverrides = (keyOverrides == null ? Collections.emptyMap() : new HashMap<>(keyOverrides));
+        this.keyOverrides = (keyOverrides == null ? Collections.emptyMap() : new EnumMap<>(keyOverrides));
         exceptionOutputType = ExceptionOutputType.DETAILED;
     }
 
@@ -240,13 +251,6 @@ public abstract class StructuredFormatter extends ExtFormatter {
                     generator.add(getKey(Key.STACK_TRACE), w.toString());
                 }
             }
-
-            // Print any user meta-data
-            if (isNotNullOrEmpty(metaData)) {
-                for (String key : metaDataMap.keySet()) {
-                    generator.add(key, metaDataMap.get(key));
-                }
-            }
             if (details) {
                 generator.add(getKey(Key.SOURCE_CLASS_NAME), record.getSourceClassName())
                         .add(getKey(Key.SOURCE_FILE_NAME), record.getSourceFileName())
@@ -254,12 +258,16 @@ public abstract class StructuredFormatter extends ExtFormatter {
                         .add(getKey(Key.SOURCE_LINE_NUMBER), record.getSourceLineNumber());
             }
 
+            if (!isNotNullOrEmpty(metaData)) {
+                generator.addMetaData(metaDataMap);
+            }
+
             after(generator, record);
             generator.end();
 
             // Append an EOL character if desired
-            if (getEndOfRecordDelimiter() != null) {
-                writer.append(getEndOfRecordDelimiter());
+            if (getRecordDelimiter() != null) {
+                writer.append(getRecordDelimiter());
             }
             return writer.toString();
         } catch (Exception e) {
@@ -277,12 +285,21 @@ public abstract class StructuredFormatter extends ExtFormatter {
     }
 
     /**
+     * A string representation of the key overrides. The default is {@code null}.
+     *
+     * @return a string representation of the key overrides or {@code null} if no overrides were configured
+     */
+    public String getKeyOverrides() {
+        return keyOverridesValue;
+    }
+
+    /**
      * Returns the character used to indicate the record has is complete. This defaults to {@code \n} and may be
      * {@code null} if no end of record character is desired.
      *
      * @return the end of record delimiter or {@code null} if no delimiter is desired
      */
-    public String getEndOfRecordDelimiter() {
+    public String getRecordDelimiter() {
         return eorDelimiter;
     }
 
@@ -292,7 +309,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
      *
      * @param eorDelimiter the delimiter to be used or {@code null} to not use a delimiter
      */
-    public void setEndOfRecordDelimiter(final String eorDelimiter) {
+    public void setRecordDelimiter(final String eorDelimiter) {
         this.eorDelimiter = eorDelimiter;
     }
 
@@ -305,7 +322,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
      *
      * @return the meta data string or {@code null} if one was not set
      *
-     * @see ValueParser#stringToMap(String)
+     * @see PropertyValues#stringToMap(String)
      */
     public String getMetaData() {
         return metaData;
@@ -320,11 +337,11 @@ public abstract class StructuredFormatter extends ExtFormatter {
      *
      * @param metaData the meta data to set or {@code null} to not format any meta data
      *
-     * @see ValueParser#stringToMap(String)
+     * @see PropertyValues#stringToMap(String)
      */
     public synchronized void setMetaData(final String metaData) {
         this.metaData = metaData;
-        metaDataMap = ValueParser.stringToMap(metaData);
+        metaDataMap = PropertyValues.stringToMap(metaData);
     }
 
     /**
@@ -598,6 +615,25 @@ public abstract class StructuredFormatter extends ExtFormatter {
          * @throws Exception if an error occurs while adding the data
          */
         Generator add(String key, String value) throws Exception;
+
+        /**
+         * Adds the meta data to the structured format.
+         * <p>
+         * By default this processes the map and uses {@link #add(String, String)} to add entries.
+         * </p>
+         *
+         * @param metaData the matp of the meta data, cannot be {@code null}
+         *
+         * @return the generator
+         *
+         * @throws Exception if an error occurs while adding the data
+         */
+        default Generator addMetaData(final Map<String, String> metaData) throws Exception {
+            for (String key : metaData.keySet()) {
+                add(key, metaData.get(key));
+            }
+            return this;
+        }
 
         /**
          * Writes the start of an object.
