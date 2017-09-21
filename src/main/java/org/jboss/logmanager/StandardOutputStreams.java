@@ -26,7 +26,7 @@ import java.io.PrintStream;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings("WeakerAccess")
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class StandardOutputStreams {
     public static final PrintStream stdout = System.out;
     public static final PrintStream stderr = System.err;
