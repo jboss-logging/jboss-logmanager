@@ -258,7 +258,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
                         .add(getKey(Key.SOURCE_LINE_NUMBER), record.getSourceLineNumber());
             }
 
-            if (!isNotNullOrEmpty(metaData)) {
+            if (isNotNullOrEmpty(metaData)) {
                 generator.addMetaData(metaDataMap);
             }
 
