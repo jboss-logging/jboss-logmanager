@@ -22,13 +22,14 @@ package org.jboss.logmanager.formatters;
 import java.io.Writer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import javax.json.Json;
 import javax.json.JsonValue;
 import javax.json.stream.JsonGenerator;
 import javax.json.stream.JsonGeneratorFactory;
+
+import org.jboss.logmanager.PropertyValues;
 
 /**
  * A formatter that outputs the record into JSON format optionally printing details.
@@ -56,7 +57,21 @@ public class JsonFormatter extends StructuredFormatter {
      * Creates a new JSON formatter.
      */
     public JsonFormatter() {
-        this(Collections.emptyMap());
+        config = new HashMap<>();
+        factory = Json.createGeneratorFactory(config);
+    }
+
+    /**
+     * Creates a new JSON formatter.
+     *
+     * @param keyOverrides a string representation of a map to override keys
+     *
+     * @see PropertyValues#stringToEnumMap(Class, String)
+     */
+    public JsonFormatter(final String keyOverrides) {
+        super(keyOverrides);
+        config = new HashMap<>();
+        factory = Json.createGeneratorFactory(config);
     }
 
     /**
