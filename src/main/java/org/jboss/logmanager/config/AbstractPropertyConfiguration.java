@@ -193,7 +193,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         if (setter == null && ! constructorProp) {
             throw new IllegalArgumentException(String.format("No property \"%s\" setter found for %s \"%s\"", propertyName, getDescription(), getName()));
         }
-        final ValueExpression oldValue = properties.put(propertyName, expression);
+        final ValueExpression<String> oldValue = properties.put(propertyName, expression);
         getConfiguration().addAction(new ConfigAction<ObjectProducer>() {
             public ObjectProducer validate() throws IllegalArgumentException {
                 if (setter == null) {
@@ -222,10 +222,33 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             }
 
             public void rollback() {
+                final Class<?> propertyType = getPropertyType(actualClass, propertyName);
+                if (propertyType == null) {
+                    // We don't want the rest of the rollback to fail so we'll just log a message
+                    StandardOutputStreams.printError("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName());
+                    return;
+                }
+                final ObjectProducer producer;
                 if (replacement) {
                     properties.put(propertyName, oldValue);
+                    producer = getConfiguration().getValue(actualClass, propertyName, propertyType, oldValue, true);
                 } else {
                     properties.remove(propertyName);
+                    producer = getDefaultValue(propertyType);
+                }
+                if (setter != null) {
+                    // Get the reference instance, the old value and reset to the old value
+                    final T instance = getRefs().get(getName());
+                    if (instance != null) {
+                        try {
+                            setter.invoke(instance, producer.getObject());
+                        } catch (Throwable e) {
+                            StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), producer.getObject());
+                        }
+                    } else {
+                        // If the instance is not available don't keep the property
+                        properties.remove(propertyName);
+                    }
                 }
             }
         });
@@ -239,11 +262,55 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         if (isRemoved()) {
             throw new IllegalArgumentException(String.format("Cannot remove property \"%s\" on %s \"%s\" (removed)", propertyName, getDescription(), getName()));
         }
-        try {
-            return properties.containsKey(propertyName);
-        } finally {
-            properties.remove(propertyName);
+        final Method setter = getPropertySetter(actualClass, propertyName);
+        if (setter == null) {
+            throw new IllegalArgumentException(String.format("No property \"%s\" setter found for %s \"%s\"", propertyName, getDescription(), getName()));
         }
+        final ValueExpression<String> oldValue = properties.remove(propertyName);
+        if (oldValue != null) {
+            getConfiguration().addAction(new ConfigAction<ObjectProducer>() {
+                public ObjectProducer validate() throws IllegalArgumentException {
+                    final Class<?> propertyType = getPropertyType(actualClass, propertyName);
+                    if (propertyType == null) {
+                        throw new IllegalArgumentException(String.format("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName()));
+                    }
+                    return getDefaultValue(propertyType);
+                }
+
+                public void applyPreCreate(final ObjectProducer param) {
+                    addPostConfigurationActions();
+                }
+
+                public void applyPostCreate(final ObjectProducer param) {
+                    final T instance = getRefs().get(getName());
+                    try {
+                        setter.invoke(instance, param.getObject());
+                    } catch (Throwable e) {
+                        StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), param.getObject());
+                    }
+                }
+
+                public void rollback() {
+                    // We need to once again determine the property type
+                    final Class<?> propertyType = getPropertyType(actualClass, propertyName);
+                    if (propertyType == null) {
+                        // We don't want the rest of the rollback to fail so we'll just log a message
+                        StandardOutputStreams.printError("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName());
+                        return;
+                    }
+                    // Get the reference instance, the old value and reset to the old value
+                    final T instance = getRefs().get(getName());
+                    final ObjectProducer producer = getConfiguration().getValue(actualClass, propertyName, propertyType, oldValue, true);
+                    try {
+                        setter.invoke(instance, producer.getObject());
+                    } catch (Throwable e) {
+                        StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), producer.getObject());
+                    }
+                }
+            });
+            return true;
+        }
+        return false;
     }
 
     public List<String> getPropertyNames() {
@@ -451,6 +518,28 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             }
         }
         return null;
+    }
+
+    private static ObjectProducer getDefaultValue(final Class<?> paramType) {
+        if (paramType == boolean.class) {
+            return new SimpleObjectProducer(Boolean.FALSE);
+        } else if (paramType == byte.class) {
+            return new SimpleObjectProducer((byte) 0x00);
+        } else if (paramType == short.class) {
+            return new SimpleObjectProducer((short) 0);
+        } else if (paramType == int.class) {
+            return new SimpleObjectProducer(0);
+        } else if (paramType == long.class) {
+            return new SimpleObjectProducer(0L);
+        } else if (paramType == float.class) {
+            return new SimpleObjectProducer(0.0f);
+        } else if (paramType == double.class) {
+            return new SimpleObjectProducer(0.0d);
+        } else if (paramType == char.class) {
+            return new SimpleObjectProducer((char) 0x00);
+        } else {
+            return SimpleObjectProducer.NULL_PRODUCER;
+        }
     }
 
     static class ModuleFinder {
