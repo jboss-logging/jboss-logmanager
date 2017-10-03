@@ -27,6 +27,7 @@ import java.util.Arrays;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings({"unused", "WeakerAccess"})
 final class ByteStringBuilder {
 
     private static final int INVALID_US_ASCII_CODE_POINT = 0x3f;
@@ -109,7 +110,19 @@ final class ByteStringBuilder {
     }
 
     public ByteStringBuilder appendUSASCII(final String s, final int offs, final int len) {
-        return appendASCII(128, s, offs, len, 0);
+        return appendASCII(128, s, offs, len, Integer.MAX_VALUE);
+    }
+
+    public ByteStringBuilder appendPrintUSASCII(final String s) {
+        return appendPrintUSASCII(s, 0, s.length());
+    }
+
+    public ByteStringBuilder appendPrintUSASCII(final String s, final int maxLen) {
+        return appendASCII(33, 126, s, 0, s.length(), maxLen);
+    }
+
+    public ByteStringBuilder appendPrintUSASCII(final String s, final int offs, final int len) {
+        return appendASCII(33, 126, s, offs, len, Integer.MAX_VALUE);
     }
 
     public ByteStringBuilder appendLatin1(final String s) {
@@ -117,7 +130,7 @@ final class ByteStringBuilder {
     }
 
     public ByteStringBuilder appendLatin1(final String s, final int offs, final int len) {
-        return appendASCII(256, s, offs, len, 0);
+        return appendASCII(256, s, offs, len, Integer.MAX_VALUE);
     }
 
     public ByteStringBuilder append(final String s) {
@@ -229,14 +242,18 @@ final class ByteStringBuilder {
     }
 
     private ByteStringBuilder appendASCII(final int asciiLen, final String s, final int offs, final int len, final int maxLen) {
+        return appendASCII(0, asciiLen, s, offs, len, maxLen);
+    }
+
+    private ByteStringBuilder appendASCII(final int minChar, final int maxChar, final String s, final int offs, final int len, final int maxLen) {
         reserve(len, false);
         char c;
         for (int i = 0; i < len; i++) {
-            if (maxLen < 0 && i >= maxLen) {
+            if (i >= maxLen) {
                 break;
             }
             c = s.charAt(i + offs);
-            if (c > asciiLen) {
+            if (c < minChar || c > maxChar) {
                 doAppendNoCheck((byte) INVALID_US_ASCII_CODE_POINT);
             } else {
                 doAppendNoCheck((byte) c);
