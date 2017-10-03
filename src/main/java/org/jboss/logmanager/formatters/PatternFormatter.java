@@ -73,7 +73,11 @@ public class PatternFormatter extends MultistepFormatter {
      * @param pattern the pattern
      */
     public void setPattern(final String pattern) {
-        setSteps(FormatStringParser.getSteps(pattern, colors));
+        if (pattern == null) {
+            setSteps(null);
+        } else {
+            setSteps(FormatStringParser.getSteps(pattern, colors));
+        }
         this.pattern = pattern;
     }
 
