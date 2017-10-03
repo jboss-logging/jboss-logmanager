@@ -23,7 +23,6 @@ import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.text.DateFormatSymbols;
@@ -35,9 +34,11 @@ import java.util.Locale;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
+import java.util.regex.Pattern;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
+import org.wildfly.common.os.Process;
 
 /**
  * A syslog handler for logging to syslogd.
@@ -150,6 +151,7 @@ import org.jboss.logmanager.ExtLogRecord;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class SyslogHandler extends ExtHandler {
 
     /**
@@ -294,6 +296,7 @@ public class SyslogHandler extends ExtHandler {
     public static final String DEFAULT_ENCODING = "UTF-8";
     public static final Facility DEFAULT_FACILITY = Facility.USER_LEVEL;
     public static final String NILVALUE_SP = "- ";
+    private static final Pattern PRINTABLE_ASCII_PATTERN = Pattern.compile("[\\P{Print} ]");
 
     static {
         try {
@@ -459,9 +462,10 @@ public class SyslogHandler extends ExtHandler {
         this.serverAddress = serverAddress;
         this.port = port;
         this.facility = facility;
-        this.pid = findPid();
+        final long pid = Process.getProcessId();
+        this.pid = (pid != -1 ? Long.toString(pid) : null);
         this.appName = "java";
-        this.hostname = hostname;
+        this.hostname = checkPrintableAscii("host name", hostname);
         this.syslogType = (syslogType == null ? SyslogType.RFC5424 : syslogType);
         if (protocol == null) {
             this.protocol = Protocol.UDP;
@@ -604,7 +608,7 @@ public class SyslogHandler extends ExtHandler {
     }
 
     /**
-     * Gets app name used when formatting the message in RFC5424 format. By default the app name is &quot;java&quot;
+     * Gets app name used when formatting the message in RFC5424 format. By default the app name is &quot;java&quot;.
      *
      * @return the app name being used
      */
@@ -615,7 +619,8 @@ public class SyslogHandler extends ExtHandler {
     }
 
     /**
-     * Sets app name used when formatting the message in RFC5424 format. By default the app name is &quot;java&quot;
+     * Sets app name used when formatting the message in RFC5424 format. By default the app name is &quot;java&quot;. If
+     * set to {@code null} the {@link ExtLogRecord#getProcessName()} will be used.
      *
      * @param appName the app name to use
      *
@@ -625,7 +630,7 @@ public class SyslogHandler extends ExtHandler {
     public void setAppName(final String appName) {
         checkAccess(this);
         synchronized (outputLock) {
-            this.appName = appName;
+            this.appName = checkPrintableAscii("app name", appName);
         }
     }
 
@@ -696,7 +701,7 @@ public class SyslogHandler extends ExtHandler {
     /**
      * Returns the pid being used as the PROCID for RFC5424 messages.
      *
-     * @return the pid
+     * @return the pid or {@code null} if the pid could not be determined
      */
     public String getPid() {
         synchronized (outputLock) {
@@ -861,11 +866,8 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setHostname(final String hostname) {
         checkAccess(this);
-        if (hostname != null && hostname.contains(" ")) {
-            throw new IllegalArgumentException(String.format("Host name '%s' is invalid. Whitespace is now allowed in the host name.", hostname));
-        }
         synchronized (outputLock) {
-            this.hostname = hostname;
+            this.hostname = checkPrintableAscii("host name", hostname);
         }
     }
 
@@ -1073,20 +1075,6 @@ public class SyslogHandler extends ExtHandler {
         }
     }
 
-    private static String findPid() {
-        final String name = ManagementFactory.getRuntimeMXBean().getName();
-        String result = name;
-        final int index = name.indexOf("@");
-        if (index > -1) {
-            try {
-                result = Integer.toString(Integer.valueOf(name.substring(0, index)));
-            } catch (NumberFormatException ignore) {
-                // ignore
-            }
-        }
-        return result;
-    }
-
     private void init() {
         if (initializeConnection && !outputStreamSet) {
             if (serverAddress == null || port < 0 || protocol == null) {
@@ -1192,30 +1180,30 @@ public class SyslogHandler extends ExtHandler {
         // Set the host name
         final String recordHostName = record.getHostName();
         if (hostname != null) {
-            buffer.appendUSASCII(hostname, 255).append(' ');
+            buffer.appendPrintUSASCII(hostname, 255).append(' ');
         } else if (recordHostName != null) {
-            buffer.appendUSASCII(recordHostName, 255).append(' ');
+            buffer.appendPrintUSASCII(recordHostName, 255).append(' ');
         } else {
             buffer.append(NILVALUE_SP);
         }
         // Set the app name
         final String recordProcName = record.getProcessName();
         if (appName != null) {
-            buffer.appendUSASCII(appName, 48);
+            buffer.appendPrintUSASCII(appName, 48);
             buffer.append(' ');
         } else if (recordProcName != null) {
-            buffer.appendUSASCII(recordProcName, 48);
+            buffer.appendPrintUSASCII(recordProcName, 48);
             buffer.append(' ');
         } else {
             buffer.appendUSASCII(NILVALUE_SP);
         }
         // Set the procid
         final long recordProcId = record.getProcessId();
-        if (pid != null) {
-            buffer.appendUSASCII(pid, 128);
-            buffer.append(' ');
-        } else if (recordProcId != -1) {
+        if (recordProcId != -1) {
             buffer.append(recordProcId);
+            buffer.append(' ');
+        } else if (pid != null) {
+            buffer.appendPrintUSASCII(pid, 128);
             buffer.append(' ');
         } else {
             buffer.appendUSASCII(NILVALUE_SP);
@@ -1228,7 +1216,7 @@ public class SyslogHandler extends ExtHandler {
             buffer.appendUSASCII("root-logger");
             buffer.append(' ');
         } else {
-            buffer.appendUSASCII(msgid, 32);
+            buffer.appendPrintUSASCII(msgid, 32);
             buffer.append(' ');
         }
         // Set the structured data
@@ -1295,16 +1283,24 @@ public class SyslogHandler extends ExtHandler {
             colon = true;
         }
         final long recordProcId = record.getProcessId();
-        if (pid != null) {
-            buffer.append('[').appendUSASCII(pid).append(']');
-            colon = true;
-        } else if (recordProcId != -1) {
+        if (recordProcId != -1) {
             buffer.append('[').append(recordProcId).append(']');
+            colon = true;
+        } else if (pid != null) {
+            buffer.append('[').appendUSASCII(pid).append(']');
             colon = true;
         }
         if (colon) {
             buffer.append(':').append(' ');
         }
         return buffer.toArray();
+    }
+
+    private static String checkPrintableAscii(final String name, final String value) {
+        if (value != null && PRINTABLE_ASCII_PATTERN.matcher(value).find()) {
+            final String upper = Character.toUpperCase(name.charAt(0)) + name.substring(1);
+            throw new IllegalArgumentException(String.format("%s '%s' is invalid. The %s must be printable ASCII characters with no spaces.", upper, value, name));
+        }
+        return value;
     }
 }
