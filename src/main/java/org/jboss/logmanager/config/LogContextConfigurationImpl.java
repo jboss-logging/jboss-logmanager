@@ -521,42 +521,21 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             int ch;
             ch = source.codePointAt(idx);
             if (isWhitespace(ch)) {
-                ch = source.codePointAt(idx);
+                source.codePointAt(idx);
                 idx = source.offsetByCodePoints(idx, 1);
             } else if (isJavaIdentifierStart(ch)) {
                 int start = idx;
                 do {
                     idx = source.offsetByCodePoints(idx, 1);
-                } while (idx < length && isJavaIdentifierPart(ch = source.codePointAt(idx)));
+                } while (idx < length && isJavaIdentifierPart(source.codePointAt(idx)));
                 tokens.add(source.substring(start, idx));
             } else if (ch == '"') {
                 final StringBuilder b = new StringBuilder();
                 // tag token as a string
                 b.append('"');
                 idx = source.offsetByCodePoints(idx, 1);
-                while (idx < length && (ch = source.codePointAt(idx)) != '"') {
-                    ch = source.codePointAt(idx);
-                    if (ch == '\\') {
-                        idx = source.offsetByCodePoints(idx, 1);
-                        if (idx == length) {
-                            throw new IllegalArgumentException("Truncated filter expression string");
-                        }
-                        ch = source.codePointAt(idx);
-                        switch (ch) {
-                            case '\\': b.append('\\'); break;
-                            case '\'': b.append('\''); break;
-                            case '"': b.append('"'); break;
-                            case 'b': b.append('\b'); break;
-                            case 'f': b.append('\f'); break;
-                            case 'n': b.append('\n'); break;
-                            case 'r': b.append('\r'); break;
-                            case 't': b.append('\t'); break;
-                            default:
-                                throw new IllegalArgumentException("Invalid escape found in filter expression string");
-                        }
-                    } else {
-                        b.appendCodePoint(ch);
-                    }
+                while ((idx < length && (source.codePointAt(idx)) != '"')) {
+                    b.appendCodePoint(source.codePointAt(idx));
                     idx = source.offsetByCodePoints(idx, 1);
                 }
                 idx = source.offsetByCodePoints(idx, 1);
