@@ -22,12 +22,14 @@ package org.jboss.logmanager.config;
 import java.util.List;
 
 import org.jboss.logmanager.LogContext;
+import org.jboss.logmanager.handlers.DelayedHandler;
 
 /**
  * A log context configuration.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
+@SuppressWarnings("unused")
 public interface LogContextConfiguration {
 
     /**
@@ -146,6 +148,14 @@ public interface LogContextConfiguration {
      * Clear all the current changes and restore this object to its original state.
      */
     void forget();
+
+    /**
+     * Activates any {@linkplain DelayedHandler#activate() handlers} that require activation. This should likely only
+     * be invoked after a {@link #prepare()}, {@link #commit()} or {@link #forget()}.
+     */
+    default void activate() {
+        // Do nothing by default for backwards compatibility
+    }
 
     /**
      * The factory class for persistent configurations.

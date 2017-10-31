@@ -43,6 +43,7 @@ import org.jboss.logmanager.filters.LevelFilter;
 import org.jboss.logmanager.filters.LevelRangeFilter;
 import org.jboss.logmanager.filters.RegexFilter;
 import org.jboss.logmanager.filters.SubstituteFilter;
+import org.jboss.logmanager.handlers.DelayedHandler;
 
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
@@ -297,6 +298,15 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             prepare();
         }
         clear();
+    }
+
+    @Override
+    public void activate() {
+        for (Handler handler : getHandlerRefs().values()) {
+            if (handler instanceof DelayedHandler) {
+                ((DelayedHandler) handler).activate();
+            }
+        }
     }
 
     @SuppressWarnings("unchecked")

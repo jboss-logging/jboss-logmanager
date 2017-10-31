@@ -36,7 +36,6 @@ import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.wildfly.common.os.Process;
 
@@ -48,6 +47,11 @@ import org.wildfly.common.os.Process;
  * UDP protocols. You can also override the {@link #setOutputStream(java.io.OutputStream) output stream} if a custom
  * protocol is needed.
  * <p/>
+ * <p>
+ * By default this handler will {@linkplain #isAutoActivate() automatically activate} itself. If messages need to be
+ * queued until the handler is appropriately configured the {@linkplain #setAutoActivate(boolean) automatic activation}
+ * should be set to {@code false}.
+ * </p>
  * <pre>
  * <table border="1">
  *  <thead>
@@ -152,12 +156,12 @@ import org.wildfly.common.os.Process;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings({"WeakerAccess", "unused"})
-public class SyslogHandler extends ExtHandler {
+public class SyslogHandler extends DelayedHandler {
 
     /**
      * The type of socket the syslog should write to
      */
-    public static enum Protocol {
+    public enum Protocol {
         /**
          * Transmission Control Protocol
          */
@@ -176,7 +180,7 @@ public class SyslogHandler extends ExtHandler {
      * Severity as defined by RFC-5424 (<a href="http://tools.ietf.org/html/rfc5424">http://tools.ietf.org/html/rfc5424</a>)
      * and RFC-3164 (<a href="http://tools.ietf.org/html/rfc3164">http://tools.ietf.org/html/rfc3164</a>).
      */
-    public static enum Severity {
+    public enum Severity {
         EMERGENCY(0, "Emergency: system is unusable"),
         ALERT(1, "Alert: action must be taken immediately"),
         CRITICAL(2, "Critical: critical conditions"),
@@ -189,7 +193,7 @@ public class SyslogHandler extends ExtHandler {
         final int code;
         final String desc;
 
-        private Severity(final int code, final String desc) {
+        Severity(final int code, final String desc) {
             this.code = code;
             this.desc = desc;
         }
@@ -233,7 +237,7 @@ public class SyslogHandler extends ExtHandler {
      * Facility as defined by RFC-5424 (<a href="http://tools.ietf.org/html/rfc5424">http://tools.ietf.org/html/rfc5424</a>)
      * and RFC-3164 (<a href="http://tools.ietf.org/html/rfc3164">http://tools.ietf.org/html/rfc3164</a>).
      */
-    public static enum Facility {
+    public enum Facility {
         KERNEL(0, "kernel messages"),
         USER_LEVEL(1, "user-level messages"),
         MAIL_SYSTEM(2, "mail system"),
@@ -263,7 +267,7 @@ public class SyslogHandler extends ExtHandler {
         final String desc;
         final int octal;
 
-        private Facility(final int code, final String desc) {
+        Facility(final int code, final String desc) {
             this.code = code;
             this.desc = desc;
             octal = code * 8;
@@ -278,7 +282,7 @@ public class SyslogHandler extends ExtHandler {
     /**
      * The syslog type used for formatting the message.
      */
-    public static enum SyslogType {
+    public enum SyslogType {
         /**
          * Formats the message according the the RFC-5424 specification (<a href="http://tools.ietf.org/html/rfc5424#section-6">http://tools.ietf.org/html/rfc5424#section-6</a>
          */
@@ -306,7 +310,6 @@ public class SyslogHandler extends ExtHandler {
         }
     }
 
-    private final Object outputLock = new Object();
     private InetAddress serverAddress;
     private int port;
     private String appName;
@@ -324,6 +327,7 @@ public class SyslogHandler extends ExtHandler {
     private boolean truncate;
     private int maxLen;
     private boolean blockOnReconnect;
+    private boolean autoActivate;
 
     /**
      * The default class constructor.
@@ -491,6 +495,8 @@ public class SyslogHandler extends ExtHandler {
             maxLen = 2048;
         }
         blockOnReconnect = false;
+        // Default to true for backwards compatibility
+        autoActivate = true;
     }
 
     @Override
@@ -591,12 +597,11 @@ public class SyslogHandler extends ExtHandler {
     }
 
     @Override
-    public void close() {
+    protected void closeResources() {
         synchronized (outputLock) {
             safeClose(out);
             out = null;
         }
-        super.close();
     }
 
     @Override
@@ -605,6 +610,13 @@ public class SyslogHandler extends ExtHandler {
             safeFlush(out);
         }
         super.flush();
+    }
+
+    @Override
+    protected boolean requiresActivation() {
+        synchronized (outputLock) {
+            return initializeConnection;
+        }
     }
 
     /**
@@ -631,6 +643,27 @@ public class SyslogHandler extends ExtHandler {
         checkAccess(this);
         synchronized (outputLock) {
             this.appName = checkPrintableAscii("app name", appName);
+        }
+    }
+
+    @Override
+    public boolean isAutoActivate() {
+        synchronized (outputLock) {
+            return autoActivate;
+        }
+    }
+
+    /**
+     * Sets whether or not the handler should be {@linkplain #activate() activated} when the first record is written.
+     * If set to {@code false} {@link #activate()} is required to be invoked explicitly.
+     *
+     * @param autoActivate {@code true} if {@link #activate()} should be automatically invoked, otherwise
+     *                     {@code false} if {@link #activate()} should be explicitly invoked
+     */
+    public void setAutoActivate(final boolean autoActivate) {
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.autoActivate = autoActivate;
         }
     }
 

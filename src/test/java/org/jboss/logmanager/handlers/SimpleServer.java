@@ -1,6 +1,7 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.ByteArrayOutputStream;
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -10,6 +11,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
 import java.security.GeneralSecurityException;
+import java.util.Deque;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -67,6 +69,10 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         return data.peek();
     }
 
+    int clientCount() {
+        return -1;
+    }
+
     private void start() {
         service.submit(this);
     }
@@ -79,12 +85,14 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
 
     private static class TcpServer extends SimpleServer {
         private final BlockingQueue<String> data;
+        private final ExecutorService executorService;
         private final AtomicBoolean closed = new AtomicBoolean(true);
         private final ServerSocket serverSocket;
-        private volatile Socket socket;
+        private final Deque<TcpEchoThread> clients = new LinkedBlockingDeque<>();
 
         private TcpServer(final ServerSocketFactory serverSocketFactory, final BlockingQueue<String> data, final int port) throws IOException {
             super(data);
+            executorService = Executors.newCachedThreadPool();
             this.serverSocket = serverSocketFactory.createServerSocket(port);
             this.data = data;
         }
@@ -93,44 +101,43 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         public void run() {
             closed.set(false);
             try {
-                socket = serverSocket.accept();
-                InputStream in = socket.getInputStream();
-                final ByteArrayOutputStream out = new ByteArrayOutputStream();
                 while (!closed.get()) {
-                    final byte[] buffer = new byte[512];
-                    int len;
-                    while ((len = in.read(buffer)) != -1) {
-                        final byte lastByte = buffer[len - 1];
-                        if (lastByte == '\n') {
-                            out.write(buffer, 0, (len - 1));
-                            data.put(out.toString());
-                            out.reset();
-                        } else {
-                            out.write(buffer, 0, len);
-                        }
-                    }
+                    final Socket socket = serverSocket.accept();
+                    final TcpEchoThread client = new TcpEchoThread(socket, data);
+                    clients.offerFirst(client);
+                    executorService.submit(client);
                 }
             } catch (IOException e) {
                 if (!closed.get()) {
                     throw new UncheckedIOException(e);
                 }
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
             }
         }
 
         @Override
         public void close() throws Exception {
             try {
+                executorService.shutdown();
                 closed.set(true);
-                try {
-                    socket.close();
-                } finally {
-                    serverSocket.close();
+                TcpEchoThread client;
+                while ((client = clients.poll()) != null) {
+                    try {
+                        client.close();
+                    } catch (Exception e) {
+                        System.err.println("Failed to close client socket");
+                        e.printStackTrace();
+                    }
                 }
+                serverSocket.close();
+                executorService.awaitTermination(5, TimeUnit.SECONDS);
             } finally {
                 super.close();
             }
+        }
+
+        @Override
+        int clientCount() {
+            return clients.size();
         }
     }
 
@@ -182,6 +189,45 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
             } finally {
                 super.close();
             }
+        }
+    }
+
+    private static class TcpEchoThread implements Runnable, Closeable {
+        private final BlockingQueue<String> data;
+        private final Socket socket;
+
+        private TcpEchoThread(final Socket socket, final BlockingQueue<String> data) {
+            this.socket = socket;
+            this.data = data;
+        }
+
+        @Override
+        public void run() {
+            try {
+                InputStream in = socket.getInputStream();
+                final ByteArrayOutputStream out = new ByteArrayOutputStream();
+                final byte[] buffer = new byte[512];
+                int len;
+                while ((len = in.read(buffer)) != -1) {
+                    final byte lastByte = buffer[len - 1];
+                    if (lastByte == '\n') {
+                        out.write(buffer, 0, (len - 1));
+                        data.put(out.toString());
+                        out.reset();
+                    } else {
+                        out.write(buffer, 0, len);
+                    }
+                }
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void close() throws IOException {
+            socket.close();
         }
     }
 }
