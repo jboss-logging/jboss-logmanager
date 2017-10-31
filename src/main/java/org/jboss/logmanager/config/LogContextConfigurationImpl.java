@@ -297,6 +297,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             prepare();
         }
         clear();
+        logContext.configurationComplete();
     }
 
     @SuppressWarnings("unchecked")
