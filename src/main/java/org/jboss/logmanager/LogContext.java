@@ -21,18 +21,20 @@ package org.jboss.logmanager;
 
 import java.lang.ref.WeakReference;
 import java.security.Permission;
+import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
 import java.util.logging.Level;
 import java.util.logging.LoggingMXBean;
 import java.util.logging.LoggingPermission;
@@ -40,7 +42,8 @@ import java.util.logging.LoggingPermission;
 /**
  * A logging context, for producing isolated logging environments.
  */
-public final class LogContext implements Protectable {
+@SuppressWarnings("unused")
+public final class LogContext implements Protectable, AutoCloseable {
     private static final LogContext SYSTEM_CONTEXT = new LogContext(false);
 
     static final Permission CREATE_CONTEXT_PERMISSION = new RuntimePermission("createLogContext", null);
@@ -98,6 +101,8 @@ public final class LogContext implements Protectable {
     }
 
     private final AtomicReference<Map<String, LevelRef>> levelMapReference;
+    // Guarded by treeLock
+    private final Set<AutoCloseable> closeHandlers;
 
     /**
      * This lock is taken any time a change is made which affects multiple nodes in the hierarchy.
@@ -109,6 +114,7 @@ public final class LogContext implements Protectable {
         levelMapReference = new AtomicReference<Map<String, LevelRef>>(LazyHolder.INITIAL_LEVEL_MAP);
         rootLogger = new LoggerNode(this);
         loggerNames = new ConcurrentSkipListMap<String, AtomicInteger>();
+        closeHandlers = new LinkedHashSet<>();
     }
 
     /**
@@ -340,6 +346,20 @@ public final class LogContext implements Protectable {
         granted.remove();
     }
 
+    @Override
+    public void close() throws Exception {
+        synchronized (treeLock) {
+            // First we want to close all loggers
+            recursivelyClose(rootLogger);
+            // Next process the close handlers associated with this log context
+            for (AutoCloseable handler : closeHandlers) {
+                handler.close();
+            }
+            // Finally clear any logger names
+            loggerNames.clear();
+        }
+    }
+
     /**
      * Returns an enumeration of the logger names that have been created. This does not return names of loggers that
      * may have been garbage collected. Logger names added after the enumeration has been retrieved may also be added to
@@ -383,6 +403,49 @@ public final class LogContext implements Protectable {
         };
     }
 
+    /**
+     * Adds a handler invoked during the {@linkplain #close() close} of this log context. The close handlers will be
+     * invoked in the order they are added.
+     * <p>
+     * The loggers associated with this context will always be closed.
+     * </p>
+     *
+     * @param closeHandler the close handler to use
+     */
+    public void addCloseHandler(final AutoCloseable closeHandler) {
+        synchronized (treeLock) {
+            closeHandlers.add(closeHandler);
+        }
+    }
+
+    /**
+     * Gets the current close handlers associated with this log context.
+     *
+     * @return the current close handlers
+     */
+    public Set<AutoCloseable> getCloseHandlers() {
+        synchronized (treeLock) {
+            return new LinkedHashSet<>(closeHandlers);
+        }
+    }
+
+    /**
+     * Clears any current close handlers associated with log context, then adds the handlers to be invoked during
+     * the {@linkplain #close() close} of this log context. The close handlers will be invoked in the order they are
+     * added.
+     * <p>
+     * The loggers associated with this context will always be closed.
+     * </p>
+     *
+     * @param closeHandlers the close handlers to use
+     */
+    public void setCloseHandlers(final Collection<AutoCloseable> closeHandlers) {
+        synchronized (treeLock) {
+            this.closeHandlers.clear();
+            this.closeHandlers.addAll(closeHandlers);
+        }
+    }
+
     protected void incrementRef(final String name) {
         AtomicInteger counter = loggerNames.get(name);
         if (counter == null) {
@@ -424,6 +487,15 @@ public final class LogContext implements Protectable {
 
     ConcurrentMap<String, LoggerNode> createChildMap() {
         return strong ? new CopyOnWriteMap<String, LoggerNode>() : new CopyOnWriteWeakMap<String, LoggerNode>();
+    }
+
+    private void recursivelyClose(final LoggerNode loggerNode) {
+        synchronized (treeLock) {
+            for (LoggerNode child : loggerNode.getChildren()) {
+                recursivelyClose(child);
+            }
+            loggerNode.close();
+        }
     }
 
     private interface LevelRef {
