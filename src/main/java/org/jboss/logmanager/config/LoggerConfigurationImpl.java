@@ -37,6 +37,7 @@ import org.jboss.logmanager.Logger;
  */
 final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, LoggerConfigurationImpl> implements LoggerConfiguration {
     private ValueExpression<String> filter;
+    private ValueExpression<Boolean> useParentFilters;
     private ValueExpression<Boolean> useParentHandlers;
     private ValueExpression<String> level;
     private final List<String> handlerNames = new ArrayList<String>(0);
@@ -82,6 +83,55 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
 
             public void rollback() {
                 filter = oldFilterName;
+            }
+        });
+    }
+
+    @Override
+    public Boolean getUseParentFilters() {
+        return getUseParentFiltersValueExpression().getResolvedValue();
+    }
+
+    @Override
+    public ValueExpression<Boolean> getUseParentFiltersValueExpression() {
+        return useParentFilters;
+    }
+
+    @Override
+    public void setUseParentFilters(final Boolean value) {
+        setUseParentFilters(new ValueExpressionImpl<>(null, value));
+    }
+
+    @Override
+    public void setUseParentFilters(final String expression) {
+        setUseParentFilters(ValueExpression.BOOLEAN_RESOLVER.resolve(expression));
+    }
+
+    @Override
+    public void setUseParentFilters(final String expression, final Boolean value) {
+        setUseParentFilters(new ValueExpressionImpl<>(expression, value));
+    }
+
+    private void setUseParentFilters(final ValueExpression<Boolean> valueExpression) {
+        final ValueExpression<Boolean> oldUseParentFilters = this.useParentFilters;
+        this.useParentFilters = valueExpression;
+        final Boolean useParentFilters = valueExpression.getResolvedValue();
+        final LogContextConfigurationImpl configuration = getConfiguration();
+        configuration.addAction(new ConfigAction<Void>() {
+            public Void validate() throws IllegalArgumentException {
+                return null;
+            }
+
+            public void applyPreCreate(final Void param) {
+            }
+
+            public void applyPostCreate(final Void param) {
+                if (useParentFilters != null)
+                    configuration.getLoggerRefs().get(getName()).setUseParentFilters(useParentFilters);
+            }
+
+            public void rollback() {
+                LoggerConfigurationImpl.this.useParentFilters = oldUseParentFilters;
             }
         });
     }
