@@ -1008,9 +1008,13 @@ public final class Formatters {
     public static FormatStep mdcFormatStep(final String key, final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
-                final String value = record.getMdc(key);
-                if (value != null) {
-                    builder.append(value);
+                if (key == null) {
+                    builder.append(record.getMdcCopy());
+                } else {
+                    final String value = record.getMdc(key);
+                    if (value != null) {
+                        builder.append(value);
+                    }
                 }
             }
         };
