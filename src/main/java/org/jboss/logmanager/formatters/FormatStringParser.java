@@ -116,6 +116,7 @@ public final class FormatStringParser {
                     }
                     case 'i': {
                         stepList.add(Formatters.processIdFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        break;
                     }
                     case 'k': {
                         stepList.add(Formatters.resourceKeyFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
