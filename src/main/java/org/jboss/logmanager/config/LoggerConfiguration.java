@@ -61,6 +61,53 @@ public interface LoggerConfiguration extends NamedConfigurable, HandlerContainin
     void setFilter(String expression, String value);
 
     /**
+     * Determine whether parent filters will be used.
+     *
+     * @return the setting, or {@code null} to leave unconfigured
+     */
+    Boolean getUseParentFilters();
+
+    /**
+     * Returns the value that may be an expression.
+     *
+     * @return the setting, or {@code null} to leave unconfigured as a value expression
+     */
+    ValueExpression<Boolean> getUseParentFiltersValueExpression();
+
+    /**
+     * Set whether to use parent filters.  A value of {@code null} indicates that the value should be left
+     * unconfigured.
+     *
+     * @param value whether to use parent filters
+     */
+    void setUseParentFilters(Boolean value);
+
+    /**
+     * Set whether to use parent filters.
+     *
+     * @param expression the expression value used to resolve the setting
+     *
+     * @see #setUseParentFilters(Boolean)
+     * @see ValueExpression
+     */
+    void setUseParentFilters(String expression);
+
+    /**
+     * Set whether to use parent filters.
+     * <p>
+     * This method will not parse the expression for the value and instead use the {@code value} parameter for the
+     * setting on the logger.
+     * </p>
+     *
+     * @param expression the expression
+     * @param value      the value to set the setting to
+     *
+     * @see #setUseParentFilters(Boolean)
+     * @see ValueExpression
+     */
+    void setUseParentFilters(String expression, Boolean value);
+
+    /**
      * Determine whether parent handlers will be used.
      *
      * @return the setting, or {@code null} to leave unconfigured
@@ -68,7 +115,7 @@ public interface LoggerConfiguration extends NamedConfigurable, HandlerContainin
     Boolean getUseParentHandlers();
 
     /**
-     * Returns a filter that may be an expression.
+     * Returns the value that may be an expression.
      *
      * @return the setting, or {@code null} to leave unconfigured as a value expression
      */
