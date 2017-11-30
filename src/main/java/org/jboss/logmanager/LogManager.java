@@ -90,7 +90,7 @@ public final class LogManager extends java.util.logging.LogManager {
                 try {
                     final Class<?> knownLevelClass = Class.forName("java.util.logging.Level$KnownLevel");
                     synchronized (knownLevelClass) {
-                        final Constructor<?> constructor = knownLevelClass.getConstructor(java.util.logging.Level.class);
+                        final Constructor<?> constructor = knownLevelClass.getDeclaredConstructor(java.util.logging.Level.class);
                         constructor.setAccessible(true);
                         boolean doBuild = false;
                         boolean setNameToLevel = false;
