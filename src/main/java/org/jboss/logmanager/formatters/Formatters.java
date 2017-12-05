@@ -344,6 +344,71 @@ public final class Formatters {
     }
 
     /**
+     * Create a format step which emits the source module name with the given justification rules (NOTE: call stack
+     * introspection introduces a significant performance penalty).
+     *
+     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param precision    the argument used for the class name, may be {@code null} or contain dots to format the class name
+     * @return the format step
+     */
+    public static FormatStep moduleNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final String precision) {
+        return moduleNameFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, precision);
+    }
+
+    /**
+     * Create a format step which emits the source module name with the given justification rules (NOTE: call stack
+     * introspection introduces a significant performance penalty).
+     *
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
+     * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param precision         the argument used for the class name, may be {@code null} or contain dots to format the
+     *                          class name
+     *
+     * @return the format step
+     */
+    public static FormatStep moduleNameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String precision) {
+        return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, precision) {
+            public String getSegmentedSubject(final ExtLogRecord record) {
+                return record.getSourceModuleName();
+            }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
+            }
+        };
+    }
+
+    /**
+     * Create a format step which emits the source module version with the given justification rules (NOTE: call stack
+     * introspection introduces a significant performance penalty).
+     *
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param precision         the argument used for the class name, may be {@code null} or contain dots to format the
+     *                          class name
+     *
+     * @return the format step
+     */
+    public static FormatStep moduleVersionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final String precision) {
+        return new SegmentedFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, precision) {
+            public String getSegmentedSubject(final ExtLogRecord record) {
+                return record.getSourceModuleVersion();
+            }
+
+            @Override
+            public boolean isCallerInformationRequired() {
+                return true;
+            }
+        };
+    }
+
+    /**
      * Create a format step which emits the date of the log record with the given justification rules.
      *
      * @param timeZone the time zone to format to

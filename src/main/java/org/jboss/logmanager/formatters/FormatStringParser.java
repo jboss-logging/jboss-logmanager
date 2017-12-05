@@ -94,6 +94,10 @@ public final class FormatStringParser {
                         stepList.add(Formatters.dateFormatStep(timeZone, argument, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
+                    case 'D': {
+                        stepList.add(Formatters.moduleNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument));
+                        break;
+                    }
                     case 'e': {
                         stepList.add(Formatters.exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument, false));
                         break;
@@ -171,6 +175,10 @@ public final class FormatStringParser {
                     }
                     case 't': {
                         stepList.add(Formatters.threadFormatStep(argument, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        break;
+                    }
+                    case 'v': {
+                        stepList.add(Formatters.moduleVersionFormatStep(leftJustify, minimumWidth, maximumWidth, argument));
                         break;
                     }
                     case 'x': {
