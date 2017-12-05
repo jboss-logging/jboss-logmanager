@@ -42,6 +42,8 @@ import org.jboss.logmanager.PropertyValues;
  * <li>{@link org.jboss.logmanager.ExtLogRecord#getSourceFileName() source file name}</li>
  * <li>{@link org.jboss.logmanager.ExtLogRecord#getSourceMethodName() source method name}</li>
  * <li>{@link org.jboss.logmanager.ExtLogRecord#getSourceLineNumber() source line number}</li>
+ * <li>{@link org.jboss.logmanager.ExtLogRecord#getSourceModuleName() source module name}</li>
+ * <li>{@link org.jboss.logmanager.ExtLogRecord#getSourceModuleVersion() source module version}</li>
  * </ul>
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>

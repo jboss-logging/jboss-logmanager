@@ -80,6 +80,8 @@ public abstract class StructuredFormatter extends ExtFormatter {
         SOURCE_FILE_NAME("sourceFileName"),
         SOURCE_LINE_NUMBER("sourceLineNumber"),
         SOURCE_METHOD_NAME("sourceMethodName"),
+        SOURCE_MODULE_NAME("sourceModuleName"),
+        SOURCE_MODULE_VERSION("sourceModuleVersion"),
         STACK_TRACE("stackTrace"),
         THREAD_ID("threadId"),
         THREAD_NAME("threadName"),
@@ -255,7 +257,9 @@ public abstract class StructuredFormatter extends ExtFormatter {
                 generator.add(getKey(Key.SOURCE_CLASS_NAME), record.getSourceClassName())
                         .add(getKey(Key.SOURCE_FILE_NAME), record.getSourceFileName())
                         .add(getKey(Key.SOURCE_METHOD_NAME), record.getSourceMethodName())
-                        .add(getKey(Key.SOURCE_LINE_NUMBER), record.getSourceLineNumber());
+                        .add(getKey(Key.SOURCE_LINE_NUMBER), record.getSourceLineNumber())
+                        .add(getKey(Key.SOURCE_MODULE_NAME), record.getSourceModuleName())
+                        .add(getKey(Key.SOURCE_MODULE_VERSION), record.getSourceModuleVersion());
             }
 
             if (isNotNullOrEmpty(metaData)) {
