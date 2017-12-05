@@ -81,22 +81,6 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
         this(LogContext.DEFAULT_LOG_CONTEXT_SELECTOR, checkParentClassLoaders);
     }
 
-    private static final class Gateway extends SecurityManager {
-        protected Class[] getClassContext() {
-            return super.getClassContext();
-        }
-    }
-
-    private static final Gateway GATEWAY;
-
-    static {
-        GATEWAY = AccessController.doPrivileged(new PrivilegedAction<Gateway>() {
-            public Gateway run() {
-                return new Gateway();
-            }
-        });
-    }
-
     private final LogContextSelector defaultSelector;
 
     private final ConcurrentMap<ClassLoader, LogContext> contextMap = new CopyOnWriteMap<ClassLoader, LogContext>();
@@ -105,27 +89,20 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
 
     private final PrivilegedAction<LogContext> logContextAction = new PrivilegedAction<LogContext>() {
         public LogContext run() {
-            for (Class<?> caller : GATEWAY.getClassContext()) {
-                final ClassLoader classLoader = caller.getClassLoader();
-                final LogContext result = check(classLoader);
-                if (result != null) {
-                    return result;
-                }
-            }
-            return defaultSelector.getLogContext();
+            final Class<?> callingClass = JDKSpecific.findCallingClass(logApiClassLoaders);
+            return callingClass == null ? defaultSelector.getLogContext() : check(callingClass.getClassLoader());
         }
 
         private LogContext check(final ClassLoader classLoader) {
-            if (classLoader != null && !logApiClassLoaders.contains(classLoader)) {
-                final LogContext context = contextMap.get(classLoader);
-                if (context != null) {
-                    return context;
-                }
-                if (checkParentClassLoaders) {
-                    return check(classLoader.getParent());
-                }
+            final LogContext context = contextMap.get(classLoader);
+            if (context != null) {
+                return context;
             }
-            return null;
+            final ClassLoader parent = classLoader.getParent();
+            if (parent != null && checkParentClassLoaders && ! logApiClassLoaders.contains(parent)) {
+                return check(parent);
+            }
+            return defaultSelector.getLogContext();
         }
     };
 

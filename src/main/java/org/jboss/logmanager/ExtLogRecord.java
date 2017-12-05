@@ -330,26 +330,10 @@ public class ExtLogRecord extends LogRecord {
             return;
         }
         calculateCaller = false;
-        final StackTraceElement[] stack = new Throwable().getStackTrace();
-        boolean found = false;
-        for (StackTraceElement element : stack) {
-            final String className = element.getClassName();
-            if (found) {
-                if (! loggerClassName.equals(className)) {
-                    setSourceClassName(className);
-                    setSourceMethodName(element.getMethodName());
-                    setSourceLineNumber(element.getLineNumber());
-                    setSourceFileName(element.getFileName());
-                    return;
-                }
-            } else {
-                found = loggerClassName.equals(className);
-            }
-        }
-        setUnknownCaller();
+        JDKSpecific.calculateCaller(this);
     }
 
-    private void setUnknownCaller() {
+    void setUnknownCaller() {
         setSourceClassName(null);
         setSourceMethodName(null);
         setSourceLineNumber(-1);
