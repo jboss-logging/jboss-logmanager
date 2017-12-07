@@ -837,16 +837,6 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             record.setResourceBundleName(bundleName);
             record.setResourceBundle(bundle);
         }
-        try {
-            if (!loggerNode.isLoggable(record)) {
-                return;
-            }
-        } catch (VirtualMachineError e) {
-            throw e;
-        } catch (Throwable t) {
-            // todo - error handler
-            // treat an errored filter as "pass" (I guess?)
-        }
         loggerNode.publish(record);
     }
 

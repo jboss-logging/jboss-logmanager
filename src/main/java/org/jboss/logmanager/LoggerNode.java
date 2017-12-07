@@ -310,16 +310,17 @@ final class LoggerNode {
     }
 
     void publish(final ExtLogRecord record) {
-        for (Handler handler : handlers) try {
-            handler.publish(record);
+        boolean isLoggable = true;
+        try {
+            isLoggable = isLoggable(record);
         } catch (VirtualMachineError e) {
             throw e;
         } catch (Throwable t) {
             // todo - error handler
+            // treat an errored filter as "pass" (I guess?)
         }
-        if (useParentHandlers) {
-            final LoggerNode parent = this.parent;
-            if (parent != null) parent.publish(record);
+        if (isLoggable) {
+            context.getLogRecordPublisher().publish(this, record);
         }
     }
 

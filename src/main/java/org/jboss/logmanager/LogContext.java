@@ -32,7 +32,6 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
 import java.util.logging.Level;
 import java.util.logging.LoggingMXBean;
 import java.util.logging.LoggingPermission;
@@ -41,6 +40,7 @@ import java.util.logging.LoggingPermission;
  * A logging context, for producing isolated logging environments.
  */
 public final class LogContext implements Protectable {
+
     private static final LogContext SYSTEM_CONTEXT = new LogContext(false);
 
     static final Permission CREATE_CONTEXT_PERMISSION = new RuntimePermission("createLogContext", null);
@@ -98,6 +98,7 @@ public final class LogContext implements Protectable {
     }
 
     private final AtomicReference<Map<String, LevelRef>> levelMapReference;
+    private final Bootstrap bootstrap;
 
     /**
      * This lock is taken any time a change is made which affects multiple nodes in the hierarchy.
@@ -105,10 +106,16 @@ public final class LogContext implements Protectable {
     final Object treeLock = new Object();
 
     LogContext(final boolean strong) {
+        this(strong, BootstrapConfiguration.create());
+    }
+
+    LogContext(final boolean strong, final BootstrapConfiguration bootstrapConfig) {
         this.strong = strong;
         levelMapReference = new AtomicReference<Map<String, LevelRef>>(LazyHolder.INITIAL_LEVEL_MAP);
         rootLogger = new LoggerNode(this);
         loggerNames = new ConcurrentSkipListMap<String, AtomicInteger>();
+        this.bootstrap = bootstrapConfig == null ? BootstrapConfiguration.create().build(rootLogger) :
+                bootstrapConfig.build(rootLogger);
     }
 
     /**
@@ -120,11 +127,35 @@ public final class LogContext implements Protectable {
      * @return a new log context
      */
     public static LogContext create(boolean strong) {
+        return create(strong, null);
+    }
+
+    /**
+     * Create a new log context.  If a security manager is installed, the caller must have the {@code "createLogContext"}
+     * {@link RuntimePermission RuntimePermission} to invoke this method.
+     *
+     * @param strong {@code true} if the context should use strong references, {@code false} to use (default) weak
+     *      references for automatic logger GC
+     * @param bootstrapConfig the configuration for bootstrapping this log context
+     * @return a new log context
+     */
+    public static LogContext create(boolean strong, final BootstrapConfiguration bootstrapConfig) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CREATE_CONTEXT_PERMISSION);
         }
-        return new LogContext(strong);
+        return new LogContext(strong, bootstrapConfig);
+    }
+
+    /**
+     * Create a new log context.  If a security manager is installed, the caller must have the {@code "createLogContext"}
+     * {@link RuntimePermission RuntimePermission} to invoke this method.
+     *
+     * @param bootstrapConfig the configuration for bootstrapping this log context
+     * @return a new log context
+     */
+    public static LogContext create(final BootstrapConfiguration bootstrapConfig) {
+        return create(false, bootstrapConfig);
     }
 
     /**
@@ -145,7 +176,8 @@ public final class LogContext implements Protectable {
      * @see java.util.logging.LogManager#getLogger(String)
      */
     public Logger getLogger(String name) {
-        return rootLogger.getOrCreate(name).createLogger();
+        final LoggerNode node = rootLogger.getOrCreate(name);
+        return node.createLogger();
     }
 
     /**
@@ -381,6 +413,23 @@ public final class LogContext implements Protectable {
                 }
             }
         };
+    }
+
+    /**
+     * If this log context was bootstrapped this indicates that the configuration has been completed and the messages
+     * can be replayed to the configured loggers.
+     */
+    public void configurationComplete() {
+        bootstrap.complete();
+    }
+
+    /**
+     * Returns the publisher to use with this log context.
+     *
+     * @return the publisher to use
+     */
+    LogRecordPublisher getLogRecordPublisher() {
+        return bootstrap.getPublisher();
     }
 
     protected void incrementRef(final String name) {
