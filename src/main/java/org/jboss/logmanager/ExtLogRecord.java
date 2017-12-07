@@ -154,6 +154,8 @@ public class ExtLogRecord extends LogRecord {
     private String hostName;
     private String processName;
     private long processId = -1;
+    private String sourceModuleName;
+    private String sourceModuleVersion;
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
         copyAll();
@@ -174,6 +176,8 @@ public class ExtLogRecord extends LogRecord {
         hostName = (String) fields.get("hostName", null);
         processName = (String) fields.get("processName", null);
         processId = fields.get("processId", -1L);
+        sourceModuleName = (String) fields.get("sourceModuleName", null);
+        sourceModuleVersion = (String) fields.get("sourceModuleVersion", null);
     }
 
     /**
@@ -326,30 +330,16 @@ public class ExtLogRecord extends LogRecord {
             return;
         }
         calculateCaller = false;
-        final StackTraceElement[] stack = new Throwable().getStackTrace();
-        boolean found = false;
-        for (StackTraceElement element : stack) {
-            final String className = element.getClassName();
-            if (found) {
-                if (! loggerClassName.equals(className)) {
-                    setSourceClassName(className);
-                    setSourceMethodName(element.getMethodName());
-                    setSourceLineNumber(element.getLineNumber());
-                    setSourceFileName(element.getFileName());
-                    return;
-                }
-            } else {
-                found = loggerClassName.equals(className);
-            }
-        }
-        setUnknownCaller();
+        JDKSpecific.calculateCaller(this);
     }
 
-    private void setUnknownCaller() {
-        setSourceClassName("<unknown>");
-        setSourceMethodName("<unknown>");
+    void setUnknownCaller() {
+        setSourceClassName(null);
+        setSourceMethodName(null);
         setSourceLineNumber(-1);
-        setSourceFileName("<unknown>");
+        setSourceFileName(null);
+        setSourceModuleName(null);
+        setSourceModuleVersion(null);
     }
 
     /**
@@ -424,6 +414,46 @@ public class ExtLogRecord extends LogRecord {
     public void setSourceMethodName(final String sourceMethodName) {
         calculateCaller = false;
         super.setSourceMethodName(sourceMethodName);
+    }
+
+    /**
+     * Get the name of the module that initiated the logging request, if known.
+     *
+     * @return the name of the module that initiated the logging request
+     */
+    public String getSourceModuleName() {
+        calculateCaller();
+        return sourceModuleName;
+    }
+
+    /**
+     * Set the source module name of this record.
+     *
+     * @param sourceModuleName the source module name
+     */
+    public void setSourceModuleName(final String sourceModuleName) {
+        calculateCaller = false;
+        this.sourceModuleName = sourceModuleName;
+    }
+
+    /**
+     * Get the version of the module that initiated the logging request, if known.
+     *
+     * @return the version of the module that initiated the logging request
+     */
+    public String getSourceModuleVersion() {
+        calculateCaller();
+        return sourceModuleVersion;
+    }
+
+    /**
+     * Set the source module version of this record.
+     *
+     * @param sourceModuleVersion the source module version
+     */
+    public void setSourceModuleVersion(final String sourceModuleVersion) {
+        calculateCaller = false;
+        this.sourceModuleVersion = sourceModuleVersion;
     }
 
     /**

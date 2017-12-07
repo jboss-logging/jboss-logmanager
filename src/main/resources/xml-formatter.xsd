@@ -171,6 +171,20 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="sourceModuleName" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the module that (allegedly) issued the logging request.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="sourceModuleVersion" type="xs:string" minOccurs="0" maxOccurs="1">
+                <xs:annotation>
+                    <xs:documentation>
+                        The version of the module that (allegedly) issued the logging request.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="metaData" type="metaDataType" minOccurs="0" maxOccurs="unbounded">
                 <xs:annotation>
                     <xs:documentation>
