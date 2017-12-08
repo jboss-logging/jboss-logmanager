@@ -42,6 +42,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     private long nextRollover = Long.MAX_VALUE;
     private TimeZone timeZone = TimeZone.getDefault();
     private SuffixRotator suffixRotator = SuffixRotator.EMPTY;
+    private int hourOfDay = 0;
 
     /**
      * Construct a new instance with no formatter and no output file.
@@ -73,6 +74,20 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     }
 
     /**
+     * Construct a new instance with the given output file, append setting, and hour of day to rotate.
+     *
+     * @param fileName the file name
+     * @param append {@code true} to append, {@code false} to overwrite
+     * @param hourOfDay the hour of day to rotate
+     *
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public PeriodicRotatingFileHandler(final String fileName, final boolean append, int hourOfDay) throws FileNotFoundException {
+        super(fileName, append);
+        setHourOfDay(hourOfDay);
+    }
+
+    /**
      * Construct a new instance with the given output file.
      *
      * @param file the file
@@ -95,6 +110,21 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      */
     public PeriodicRotatingFileHandler(final File file, final String suffix, final boolean append) throws FileNotFoundException {
         super(file, append);
+        setSuffix(suffix);
+    }
+
+    /**
+     * Construct a new instance with the given output file, append setting, and hour of day to rotate.
+     *
+     * @param file the file
+     * @param suffix the format suffix to use
+     * @param append {@code true} to append, {@code false} to overwrite
+     * @param hourOfDay the hour of day to rotate
+     * @throws java.io.FileNotFoundException if the file could not be found on open
+     */
+    public PeriodicRotatingFileHandler(final File file, final String suffix, final boolean append, int hourOfDay) throws FileNotFoundException {
+        super(file, append);
+        setHourOfDay(hourOfDay);
         setSuffix(suffix);
     }
 
@@ -209,6 +239,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         }
         nextSuffix = format.format(new Date(fromTime));
         final Calendar calendar = Calendar.getInstance(timeZone);
+        final int currentHourOfDay = calendar.get(Calendar.HOUR_OF_DAY);
         calendar.setTimeInMillis(fromTime);
         final Period period = this.period;
         // clear out less-significant fields
@@ -228,15 +259,18 @@ public class PeriodicRotatingFileHandler extends FileHandler {
                 }
                 calendar.clear(Calendar.DAY_OF_WEEK_IN_MONTH);
             case DAY:
-                calendar.set(Calendar.HOUR_OF_DAY, 0);
+                calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                if (currentHourOfDay < hourOfDay)
+                    calendar.add(Calendar.DAY_OF_MONTH, -1);
             case HALF_DAY:
+                int h = hourOfDay % 12;
                 if (period == Period.HALF_DAY) {
-                    calendar.set(Calendar.HOUR, 0);
+                    calendar.set(Calendar.HOUR, h);
                 } else {
                     //We want both HOUR_OF_DAY and (HOUR + AM_PM) to be zeroed out
                     //This should ensure the hour is truly zeroed out
-                    calendar.set(Calendar.HOUR, 0);
-                    calendar.set(Calendar.AM_PM, 0);
+                    calendar.set(Calendar.HOUR, h);
+                    calendar.set(Calendar.AM_PM, hourOfDay < 12 ? Calendar.AM : Calendar.PM);
                 }
             case HOUR:
                 calendar.set(Calendar.MINUTE, 0);
@@ -290,6 +324,26 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             throw new NullPointerException("timeZone is null");
         }
         this.timeZone = timeZone;
+    }
+
+    /**
+     * Get the hour of day for this handler.
+     *
+     * @return the hour of day (from 0 to 23)
+     */
+    public int getHourOfDay() {
+        return hourOfDay;
+    }
+
+    /**
+     * Get the our of day for this handler.
+     *
+     * @return the hour of day (from 0 to 23)
+     */
+    public void setHourOfDay(int hourOfDay) {
+        if (hourOfDay < 0) hourOfDay *= -1;
+        hourOfDay %= 24;
+        this.hourOfDay = hourOfDay;
     }
 
     private static <T extends Comparable<? super T>> T min(T a, T b) {
