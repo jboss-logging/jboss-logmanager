@@ -22,6 +22,7 @@ package org.jboss.logmanager;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.security.Permission;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -89,8 +90,14 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
 
     private final PrivilegedAction<LogContext> logContextAction = new PrivilegedAction<LogContext>() {
         public LogContext run() {
-            final Class<?> callingClass = JDKSpecific.findCallingClass(logApiClassLoaders);
-            return callingClass == null ? defaultSelector.getLogContext() : check(callingClass.getClassLoader());
+            final Collection<Class<?>> callingClasses = JDKSpecific.findCallingClasses(logApiClassLoaders);
+            for (Class<?> caller : callingClasses) {
+                final LogContext result = check(caller.getClassLoader());
+                if (result != null) {
+                    return result;
+                }
+            }
+            return defaultSelector.getLogContext();
         }
 
         private LogContext check(final ClassLoader classLoader) {
@@ -102,7 +109,7 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
             if (parent != null && checkParentClassLoaders && ! logApiClassLoaders.contains(parent)) {
                 return check(parent);
             }
-            return defaultSelector.getLogContext();
+            return null;
         }
     };
 
