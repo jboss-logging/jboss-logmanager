@@ -5,8 +5,16 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.logging.Handler;
+
+import javax.net.ssl.SSLContext;
 
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.LogContext;
+import org.jboss.logmanager.Logger;
+import org.jboss.logmanager.config.FormatterConfiguration;
+import org.jboss.logmanager.config.HandlerConfiguration;
+import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.SocketHandler.Protocol;
 import org.junit.Assert;
@@ -155,6 +163,43 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                 Assert.assertNotNull(msg);
                 Assert.assertEquals("Test TCP handler", msg);
             }
+        }
+    }
+
+    @Test
+    public void testTlsConfig() throws Exception {
+        try (SimpleServer server = SimpleServer.createTlsServer(port)) {
+            final LogContext logContext = LogContext.create();
+            final LogContextConfiguration logContextConfiguration = LogContextConfiguration.Factory.create(logContext);
+            // Create the formatter
+            final FormatterConfiguration formatterConfiguration = logContextConfiguration.addFormatterConfiguration(
+                    null, PatternFormatter.class.getName(), "pattern");
+            formatterConfiguration.setPropertyValueString("pattern", "%s\n");
+            // Create the handler
+            final HandlerConfiguration handlerConfiguration = logContextConfiguration.addHandlerConfiguration(
+                    null, SocketHandler.class.getName(), "socket",
+                    "protocol", "hostname", "port");
+            handlerConfiguration.setPropertyValueString("protocol", Protocol.SSL_TCP.name());
+            handlerConfiguration.setPropertyValueString("hostname", address.getHostAddress());
+            handlerConfiguration.setPropertyValueString("port", Integer.toString(port));
+            handlerConfiguration.setPropertyValueString("autoFlush", "true");
+            handlerConfiguration.setPropertyValueString("encoding", "utf-8");
+            handlerConfiguration.setFormatterName(formatterConfiguration.getName());
+
+            logContextConfiguration.addLoggerConfiguration("").addHandlerName(handlerConfiguration.getName());
+
+            logContextConfiguration.commit();
+
+            final Handler instance = handlerConfiguration.getInstance();
+            Assert.assertTrue(instance instanceof SocketHandler);
+            ((SocketHandler) instance).setSocketFactory(SSLContext.getDefault().getSocketFactory());
+
+            // Create the root logger
+            final Logger logger = logContext.getLogger("");
+            logger.info("Test TCP handler " + port + " 1");
+            String msg = server.timeoutPoll();
+            Assert.assertNotNull(msg);
+            Assert.assertEquals("Test TCP handler " + port + " 1", msg);
         }
     }
 
