@@ -108,7 +108,8 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @param target the target to write to, or {@code null} to clear the target
      */
     public void setTarget(Target target) {
-        switch (target) {
+        final Target t = (target == null ? console == null ? Target.SYSTEM_OUT : Target.CONSOLE : target);
+        switch (t) {
             case SYSTEM_OUT: setOutputStream(wrap(out)); break;
             case SYSTEM_ERR: setOutputStream(wrap(err)); break;
             case CONSOLE: setWriter(wrap(console)); break;
