@@ -65,8 +65,6 @@ public class SocketHandler extends ExtHandler {
     @SuppressWarnings("WeakerAccess")
     public static final int DEFAULT_PORT = 4560;
 
-    private final boolean configureSocketFactory;
-
     private final Object outputLock = new Object();
 
     // All the following fields are guarded by outputLock
@@ -141,6 +139,22 @@ public class SocketHandler extends ExtHandler {
      *                      {@linkplain Protocol#SSL_TCP SSL TCP} connections, if {@code null} a default factory will
      *                      be used
      * @param protocol      the protocol to connect with
+     * @param hostname      the hostname to connect to
+     * @param port          the port to connect to
+     *
+     * @throws UnknownHostException if an error occurs resolving the hostname
+     */
+    public SocketHandler(final SocketFactory socketFactory, final Protocol protocol, final String hostname, final int port) throws UnknownHostException {
+        this(socketFactory, protocol, InetAddress.getByName(hostname), port);
+    }
+
+    /**
+     * Creates a socket handler.
+     *
+     * @param socketFactory the socket factory to use for creating {@linkplain Protocol#TCP TCP} or
+     *                      {@linkplain Protocol#SSL_TCP SSL TCP} connections, if {@code null} a default factory will
+     *                      be used
+     * @param protocol      the protocol to connect with
      * @param address       the address to connect to
      * @param port          the port to connect to
      */
@@ -151,7 +165,6 @@ public class SocketHandler extends ExtHandler {
         initialize = true;
         writer = null;
         this.socketFactory = socketFactory;
-        configureSocketFactory = (socketFactory == null);
         blockOnReconnect = false;
     }
 
@@ -200,6 +213,7 @@ public class SocketHandler extends ExtHandler {
         synchronized (outputLock) {
             safeClose(writer);
             writer = null;
+            initialize = true;
         }
         super.close();
     }
@@ -276,17 +290,22 @@ public class SocketHandler extends ExtHandler {
     }
 
     /**
-     * Sets the protocol to use.
+     * Sets the protocol to use. If the value is {@code null} the protocol will be set to
+     * {@linkplain Protocol#TCP TCP}.
+     * <p>
+     * Note that is resets the {@linkplain #setSocketFactory(SocketFactory) socket factory}.
+     * </p>
      *
      * @param protocol the protocol to use
      */
     public void setProtocol(final Protocol protocol) {
         checkAccess(this);
         synchronized (outputLock) {
-            // If the socket factory wasn't set, we may need to configure the correct factory
-            if (configureSocketFactory && this.protocol != protocol) {
-                socketFactory = null;
+            if (protocol == null) {
+                this.protocol = Protocol.TCP;
             }
+            // Reset the socket factory
+            socketFactory = null;
             this.protocol = protocol;
             initialize = true;
         }
@@ -310,6 +329,24 @@ public class SocketHandler extends ExtHandler {
         checkAccess(this);
         synchronized (outputLock) {
             this.port = port;
+            initialize = true;
+        }
+    }
+
+    /**
+     * Sets the socket factory to use for creating {@linkplain Protocol#TCP TCP} or {@linkplain Protocol#SSL_TCP SSL}
+     * connections.
+     * <p>
+     * Note that if the {@linkplain #setProtocol(Protocol) protocol} is set the socket factory will be set to
+     * {@code null} and reset.
+     * </p>
+     *
+     * @param socketFactory the socket factory
+     */
+    public void setSocketFactory(final SocketFactory socketFactory) {
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.socketFactory = socketFactory;
             initialize = true;
         }
     }
@@ -351,13 +388,19 @@ public class SocketHandler extends ExtHandler {
     private OutputStream createOutputStream() {
         if (address != null || port >= 0) {
             try {
-                if (protocol == Protocol.SSL_TCP) {
-                    return new SslTcpOutputStream(getSocketFactory(), address, port, blockOnReconnect);
-                } else if (protocol == Protocol.UDP) {
+                if (protocol == Protocol.UDP) {
                     return new UdpOutputStream(address, port);
-                } else {
-                    return new TcpOutputStream(getSocketFactory(), address, port, blockOnReconnect);
                 }
+                SocketFactory socketFactory = this.socketFactory;
+                if (socketFactory == null) {
+                    if (protocol == Protocol.SSL_TCP) {
+                        this.socketFactory = socketFactory = SSLSocketFactory.getDefault();
+                    } else {
+                        // Assume we want a TCP connection
+                        this.socketFactory = socketFactory = SocketFactory.getDefault();
+                    }
+                }
+                return new TcpOutputStream(socketFactory, address, port, blockOnReconnect);
             } catch (IOException e) {
                 reportError("Failed to create socket output stream", e, ErrorManager.OPEN_FAILURE);
             }
@@ -399,17 +442,5 @@ public class SocketHandler extends ExtHandler {
             reportError("Error on flush", e, ErrorManager.FLUSH_FAILURE);
         } catch (Throwable ignored) {
         }
-    }
-
-    private SocketFactory getSocketFactory() {
-        SocketFactory socketFactory = this.socketFactory;
-        if (socketFactory == null) {
-            if (protocol == Protocol.TCP) {
-                this.socketFactory = socketFactory = SocketFactory.getDefault();
-            } else if (protocol == Protocol.SSL_TCP) {
-                this.socketFactory = socketFactory = SSLSocketFactory.getDefault();
-            }
-        }
-        return socketFactory;
     }
 }
