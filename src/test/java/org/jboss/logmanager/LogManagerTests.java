@@ -19,7 +19,6 @@
 
 package org.jboss.logmanager;
 
-import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -57,22 +56,12 @@ public class LogManagerTests extends AbstractTest {
 
     @Test
     public void testLevelReplacement() throws Exception {
-        // Get the static method to find the level by name
-        Method method = null;
-        try {
-            method = java.util.logging.Level.class.getDeclaredMethod("findLevel", String.class);
-            method.setAccessible(true);
-        } catch (NoSuchMethodException ignore) {
-        }
         // Validate each level
         for (java.util.logging.Level l : levels) {
             java.util.logging.Level level = java.util.logging.Level.parse(l.getName());
             Assert.assertEquals(l, level);
-            if (method != null) {
-                // Hack to check the level by int
-                level = (java.util.logging.Level) method.invoke(null, Integer.toString(level.intValue()));
-                Assert.assertEquals(l, level);
-            }
+            level = java.util.logging.Level.parse(Integer.toString(l.intValue()));
+            Assert.assertEquals(l, level);
         }
     }
 

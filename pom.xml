@@ -33,7 +33,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>21</version>
+        <version>25</version>
     </parent>
 
     <licenses>
@@ -146,6 +146,7 @@
                     <includes>
                         <include>**/*Tests.java</include>
                     </includes>
+                    <argLine>-Djdk.attach.allowAttachSelf=true</argLine>
                     <systemPropertyVariables>
                         <jdk.attach.allowAttachSelf>true</jdk.attach.allowAttachSelf>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
