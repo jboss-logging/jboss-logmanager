@@ -172,21 +172,4 @@ public interface HandlerConfiguration extends HandlerContainingConfigurable, Nam
      * @see ValueExpression
      */
     void setErrorManagerName(String expression, String value);
-
-    /**
-     * Indicates whether or not the handler names should be persisted to the configuration.
-     *
-     * @return {@code true} if the handler names should be persisted, otherwise {@code false}
-     */
-    default boolean isHandlerNamesPersistable() {
-        return true;
-    }
-
-    /**
-     * Sets whether or not the handler names should be persisted to the configuration.
-     *
-     * @param persistable {@code true} if the handler names should be persisted, otherwise {@code false}
-     */
-    default void setHandlerNamesPersistable(final boolean persistable) {
-    }
 }

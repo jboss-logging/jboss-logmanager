@@ -164,11 +164,6 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return new ArrayList<String>(handlers.keySet());
     }
 
-    @Override
-    public List<String> getPersistableHandlerNames() {
-        return filterPersistableNames(handlers);
-    }
-
     public FormatterConfiguration addFormatterConfiguration(final String moduleName, final String className, final String formatterName, final String... constructorProperties) {
         if (formatters.containsKey(formatterName)) {
             throw new IllegalArgumentException(String.format("Formatter \"%s\" already exists", formatterName));
@@ -198,11 +193,6 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
         return new ArrayList<String>(formatters.keySet());
     }
 
-    @Override
-    public List<String> getPersistableFormatterNames() {
-        return filterPersistableNames(formatters);
-    }
-
     public FilterConfiguration addFilterConfiguration(final String moduleName, final String className, final String filterName, final String... constructorProperties) {
         if (filters.containsKey(filterName)) {
             throw new IllegalArgumentException(String.format("Filter \"%s\" already exists", filterName));
@@ -230,11 +220,6 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
 
     public List<String> getFilterNames() {
         return new ArrayList<String>(filters.keySet());
-    }
-
-    @Override
-    public List<String> getPersistableFilterNames() {
-        return filterPersistableNames(filters);
     }
 
     public ErrorManagerConfiguration addErrorManagerConfiguration(final String moduleName, final String className, final String errorManagerName, final String... constructorProperties) {
@@ -267,11 +252,6 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     }
 
     @Override
-    public List<String> getPersistableErrorManagerNames() {
-        return filterPersistableNames(errorManagers);
-    }
-
-    @Override
     public PojoConfiguration addPojoConfiguration(final String moduleName, final String className, final String pojoName, final String... constructorProperties) {
         if (pojos.containsKey(pojoName)) {
             throw new IllegalArgumentException(String.format("POJO \"%s\" already exists", pojoName));
@@ -301,11 +281,6 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
     @Override
     public List<String> getPojoNames() {
         return new ArrayList<String>(pojos.keySet());
-    }
-
-    @Override
-    public List<String> getPersistablePojoNames() {
-        return filterPersistableNames(pojos);
     }
 
     @Override
@@ -758,16 +733,6 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             throw new IllegalArgumentException("Extra data after filter expression");
         }
         return result;
-    }
-
-    private static List<String> filterPersistableNames(final Map<String, ? extends PropertyConfigurable> map) {
-        final List<String> names = new ArrayList<>();
-        for (Map.Entry<String, ? extends PropertyConfigurable> entry : map.entrySet()) {
-            if (entry.getValue().isPersistable()) {
-                names.add(entry.getKey());
-            }
-        }
-        return names;
     }
 
     ObjectProducer resolveFilter(String expression) {

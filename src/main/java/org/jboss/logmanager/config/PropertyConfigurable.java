@@ -19,7 +19,6 @@
 
 package org.jboss.logmanager.config;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -38,19 +37,6 @@ public interface PropertyConfigurable {
      * @throws IllegalArgumentException if the given value is not acceptable for this property
      */
     void setPropertyValueString(String propertyName, String value) throws IllegalArgumentException;
-
-    /**
-     * Set a property value from a string.
-     *
-     * @param propertyName the property name
-     * @param value        the property value
-     * @param persist      indicates whether or not the property should be persisted to the configuration
-     *
-     * @throws IllegalArgumentException if the given value is not acceptable for this property
-     */
-    default void setPropertyValueString(final String propertyName, final String value, final boolean persist) throws IllegalArgumentException {
-        setPropertyValueString(propertyName, value);
-    }
 
     /**
      * Get the string property value with the given name.
@@ -80,17 +66,6 @@ public interface PropertyConfigurable {
 
     /**
      * Sets the expression value for the property.
-     *
-     * @param propertyName the name of the property
-     * @param expression   the expression used to resolve the value
-     * @param persist      indicates whether or not the property should be persisted to the configuration
-     */
-    default void setPropertyValueExpression(final String propertyName, final String expression, final boolean persist) {
-        setPropertyValueExpression(propertyName, expression);
-    }
-
-    /**
-     * Sets the expression value for the property.
      * <p/>
      * This method will not parse the expression for the value and instead use the {@code value} parameter for the
      * value.
@@ -100,22 +75,6 @@ public interface PropertyConfigurable {
      * @param value        the value to use
      */
     void setPropertyValueExpression(String propertyName, String expression, String value);
-
-    /**
-     * Sets the expression value for the property.
-     * <p>
-     * This method will not parse the expression for the value and instead use the {@code value} parameter for the
-     * value.
-     * </p>
-     *
-     * @param propertyName the name of the property
-     * @param expression   the expression used to resolve the value
-     * @param value        the value to use
-     * @param persist      indicates whether or not the property should be persisted to the configuration
-     */
-    default void setPropertyValueExpression(final String propertyName, final String expression, final String value, final boolean persist) {
-        setPropertyValueExpression(propertyName, expression, value);
-    }
 
     /**
      * Determine whether the given property name is configured.
@@ -197,34 +156,4 @@ public interface PropertyConfigurable {
      * @return {@code true} if the method was removed, otherwise {@code false}
      */
     boolean removePostConfigurationMethod(String methodName);
-
-    /**
-     * Gets the configuration properties that have been set.
-     *
-     * @return the configuration properties
-     */
-    default List<ConfigurationProperty> getProperties() {
-        final List<ConfigurationProperty> result = new ArrayList<>();
-        for (String key : getPropertyNames()) {
-            result.add(new ConfigurationPropertyImpl(key, getPropertyValueExpression(key), true));
-        }
-        return result;
-    }
-
-    /**
-     * Indicates whether or not this configuration is persistable as a whole.
-     *
-     * @return {@code true} if this configuration should be persisted, owtherwise {@code false}
-     */
-    default boolean isPersistable() {
-        return true;
-    }
-
-    /**
-     * Sets whether or not this configuration should be persisted.
-     *
-     * @param persistable {@code false} if this configuration should not be persisted as a whole, otherwise {@code true}
-     */
-    default void setPersistable(final boolean persistable) {
-    }
 }

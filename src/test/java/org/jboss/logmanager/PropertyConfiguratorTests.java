@@ -35,7 +35,6 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.logging.Formatter;
-import java.util.logging.Handler;
 
 import org.jboss.logmanager.config.HandlerConfiguration;
 import org.jboss.logmanager.config.LogContextConfiguration;
@@ -320,115 +319,6 @@ public class PropertyConfiguratorTests {
 
     }
 
-    @Test
-    public void testNonPersistableProperty() throws Exception {
-        final String typeName = TestQueueHandler.class.getName();
-        final String handlerName = "testQueue";
-        final String childHandlerName = "testChild";
-
-        final LogContext logContext = LogContext.create();
-        final PropertyConfigurator configurator = new PropertyConfigurator(logContext);
-
-        final LogContextConfiguration logContextConfiguration = configurator.getLogContextConfiguration();
-
-        // Add a handler that will not persist the handler names
-        final HandlerConfiguration handlerConfiguration = logContextConfiguration.
-                addHandlerConfiguration(null, typeName, handlerName);
-        handlerConfiguration.setLevel("INFO");
-        handlerConfiguration.setHandlerNamesPersistable(false);
-        handlerConfiguration.setPropertyValueString("value", "testParentValue", true);
-
-        // Add a root logger
-        final LoggerConfiguration loggerConfiguration = logContextConfiguration.addLoggerConfiguration("");
-        loggerConfiguration.addHandlerName(handlerName);
-        loggerConfiguration.setLevel("INFO");
-
-        final HandlerConfiguration childHandlerConfiguration = logContextConfiguration
-                .addHandlerConfiguration(null, typeName, childHandlerName);
-        // Add a property that should not be persisted
-        childHandlerConfiguration.setPropertyValueString("value", "testValue", false);
-        // Add the handler which should not be persisted
-        handlerConfiguration.addHandlerName(childHandlerConfiguration.getName());
-
-        logContextConfiguration.commit();
-
-        // Since the VALUE is static it should always be set to the second configured value, however that value should
-        // not be persisted to via the PropertyConfigurator. The later will be tested below.
-        assertEquals("testValue", TestQueueHandler.VALUE);
-
-        // Reload output streams into properties
-        final Properties configProps = new Properties();
-        final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
-        configurator.writeConfiguration(configOut);
-        final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
-        configProps.load(new InputStreamReader(configIn, ENCODING));
-
-        // Manually create the expected properties and compare the written results
-        final Properties expectedProperties = new Properties();
-        expectedProperties.setProperty("loggers", "");
-        expectedProperties.setProperty("logger.level", "INFO");
-        expectedProperties.setProperty("logger.handlers", handlerName);
-        expectedProperties.setProperty("handlers", childHandlerName);
-        expectedProperties.setProperty("handler." + handlerName, typeName);
-        expectedProperties.setProperty("handler." + handlerName + ".level", "INFO");
-        expectedProperties.setProperty("handler." + handlerName + ".properties", "value");
-        expectedProperties.setProperty("handler." + handlerName + ".value", "testParentValue");
-        expectedProperties.setProperty("handler." + childHandlerName, typeName);
-        compare(expectedProperties, configProps);
-    }
-
-    @Test
-    public void testNonPersistableHandler() throws Exception {
-        final String typeName = TestQueueHandler.class.getName();
-        final String handlerName = "testQueue";
-        final String childHandlerName = "testChild";
-
-        final LogContext logContext = LogContext.create();
-        final PropertyConfigurator configurator = new PropertyConfigurator(logContext);
-
-        final LogContextConfiguration logContextConfiguration = configurator.getLogContextConfiguration();
-
-        // Add a handler that will not persist the handler names
-        final HandlerConfiguration handlerConfiguration = logContextConfiguration.
-                addHandlerConfiguration(null, typeName, handlerName);
-        handlerConfiguration.setLevel("INFO");
-        handlerConfiguration.setHandlerNamesPersistable(false);
-        handlerConfiguration.setPropertyValueString("value", "testParentValue", true);
-
-        // Add a root logger
-        final LoggerConfiguration loggerConfiguration = logContextConfiguration.addLoggerConfiguration("");
-        loggerConfiguration.addHandlerName(handlerName);
-        loggerConfiguration.setLevel("INFO");
-
-        final HandlerConfiguration childHandlerConfiguration = logContextConfiguration
-                .addHandlerConfiguration(null, typeName, childHandlerName);
-        // Add a property that should not be persisted
-        childHandlerConfiguration.setPropertyValueString("value", "testValue");
-        childHandlerConfiguration.setPersistable(false);
-        // Add the handler which should not be persisted
-        handlerConfiguration.addHandlerName(childHandlerConfiguration.getName());
-
-        logContextConfiguration.commit();
-
-        // Reload output streams into properties
-        final Properties configProps = new Properties();
-        final ByteArrayOutputStream configOut = new ByteArrayOutputStream();
-        configurator.writeConfiguration(configOut);
-        final ByteArrayInputStream configIn = new ByteArrayInputStream(configOut.toByteArray());
-        configProps.load(new InputStreamReader(configIn, ENCODING));
-
-        // Manually create the expected properties and compare the written results
-        final Properties expectedProperties = new Properties();
-        expectedProperties.setProperty("loggers", "");
-        expectedProperties.setProperty("logger.level", "INFO");
-        expectedProperties.setProperty("logger.handlers", handlerName);
-        expectedProperties.setProperty("handler." + handlerName, typeName);
-        expectedProperties.setProperty("handler." + handlerName + ".level", "INFO");
-        expectedProperties.setProperty("handler." + handlerName + ".properties", "value");
-        expectedProperties.setProperty("handler." + handlerName + ".value", "testParentValue");
-        compare(expectedProperties, configProps);
-    }
-
     private void compare(final Properties defaultProps, final Properties configProps) {
         final Set<String> dftNames = defaultProps.stringPropertyNames();
         final Set<String> configNames = configProps.stringPropertyNames();
@@ -582,31 +472,6 @@ public class PropertyConfiguratorTests {
             } catch (Exception ignore) {
                 // ignore
             }
-        }
-    }
-
-    @SuppressWarnings("unused")
-    public static class TestQueueHandler extends ExtHandler {
-
-        private static String VALUE;
-
-        public String getValue() {
-            return VALUE;
-        }
-
-        public void setValue(final String value) {
-            VALUE = value;
-        }
-
-        @Override
-        protected void doPublish(final ExtLogRecord record) {
-            final Handler[] children = getHandlers();
-            if (children != null) {
-                for (Handler child : children) {
-                    child.publish(record);
-                }
-            }
-            super.doPublish(record);
         }
     }
 }

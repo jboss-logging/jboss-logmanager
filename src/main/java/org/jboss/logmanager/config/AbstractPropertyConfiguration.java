@@ -47,10 +47,8 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
     private final String moduleName;
     private final String className;
     private final String[] constructorProperties;
-    private final Map<String, ConfigurationProperty> properties = new LinkedHashMap<>(0);
+    private final Map<String, ValueExpression<String>> properties = new LinkedHashMap<String, ValueExpression<String>>(0);
     private final Map<String, Method> postConfigurationMethods = new LinkedHashMap<String, Method>();
-
-    private boolean persistable;
 
     protected AbstractPropertyConfiguration(final Class<T> baseClass, final LogContextConfigurationImpl configuration, final Map<String, T> refs, final Map<String, C> configs, final String name, final String moduleName, final String className, final String[] constructorProperties) {
         super(name, configuration, refs, configs);
@@ -76,7 +74,6 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             throw new IllegalArgumentException(String.format("Failed to load class \"%s\" for %s \"%s\"", className, getDescription(), name), e);
         }
         this.actualClass = actualClass;
-        persistable = true;
     }
 
     ConfigAction<T> getConstructAction() {
@@ -110,8 +107,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 if (! properties.containsKey(property)) {
                     throw new IllegalArgumentException(String.format("No property named \"%s\" is configured on %s \"%s\"", property, getDescription(), getName()));
                 }
-                final ConfigurationProperty configurationProperty = properties.get(property);
-                final ValueExpression<String> valueExpression = configurationProperty == null ? null : configurationProperty.getValue();
+                final ValueExpression valueExpression = properties.get(property);
                 final Object value = getConfiguration().getValue(actualClass, property, paramTypes[i], valueExpression, true).getObject();
                 params[i] = value;
             }
@@ -150,18 +146,13 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
     }
 
     public void setPropertyValueString(final String propertyName, final String value) throws IllegalArgumentException {
-        setPropertyValueExpression(propertyName, value, true);
-    }
-
-    @Override
-    public void setPropertyValueString(final String propertyName, final String value, final boolean persist) throws IllegalArgumentException {
         if (isRemoved()) {
             throw new IllegalArgumentException(String.format("Cannot set property \"%s\" on %s \"%s\" (removed)", propertyName, getDescription(), getName()));
         }
         if (propertyName == null) {
             throw new IllegalArgumentException("propertyName is null");
         }
-        setPropertyValueExpression(propertyName, new ConfigurationPropertyImpl(propertyName, ValueExpression.STRING_RESOLVER.resolve(value), persist));
+        setPropertyValueExpression(propertyName, ValueExpression.STRING_RESOLVER.resolve(value));
     }
 
     public String getPropertyValueString(final String propertyName) {
@@ -170,55 +161,39 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
 
     @Override
     public ValueExpression<String> getPropertyValueExpression(final String propertyName) {
-        return properties.containsKey(propertyName) ? properties.get(propertyName).getValue() : ValueExpression.NULL_STRING_EXPRESSION;
+        return properties.containsKey(propertyName) ? properties.get(propertyName) : ValueExpression.NULL_STRING_EXPRESSION;
     }
 
     @Override
     public void setPropertyValueExpression(final String propertyName, final String expression) {
-        setPropertyValueExpression(propertyName, expression, true);
-    }
-
-    @Override
-    public void setPropertyValueExpression(final String propertyName, final String expression, final boolean persist) {
         if (isRemoved()) {
             throw new IllegalArgumentException(String.format("Cannot set property \"%s\" on %s \"%s\" (removed)", propertyName, getDescription(), getName()));
         }
         if (propertyName == null) {
             throw new IllegalArgumentException("propertyName is null");
         }
-        setPropertyValueExpression(propertyName, new ConfigurationPropertyImpl(propertyName, ValueExpression.STRING_RESOLVER.resolve(expression), persist));
+        setPropertyValueExpression(propertyName, ValueExpression.STRING_RESOLVER.resolve(expression));
     }
 
     @Override
     public void setPropertyValueExpression(final String propertyName, final String expression, final String value) {
-        setPropertyValueExpression(propertyName, expression, value, true);
-    }
-
-    @Override
-    public void setPropertyValueExpression(final String propertyName, final String expression, final String value, final boolean persist) {
         if (isRemoved()) {
             throw new IllegalArgumentException(String.format("Cannot set property \"%s\" on %s \"%s\" (removed)", propertyName, getDescription(), getName()));
         }
         if (propertyName == null) {
             throw new IllegalArgumentException("propertyName is null");
         }
-        setPropertyValueExpression(propertyName, new ConfigurationPropertyImpl(propertyName, new ValueExpressionImpl<>(expression, value), persist));
+        setPropertyValueExpression(propertyName, new ValueExpressionImpl<String>(expression, value));
     }
 
-    @Override
-    public List<ConfigurationProperty> getProperties() {
-        return new ArrayList<>(properties.values());
-    }
-
-    private void setPropertyValueExpression(final String propertyName, final ConfigurationProperty configurationProperty) {
+    private void setPropertyValueExpression(final String propertyName, final ValueExpression<String> expression) {
         final boolean replacement = properties.containsKey(propertyName);
         final boolean constructorProp = contains(constructorProperties, propertyName);
         final Method setter = getPropertySetter(actualClass, propertyName);
         if (setter == null && ! constructorProp) {
             throw new IllegalArgumentException(String.format("No property \"%s\" setter found for %s \"%s\"", propertyName, getDescription(), getName()));
         }
-        final ConfigurationProperty oldProperty = properties.put(propertyName, configurationProperty);
-        final ValueExpression<String> oldValue = oldProperty == null ? null : oldProperty.getValue();
+        final ValueExpression<String> oldValue = properties.put(propertyName, expression);
         getConfiguration().addAction(new ConfigAction<ObjectProducer>() {
             public ObjectProducer validate() throws IllegalArgumentException {
                 if (setter == null) {
@@ -228,7 +203,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 if (propertyType == null) {
                     throw new IllegalArgumentException(String.format("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName()));
                 }
-                return getConfiguration().getValue(actualClass, propertyName, propertyType, configurationProperty.getValue(), false);
+                return getConfiguration().getValue(actualClass, propertyName, propertyType, expression, false);
             }
 
             public void applyPreCreate(final ObjectProducer param) {
@@ -255,7 +230,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 }
                 final ObjectProducer producer;
                 if (replacement) {
-                    properties.put(propertyName, oldProperty);
+                    properties.put(propertyName, oldValue);
                     producer = getConfiguration().getValue(actualClass, propertyName, propertyType, oldValue, true);
                 } else {
                     properties.remove(propertyName);
@@ -291,9 +266,8 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         if (setter == null) {
             throw new IllegalArgumentException(String.format("No property \"%s\" setter found for %s \"%s\"", propertyName, getDescription(), getName()));
         }
-        final ConfigurationProperty oldProperty = properties.remove(propertyName);
-        if (oldProperty != null) {
-            final ValueExpression<String> oldValue = oldProperty.getValue();
+        final ValueExpression<String> oldValue = properties.remove(propertyName);
+        if (oldValue != null) {
             getConfiguration().addAction(new ConfigAction<ObjectProducer>() {
                 public ObjectProducer validate() throws IllegalArgumentException {
                     final Class<?> propertyType = getPropertyType(actualClass, propertyName);
@@ -464,16 +438,6 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             }
         });
         return true;
-    }
-
-    @Override
-    public boolean isPersistable() {
-        return persistable;
-    }
-
-    @Override
-    public void setPersistable(final boolean persistable) {
-        this.persistable = persistable;
     }
 
     protected final void addPostConfigurationActions() {
