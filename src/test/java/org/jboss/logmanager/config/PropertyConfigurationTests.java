@@ -29,6 +29,7 @@ import java.util.logging.Filter;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 import org.jboss.logmanager.ExtHandler;
@@ -145,6 +146,39 @@ public class PropertyConfigurationTests {
         // Forget instead of commit so that properties should be rolled back
         logContextConfiguration.forget();
         checkPropertiesSet();
+    }
+
+    @Test
+    public void testInstanceTypes() {
+        final FilterConfiguration filterConfiguration = logContextConfiguration.addFilterConfiguration(null,
+                TestFilter.class.getName(), "testFilter");
+
+        final PojoConfiguration pojoConfiguration = logContextConfiguration.addPojoConfiguration(null,
+                TestPojo.class.getName(), "testPojo");
+        pojoConfiguration.setPropertyValueString("value", "testValue");
+
+        logContextConfiguration.commit();
+
+        final ErrorManager errorManager = logContextConfiguration.getErrorManagerConfiguration(ERROR_MANAGER_NAME).getInstance();
+        Assert.assertNotNull("Error manager should not be null", errorManager);
+        Assert.assertEquals(ErrorManager.class, errorManager.getClass());
+
+        final Handler handler = logContextConfiguration.getHandlerConfiguration(HANDLER_NAME).getInstance();
+        Assert.assertNotNull("Handler should not be null", handler);
+        Assert.assertEquals(TypeHandler.class, handler.getClass());
+
+        final Formatter formatter = logContextConfiguration.getFormatterConfiguration(PATTERN_FORMATTER_NAME).getInstance();
+        Assert.assertNotNull("Formatter should not be null", formatter);
+        Assert.assertEquals(PatternFormatter.class, formatter.getClass());
+
+        final Filter filter = filterConfiguration.getInstance();
+        Assert.assertNotNull("Filter should not be null", filter);
+        Assert.assertEquals(TestFilter.class, filter.getClass());
+
+        final Object object = pojoConfiguration.getInstance();
+        Assert.assertNotNull("POJO instance should not be null", object);
+        Assert.assertEquals(TestPojo.class, object.getClass());
+        Assert.assertEquals("testValue", ((TestPojo) object).getValue());
     }
 
     private static void checkPropertiesSet() {
@@ -460,6 +494,27 @@ public class PropertyConfigurationTests {
 
         public void setEnumValue(final TestEnum enumValue) {
             TypeHandler.enumValue = enumValue;
+        }
+    }
+
+    public static class TestFilter implements Filter {
+
+        @Override
+        public boolean isLoggable(final LogRecord record) {
+            return true;
+        }
+    }
+
+    @SuppressWarnings("unused")
+    public static class TestPojo {
+        private String value;
+
+        public String getValue() {
+            return value;
+        }
+
+        public void setValue(final String value) {
+            this.value = value;
         }
     }
 }

@@ -19,10 +19,12 @@
 
 package org.jboss.logmanager.config;
 
+import java.util.logging.ErrorManager;
+
 /**
  * Configuration for an error manager.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface ErrorManagerConfiguration extends ObjectConfigurable, PropertyConfigurable, NamedConfigurable {
+public interface ErrorManagerConfiguration extends ObjectConfigurable<ErrorManager>, PropertyConfigurable, NamedConfigurable {
 }

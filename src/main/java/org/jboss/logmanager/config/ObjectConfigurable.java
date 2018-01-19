@@ -24,7 +24,7 @@ package org.jboss.logmanager.config;
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface ObjectConfigurable {
+public interface ObjectConfigurable<T> {
 
     /**
      * Get the module name for this object's configuration, if any.  If JBoss Modules is not present
@@ -40,4 +40,16 @@ public interface ObjectConfigurable {
      * @return the class name
      */
     String getClassName();
+
+    /**
+     * Returns the instance associated with this configuration or {@code null} if no instance has yet been created.
+     * <p>
+     * Any changes to the instance will not be recognized by the configuration API.
+     * </p>
+     *
+     * @return the instance associated with this configuration or {@code null}
+     */
+    default T getInstance() {
+        return null;
+    }
 }

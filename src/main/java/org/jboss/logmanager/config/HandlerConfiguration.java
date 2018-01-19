@@ -19,12 +19,14 @@
 
 package org.jboss.logmanager.config;
 
+import java.util.logging.Handler;
+
 /**
  * Configuration for a single handler.
  *
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface HandlerConfiguration extends HandlerContainingConfigurable, NamedConfigurable, PropertyConfigurable, ObjectConfigurable {
+public interface HandlerConfiguration extends HandlerContainingConfigurable, NamedConfigurable, PropertyConfigurable, ObjectConfigurable<Handler> {
 
     /**
      * Get the name of the configured formatter for this handler.
