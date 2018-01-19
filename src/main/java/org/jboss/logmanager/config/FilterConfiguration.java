@@ -19,9 +19,11 @@
 
 package org.jboss.logmanager.config;
 
+import java.util.logging.Filter;
+
 /**
  * A configuration for a filter.
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-public interface FilterConfiguration extends ObjectConfigurable, NamedConfigurable, PropertyConfigurable {
+public interface FilterConfiguration extends ObjectConfigurable<Filter>, NamedConfigurable, PropertyConfigurable {
 }

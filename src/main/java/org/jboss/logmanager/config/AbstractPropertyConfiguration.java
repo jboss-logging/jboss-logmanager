@@ -42,7 +42,7 @@ import org.jboss.modules.ModuleLoader;
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
-abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfiguration<T, C>> extends AbstractBasicConfiguration<T, C> implements ObjectConfigurable, PropertyConfigurable {
+abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfiguration<T, C>> extends AbstractBasicConfiguration<T, C> implements ObjectConfigurable<T>, PropertyConfigurable {
     private final Class<? extends T> actualClass;
     private final String moduleName;
     private final String className;
@@ -438,6 +438,11 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             }
         });
         return true;
+    }
+
+    @Override
+    public T getInstance() {
+        return refs.get(getName());
     }
 
     protected final void addPostConfigurationActions() {

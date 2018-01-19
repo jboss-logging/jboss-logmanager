@@ -22,5 +22,5 @@ package org.jboss.logmanager.config;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public interface PojoConfiguration extends NamedConfigurable, PropertyConfigurable, ObjectConfigurable {
+public interface PojoConfiguration extends NamedConfigurable, PropertyConfigurable, ObjectConfigurable<Object> {
 }
