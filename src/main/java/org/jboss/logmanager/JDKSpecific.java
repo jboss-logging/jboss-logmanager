@@ -21,6 +21,9 @@ package org.jboss.logmanager;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.Collection;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.jboss.modules.Module;
@@ -63,6 +66,17 @@ final class JDKSpecific {
             }
         }
         return null;
+    }
+
+    static Collection<Class<?>> findCallingClasses(Set<ClassLoader> rejectClassLoaders) {
+        final Collection<Class<?>> result = new LinkedHashSet<>();
+        for (Class<?> caller : GATEWAY.getClassContext()) {
+            final ClassLoader classLoader = caller.getClassLoader();
+            if (classLoader != null && ! rejectClassLoaders.contains(classLoader)) {
+                result.add(caller);
+            }
+        }
+        return result;
     }
 
     static void calculateCaller(ExtLogRecord logRecord) {
