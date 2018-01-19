@@ -46,7 +46,6 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
     private ValueExpression<String> filter;
     private ValueExpression<String> encoding;
     private ValueExpression<String> errorManagerName;
-    private boolean handlerNamesPersistable = true;
 
     HandlerConfigurationImpl(final LogContextConfigurationImpl configuration, final String name, final String moduleName, final String className, final String[] constructorProperties) {
         super(Handler.class, configuration, configuration.getHandlerRefs(), configuration.getHandlerConfigurations(), name, moduleName, className, constructorProperties);
@@ -396,16 +395,6 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
             }
         });
         return true;
-    }
-
-    @Override
-    public boolean isHandlerNamesPersistable() {
-        return handlerNamesPersistable;
-    }
-
-    @Override
-    public void setHandlerNamesPersistable(final boolean persistable) {
-        this.handlerNamesPersistable = persistable;
     }
 
     String getDescription() {
