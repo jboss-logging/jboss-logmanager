@@ -437,6 +437,23 @@ public final class FilterTests {
     }
 
     @Test
+    public void testRegexFilter4() {
+        final Filter filter = new RegexFilter("pest");
+        final AtomicBoolean ran = new AtomicBoolean();
+        final Handler handler = new CheckingHandler(ran);
+        final Logger logger = Logger.getLogger("filterTest");
+        final ExtLogRecord record = new ExtLogRecord(Level.ERROR, null, FormatStyle.MESSAGE_FORMAT, "filterTest");
+        record.setThrown(new Exception());
+        logger.setUseParentHandlers(false);
+        logger.addHandler(handler);
+        logger.setLevel(Level.INFO);
+        logger.setFilter(filter);
+        handler.setLevel(Level.INFO);
+        logger.log(record);
+        assertFalse("Handler was run", ran.get());
+    }
+
+    @Test
     public void testSubstitueFilter0() {
         final Filter filter = new SubstituteFilter(Pattern.compile("test"), "lunch", true);
         final AtomicReference<String> result = new AtomicReference<String>();
