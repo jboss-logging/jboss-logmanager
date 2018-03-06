@@ -60,7 +60,13 @@ public final class RegexFilter implements Filter {
     @Override
     public boolean isLoggable(final LogRecord record) {
         if (record instanceof ExtLogRecord) {
+            if (((ExtLogRecord) record).getFormattedMessage() == null) {
+                return false;
+            }
             return pattern.matcher(((ExtLogRecord) record).getFormattedMessage()).find();
+        }
+        if (record.getMessage() == null) {
+            return false;
         }
         return pattern.matcher(record.getMessage()).find();
     }
