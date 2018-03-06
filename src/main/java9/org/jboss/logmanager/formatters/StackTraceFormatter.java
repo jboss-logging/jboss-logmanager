@@ -18,7 +18,6 @@
 
 package org.jboss.logmanager.formatters;
 
-import java.net.URL;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
