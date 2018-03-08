@@ -68,6 +68,6 @@ public final class RegexFilter implements Filter {
         if (message == null) {
             message = record.getMessage();
         }
-        return pattern.matcher(message).find();
+        return pattern.matcher(String.valueOf(message)).find();
     }
 }
