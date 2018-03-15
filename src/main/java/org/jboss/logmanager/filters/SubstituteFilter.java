@@ -73,12 +73,13 @@ public final class SubstituteFilter implements Filter {
      */
     @Override
     public boolean isLoggable(final LogRecord record) {
-        final Matcher matcher;
+        final String currentMsg;
         if (record instanceof ExtLogRecord) {
-            matcher = pattern.matcher(((ExtLogRecord) record).getFormattedMessage());
+            currentMsg = ((ExtLogRecord) record).getFormattedMessage();
         } else {
-            matcher = pattern.matcher(record.getMessage());
+            currentMsg = record.getMessage();
         }
+        final Matcher matcher = pattern.matcher(String.valueOf(currentMsg));
         final String msg;
         if (replaceAll) {
             msg = matcher.replaceAll(replacement);
