@@ -70,7 +70,7 @@ public final class SubstituteFilter implements Filter {
      * @return {@code true} always
      */
     public boolean isLoggable(final LogRecord record) {
-        final Matcher matcher = pattern.matcher(record.getMessage());
+        final Matcher matcher = pattern.matcher(String.valueOf(record.getMessage()));
         final String msg;
         if (replaceAll) {
             msg = matcher.replaceAll(replacement);
