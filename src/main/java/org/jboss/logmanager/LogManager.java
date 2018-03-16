@@ -28,6 +28,8 @@ import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.logging.Filter;
 
 /**
@@ -212,6 +214,48 @@ public final class LogManager extends java.util.logging.LogManager {
      */
     public void removePropertyChangeListener(PropertyChangeListener l) {
         // no operation - properties are never changed
+    }
+
+    /**
+     * Does nothing. The {@linkplain org.jboss.logmanager.config.LogContextConfiguration configuration API} should be
+     * used.
+     *
+     * @param mapper not used
+     */
+    public void updateConfiguration(final Function<String, BiFunction<String, String, String>> mapper) throws IOException {
+        // no operation the configuration API should be used
+    }
+
+    /**
+     * Does nothing. The {@linkplain org.jboss.logmanager.config.LogContextConfiguration configuration API} should be
+     * used.
+     *
+     * @param ins    not used
+     * @param mapper not used
+     */
+    public void updateConfiguration(final InputStream ins, final Function<String, BiFunction<String, String, String>> mapper) throws IOException {
+        // no operation the configuration API should be used
+    }
+
+    /**
+     * Configuration listeners are not currently supported.
+     *
+     * @param listener not used
+     *
+     * @return this log manager
+     */
+    public java.util.logging.LogManager addConfigurationListener(final Runnable listener) {
+        // no operation
+        return this;
+    }
+
+    /**
+     * Configuration listeners are not currently supported.
+     *
+     * @param listener not used
+     */
+    public void removeConfigurationListener(final Runnable listener) {
+        // no operation
     }
 
     /**
