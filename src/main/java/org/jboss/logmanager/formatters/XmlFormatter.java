@@ -44,27 +44,7 @@ import org.jboss.logmanager.PropertyValues;
 @SuppressWarnings({"WeakerAccess", "unused", "SameParameterValue"})
 public class XmlFormatter extends StructuredFormatter {
 
-    /**
-     * The namespaces for logged records.
-     */
-    public enum Namespace {
-        LOGGING_1_0("urn:jboss:logmanager:formatter:1.0");
-
-        private final String uri;
-
-        Namespace(final String uri) {
-            this.uri = uri;
-        }
-
-        /**
-         * Get the URI of this namespace.
-         *
-         * @return the URI
-         */
-        public String getUriString() {
-            return uri;
-        }
-    }
+    public static final String DEFAULT_NAMESPACE = "urn:jboss:logmanager:formatter:1.0";
 
     private final XMLOutputFactory factory = XMLOutputFactory.newFactory();
 
@@ -76,13 +56,13 @@ public class XmlFormatter extends StructuredFormatter {
      * Creates a new XML formatter.
      */
     public XmlFormatter() {
-        namespaceUri = Namespace.LOGGING_1_0.getUriString();
+        namespaceUri = DEFAULT_NAMESPACE;
     }
 
     /**
      * Creates a new XML formatter.
      * <p>
-     * If the {@code keyOverrides} is empty the default {@linkplain Namespace#LOGGING_1_0 namespace} will be used.
+     * If the {@code keyOverrides} is empty the default {@linkplain #DEFAULT_NAMESPACE namespace} will be used.
      * </p>
      *
      * @param keyOverrides a string representation of a map to override keys
@@ -92,7 +72,7 @@ public class XmlFormatter extends StructuredFormatter {
     public XmlFormatter(final String keyOverrides) {
         super(keyOverrides);
         if (keyOverrides == null || keyOverrides.isEmpty()) {
-            namespaceUri = Namespace.LOGGING_1_0.getUriString();
+            namespaceUri = DEFAULT_NAMESPACE;
         } else {
             namespaceUri = null;
         }
@@ -101,7 +81,7 @@ public class XmlFormatter extends StructuredFormatter {
     /**
      * Creates a new XML formatter.
      * <p>
-     * If the {@code keyOverrides} is empty the default {@linkplain Namespace#LOGGING_1_0 namespace} will be used.
+     * If the {@code keyOverrides} is empty the default {@linkplain #DEFAULT_NAMESPACE namespace} will be used.
      * </p>
      *
      * @param keyOverrides a map of overrides for the default keys
@@ -109,7 +89,7 @@ public class XmlFormatter extends StructuredFormatter {
     public XmlFormatter(final Map<Key, String> keyOverrides) {
         super(keyOverrides);
         if (keyOverrides == null || keyOverrides.isEmpty()) {
-            namespaceUri = Namespace.LOGGING_1_0.getUriString();
+            namespaceUri =  DEFAULT_NAMESPACE;
         } else {
             namespaceUri = null;
         }
@@ -159,16 +139,6 @@ public class XmlFormatter extends StructuredFormatter {
      */
     public String getNamespaceUri() {
         return namespaceUri;
-    }
-
-    /**
-     * Sets the namespace URI used for each record if {@link #isPrintNamespace()} is {@code true}.
-     *
-     * @param namespace the namespace to use or {@code null} if no namespace URI should be used regardless of the
-     *                  {@link #isPrintNamespace()} value
-     */
-    public void setNamespaceUri(final Namespace namespace) {
-        this.namespaceUri = (namespace == null ? null : namespace.getUriString());
     }
 
     /**
