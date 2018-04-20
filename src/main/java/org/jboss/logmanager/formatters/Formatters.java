@@ -120,7 +120,7 @@ public final class Formatters {
      * @return the substring
      */
     private static String applySegments(final String precision, final String subject) {
-        if (precision == null) {
+        if (precision == null || subject == null) {
             return subject;
         }
 
