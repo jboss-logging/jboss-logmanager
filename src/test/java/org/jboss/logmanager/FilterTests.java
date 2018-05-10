@@ -437,6 +437,15 @@ public final class FilterTests {
     }
 
     @Test
+    public void regexFilterExceptionNullMessageTest(){
+        final ExtLogRecord logRecord = new ExtLogRecord(Level.ALL, null, null);
+        final Filter filter = new RegexFilter("test");
+        boolean isLoggable = filter.isLoggable(logRecord);
+        assertFalse(isLoggable);
+        assertNull(logRecord.getFormattedMessage());
+    }
+
+    @Test
     public void testSubstitueFilter0() {
         final Filter filter = new SubstituteFilter(Pattern.compile("test"), "lunch", true);
         final AtomicReference<String> result = new AtomicReference<String>();
@@ -488,6 +497,14 @@ public final class FilterTests {
         record.setParameters(new String[] {"test"});
         filter.isLoggable(record);
         assertEquals("Substitution was not correctly applied", "This is a lunches lunches", record.getFormattedMessage());
+    }
+
+    @Test
+    public void substituteFilterExceptionNullMessageTest(){
+        final ExtLogRecord logRecord = new ExtLogRecord(Level.ALL, null, null);
+        final Filter filter = new SubstituteFilter(Pattern.compile("test"), "lunch", true);
+        filter.isLoggable(logRecord);
+        assertEquals("null", logRecord.getFormattedMessage());
     }
 
 
