@@ -35,6 +35,8 @@ import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
+import javax.net.SocketFactory;
+import javax.net.ssl.SSLSocketFactory;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
@@ -324,6 +326,7 @@ public class SyslogHandler extends ExtHandler {
     private boolean truncate;
     private int maxLen;
     private boolean blockOnReconnect;
+    private ClientSocketFactory clientSocketFactory;
 
     /**
      * The default class constructor.
@@ -664,6 +667,19 @@ public class SyslogHandler extends ExtHandler {
             if (out instanceof TcpOutputStream) {
                 ((TcpOutputStream) out).setBlockOnReconnect(blockOnReconnect);
             }
+        }
+    }
+
+    /**
+     * Sets the client socket factory used to create sockets.
+     *
+     * @param clientSocketFactory the client socket factory to use
+     */
+    public void setClientSocketFactory(final ClientSocketFactory clientSocketFactory) {
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.clientSocketFactory = clientSocketFactory;
+            initializeConnection = true;
         }
     }
 
@@ -1084,14 +1100,11 @@ public class SyslogHandler extends ExtHandler {
             final OutputStream out;
             // Check the sockets
             try {
-                if (protocol == Protocol.TCP) {
-                    out = new TcpOutputStream(serverAddress, port, blockOnReconnect);
-                } else if (protocol == Protocol.UDP) {
-                    out = new UdpOutputStream(serverAddress, port);
-                } else if (protocol == Protocol.SSL_TCP) {
-                    out = new SslTcpOutputStream(serverAddress, port, blockOnReconnect);
+                final ClientSocketFactory clientSocketFactory = getClientSocketFactory();
+                if (protocol == Protocol.UDP) {
+                    out = new UdpOutputStream(clientSocketFactory);
                 } else {
-                    throw new IllegalStateException("Invalid protocol: " + protocol);
+                    out = new TcpOutputStream(clientSocketFactory, blockOnReconnect);
                 }
                 setOutputStream(out, false);
             } catch (IOException e) {
@@ -1294,6 +1307,16 @@ public class SyslogHandler extends ExtHandler {
             buffer.append(':').append(' ');
         }
         return buffer.toArray();
+    }
+
+    private ClientSocketFactory getClientSocketFactory() {
+        synchronized (outputLock) {
+            if (clientSocketFactory != null) {
+                return clientSocketFactory;
+            }
+            final SocketFactory socketFactory = (protocol == Protocol.SSL_TCP ? SSLSocketFactory.getDefault() : SocketFactory.getDefault());
+            return ClientSocketFactory.of(socketFactory, serverAddress, port);
+        }
     }
 
     private static String checkPrintableAscii(final String name, final String value) {
