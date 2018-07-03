@@ -34,6 +34,7 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.TimeZone;
+import java.util.TreeMap;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -1074,7 +1075,7 @@ public final class Formatters {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
                 if (key == null) {
-                    builder.append(record.getMdcCopy());
+                    builder.append(new TreeMap<>(record.getMdcCopy()));
                 } else {
                     final String value = record.getMdc(key);
                     if (value != null) {

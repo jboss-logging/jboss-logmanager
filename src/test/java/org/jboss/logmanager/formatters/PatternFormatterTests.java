@@ -117,6 +117,7 @@ public class PatternFormatterTests {
     @Test
     public void mdc() throws Exception {
         try {
+            MDC.put("primaryKey", "primaryValue");
             MDC.put("key1", "value1");
             MDC.put("key2", "value2");
             final ExtLogRecord record = createLogRecord("test");
@@ -129,8 +130,7 @@ public class PatternFormatterTests {
 
             formatter = new PatternFormatter("%X");
             String formatted = formatter.format(record);
-            Assert.assertTrue(formatted.equals("{key1=value1, key2=value2}") 
-                    || formatted.equals("{key2=value2, key1=value1}"));
+            Assert.assertEquals("{key1=value1, key2=value2, primaryKey=primaryValue}", formatted);
         } finally {
             MDC.clear();
         }
