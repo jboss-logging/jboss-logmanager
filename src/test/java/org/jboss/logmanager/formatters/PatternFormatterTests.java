@@ -20,6 +20,7 @@
 package org.jboss.logmanager.formatters;
 
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.MDC;
 import org.jboss.logmanager.NDC;
 import org.junit.Assert;
 import org.junit.Test;
@@ -111,6 +112,28 @@ public class PatternFormatterTests {
 
         formatter = new PatternFormatter("%x{2}");
         Assert.assertEquals("value2.value3", formatter.format(record));
+    }
+
+    @Test
+    public void mdc() throws Exception {
+        try {
+            MDC.put("key1", "value1");
+            MDC.put("key2", "value2");
+            final ExtLogRecord record = createLogRecord("test");
+
+            PatternFormatter formatter = new PatternFormatter("%X{key1}");
+            Assert.assertEquals("value1", formatter.format(record));
+
+            formatter = new PatternFormatter("%X{not.found}");
+            Assert.assertEquals("", formatter.format(record));
+
+            formatter = new PatternFormatter("%X");
+            String formatted = formatter.format(record);
+            Assert.assertTrue(formatted.equals("{key1=value1, key2=value2}") 
+                    || formatted.equals("{key2=value2, key1=value1}"));
+        } finally {
+            MDC.clear();
+        }
     }
 
     @Test
