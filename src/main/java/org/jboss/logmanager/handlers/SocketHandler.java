@@ -68,6 +68,7 @@ public class SocketHandler extends ExtHandler {
     private final Object outputLock = new Object();
 
     // All the following fields are guarded by outputLock
+    private ClientSocketFactory clientSocketFactory;
     private SocketFactory socketFactory;
     private InetAddress address;
     private int port;
@@ -143,6 +144,7 @@ public class SocketHandler extends ExtHandler {
      * @param port          the port to connect to
      *
      * @throws UnknownHostException if an error occurs resolving the hostname
+     * @see #SocketHandler(ClientSocketFactory, Protocol)
      */
     public SocketHandler(final SocketFactory socketFactory, final Protocol protocol, final String hostname, final int port) throws UnknownHostException {
         this(socketFactory, protocol, InetAddress.getByName(hostname), port);
@@ -157,14 +159,35 @@ public class SocketHandler extends ExtHandler {
      * @param protocol      the protocol to connect with
      * @param address       the address to connect to
      * @param port          the port to connect to
+     *
+     * @see #SocketHandler(ClientSocketFactory, Protocol)
      */
     public SocketHandler(final SocketFactory socketFactory, final Protocol protocol, final InetAddress address, final int port) {
+        this.socketFactory = socketFactory;
+        this.clientSocketFactory = null;
         this.address = address;
         this.port = port;
-        this.protocol = protocol;
+        this.protocol = (protocol == null ? Protocol.TCP : protocol);
         initialize = true;
         writer = null;
-        this.socketFactory = socketFactory;
+        blockOnReconnect = false;
+    }
+
+    /**
+     * Creates a socket handler.
+     *
+     * @param clientSocketFactory the client socket factory used to create sockets
+     * @param protocol            the protocol to connect with
+     */
+    public SocketHandler(final ClientSocketFactory clientSocketFactory, final Protocol protocol) {
+        this.clientSocketFactory = clientSocketFactory;
+        if (clientSocketFactory != null) {
+            address = clientSocketFactory.getAddress();
+            port = clientSocketFactory.getPort();
+        }
+        this.protocol = (protocol == null ? Protocol.TCP : protocol);
+        initialize = true;
+        writer = null;
         blockOnReconnect = false;
     }
 
@@ -229,19 +252,28 @@ public class SocketHandler extends ExtHandler {
 
     /**
      * Sets the address to connect to.
+     * <p>
+     * Note that is resets the {@linkplain #setClientSocketFactory(ClientSocketFactory) client socket factory}.
+     * </p>
      *
      * @param address the address
      */
     public void setAddress(final InetAddress address) {
         checkAccess(this);
         synchronized (outputLock) {
+            if (!this.address.equals(address)) {
+                initialize = true;
+                clientSocketFactory = null;
+            }
             this.address = address;
-            initialize = true;
         }
     }
 
     /**
      * Sets the address to connect to by doing a lookup on the hostname.
+     * <p>
+     * Note that is resets the {@linkplain #setClientSocketFactory(ClientSocketFactory) client socket factory}.
+     * </p>
      *
      * @param hostname the host name used to resolve the address
      *
@@ -277,6 +309,7 @@ public class SocketHandler extends ExtHandler {
         checkAccess(this);
         synchronized (outputLock) {
             this.blockOnReconnect = blockOnReconnect;
+            initialize = true;
         }
     }
 
@@ -293,7 +326,7 @@ public class SocketHandler extends ExtHandler {
      * Sets the protocol to use. If the value is {@code null} the protocol will be set to
      * {@linkplain Protocol#TCP TCP}.
      * <p>
-     * Note that is resets the {@linkplain #setSocketFactory(SocketFactory) socket factory}.
+     * Note that is resets the {@linkplain #setSocketFactory(SocketFactory) socket factory} if it was previously set.
      * </p>
      *
      * @param protocol the protocol to use
@@ -304,10 +337,11 @@ public class SocketHandler extends ExtHandler {
             if (protocol == null) {
                 this.protocol = Protocol.TCP;
             }
-            // Reset the socket factory
-            socketFactory = null;
+            if (this.protocol != protocol) {
+                socketFactory = null;
+                initialize = true;
+            }
             this.protocol = protocol;
-            initialize = true;
         }
     }
 
@@ -322,14 +356,20 @@ public class SocketHandler extends ExtHandler {
 
     /**
      * Sets the port to connect to.
+     * <p>
+     * Note that is resets the {@linkplain #setClientSocketFactory(ClientSocketFactory) client socket factory}.
+     * </p>
      *
      * @param port the port
      */
     public void setPort(final int port) {
         checkAccess(this);
         synchronized (outputLock) {
+            if (this.port != port) {
+                initialize = true;
+                clientSocketFactory = null;
+            }
             this.port = port;
-            initialize = true;
         }
     }
 
@@ -338,15 +378,33 @@ public class SocketHandler extends ExtHandler {
      * connections.
      * <p>
      * Note that if the {@linkplain #setProtocol(Protocol) protocol} is set the socket factory will be set to
-     * {@code null} and reset.
+     * {@code null} and reset. Setting a value here also resets the
+     * {@linkplain #setClientSocketFactory(ClientSocketFactory) client socket factory}.
      * </p>
      *
      * @param socketFactory the socket factory
+     *
+     * @see #setClientSocketFactory(ClientSocketFactory)
      */
     public void setSocketFactory(final SocketFactory socketFactory) {
         checkAccess(this);
         synchronized (outputLock) {
             this.socketFactory = socketFactory;
+            this.clientSocketFactory = null;
+            initialize = true;
+        }
+    }
+
+    /**
+     * Sets the client socket factory used to create sockets. If {@code null} the
+     * {@linkplain #setAddress(InetAddress) address} and {@linkplain #setPort(int) port} are required to be set.
+     *
+     * @param clientSocketFactory the client socket factory to use
+     */
+    public void setClientSocketFactory(final ClientSocketFactory clientSocketFactory) {
+        checkAccess(this);
+        synchronized (outputLock) {
+            this.clientSocketFactory = clientSocketFactory;
             initialize = true;
         }
     }
@@ -388,24 +446,38 @@ public class SocketHandler extends ExtHandler {
     private OutputStream createOutputStream() {
         if (address != null || port >= 0) {
             try {
+                final ClientSocketFactory socketFactory = getClientSocketFactory();
                 if (protocol == Protocol.UDP) {
-                    return new UdpOutputStream(address, port);
+                    return new UdpOutputStream(socketFactory);
                 }
-                SocketFactory socketFactory = this.socketFactory;
-                if (socketFactory == null) {
-                    if (protocol == Protocol.SSL_TCP) {
-                        this.socketFactory = socketFactory = SSLSocketFactory.getDefault();
-                    } else {
-                        // Assume we want a TCP connection
-                        this.socketFactory = socketFactory = SocketFactory.getDefault();
-                    }
-                }
-                return new TcpOutputStream(socketFactory, address, port, blockOnReconnect);
+                return new TcpOutputStream(socketFactory, blockOnReconnect);
             } catch (IOException e) {
                 reportError("Failed to create socket output stream", e, ErrorManager.OPEN_FAILURE);
             }
         }
         return null;
+    }
+
+    private ClientSocketFactory getClientSocketFactory() {
+        synchronized (outputLock) {
+            if (clientSocketFactory != null) {
+                return clientSocketFactory;
+            }
+            if (address == null || port <= 0) {
+                throw new IllegalStateException("An address and port greater than 0 is required.");
+            }
+            final ClientSocketFactory clientSocketFactory;
+            if (socketFactory == null) {
+                if (protocol == Protocol.SSL_TCP) {
+                    clientSocketFactory = ClientSocketFactory.of(SSLSocketFactory.getDefault(), address, port);
+                } else {
+                    clientSocketFactory = ClientSocketFactory.of(address, port);
+                }
+            } else {
+                clientSocketFactory = ClientSocketFactory.of(socketFactory, address, port);
+            }
+            return clientSocketFactory;
+        }
     }
 
     private void writeHead(final Writer writer) {

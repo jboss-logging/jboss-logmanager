@@ -24,31 +24,39 @@ import java.io.OutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.SocketAddress;
+import java.net.SocketException;
 
 /**
  * An output stream that writes data to a {@link java.net.DatagramSocket DatagramSocket}.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
+@SuppressWarnings("WeakerAccess")
 public class UdpOutputStream extends OutputStream implements FlushableCloseable {
     private final DatagramSocket socket;
+    private final SocketAddress socketAddress;
 
     public UdpOutputStream(final InetAddress address, final int port) throws IOException {
-        socket = new DatagramSocket();
-        socket.connect(address, port);
+        this(ClientSocketFactory.of(address, port));
+    }
+
+    public UdpOutputStream(final ClientSocketFactory socketManager) throws SocketException {
+        socket = socketManager.createDatagramSocket();
+        socketAddress = socketManager.getSocketAddress();
     }
 
     @Override
     public void write(final int b) throws IOException {
         final byte[] msg = new byte[] {(byte) b};
-        final DatagramPacket packet = new DatagramPacket(msg, 1);
+        final DatagramPacket packet = new DatagramPacket(msg, 1, socketAddress);
         socket.send(packet);
     }
 
     @Override
     public void write(final byte[] b) throws IOException {
         if (b != null) {
-            final DatagramPacket packet = new DatagramPacket(b, b.length);
+            final DatagramPacket packet = new DatagramPacket(b, b.length, socketAddress);
             socket.send(packet);
         }
     }
@@ -56,7 +64,7 @@ public class UdpOutputStream extends OutputStream implements FlushableCloseable 
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
         if (b != null) {
-            final DatagramPacket packet = new DatagramPacket(b, off, len);
+            final DatagramPacket packet = new DatagramPacket(b, off, len, socketAddress);
             socket.send(packet);
         }
     }

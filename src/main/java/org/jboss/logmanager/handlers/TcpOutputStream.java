@@ -54,9 +54,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
 
     protected final Object outputLock = new Object();
 
-    private final SocketFactory socketFactory;
-    private final InetAddress address;
-    private final int port;
+    private final ClientSocketFactory socketFactory;
     private final Deque<Exception> errors = new ArrayDeque<Exception>(maxErrors);
 
     // Guarded by outputLock
@@ -108,13 +106,11 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
      *
      * @param socket the socket used to write the output to
      *
-     * @deprecated Use {@link #TcpOutputStream(javax.net.SocketFactory, java.net.InetAddress, int)}
+     * @deprecated Use {@link #TcpOutputStream(ClientSocketFactory, boolean)}
      */
     @Deprecated
     protected TcpOutputStream(final Socket socket) {
         this.socketFactory = null;
-        this.address = null;
-        this.port = -1;
         this.socket = socket;
         reconnectThread = null;
         connected = true;
@@ -152,12 +148,21 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
      *                     a reconnect will be attempted on the next write.
      */
     protected TcpOutputStream(final SocketFactory socketFactory, final InetAddress address, final int port, final boolean blockOnReconnect) throws IOException {
+        this(ClientSocketFactory.of(socketFactory, address, port), blockOnReconnect);
+    }
+
+    /**
+     * Creates a new TCP stream which uses the {@link ClientSocketFactory#createSocket()} to create the socket.
+     *
+     * @param socketFactory    the socket factory used to create TCP sockets
+     * @param blockOnReconnect {@code true} to block when attempting to reconnect the socket or {@code false} to
+     *                         reconnect asynchronously
+     */
+    public TcpOutputStream(final ClientSocketFactory socketFactory, final boolean blockOnReconnect) {
         this.socketFactory = socketFactory;
-        this.address = address;
-        this.port = port;
         this.blockOnReconnect = blockOnReconnect;
         try {
-            socket = socketFactory.createSocket(address, port);
+            socket = this.socketFactory.createSocket();
             connected = true;
         } catch (IOException e) {
             connected = false;
@@ -166,7 +171,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
 
     @Override
     public void write(final int b) throws IOException {
-        write(new byte[]{(byte) b}, 0, 1);
+        write(new byte[] {(byte) b}, 0, 1);
     }
 
     @Override
@@ -208,7 +213,9 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
     public void flush() throws IOException {
         synchronized (outputLock) {
             try {
-                socket.getOutputStream().flush();
+                if (socket != null) {
+                    socket.getOutputStream().flush();
+                }
             } catch (SocketException e) {
                 // This should likely never be hit, but should attempt to reconnect if it does happen
                 if (isReconnectAllowed()) {
@@ -230,7 +237,9 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
             if (reconnectThread != null) {
                 reconnectThread.interrupt();
             }
-            socket.close();
+            if (socket != null) {
+                socket.close();
+            }
         }
     }
 
@@ -345,7 +354,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
             while (socketFactory != null && !connected) {
                 Socket socket = null;
                 try {
-                    socket = socketFactory.createSocket(address, port);
+                    socket = socketFactory.createSocket();
                     synchronized (outputLock) {
                         // Unlikely but if we've been interrupted due to a close, we should shutdown
                         if (Thread.currentThread().isInterrupted()) {
