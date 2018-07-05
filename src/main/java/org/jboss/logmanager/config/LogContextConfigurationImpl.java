@@ -85,6 +85,7 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
 
     LogContextConfigurationImpl(final LogContext logContext) {
         this.logContext = logContext;
+        logContext.addCloseHandler(new LogContextConfigurationCloseHandler());
     }
 
     public LogContext getLogContext() {
@@ -737,5 +738,44 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
 
     ObjectProducer resolveFilter(String expression) {
         return resolveFilter(expression, false);
+    }
+
+    private class LogContextConfigurationCloseHandler implements AutoCloseable {
+
+        @Override
+        public void close() {
+            final LogContextConfigurationImpl configuration = LogContextConfigurationImpl.this;
+            // Remove all the loggers first
+            for (String name : configuration.getLoggerNames()) {
+                configuration.removeLoggerConfiguration(name);
+            }
+
+            // Remove all handlers next
+            for (String name : configuration.getHandlerNames()) {
+                configuration.removeHandlerConfiguration(name);
+            }
+
+            // Remove all filters
+            for (String name : configuration.getFilterNames()) {
+                configuration.removeFilterConfiguration(name);
+            }
+
+            // Remove all formatters
+            for (String name : configuration.getFormatterNames()) {
+                configuration.removeFormatterConfiguration(name);
+            }
+
+            // Remove all error managers
+            for (String name : configuration.getErrorManagerNames()) {
+                configuration.removeErrorManagerConfiguration(name);
+            }
+
+            // Finally remove all POJO's
+            for (String name : configuration.getPojoNames()) {
+                configuration.removePojoConfiguration(name);
+            }
+
+            configuration.commit();
+        }
     }
 }

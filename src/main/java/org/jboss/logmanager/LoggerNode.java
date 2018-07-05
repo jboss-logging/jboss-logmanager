@@ -35,7 +35,7 @@ import java.util.logging.Level;
 /**
  * A node in the tree of logger names.  Maintains weak references to children and a strong reference to its parent.
  */
-final class LoggerNode {
+final class LoggerNode implements AutoCloseable {
 
     /**
      * The log context.
@@ -142,6 +142,26 @@ final class LoggerNode {
         this.context = context;
         effectiveLevel = parent.effectiveLevel;
         children = context.createChildMap();
+    }
+
+    @Override
+    public void close() {
+        synchronized (context.treeLock) {
+            // Reset everything to defaults
+            filter = null;
+            if ("".equals(fullName)) {
+                level = Level.INFO;
+                effectiveLevel = Level.INFO.intValue();
+            } else {
+                level = null;
+                effectiveLevel = Level.INFO.intValue();
+            }
+            handlersUpdater.clear(this);
+            useParentFilter = false;
+            useParentHandlers = true;
+            attachmentsUpdater.get(this).clear();
+            children.clear();
+        }
     }
 
     /**
