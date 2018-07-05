@@ -100,7 +100,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
             targetClass = "java.nio.file.Files",
             targetMethod = "move",
             targetLocation = "AT ENTRY",
-            condition = "$2.getFileName().toString().matches(\"periodic-rotating-file-handler\\.log\\.\\d+\")",
+            condition = "$2.getFileName().toString().matches(\"periodic-rotating-file-handler\\\\.log\\\\.\\\\d+\")",
             action = "throw new IOException(\"Fail on purpose\")")
     public void testFailedRotate() throws Exception {
         final Calendar cal = Calendar.getInstance();
