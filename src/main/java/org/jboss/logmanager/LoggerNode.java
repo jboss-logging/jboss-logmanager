@@ -24,7 +24,6 @@ import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -400,13 +399,8 @@ final class LoggerNode implements AutoCloseable {
         V old;
         do {
             oldAttachments = attachments;
-            if (oldAttachments.isEmpty() || oldAttachments.size() == 1 && oldAttachments.containsKey(key)) {
-                old = (V) oldAttachments.get(key);
-                newAttachments = Collections.<Logger.AttachmentKey, Object>singletonMap(key, value);
-            } else {
-                newAttachments = new HashMap<Logger.AttachmentKey, Object>(oldAttachments);
-                old = (V) newAttachments.put(key, value);
-            }
+            newAttachments = new HashMap<>(oldAttachments);
+            old = (V) newAttachments.put(key, value);
         } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
         return old;
     }
@@ -423,15 +417,11 @@ final class LoggerNode implements AutoCloseable {
         Map<Logger.AttachmentKey, Object> newAttachments;
         do {
             oldAttachments = attachments;
-            if (oldAttachments.isEmpty()) {
-                newAttachments = Collections.<Logger.AttachmentKey, Object>singletonMap(key, value);
-            } else {
-                if (oldAttachments.containsKey(key)) {
-                    return (V) oldAttachments.get(key);
-                }
-                newAttachments = new HashMap<Logger.AttachmentKey, Object>(oldAttachments);
-                newAttachments.put(key, value);
+            if (oldAttachments.containsKey(key)) {
+                return (V) oldAttachments.get(key);
             }
+            newAttachments = new HashMap<>(oldAttachments);
+            newAttachments.put(key, value);
         } while (! attachmentsUpdater.compareAndSet(this, oldAttachments, newAttachments));
         return null;
     }
@@ -454,16 +444,6 @@ final class LoggerNode implements AutoCloseable {
             if (size == 1) {
                 // special case - the new map is empty
                 newAttachments = Collections.emptyMap();
-            } else if (size == 2) {
-                // special case - the new map is a singleton
-                final Iterator<Map.Entry<Logger.AttachmentKey,Object>> it = oldAttachments.entrySet().iterator();
-                // find the entry that we are not removing
-                Map.Entry<Logger.AttachmentKey, Object> entry = it.next();
-                if (entry.getKey() == key) {
-                    // must be the next one
-                    entry = it.next();
-                }
-                newAttachments = Collections.singletonMap(entry.getKey(), entry.getValue());
             } else {
                 newAttachments = new HashMap<Logger.AttachmentKey, Object>(oldAttachments);
             }

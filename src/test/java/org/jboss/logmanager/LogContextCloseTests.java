@@ -162,6 +162,39 @@ public class LogContextCloseTests {
         Assert.assertTrue("The handler was expected to be closed", TestHandler.IS_CLOSED);
     }
 
+    @Test
+    public void testCloseWithAttachment() throws Exception {
+        LogContext logContext = LogContext.create();
+        final Logger.AttachmentKey<String> key = new Logger.AttachmentKey<>();
+        final String value = "test value";
+        Logger rootLogger = logContext.getLogger("");
+        Assert.assertNull(rootLogger.attach(key, value));
+
+        // Close and ensure the context is clean
+        logContext.close();
+        Assert.assertNull(rootLogger.getAttachment(key));
+        assertEmptyContext(logContext, rootLogger);
+
+        // Test attachIfAbsent()
+        logContext = LogContext.create();
+        rootLogger = logContext.getLogger("");
+        Assert.assertNull(rootLogger.attachIfAbsent(key, value));
+
+        // Close and ensure the context is clean
+        logContext.close();
+        Assert.assertNull(rootLogger.getAttachment(key));
+        assertEmptyContext(logContext, rootLogger);
+
+        // Test detach()
+        logContext = LogContext.create();
+        rootLogger = logContext.getLogger("");
+        Assert.assertNull(rootLogger.attach(key, value));
+        Assert.assertEquals(value, rootLogger.detach(key));
+        logContext.close();
+        Assert.assertNull(rootLogger.getAttachment(key));
+        assertEmptyContext(logContext, rootLogger);
+    }
+
     private void assertEmptyContext(final LogContext logContext, final Logger... loggers) {
         // Inspect the log context and ensure it's "empty"
         final LoggerNode rootLogger = logContext.getRootLoggerNode();
