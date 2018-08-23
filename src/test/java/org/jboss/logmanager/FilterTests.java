@@ -442,7 +442,7 @@ public final class FilterTests {
         final Filter filter = new RegexFilter("test");
         boolean isLoggable = filter.isLoggable(logRecord);
         assertFalse(isLoggable);
-        assertNull(logRecord.getFormattedMessage());
+        assertNotNull(logRecord.getFormattedMessage());
     }
 
     @Test
