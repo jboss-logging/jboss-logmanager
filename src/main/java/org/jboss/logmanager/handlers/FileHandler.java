@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.OutputStream;
+import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
 /**
@@ -33,6 +34,8 @@ public class FileHandler extends OutputStreamHandler {
 
     private File file;
     private boolean append;
+    private boolean initialized = false;
+    private File fileToInitialize;
 
     /**
      * Construct a new instance with no formatter and no output file.
@@ -147,23 +150,41 @@ public class FileHandler extends OutputStreamHandler {
             if (parentFile != null) {
                 parentFile.mkdirs();
             }
-            boolean ok = false;
+            initializeOutputStream(file);
+        }
+    }
+
+    private void initializeOutputStream(File file) throws FileNotFoundException {
+        synchronized (outputLock) {
+            initialized = false;
+            fileToInitialize = file;
             final FileOutputStream fos = new FileOutputStream(file, append);
             try {
                 final OutputStream bos = new BufferedOutputStream(fos);
                 try {
                     setOutputStream(bos);
                     this.file = file;
-                    ok = true;
+                    initialized = true;
                 } finally {
-                    if (! ok) {
+                    if (!initialized) {
                         safeClose(bos);
                     }
                 }
             } finally {
-                if (! ok) {
+                if (!initialized) {
                     safeClose(fos);
                 }
+            }
+        }
+    }
+
+    @Override
+    protected void lazyInitialize() {
+        if (! initialized && fileToInitialize != null) {
+            try {
+                initializeOutputStream(fileToInitialize);
+            } catch (FileNotFoundException e) {
+                reportError("Error opening output stream", e, ErrorManager.OPEN_FAILURE);
             }
         }
     }

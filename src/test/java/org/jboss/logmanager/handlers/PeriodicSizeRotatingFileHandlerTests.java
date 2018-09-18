@@ -23,6 +23,7 @@ import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.PosixFilePermissions;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -205,6 +206,48 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         // The log file should exist, as should one rotated file since we fail the rotation on the second rotate
         Assert.assertTrue(String.format("Expected log file %s to exist", logFile), logFile.exists());
         final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + ".1");
+        Assert.assertTrue(String.format("Expected rotated file %s to exist", rotatedFile), Files.exists(rotatedFile));
+
+        // The last line of the log file should end with "99" as it should be the last record
+        final List<String> lines = Files.readAllLines(logFile.toPath(), StandardCharsets.UTF_8);
+        final String lastLine = lines.get(lines.size() - 1);
+        Assert.assertTrue("Expected the last line to end with 99: " + lastLine, lastLine.endsWith("99"));
+    }
+
+    @Test
+    public void testFailedRotateCurrentLog() throws Exception {
+        final PeriodicSizeRotatingFileHandler handler = new PeriodicSizeRotatingFileHandler();
+        configureHandlerDefaults(handler);
+        handler.setRotateSize(1024L);
+        handler.setMaxBackupIndex(5);
+        handler.setFile(logFile);
+
+        // "Lock" the log file - prevent moving it as well as writing to it
+        Files.setPosixFilePermissions(logFile.getParentFile().toPath(), PosixFilePermissions.fromString("r-xr-xr-x"));
+        Files.setPosixFilePermissions(logFile.toPath(), PosixFilePermissions.fromString("r--r--r--"));
+
+        for (int i = 0; i < 50; i++) {
+            handler.publish(createLogRecord("Test message: %d", i));
+        }
+
+        // The log file should exist, the rotated file should not, because it wasn't possible to move the log file
+        Assert.assertTrue(String.format("Expected log file %s to exist", logFile), logFile.exists());
+        Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + ".1");
+        Assert.assertFalse(String.format("Expected rotated file %s not to exist", rotatedFile), Files.exists(rotatedFile));
+
+        // "Unlock" the log file
+        Files.setPosixFilePermissions(logFile.getParentFile().toPath(), PosixFilePermissions.fromString("rwxr-xr-x"));
+        Files.setPosixFilePermissions(logFile.toPath(), PosixFilePermissions.fromString("rw-r--r--"));
+
+        for (int i = 50; i < 100; i++) {
+            handler.publish(createLogRecord("Test message: %d", i));
+        }
+
+        handler.close();
+
+        // The log file should exist, as should the rotated file
+        Assert.assertTrue(String.format("Expected log file %s to exist", logFile), logFile.exists());
+        rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + ".1");
         Assert.assertTrue(String.format("Expected rotated file %s to exist", rotatedFile), Files.exists(rotatedFile));
 
         // The last line of the log file should end with "99" as it should be the last record

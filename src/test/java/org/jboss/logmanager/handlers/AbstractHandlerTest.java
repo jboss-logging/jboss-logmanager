@@ -41,6 +41,9 @@ public class AbstractHandlerTest {
 
     @Before
     public void setup() throws Exception {
+        if (BASE_LOG_DIR.exists()) {
+            deleteRecursively(BASE_LOG_DIR);
+        }
         BASE_LOG_DIR.mkdir();
     }
 

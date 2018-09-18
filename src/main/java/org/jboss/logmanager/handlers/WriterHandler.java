@@ -54,6 +54,7 @@ public class WriterHandler extends ExtHandler {
         }
         try {
             synchronized (outputLock) {
+                lazyInitialize();
                 if (writer == null) {
                     return;
                 }
@@ -79,6 +80,13 @@ public class WriterHandler extends ExtHandler {
      * @param record the record about to be logged
      */
     protected void preWrite(final ExtLogRecord record) {
+        // do nothing by default
+    }
+
+    /**
+     * Execute actions needed to initialize the handler in case it hasn't been initialized yet.
+     */
+    protected void lazyInitialize() {
         // do nothing by default
     }
 
