@@ -110,6 +110,8 @@ public class ExtLogRecord extends LogRecord {
             setSourceMethodName(original.getSourceMethodName());
             sourceFileName = original.sourceFileName;
             sourceLineNumber = original.sourceLineNumber;
+            sourceModuleName = original.sourceModuleName;
+            sourceModuleVersion = original.sourceModuleVersion;
         }
         formatStyle = original.formatStyle;
         mdcCopy = original.mdcCopy;
