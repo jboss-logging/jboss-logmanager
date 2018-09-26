@@ -168,7 +168,7 @@ public class WriterHandler extends ExtHandler {
         } catch (Throwable ignored) {}
     }
 
-    private void safeFlush(Flushable f) {
+    void safeFlush(Flushable f) {
         try {
             if (f != null) f.flush();
         } catch (Exception e) {
