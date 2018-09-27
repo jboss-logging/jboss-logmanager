@@ -25,6 +25,7 @@ import java.io.OutputStreamWriter;
 import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
+import java.nio.charset.Charset;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
@@ -35,6 +36,7 @@ import java.util.logging.Formatter;
 public class OutputStreamHandler extends WriterHandler {
 
     private OutputStream outputStream;
+    private Charset charset;
 
     /**
      * Construct a new instance with no formatter.
@@ -84,11 +86,13 @@ public class OutputStreamHandler extends WriterHandler {
     public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
         // superclass checks access
         synchronized (outputLock) {
+            charset = encoding == null ? null : Charset.forName(encoding);
             super.setEncoding(encoding);
-            if (this.outputStream != null) {
-                final OutputStream outputStream = this.outputStream;
-                updateWriter(outputStream, encoding);
-           }
+            // we only want to change the writer, not the output stream
+            final OutputStream outputStream = this.outputStream;
+            if (outputStream != null) {
+                super.setWriter(getNewWriter(outputStream));
+            }
         }
     }
 
@@ -96,32 +100,50 @@ public class OutputStreamHandler extends WriterHandler {
     public void setWriter(final Writer writer) {
         synchronized (outputLock) {
             super.setWriter(writer);
+            final OutputStream oldStream = this.outputStream;
             outputStream = null;
+            safeFlush(oldStream);
+            safeClose(oldStream);
         }
     }
 
     /**
-     * Set the output stream to write to.
+     * Set the output stream to write to.  The output stream will then belong to this handler; when the handler is
+     * closed or a new writer or output stream is set, this output stream will be closed.
      *
      * @param outputStream the new output stream or {@code null} for none
      */
     public void setOutputStream(final OutputStream outputStream) {
+        if (outputStream == null) {
+            // call ours, not the superclass one
+            this.setWriter(null);
+            return;
+        }
         checkAccess(this);
+        // Close the writer, then close the old stream, then establish the new stream with a new writer.
         try {
             synchronized (outputLock) {
-                this.outputStream = outputStream;
-                updateWriter(outputStream, getEncoding());
+                final OutputStream oldStream = this.outputStream;
+                // do not close the old stream if creating the writer fails
+                final Writer writer = getNewWriter(outputStream);
+                try {
+                    this.outputStream = outputStream;
+                    super.setWriter(writer);
+                } finally {
+                    safeFlush(oldStream);
+                    safeClose(oldStream);
+                }
             }
-        } catch (UnsupportedEncodingException e) {
-            throw new IllegalArgumentException("The specified encoding is invalid");
         } catch (Exception e) {
             reportError("Error opening output stream", e, ErrorManager.OPEN_FAILURE);
             return;
         }
     }
 
-    private void updateWriter(final OutputStream newOutputStream, final String encoding) throws UnsupportedEncodingException {
-        final UninterruptibleOutputStream outputStream = new UninterruptibleOutputStream(newOutputStream);
-        super.setWriter(newOutputStream == null ? null : encoding == null ? new OutputStreamWriter(outputStream) : new OutputStreamWriter(outputStream, encoding));
+    private Writer getNewWriter(OutputStream newOutputStream) {
+        if (newOutputStream == null) return null;
+        final UninterruptibleOutputStream outputStream = new UninterruptibleOutputStream(new UncloseableOutputStream(newOutputStream));
+        final Charset charset = this.charset;
+        return charset == null ? new OutputStreamWriter(outputStream) : new OutputStreamWriter(outputStream, charset);
     }
 }
