@@ -107,7 +107,7 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'h': {
-                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument == null ? "1" : argument));
+                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, false));
                         break;
                     }
                     case 'H': {
