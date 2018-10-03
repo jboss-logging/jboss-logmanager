@@ -547,7 +547,13 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep hostnameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final boolean qualified) {
-        return hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, qualified ? null : "1");
+        return qualified ? hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, null) : new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, null) {
+            public String getSegmentedSubject(final ExtLogRecord record) {
+                final String hostName = record.getHostName();
+                final int idx = hostName.indexOf('.');
+                return idx == -1 ? hostName :hostName.substring(0, idx);
+            }
+        };
     }
 
     /**
