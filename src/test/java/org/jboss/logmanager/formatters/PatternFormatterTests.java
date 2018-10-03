@@ -248,6 +248,58 @@ public class PatternFormatterTests {
         Assert.assertTrue(formatted.contains("CIRCULAR REFERENCE:java.lang.IllegalStateException: suppressedLevel1"));
     }
 
+    @Test
+    public void unqualifiedHost() {
+        final String hostName = "logmanager.jboss.org";
+        final ExtLogRecord record = createLogRecord("test");
+        record.setHostName(hostName);
+        PatternFormatter formatter = new PatternFormatter("%h");
+        Assert.assertEquals("logmanager", formatter.format(record));
+
+        // This should still return just the first portion
+        formatter = new PatternFormatter("%h{2}");
+        Assert.assertEquals("logmanager", formatter.format(record));
+
+        // Should truncate from the beginning
+        formatter = new PatternFormatter("%.3h");
+        Assert.assertEquals("log", formatter.format(record));
+
+        // Should truncate from the end
+        formatter = new PatternFormatter("%.-7h");
+        Assert.assertEquals("manager", formatter.format(record));
+    }
+
+    @Test
+    public void qualifiedHost() {
+        final String hostName = "logmanager.jboss.org";
+        final ExtLogRecord record = createLogRecord("test");
+        record.setHostName(hostName);
+        PatternFormatter formatter = new PatternFormatter("%H");
+        Assert.assertEquals(hostName, formatter.format(record));
+
+        formatter = new PatternFormatter("%H{1}");
+        Assert.assertEquals("logmanager", formatter.format(record));
+
+        formatter = new PatternFormatter("%H{2}");
+        Assert.assertEquals("logmanager.jboss", formatter.format(record));
+
+        formatter = new PatternFormatter("%H{3}");
+        Assert.assertEquals(hostName, formatter.format(record));
+
+        formatter = new PatternFormatter("%H{4}");
+        Assert.assertEquals(hostName, formatter.format(record));
+
+        // Truncate from the beginning
+        formatter = new PatternFormatter("%.10H");
+        Assert.assertEquals("logmanager", formatter.format(record));
+
+        // Truncate from the end
+        formatter = new PatternFormatter("%.-3H");
+        Assert.assertEquals("org", formatter.format(record));
+        formatter = new PatternFormatter("%.-5H{2}");
+        Assert.assertEquals("jboss", formatter.format(record));
+    }
+
 
     private void systemProperties(final String propertyPrefix) throws Exception {
         final ExtLogRecord record = createLogRecord("test");
