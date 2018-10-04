@@ -45,12 +45,12 @@ import org.jboss.logmanager.ExtLogRecord;
 /**
  * Formatter utility methods.
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public final class Formatters {
 
     public static final String THREAD_ID = "id";
 
     private static final boolean DEFAULT_TRUNCATE_BEGINNING = false;
-    private static final String NEW_LINE = String.format("%n");
     private static final Pattern PRECISION_INT_PATTERN = Pattern.compile("\\d+");
 
 
@@ -567,9 +567,30 @@ public final class Formatters {
      * @return the format step
      */
     public static FormatStep hostnameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String precision) {
-        return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, precision) {
+        return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, null) {
             public String getSegmentedSubject(final ExtLogRecord record) {
-                return record.getHostName();
+                final String hostName = record.getHostName();
+                // Check for a specified precision. This is not passed to the constructor because we want truncate
+                // segments from the right intsead of the left.
+                if (precision != null && PRECISION_INT_PATTERN.matcher(precision).matches()) {
+                    int count = Integer.parseInt(precision);
+                    int end = 0;
+                    for (int i = 0; i < hostName.length(); i++) {
+                        // If we've got a dot we're at a new segment
+                        if (hostName.charAt(i) == '.') {
+                            count--;
+                            end = i;
+                        }
+                        // We've reached the precision we want
+                        if (count == 0) {
+                            break;
+                        }
+                    }
+                    if (end != 0 && count == 0) {
+                        return hostName.substring(0, end);
+                    }
+                }
+                return hostName;
             }
         };
     }
