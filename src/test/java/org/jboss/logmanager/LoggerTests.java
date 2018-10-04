@@ -163,7 +163,7 @@ public final class LoggerTests {
         logger.addHandler(handler);
         logger.log(Level.INFO, null, new IllegalArgumentException());
         logger.log(Level.INFO, "test", new IllegalArgumentException());
-        assertEquals(null, handler.messages.get(0));
+        assertEquals("null", handler.messages.get(0));
         assertEquals("Test message", handler.messages.get(1));
     }
 

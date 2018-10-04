@@ -67,7 +67,7 @@ public class ExtLogRecord extends LogRecord {
      * @param loggerClassName the name of the logger class
      */
     public ExtLogRecord(final java.util.logging.Level level, final String msg, final String loggerClassName) {
-        this(level, msg, FormatStyle.MESSAGE_FORMAT, loggerClassName);
+        this(level, messageOrBlankTag(msg), FormatStyle.MESSAGE_FORMAT, loggerClassName);
     }
 
     /**
@@ -79,7 +79,7 @@ public class ExtLogRecord extends LogRecord {
      * @param loggerClassName the name of the logger class
      */
     public ExtLogRecord(final java.util.logging.Level level, final String msg, final FormatStyle formatStyle, final String loggerClassName) {
-        super(level, msg);
+        super(level, messageOrBlankTag(msg));
         this.formatStyle = formatStyle == null ? FormatStyle.MESSAGE_FORMAT : formatStyle;
         this.loggerClassName = loggerClassName;
         ndc = NDC.get();
@@ -95,7 +95,7 @@ public class ExtLogRecord extends LogRecord {
      * @param original the original
      */
     public ExtLogRecord(final ExtLogRecord original) {
-        super(original.getLevel(), original.getMessage());
+        super(original.getLevel(), messageOrBlankTag(original.getMessage()));
         // LogRecord fields
         setLoggerName(original.getLoggerName());
         setMillis(original.getMillis());
@@ -123,6 +123,12 @@ public class ExtLogRecord extends LogRecord {
         hostName = original.hostName;
         processName = original.processName;
         processId = original.processId;
+        sourceModuleName = original.sourceModuleName;
+        sourceModuleVersion = original.sourceModuleVersion;
+    }
+
+    private static String messageOrBlankTag(String msg) {
+        return msg == null ? "null" : msg.isEmpty() ? "empty" : msg;
     }
 
     /**
