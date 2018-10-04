@@ -182,6 +182,22 @@ public class SyslogHandlerTests {
 
     }
 
+    @Test
+    public void testNullMessage() throws Exception {
+        // Setup the handler
+        handler.setSyslogType(SyslogType.RFC5424);
+        final ByteArrayOutputStream out = new ByteArrayOutputStream();
+        handler.setOutputStream(out);
+
+        final Calendar cal = getCalendar();
+        // Create the record
+        handler.setHostname("test");
+        ExtLogRecord record = createRecord(cal, null);
+        final String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + "null";
+        handler.publish(record);
+        Assert.assertEquals(expectedMessage, createString(out));
+    }
+
     private void testMultibyteTruncation(final String part1, final String part2, final int charsToTruncate) throws Exception {
         // Setup the handler
         handler.setSyslogType(SyslogType.RFC5424);

@@ -498,10 +498,6 @@ public class SyslogHandler extends ExtHandler {
 
     @Override
     public final void doPublish(final ExtLogRecord record) {
-        // Don't log empty messages
-        if (record.getMessage() == null || record.getMessage().isEmpty()) {
-            return;
-        }
         synchronized (outputLock) {
             init();
             if (out == null) {
