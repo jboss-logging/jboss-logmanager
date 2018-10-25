@@ -45,6 +45,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
     private volatile boolean closeChildren;
     private static final ErrorManager DEFAULT_ERROR_MANAGER = new OnlyOnceErrorManager();
 
+    @SuppressWarnings("unused")
     private volatile Object protectKey;
     private final ThreadLocal<Boolean> granted = new InheritableThreadLocal<Boolean>();
 
@@ -54,7 +55,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
      * The sub-handlers for this handler.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
      * instance should not be modified (treat as immutable).
      */
-    @SuppressWarnings({ "UnusedDeclaration" })
+    @SuppressWarnings("unused")
     protected volatile Handler[] handlers;
 
     /**
@@ -196,7 +197,7 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
     /**
      * Change the autoflush setting for this handler.
      *
-     * @param autoFlush {@code true} to automatically flush after each write; false otherwise
+     * @param autoFlush {@code true} to automatically flush after each write; {@code false} otherwise
      *
      * @throws SecurityException if a security manager exists and if the caller does not have {@code
      *                           LoggingPermission(control)} or the handler is {@link #protect(Object) protected}.
@@ -400,9 +401,12 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
         Formatter formatter = getFormatter();
         if (formatterRequiresCallerCalculation(formatter)) {
             return true;
-        } else {
-            final Handler[] handlers = getHandlers();
-            for (Handler handler : handlers) {
+        } else for (Handler handler : getHandlers()) {
+            if (handler instanceof ExtHandler) {
+                if (((ExtHandler) handler).isCallerCalculationRequired()) {
+                    return true;
+                }
+            } else {
                 formatter = handler.getFormatter();
                 if (formatterRequiresCallerCalculation(formatter)) {
                     return true;

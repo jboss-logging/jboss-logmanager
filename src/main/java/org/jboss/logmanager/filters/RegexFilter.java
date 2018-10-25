@@ -19,6 +19,7 @@
 
 package org.jboss.logmanager.filters;
 
+import java.text.MessageFormat;
 import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
 
@@ -63,7 +64,7 @@ public final class RegexFilter implements Filter {
         if (record instanceof ExtLogRecord) {
             msg = ((ExtLogRecord) record).getFormattedMessage();
         } else {
-            msg = record.getMessage();
+            msg = MessageFormat.format(record.getMessage(), record.getParameters());
         }
         return pattern.matcher(String.valueOf(msg)).find();
     }
