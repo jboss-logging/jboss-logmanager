@@ -23,12 +23,15 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class StackTraceFormatterTests {
+
+    private static final boolean IS_IBM_JDK = System.getProperty("java.vendor").startsWith("IBM");
 
     @Test
     public void compareSimpleStackTrace() {
@@ -57,6 +60,7 @@ public class StackTraceFormatterTests {
 
     @Test
     public void compareSuppressedAndCauseStackTrace() {
+        Assume.assumeFalse("The IBM JDK does not show print circular references.", IS_IBM_JDK);
         final RuntimeException r1 = new RuntimeException("Exception 1");
         final RuntimeException r2 = new RuntimeException("Exception 2", r1);
         final RuntimeException r3 = new RuntimeException("Exception 3", r2);
@@ -76,6 +80,7 @@ public class StackTraceFormatterTests {
 
     @Test
     public void compareNestedSuppressedStackTrace() {
+        Assume.assumeFalse("The IBM JDK does not show print circular references.", IS_IBM_JDK);
         final RuntimeException r1 = new RuntimeException("Exception 1");
         final RuntimeException r2 = new RuntimeException("Exception 2", r1);
         final RuntimeException r3 = new RuntimeException("Exception 3", r2);
@@ -99,6 +104,7 @@ public class StackTraceFormatterTests {
 
     @Test
     public void compareMultiNestedSuppressedStackTrace() {
+        Assume.assumeFalse("The IBM JDK does not show print circular references.", IS_IBM_JDK);
         final Throwable cause = createMultiNestedCause();
 
         final StringWriter writer = new StringWriter();
@@ -112,6 +118,7 @@ public class StackTraceFormatterTests {
 
     @Test
     public void compareMultiNestedSuppressedAndNestedCauseStackTrace() {
+        Assume.assumeFalse("The IBM JDK does not show print circular references.", IS_IBM_JDK);
         final Throwable rootCause = createMultiNestedCause();
         final RuntimeException cause = new RuntimeException("This is the parent", rootCause);
 

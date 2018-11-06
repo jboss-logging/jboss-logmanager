@@ -19,7 +19,6 @@
 
 package org.jboss.logmanager.formatters;
 
-import java.io.PrintWriter;
 import java.io.Writer;
 import java.time.Instant;
 import java.time.ZoneId;
@@ -248,9 +247,9 @@ public abstract class StructuredFormatter extends ExtFormatter {
                 }
 
                 if (isFormattedExceptionOutputType()) {
-                    final StringBuilderWriter w = new StringBuilderWriter();
-                    thrown.printStackTrace(new PrintWriter(w));
-                    generator.add(getKey(Key.STACK_TRACE), w.toString());
+                    final StringBuilder sb = new StringBuilder();
+                    StackTraceFormatter.renderStackTrace(sb, thrown, false, -1);
+                    generator.add(getKey(Key.STACK_TRACE), sb.toString());
                 }
             }
             if (details) {
