@@ -24,8 +24,11 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 
+import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
+import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.Level;
 import org.jboss.logmanager.formatters.Formatters;
 
 /**
@@ -55,6 +58,29 @@ public class ConsoleHandler extends OutputStreamHandler {
     }
 
     private static final PrintWriter console;
+
+    private final ErrorManager localErrorManager = new ErrorManager() {
+        public void error(final String msg, final Exception ex, final int code) {
+            final ExtLogRecord record = new ExtLogRecord(Level.ERROR, "Failed to publish log record (%s[%d]): %s", ExtLogRecord.FormatStyle.PRINTF, getClass().getName());
+            final String codeStr;
+            switch (code) {
+                case ErrorManager.GENERIC_FAILURE: codeStr = "GENERIC_FAILURE"; break;
+                case ErrorManager.WRITE_FAILURE:   codeStr = "WRITE_FAILURE";   break;
+                case ErrorManager.FLUSH_FAILURE:   codeStr = "FLUSH_FAILURE";   break;
+                case ErrorManager.CLOSE_FAILURE:   codeStr = "CLOSE_FAILURE";   break;
+                case ErrorManager.OPEN_FAILURE:    codeStr = "OPEN_FAILURE";    break;
+                case ErrorManager.FORMAT_FAILURE:  codeStr = "FORMAT_FAILURE";  break;
+                default: codeStr = "Unknown Code"; break;
+            }
+            record.setParameters(new Object[] {
+                codeStr,
+                Integer.toString(code),
+                msg,
+            });
+            record.setThrown(ex);
+            publish(record);
+        }
+    };
 
     static {
         final Console con = System.console();
@@ -115,6 +141,25 @@ public class ConsoleHandler extends OutputStreamHandler {
             case CONSOLE: setWriter(wrap(console)); break;
             default: throw new IllegalArgumentException();
         }
+    }
+
+    public void setErrorManager(final ErrorManager em) {
+        if (em == localErrorManager) {
+            // ignore to avoid loops
+            super.setErrorManager(new ErrorManager());
+            return;
+        }
+        super.setErrorManager(em);
+    }
+
+    /**
+     * Get the local error manager.  This is an error manager that will publish errors to this console handler.
+     * The console handler itself should not use this error manager.
+     *
+     * @return the local error manager
+     */
+    public ErrorManager getLocalErrorManager() {
+        return localErrorManager;
     }
 
     private static OutputStream wrap(final OutputStream outputStream) {
