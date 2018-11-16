@@ -116,7 +116,7 @@ public class AsyncHandler extends ExtHandler {
         if (overflowAction == null) {
             throw new NullPointerException("overflowAction is null");
         }
-        checkAccess(this);
+        checkAccess();
         this.overflowAction = overflowAction;
     }
 
@@ -160,7 +160,7 @@ public class AsyncHandler extends ExtHandler {
 
     /** {@inheritDoc} */
     public void close() throws SecurityException {
-        checkAccess(this);
+        checkAccess();
         if (stateUpdater.getAndSet(this, 2) != 2) {
             thread.interrupt();
             super.close();

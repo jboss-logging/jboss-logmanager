@@ -89,7 +89,7 @@ public class WriterHandler extends ExtHandler {
      * @param writer the new writer, or {@code null} to disable logging
      */
     public void setWriter(final Writer writer) {
-        checkAccess(this);
+        checkAccess();
         Writer oldWriter = null;
         boolean ok = false;
         try {
@@ -147,7 +147,7 @@ public class WriterHandler extends ExtHandler {
      * @throws SecurityException if the caller does not have sufficient permission
      */
     public void close() throws SecurityException {
-        checkAccess(this);
+        checkAccess();
         setWriter(null);
         super.close();
     }
