@@ -117,31 +117,28 @@ public final class NDC {
     }
 
     private static final class Stack<T> {
-        private Object[] data = new Object[32];
+        @SuppressWarnings("unchecked")
+        private T[] data = (T[]) new Object[32];
         private int sp;
 
         public void push(T value) {
             final int oldlen = data.length;
             if (sp == oldlen) {
-                Object[] newdata = new Object[oldlen * 3 / 2];
-                System.arraycopy(data, 0, newdata, 0, oldlen);
-                data = newdata;
+                data = Arrays.copyOf(data, (oldlen << 1) + oldlen >>> 1);
             }
             data[sp++] = value;
         }
 
-        @SuppressWarnings("unchecked")
         public T pop() {
             try {
-                return (T) data[--sp];
+                return data[--sp];
             } finally {
                 data[sp] = null;
             }
         }
 
-        @SuppressWarnings("unchecked")
         public T top() {
-            return (T) data[sp - 1];
+            return data[sp - 1];
         }
 
         public boolean isEmpty() {
@@ -160,9 +157,8 @@ public final class NDC {
             }
         }
 
-        @SuppressWarnings("unchecked")
         public T get(int n) {
-            return n < sp ? (T) data[n] : null;
+            return n < sp ? data[n] : null;
         }
 
         public String toString() {

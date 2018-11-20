@@ -232,7 +232,7 @@ public class SocketHandler extends ExtHandler {
 
     @Override
     public void close() throws SecurityException {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             safeClose(writer);
             writer = null;
@@ -259,7 +259,7 @@ public class SocketHandler extends ExtHandler {
      * @param address the address
      */
     public void setAddress(final InetAddress address) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             if (!this.address.equals(address)) {
                 initialize = true;
@@ -280,7 +280,7 @@ public class SocketHandler extends ExtHandler {
      * @throws UnknownHostException if an error occurs resolving the address
      */
     public void setHostname(final String hostname) throws UnknownHostException {
-        checkAccess(this);
+        checkAccess();
         setAddress(InetAddress.getByName(hostname));
     }
 
@@ -306,7 +306,7 @@ public class SocketHandler extends ExtHandler {
      *                         discarding any new messages coming in
      */
     public void setBlockOnReconnect(final boolean blockOnReconnect) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.blockOnReconnect = blockOnReconnect;
             initialize = true;
@@ -332,7 +332,7 @@ public class SocketHandler extends ExtHandler {
      * @param protocol the protocol to use
      */
     public void setProtocol(final Protocol protocol) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             if (protocol == null) {
                 this.protocol = Protocol.TCP;
@@ -363,7 +363,7 @@ public class SocketHandler extends ExtHandler {
      * @param port the port
      */
     public void setPort(final int port) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             if (this.port != port) {
                 initialize = true;
@@ -387,7 +387,7 @@ public class SocketHandler extends ExtHandler {
      * @see #setClientSocketFactory(ClientSocketFactory)
      */
     public void setSocketFactory(final SocketFactory socketFactory) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.socketFactory = socketFactory;
             this.clientSocketFactory = null;
@@ -402,7 +402,7 @@ public class SocketHandler extends ExtHandler {
      * @param clientSocketFactory the client socket factory to use
      */
     public void setClientSocketFactory(final ClientSocketFactory clientSocketFactory) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.clientSocketFactory = clientSocketFactory;
             initialize = true;

@@ -75,7 +75,7 @@ public class DelayedHandler extends ExtHandler {
 
     @Override
     public final void close() throws SecurityException {
-        checkAccess(this);
+        checkAccess();
         synchronized (this) {
             if (!logRecords.isEmpty()) {
                 Formatter formatter = getFormatter();

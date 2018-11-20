@@ -181,7 +181,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      * @param rotateOnBoot {@code true} to rotate on boot, otherwise {@code false}
      */
     public void setRotateOnBoot(final boolean rotateOnBoot) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.rotateOnBoot = rotateOnBoot;
         }
@@ -193,7 +193,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      * @param rotateSize the number of bytes before the log is rotated
      */
     public void setRotateSize(final long rotateSize) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.rotateSize = rotateSize;
         }
@@ -205,7 +205,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      * @param maxBackupIndex the maximum backup index
      */
     public void setMaxBackupIndex(final int maxBackupIndex) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.maxBackupIndex = maxBackupIndex;
         }

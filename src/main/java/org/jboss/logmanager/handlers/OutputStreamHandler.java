@@ -119,7 +119,7 @@ public class OutputStreamHandler extends WriterHandler {
             this.setWriter(null);
             return;
         }
-        checkAccess(this);
+        checkAccess();
         // Close the writer, then close the old stream, then establish the new stream with a new writer.
         try {
             synchronized (outputLock) {

@@ -34,7 +34,6 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Level;
 import java.util.logging.LoggingMXBean;
 import java.util.logging.LoggingPermission;
@@ -43,7 +42,7 @@ import java.util.logging.LoggingPermission;
  * A logging context, for producing isolated logging environments.
  */
 @SuppressWarnings("unused")
-public final class LogContext implements Protectable, AutoCloseable {
+public final class LogContext implements AutoCloseable {
     private static final LogContext SYSTEM_CONTEXT = new LogContext(false);
 
     static final Permission CREATE_CONTEXT_PERMISSION = new RuntimePermission("createLogContext", null);
@@ -55,13 +54,6 @@ public final class LogContext implements Protectable, AutoCloseable {
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
     private final boolean strong;
     private final ConcurrentSkipListMap<String, AtomicInteger> loggerNames;
-
-    @SuppressWarnings("unused")
-    private volatile Object protectKey;
-
-    private final ThreadLocal<Boolean> granted = new InheritableThreadLocal<Boolean>();
-
-    private static final AtomicReferenceFieldUpdater<LogContext, Object> protectKeyUpdater = AtomicReferenceFieldUpdater.newUpdater(LogContext.class, Object.class, "protectKey");
 
     /**
      * This lazy holder class is required to prevent a problem due to a LogContext instance being constructed
@@ -319,34 +311,6 @@ public final class LogContext implements Protectable, AutoCloseable {
     }
 
     @Override
-    public void protect(Object protectionKey) throws SecurityException {
-        if (protectKeyUpdater.compareAndSet(this, null, protectionKey)) {
-            return;
-        }
-        throw new SecurityException("Log context already protected");
-    }
-
-    @Override
-    public void unprotect(Object protectionKey) throws SecurityException {
-        if (protectKeyUpdater.compareAndSet(this, protectionKey, null)) {
-            return;
-        }
-        throw accessDenied();
-    }
-
-    @Override
-    public void enableAccess(Object protectKey) throws SecurityException {
-        if (protectKey == this.protectKey) {
-            granted.set(Boolean.TRUE);
-        }
-    }
-
-    @Override
-    public void disableAccess() {
-        granted.remove();
-    }
-
-    @Override
     public void close() throws Exception {
         synchronized (treeLock) {
             // First we want to close all loggers
@@ -467,17 +431,10 @@ public final class LogContext implements Protectable, AutoCloseable {
         return new SecurityException("Log context modification access denied");
     }
 
-    static void checkSecurityAccess() {
+    static void checkAccess() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
-        }
-    }
-
-    static void checkAccess(final LogContext logContext) {
-        checkSecurityAccess();
-        if (logContext.protectKey != null && logContext.granted.get() == null) {
-            throw accessDenied();
         }
     }
 
@@ -490,12 +447,11 @@ public final class LogContext implements Protectable, AutoCloseable {
     }
 
     private void recursivelyClose(final LoggerNode loggerNode) {
-        synchronized (treeLock) {
-            for (LoggerNode child : loggerNode.getChildren()) {
-                recursivelyClose(child);
-            }
-            loggerNode.close();
+        assert Thread.holdsLock(treeLock);
+        for (LoggerNode child : loggerNode.getChildren()) {
+            recursivelyClose(child);
         }
+        loggerNode.close();
     }
 
     private interface LevelRef {

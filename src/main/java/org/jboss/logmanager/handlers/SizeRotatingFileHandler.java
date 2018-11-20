@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+
 import org.jboss.logmanager.ExtLogRecord;
 
 import java.util.logging.ErrorManager;
@@ -165,7 +166,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param rotateOnBoot {@code true} to rotate on boot, otherwise {@code false}
      */
     public void setRotateOnBoot(final boolean rotateOnBoot) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.rotateOnBoot = rotateOnBoot;
         }
@@ -177,7 +178,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param rotateSize the number of bytes before the log is rotated
      */
     public void setRotateSize(final long rotateSize) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.rotateSize = rotateSize;
         }
@@ -189,7 +190,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param maxBackupIndex the maximum backup index
      */
     public void setMaxBackupIndex(final int maxBackupIndex) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.maxBackupIndex = maxBackupIndex;
         }
@@ -226,7 +227,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param suffix the suffix to place after the filename when the file is rotated
      */
     public void setSuffix(final String suffix) {
-        checkAccess(this);
+        checkAccess();
         synchronized (outputLock) {
             this.suffixRotator = SuffixRotator.parse(suffix);
         }
