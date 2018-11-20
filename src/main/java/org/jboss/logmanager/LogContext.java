@@ -447,12 +447,11 @@ public final class LogContext implements AutoCloseable {
     }
 
     private void recursivelyClose(final LoggerNode loggerNode) {
-        synchronized (treeLock) {
-            for (LoggerNode child : loggerNode.getChildren()) {
-                recursivelyClose(child);
-            }
-            loggerNode.close();
+        assert Thread.holdsLock(treeLock);
+        for (LoggerNode child : loggerNode.getChildren()) {
+            recursivelyClose(child);
         }
+        loggerNode.close();
     }
 
     private interface LevelRef {
