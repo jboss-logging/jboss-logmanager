@@ -22,6 +22,7 @@ package org.jboss.logmanager;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.ResourceBundle;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -50,12 +51,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @return the logger
      */
     public static Logger getLogger(final String name) {
-        try {
-            // call through j.u.l.Logger so that primordial configuration is set up
-            return (Logger) java.util.logging.Logger.getLogger(name);
-        } catch (ClassCastException e) {
-            throw new IllegalStateException("The LogManager was not properly installed (you must set the \"java.util.logging.manager\" system property to \"" + LogManager.class.getName() + "\")");
-        }
+        return LogContext.getLogContext().getLogger(name);
     }
 
     /**
@@ -66,12 +62,9 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @return the logger
      */
     public static Logger getLogger(final String name, final String bundleName) {
-        try {
-            // call through j.u.l.Logger so that primordial configuration is set up
-            return (Logger) java.util.logging.Logger.getLogger(name, bundleName);
-        } catch (ClassCastException e) {
-            throw new IllegalStateException("The LogManager was not properly installed (you must set the \"java.util.logging.manager\" system property to \"" + LogManager.class.getName() + "\")");
-        }
+        final Logger logger = LogContext.getLogContext().getLogger(name);
+        logger.setResourceBundle(ResourceBundle.getBundle(bundleName, Locale.getDefault(), Logger.class.getClassLoader()));
+        return logger;
     }
 
     /**

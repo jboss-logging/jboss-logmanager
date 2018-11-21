@@ -46,6 +46,6 @@ public final class SerializedLogger implements Serializable {
      * @see <a href="http://java.sun.com/javase/6/docs/platform/serialization/spec/input.html#5903">Serialization spec, 3.7</a>
      */
     public Object readResolve() {
-        return java.util.logging.Logger.getLogger(name);
+        return Logger.getLogger(name);
     }
 }
