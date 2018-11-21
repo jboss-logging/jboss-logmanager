@@ -23,8 +23,6 @@ import org.wildfly.common.ref.PhantomReference;
 import org.wildfly.common.ref.Reaper;
 import org.wildfly.common.ref.Reference;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -236,20 +234,9 @@ final class LoggerNode implements AutoCloseable {
     }
 
     Logger createLogger() {
-        final SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
-                public Logger run() {
-                    final Logger logger = new Logger(LoggerNode.this, fullName);
-                    activeLoggers.add(new PhantomReference<Logger, LoggerNode>(logger, LoggerNode.this, REAPER));
-                    return logger;
-                }
-            });
-        } else {
-            final Logger logger = new Logger(this, fullName);
-            activeLoggers.add(new PhantomReference<Logger, LoggerNode>(logger, LoggerNode.this, REAPER));
-            return logger;
-        }
+        final Logger logger = new Logger(this, fullName);
+        activeLoggers.add(new PhantomReference<Logger, LoggerNode>(logger, LoggerNode.this, REAPER));
+        return logger;
     }
 
     /**
