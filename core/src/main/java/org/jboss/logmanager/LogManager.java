@@ -25,9 +25,6 @@ import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Filter;
@@ -84,99 +81,20 @@ public final class LogManager extends java.util.logging.LogManager {
 
     // Configuration
 
-    private final AtomicBoolean configured = new AtomicBoolean();
-
-    private static String tryGetProperty(String name, String defaultVal) {
-        try {
-            return System.getProperty(name, defaultVal);
-        } catch (Throwable t) {
-            return defaultVal;
-        }
-    }
-
     /**
-     * Configure the log manager one time.  An implementation of {@link ConfigurationLocator} is created by constructing an
-     * instance of the class name specified in the {@code org.jboss.logmanager.configurationLocator} system property.
+     * Do nothing.  Log contexts are configured on construction.
      */
-    public void readConfiguration() throws IOException, SecurityException {
-        checkAccess();
-        if (configured.getAndSet(true)) {
-            return;
-        }
-        final String confLocClassName = tryGetProperty("org.jboss.logmanager.configurationLocator", null);
-        ConfigurationLocator locator = null;
-        if (confLocClassName != null) {
-            locator = construct(ConfigurationLocator.class, confLocClassName);
-        } else {
-            final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-            if (tccl != null) {
-                final ServiceLoader<ConfigurationLocator> loader = ServiceLoader.load(ConfigurationLocator.class, tccl);
-                final Iterator<ConfigurationLocator> iterator = loader.iterator();
-                if (iterator.hasNext()) {
-                    locator = iterator.next();
-                }
-            }
-            if (locator == null) {
-                final ServiceLoader<ConfigurationLocator> loader = ServiceLoader.load(ConfigurationLocator.class, tccl != null ? tccl : LogManager.class.getClassLoader());
-                final Iterator<ConfigurationLocator> iterator = loader.iterator();
-                if (iterator.hasNext()) {
-                    locator = iterator.next();
-                } else {
-                    locator = new DefaultConfigurationLocator();
-                }
-            }
-        }
-        if (locator != null) {
-            final InputStream configuration = locator.findConfiguration();
-            if (configuration != null) {
-                readConfiguration(configuration);
-            }
-        }
+    public void readConfiguration() {
+        // on operation
     }
 
     /**
-     * Configure the log manager.
+     * Do nothing.  Log contexts are configured on construction.
      *
-     * @param inputStream the input stream from which the logmanager should be configured
+     * @param inputStream ignored
      */
-    public void readConfiguration(InputStream inputStream) throws IOException, SecurityException {
-        try {
-            checkAccess();
-            configured.set(true);
-            final String confClassName = tryGetProperty("org.jboss.logmanager.configurator", null);
-            Configurator configurator = null;
-            if (confClassName != null) {
-                configurator = construct(Configurator.class, confClassName);
-            } else {
-                final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-                if (tccl != null) {
-                    final ServiceLoader<Configurator> loader = ServiceLoader.load(Configurator.class, tccl);
-                    final Iterator<Configurator> iterator = loader.iterator();
-                    if (iterator.hasNext()) {
-                        configurator = iterator.next();
-                    }
-                }
-                if (configurator == null) {
-                    final ServiceLoader<Configurator> loader = ServiceLoader.load(Configurator.class, LogManager.class.getClassLoader());
-                    final Iterator<Configurator> iterator = loader.iterator();
-                    if (iterator.hasNext()) {
-                        configurator = iterator.next();
-                    } else {
-                        configurator = new PropertyConfigurator();
-                    }
-                }
-            }
-            if (configurator != null) try {
-                configurator.configure(inputStream);
-                LogContext.getSystemLogContext().getLogger("").attach(Configurator.ATTACHMENT_KEY, configurator);
-            } catch (Throwable t) {
-                StandardOutputStreams.printError(t, "Failed to read or configure the org.jboss.logmanager.LogManager");
-            }
-        } finally {
-            try {
-                inputStream.close();
-            } catch (Throwable ignored) {}
-        }
+    public void readConfiguration(InputStream inputStream) {
+        // on operation
     }
 
     static <T> T construct(Class<? extends T> type, String className) throws IOException {
@@ -217,8 +135,7 @@ public final class LogManager extends java.util.logging.LogManager {
     }
 
     /**
-     * Does nothing. The {@linkplain org.jboss.logmanager.config.LogContextConfiguration configuration API} should be
-     * used.
+     * Does nothing.
      *
      * @param mapper not used
      */
@@ -227,8 +144,7 @@ public final class LogManager extends java.util.logging.LogManager {
     }
 
     /**
-     * Does nothing. The {@linkplain org.jboss.logmanager.config.LogContextConfiguration configuration API} should be
-     * used.
+     * Does nothing.
      *
      * @param ins    not used
      * @param mapper not used

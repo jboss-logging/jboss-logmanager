@@ -33,8 +33,6 @@ import java.util.stream.Collectors;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.LogContext;
-import org.jboss.logmanager.config.HandlerConfiguration;
-import org.jboss.logmanager.config.LogContextConfiguration;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
@@ -56,13 +54,9 @@ public class DelayedHandlerTests {
     public void testQueuedMessages() {
         final LogContext logContext = LogContext.create();
 
-        final LogContextConfiguration logContextConfiguration = LogContextConfiguration.Factory.create(logContext);
-        final HandlerConfiguration delayedHandler = logContextConfiguration.addHandlerConfiguration(
-                null, DelayedHandler.class.getName(), "delayed-handler");
-        logContextConfiguration.addLoggerConfiguration("").addHandlerName(delayedHandler.getName());
-        logContextConfiguration.commit();
-
         final Logger rootLogger = logContext.getLogger("");
+        final DelayedHandler delayedHandler = new DelayedHandler();
+        rootLogger.addHandler(delayedHandler);
         rootLogger.info("Test message 1");
         rootLogger.fine("Test message 2");
 
@@ -72,12 +66,7 @@ public class DelayedHandlerTests {
         final Logger randomLogger = logContext.getLogger("org.jboss.logmanager." + UUID.randomUUID());
         randomLogger.severe("Test message 4");
 
-        // Activate after some messages have been logged
-        final HandlerConfiguration handlerConfiguration = logContextConfiguration.addHandlerConfiguration(
-                null, TestHandler.class.getName(), "test-handler");
-        delayedHandler.setHandlerNames(handlerConfiguration.getName());
-        logContextConfiguration.commit();
-
+        delayedHandler.addHandler(new TestHandler());
 
         rootLogger.info("Test message 5");
         testLogger.severe("Test message 6");
