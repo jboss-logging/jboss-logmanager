@@ -211,6 +211,17 @@ public final class LogContext implements AutoCloseable {
      * @param level the level to register
      */
     public void registerLevel(Level level) {
+        registerLevel(level, false);
+    }
+
+    /**
+     * Register a level instance with this log context.  The level can then be looked up by name.  Any previous level
+     * registration for the given level's name will be overwritten.
+     *
+     * @param level the level to register
+     * @param strong {@code true} to strongly reference the level, or {@code false} to weakly reference it
+     */
+    public void registerLevel(Level level, boolean strong) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
@@ -225,7 +236,7 @@ public final class LogContext implements AutoCloseable {
                     newLevelMap.put(name, levelRef);
                 }
             }
-            newLevelMap.put(level.getName(), References.create(Reference.Type.WEAK, level, null));
+            newLevelMap.put(level.getName(), References.create(strong ? Reference.Type.STRONG : Reference.Type.WEAK, level, null));
             if (levelMapReference.compareAndSet(oldLevelMap, newLevelMap)) {
                 return;
             }
