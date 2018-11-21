@@ -19,7 +19,9 @@
 
 package org.jboss.logmanager;
 
-import java.lang.ref.WeakReference;
+import org.wildfly.common.ref.Reference;
+import org.wildfly.common.ref.References;
+
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Enumeration;
@@ -60,17 +62,17 @@ public final class LogContext implements AutoCloseable {
      * before the class init is complete.
      */
     private static final class LazyHolder {
-        private static final HashMap<String, LevelRef> INITIAL_LEVEL_MAP;
+        private static final HashMap<String, Reference<Level, Void>> INITIAL_LEVEL_MAP;
 
         private LazyHolder() {
         }
 
-        private static void addStrong(Map<String, LevelRef> map, Level level) {
-            map.put(level.getName().toUpperCase(), new StrongLevelRef(level));
+        private static void addStrong(Map<String, Reference<Level, Void>> map, Level level) {
+            map.put(level.getName().toUpperCase(), References.create(Reference.Type.STRONG, level, null));
         }
 
         static {
-            final HashMap<String, LevelRef> map = new HashMap<String, LevelRef>();
+            final HashMap<String, Reference<Level, Void>> map = new HashMap<String, Reference<Level, Void>>();
             addStrong(map, Level.OFF);
             addStrong(map, Level.ALL);
             addStrong(map, Level.SEVERE);
@@ -92,7 +94,7 @@ public final class LogContext implements AutoCloseable {
         }
     }
 
-    private final AtomicReference<Map<String, LevelRef>> levelMapReference;
+    private final AtomicReference<Map<String, Reference<Level, Void>>> levelMapReference;
     // Guarded by treeLock
     private final Set<AutoCloseable> closeHandlers;
 
@@ -103,7 +105,7 @@ public final class LogContext implements AutoCloseable {
 
     LogContext(final boolean strong) {
         this.strong = strong;
-        levelMapReference = new AtomicReference<Map<String, LevelRef>>(LazyHolder.INITIAL_LEVEL_MAP);
+        levelMapReference = new AtomicReference<Map<String, Reference<Level, Void>>>(LazyHolder.INITIAL_LEVEL_MAP);
         rootLogger = new LoggerNode(this);
         loggerNames = new ConcurrentSkipListMap<String, AtomicInteger>();
         closeHandlers = new LinkedHashSet<>();
@@ -189,8 +191,8 @@ public final class LogContext implements AutoCloseable {
      */
     public Level getLevelForName(String name) throws IllegalArgumentException {
         if (name != null) {
-            final Map<String, LevelRef> map = levelMapReference.get();
-            final LogContext.LevelRef levelRef = map.get(name);
+            final Map<String, Reference<Level, Void>> map = levelMapReference.get();
+            final Reference<Level, Void> levelRef = map.get(name);
             if (levelRef != null) {
                 final Level level = levelRef.get();
                 if (level != null) {
@@ -214,16 +216,16 @@ public final class LogContext implements AutoCloseable {
             sm.checkPermission(CONTROL_PERMISSION);
         }
         for (;;) {
-            final Map<String, LevelRef> oldLevelMap = levelMapReference.get();
-            final Map<String, LevelRef> newLevelMap = new HashMap<String, LevelRef>(oldLevelMap.size());
-            for (Map.Entry<String, LevelRef> entry : oldLevelMap.entrySet()) {
+            final Map<String, Reference<Level, Void>> oldLevelMap = levelMapReference.get();
+            final Map<String, Reference<Level, Void>> newLevelMap = new HashMap<>(oldLevelMap.size());
+            for (Map.Entry<String, Reference<Level, Void>> entry : oldLevelMap.entrySet()) {
                 final String name = entry.getKey();
-                final LogContext.LevelRef levelRef = entry.getValue();
+                final Reference<Level, Void> levelRef = entry.getValue();
                 if (levelRef.get() != null) {
                     newLevelMap.put(name, levelRef);
                 }
             }
-            newLevelMap.put(level.getName(), new WeakLevelRef(level));
+            newLevelMap.put(level.getName(), References.create(Reference.Type.WEAK, level, null));
             if (levelMapReference.compareAndSet(oldLevelMap, newLevelMap)) {
                 return;
             }
@@ -242,22 +244,22 @@ public final class LogContext implements AutoCloseable {
             sm.checkPermission(CONTROL_PERMISSION);
         }
         for (;;) {
-            final Map<String, LevelRef> oldLevelMap = levelMapReference.get();
-            final LevelRef oldRef = oldLevelMap.get(level.getName());
+            final Map<String, Reference<Level, Void>> oldLevelMap = levelMapReference.get();
+            final Reference<Level, Void> oldRef = oldLevelMap.get(level.getName());
             if (oldRef == null || oldRef.get() != level) {
                 // not registered, or the registration expired naturally
                 return;
             }
-            final Map<String, LevelRef> newLevelMap = new HashMap<String, LevelRef>(oldLevelMap.size());
-            for (Map.Entry<String, LevelRef> entry : oldLevelMap.entrySet()) {
+            final Map<String, Reference<Level, Void>> newLevelMap = new HashMap<>(oldLevelMap.size());
+            for (Map.Entry<String, Reference<Level, Void>> entry : oldLevelMap.entrySet()) {
                 final String name = entry.getKey();
-                final LevelRef levelRef = entry.getValue();
+                final Reference<Level, Void> levelRef = entry.getValue();
                 final Level oldLevel = levelRef.get();
                 if (oldLevel != null && oldLevel != level) {
                     newLevelMap.put(name, levelRef);
                 }
             }
-            newLevelMap.put(level.getName(), new WeakLevelRef(level));
+            newLevelMap.put(level.getName(), References.create(Reference.Type.WEAK, level, null));
             if (levelMapReference.compareAndSet(oldLevelMap, newLevelMap)) {
                 return;
             }
@@ -452,27 +454,5 @@ public final class LogContext implements AutoCloseable {
             recursivelyClose(child);
         }
         loggerNode.close();
-    }
-
-    private interface LevelRef {
-        Level get();
-    }
-
-    private static final class WeakLevelRef extends WeakReference<Level> implements LevelRef {
-        private WeakLevelRef(final Level level) {
-            super(level);
-        }
-    }
-
-    private static final class StrongLevelRef implements LevelRef {
-        private final Level level;
-
-        private StrongLevelRef(final Level level) {
-            this.level = level;
-        }
-
-        public Level get() {
-            return level;
-        }
     }
 }
