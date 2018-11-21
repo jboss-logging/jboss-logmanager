@@ -19,11 +19,14 @@
 
 package org.jboss.logmanager;
 
+import org.wildfly.common.Assert;
+
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Locale;
 import java.util.ResourceBundle;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -41,6 +44,16 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * The named logger tree node.
      */
     private final LoggerNode loggerNode;
+
+    /**
+     * The resource bundle for this logger.
+     */
+    private volatile ResourceBundle resourceBundle;
+
+    /**
+     * Atomic updater for {@link #resourceBundle}.
+     */
+    private static final AtomicReferenceFieldUpdater<Logger, ResourceBundle> resourceBundleUpdater = AtomicReferenceFieldUpdater.newUpdater(Logger.class, ResourceBundle.class, "resourceBundle");
 
     private static final String LOGGER_CLASS_NAME = Logger.class.getName();
 
@@ -63,7 +76,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     public static Logger getLogger(final String name, final String bundleName) {
         final Logger logger = LogContext.getLogContext().getLogger(name);
-        logger.setResourceBundle(ResourceBundle.getBundle(bundleName, Locale.getDefault(), Logger.class.getClassLoader()));
+        logger.resourceBundle = ResourceBundle.getBundle(bundleName, Locale.getDefault(), Logger.class.getClassLoader());
         return logger;
     }
 
@@ -814,20 +827,9 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     public void logRaw(final ExtLogRecord record) {
         record.setLoggerName(getName());
-        String bundleName = null;
-        ResourceBundle bundle = null;
-        // todo: new parents never have resource bundles; this could cause an issue
-        bundleName = getResourceBundleName();
-        bundle = getResourceBundle();
-//        for (Logger current = this; current != null; current = current.getParent()) {
-//            bundleName = current.getResourceBundleName();
-//            if (bundleName != null) {
-//                bundle = current.getResourceBundle();
-//                break;
-//            }
-//        }
-        if (bundleName != null && bundle != null) {
-            record.setResourceBundleName(bundleName);
+        final ResourceBundle bundle = getResourceBundle();
+        if (bundle != null) {
+            record.setResourceBundleName(bundle.getBaseBundleName());
             record.setResourceBundle(bundle);
         }
         try {
@@ -841,6 +843,48 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             // treat an errored filter as "pass" (I guess?)
         }
         loggerNode.publish(record);
+    }
+
+    /**
+     * Set the resource bundle for this logger.  Unlike {@link java.util.logging.Logger#setResourceBundle(ResourceBundle)},
+     * there is no parent search performed for resource bundles by this implementation.
+     *
+     * @param resourceBundle the resource bundle (must not be {@code null})
+     */
+    @Override
+    public void setResourceBundle(ResourceBundle resourceBundle) {
+        Assert.checkNotNullParam("resourceBundle", resourceBundle);
+        LogContext.checkAccess();
+        ResourceBundle old;
+        do {
+            old = this.resourceBundle;
+            if (old != null && ! old.getBaseBundleName().equals(resourceBundle.getBaseBundleName())) {
+                throw new IllegalArgumentException("Bundle base name does not match existing bundle");
+            }
+        } while (! resourceBundleUpdater.compareAndSet(this, old, resourceBundle));
+    }
+
+    /**
+     * Get the resource bundle for this logger.  Unlike {@link java.util.logging.Logger#getResourceBundle()},
+     * there is no parent search performed for resource bundles by this implementation.
+     *
+     * @return the resource bundle, or {@code null} if none is configured for this logger
+     */
+    @Override
+    public ResourceBundle getResourceBundle() {
+        return resourceBundle;
+    }
+
+    /**
+     * Get the resource bundle name for this logger.  Unlike {@link java.util.logging.Logger#getResourceBundleName()},
+     * there is no parent search performed for resource bundles by this implementation.
+     *
+     * @return the resource bundle, or {@code null} if none is configured for this logger
+     */
+    @Override
+    public String getResourceBundleName() {
+        final ResourceBundle resourceBundle = getResourceBundle();
+        return resourceBundle == null ? null : resourceBundle.getBaseBundleName();
     }
 
     /**
