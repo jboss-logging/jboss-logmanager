@@ -26,15 +26,10 @@ import java.security.Permission;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.LoggingMXBean;
@@ -55,7 +50,6 @@ public final class LogContext implements AutoCloseable {
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
     private final boolean strong;
-    private final ConcurrentSkipListMap<String, AtomicInteger> loggerNames;
 
     /**
      * This lazy holder class is required to prevent a problem due to a LogContext instance being constructed
@@ -107,7 +101,6 @@ public final class LogContext implements AutoCloseable {
         this.strong = strong;
         levelMapReference = new AtomicReference<Map<String, Reference<Level, Void>>>(LazyHolder.INITIAL_LEVEL_MAP);
         rootLogger = new LoggerNode(this);
-        loggerNames = new ConcurrentSkipListMap<String, AtomicInteger>();
         closeHandlers = new LinkedHashSet<>();
     }
 
@@ -332,8 +325,6 @@ public final class LogContext implements AutoCloseable {
             for (AutoCloseable handler : closeHandlers) {
                 handler.close();
             }
-            // Finally clear any logger names
-            loggerNames.clear();
         }
     }
 
@@ -347,37 +338,7 @@ public final class LogContext implements AutoCloseable {
      * @see java.util.logging.LogManager#getLoggerNames()
      */
     public Enumeration<String> getLoggerNames() {
-        final Iterator<Entry<String, AtomicInteger>> iter = loggerNames.entrySet().iterator();
-        return new Enumeration<String>() {
-            String next = null;
-            @Override
-            public boolean hasMoreElements() {
-                while (next == null) {
-                    if (iter.hasNext()) {
-                        final Entry<String, AtomicInteger> entry = iter.next();
-                        if (entry.getValue().get() > 0) {
-                            next = entry.getKey();
-                            return true;
-                        }
-                    } else {
-                        return false;
-                    }
-                }
-                return next != null;
-            }
-
-            @Override
-            public String nextElement() {
-                if (!hasMoreElements()) {
-                    throw new NoSuchElementException();
-                }
-                try {
-                    return next;
-                } finally {
-                    next = null;
-                }
-            }
-        };
+        return rootLogger.getLoggerNames();
     }
 
     /**
@@ -421,23 +382,6 @@ public final class LogContext implements AutoCloseable {
             this.closeHandlers.clear();
             this.closeHandlers.addAll(closeHandlers);
         }
-    }
-
-    protected void incrementRef(final String name) {
-        AtomicInteger counter = loggerNames.get(name);
-        if (counter == null) {
-            final AtomicInteger appearing = loggerNames.putIfAbsent(name, counter = new AtomicInteger());
-            if (appearing != null) {
-                counter = appearing;
-            }
-        }
-        counter.incrementAndGet();
-    }
-
-    protected void decrementRef(final String name) {
-        AtomicInteger counter = loggerNames.get(name);
-        assert (counter != null && counter.get() > 0);
-        counter.decrementAndGet();
     }
 
     private static SecurityException accessDenied() {

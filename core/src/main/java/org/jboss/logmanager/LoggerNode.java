@@ -19,12 +19,20 @@
 
 package org.jboss.logmanager;
 
+import org.wildfly.common.ref.PhantomReference;
+import org.wildfly.common.ref.Reaper;
+import org.wildfly.common.ref.Reference;
+
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Filter;
@@ -35,6 +43,13 @@ import java.util.logging.Level;
  * A node in the tree of logger names.  Maintains weak references to children and a strong reference to its parent.
  */
 final class LoggerNode implements AutoCloseable {
+
+    private static final Reaper<Logger, LoggerNode> REAPER = new Reaper<Logger, LoggerNode>() {
+        @Override
+        public void reap(Reference<Logger, LoggerNode> reference) {
+            reference.getAttachment().activeLoggers.remove(reference);
+        }
+    };
 
     /**
      * The log context.
@@ -75,6 +90,11 @@ final class LoggerNode implements AutoCloseable {
      * Flag to specify whether parent filters are used.
      */
     private volatile boolean useParentFilter = false;
+
+    /**
+     * The set of phantom references to active loggers.
+     */
+    private final Set<Reference<Logger, LoggerNode>> activeLoggers = ConcurrentHashMap.newKeySet();
 
     /**
      * The attachments map.
@@ -221,22 +241,15 @@ final class LoggerNode implements AutoCloseable {
             return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
                 public Logger run() {
                     final Logger logger = new Logger(LoggerNode.this, fullName);
-                    context.incrementRef(fullName);
+                    activeLoggers.add(new PhantomReference<Logger, LoggerNode>(logger, LoggerNode.this, REAPER));
                     return logger;
                 }
             });
         } else {
             final Logger logger = new Logger(this, fullName);
-            context.incrementRef(fullName);
+            activeLoggers.add(new PhantomReference<Logger, LoggerNode>(logger, LoggerNode.this, REAPER));
             return logger;
         }
-    }
-
-    /**
-     * Removes one from the reference count.
-     */
-    void decrementRef() {
-        context.decrementRef(fullName);
     }
 
     /**
@@ -487,19 +500,41 @@ final class LoggerNode implements AutoCloseable {
         return !(filter != null && !filter.isLoggable(record)) && (!loggerNode.useParentFilter || isLoggable(loggerNode.getParent(), record));
     }
 
-    // GC
+    Enumeration<String> getLoggerNames() {
+        return new Enumeration<String>() {
+            final Iterator<LoggerNode> children = getChildren().iterator();
+            String next = activeLoggers.isEmpty() ? null : fullName;
+            Enumeration<String> sub;
 
-    /**
-     * Perform finalization actions.  This amounts to clearing out the loglevel so that all children are updated
-     * with the parent's effective loglevel.  As such, a lock is acquired from this method which might cause delays in
-     * garbage collection.
-     */
-    protected void finalize() throws Throwable {
-        try {
-            // clear out level so that it spams out to all children
-            setLevel(null);
-        } finally {
-            super.finalize();
-        }
+            @Override
+            public boolean hasMoreElements() {
+                while (next == null) {
+                    while (sub == null) {
+                        if (children.hasNext()) {
+                            final LoggerNode child = children.next();
+                            sub = child.getLoggerNames();
+                        } else {
+                            return false;
+                        }
+                    }
+                    if (sub.hasMoreElements()) {
+                        next = sub.nextElement();
+                        return true;
+                    } else {
+                        sub = null;
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public String nextElement() {
+                try {
+                    return next;
+                } finally {
+                    next = null;
+                }
+            }
+        };
     }
 }

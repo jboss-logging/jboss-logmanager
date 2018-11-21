@@ -878,13 +878,4 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     public String toString() {
         return "Logger '" + getName() + "' in context " + loggerNode.getContext();
     }
-
-    @Override
-    protected void finalize() throws Throwable {
-        try {
-            loggerNode.decrementRef();
-        } finally {
-            super.finalize();
-        }
-    }
 }
