@@ -66,6 +66,15 @@
         <org.jboss.test.port>4560</org.jboss.test.port>
         <org.jboss.test.alt.port>14560</org.jboss.test.alt.port>
 
+        <skipTests>false</skipTests>
+        <skipITs>${skipTests}</skipITs>
+        <skipUTs>${skipTests}</skipUTs>
+
+        <!-- Please note this version override is only done to support the testCompile use-case for Java 9+ tests. The
+             testCompile does not seem to include test dependencies on the class path in 3.8.0-jboss-1 for some reason.
+        -->
+        <version.compiler.plugin>3.7.0-jboss-1</version.compiler.plugin>
+
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
 
@@ -148,6 +157,34 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <artifactId>maven-failsafe-plugin</artifactId>
+                    <configuration>
+                        <skipTests>${skipTests}</skipTests>
+                        <skipITs>${skipITs}</skipITs>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <goals>
+                                <goal>integration-test</goal>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <configuration>
+                        <skipTests>${skipUTs}</skipTests>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
 
     <profiles>
         <!-- This profile is required to add the tools.jar to the class path for Java 8 for byteman -->
