@@ -23,8 +23,9 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.jboss.modules.Module;
 import org.jboss.modules.Version;
@@ -37,6 +38,7 @@ final class JDKSpecific {
 
     private static final Gateway GATEWAY;
     private static final boolean JBOSS_MODULES;
+    private static final boolean MODULAR_JVM;
 
     static {
         GATEWAY = AccessController.doPrivileged(new PrivilegedAction<Gateway>() {
@@ -50,12 +52,40 @@ final class JDKSpecific {
             jbossModules = true;
         } catch (Throwable ignored) {}
         JBOSS_MODULES = jbossModules;
+
+        // Get the current Java version and determine, by JVM version level, if this is a modular JDK
+        final String value = AccessController.doPrivileged(new PrivilegedAction<String>() {
+            @Override
+            public String run() {
+                return System.getProperty("java.specification.version");
+            }
+        });
+        // Shouldn't happen, but we'll assume we're not a modular environment
+        boolean modularJvm = false;
+        if (value != null) {
+            final Matcher matcher = Pattern.compile("^(?:1\\.)?(\\d+)$").matcher(value);
+            if (matcher.find()) {
+                modularJvm = Integer.parseInt(matcher.group(1)) >= 9;
+            }
+        }
+        MODULAR_JVM = modularJvm;
     }
 
     static final class Gateway extends SecurityManager {
         protected Class<?>[] getClassContext() {
             return super.getClassContext();
         }
+    }
+
+    /**
+     * Determines whether or not this is a modular JVM. The version of the {@code java.specification.version} is checked
+     * to determine if the version is greater than or equal to 9. This is required to disable specific features/hacks
+     * for older JVM's when the log manager is loaded on the boot class path which doesn't support multi-release JAR's.
+     *
+     * @return {@code true} if determined to be a modular JVM, otherwise {@code false}
+     */
+    static boolean isModularJvm() {
+        return MODULAR_JVM;
     }
 
     static Class<?> findCallingClass(Set<ClassLoader> rejectClassLoaders) {

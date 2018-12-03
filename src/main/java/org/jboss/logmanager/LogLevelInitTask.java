@@ -39,6 +39,11 @@ class LogLevelInitTask implements PrivilegedAction<Void> {
 
     @SuppressWarnings({ "unchecked" })
     public Void run() {
+        // If this is a modular JVM ignore the level hack. The check here is required when the log manager is added to
+        // the boot class path. The boot class path does not support multi-release JAR's.
+        if (JDKSpecific.isModularJvm()) {
+            return null;
+        }
         /* This mysterious-looking hack is designed to trick JDK logging into not leaking classloaders and
            so forth when adding levels, by simply shutting down the craptastic level name "registry" that it keeps.
         */
