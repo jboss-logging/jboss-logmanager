@@ -12,9 +12,6 @@ import javax.net.ssl.SSLContext;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
-import org.jboss.logmanager.config.FormatterConfiguration;
-import org.jboss.logmanager.config.HandlerConfiguration;
-import org.jboss.logmanager.config.LogContextConfiguration;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.SocketHandler.Protocol;
 import org.junit.Assert;
@@ -170,33 +167,19 @@ public class SocketHandlerTests extends AbstractHandlerTest {
     public void testTlsConfig() throws Exception {
         try (SimpleServer server = SimpleServer.createTlsServer(port)) {
             final LogContext logContext = LogContext.create();
-            final LogContextConfiguration logContextConfiguration = LogContextConfiguration.Factory.create(logContext);
-            // Create the formatter
-            final FormatterConfiguration formatterConfiguration = logContextConfiguration.addFormatterConfiguration(
-                    null, PatternFormatter.class.getName(), "pattern");
-            formatterConfiguration.setPropertyValueString("pattern", "%s\n");
-            // Create the handler
-            final HandlerConfiguration handlerConfiguration = logContextConfiguration.addHandlerConfiguration(
-                    null, SocketHandler.class.getName(), "socket",
-                    "protocol", "hostname", "port");
-            handlerConfiguration.setPropertyValueString("protocol", Protocol.SSL_TCP.name());
-            handlerConfiguration.setPropertyValueString("hostname", address.getHostAddress());
-            handlerConfiguration.setPropertyValueString("port", Integer.toString(port));
-            handlerConfiguration.setPropertyValueString("autoFlush", "true");
-            handlerConfiguration.setPropertyValueString("encoding", "utf-8");
-            handlerConfiguration.setFormatterName(formatterConfiguration.getName());
-
-            logContextConfiguration.addLoggerConfiguration("").addHandlerName(handlerConfiguration.getName());
-
-            logContextConfiguration.commit();
-
-            final Handler instance = handlerConfiguration.getInstance();
-            Assert.assertTrue(instance instanceof SocketHandler);
-            ((SocketHandler) instance).setSocketFactory(SSLContext.getDefault().getSocketFactory());
-
+            final PatternFormatter patternFormatter = new PatternFormatter("%s\n");
+            final SocketHandler socketHandler = new SocketHandler();
+            socketHandler.setSocketFactory(SSLContext.getDefault().getSocketFactory());
+            socketHandler.setProtocol(Protocol.SSL_TCP);
+            socketHandler.setAddress(address);
+            socketHandler.setPort(port);
+            socketHandler.setAutoFlush(true);
+            socketHandler.setEncoding("utf-8");
+            socketHandler.setFormatter(patternFormatter);
             // Create the root logger
-            final Logger logger = logContext.getLogger("");
-            logger.info("Test TCP handler " + port + " 1");
+            final Logger rootLogger = logContext.getLogger("");
+            rootLogger.addHandler(socketHandler);
+            rootLogger.info("Test TCP handler " + port + " 1");
             String msg = server.timeoutPoll();
             Assert.assertNotNull(msg);
             Assert.assertEquals("Test TCP handler " + port + " 1", msg);

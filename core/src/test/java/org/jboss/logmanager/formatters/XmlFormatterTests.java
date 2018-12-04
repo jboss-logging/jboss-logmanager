@@ -24,13 +24,9 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 import javax.xml.XMLConstants;
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -46,18 +42,14 @@ import org.jboss.logmanager.Level;
 import org.jboss.logmanager.formatters.StructuredFormatter.Key;
 import org.junit.Assert;
 import org.junit.Test;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
 import org.xml.sax.ErrorHandler;
-import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class XmlFormatterTests extends AbstractStructuredFormatterTest {
+public class XmlFormatterTests extends AbstractTest {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
             .ISO_OFFSET_DATE_TIME
             .withZone(ZoneId.systemDefault());
@@ -143,61 +135,6 @@ public class XmlFormatterTests extends AbstractStructuredFormatterTest {
         record.setNdc("testNdc");
         formatter.setExceptionOutputType(JsonFormatter.ExceptionOutputType.DETAILED_AND_FORMATTED);
         compare(record, formatter);
-    }
-
-    @Override
-    Class<? extends StructuredFormatter> getFormatterType() {
-        return XmlFormatter.class;
-    }
-
-    @Override
-    void compare(final Map<String, Consumer<String>> expectedValues, final String formattedMessage) throws Exception {
-
-        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        final DocumentBuilder builder = factory.newDocumentBuilder();
-        final Document doc = builder.parse(new InputSource(new StringReader(formattedMessage)));
-
-        final Iterator<Map.Entry<String, Consumer<String>>> iterator = expectedValues.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry<String, Consumer<String>> entry = iterator.next();
-            String key = entry.getKey();
-            NodeList nodes = doc.getElementsByTagName(key);
-            // We're assuming here if the nodes are null we're using meta data
-            if (nodes.getLength() == 0) {
-                int metaDataCounter = 0;
-                nodes = doc.getElementsByTagName("metaData");
-                while (metaDataCounter < nodes.getLength()) {
-                    final Node node = nodes.item(metaDataCounter++);
-                    Assert.assertTrue(node.hasAttributes());
-                    Assert.assertTrue(node.hasChildNodes());
-                    // Check the key attribute
-                    Assert.assertEquals(1, node.getAttributes().getLength());
-                    Assert.assertEquals(key, node.getAttributes().getNamedItem("key").getTextContent());
-
-                    // Check the content
-                    final String content = node.getTextContent();
-                    // We're assuming an empty string or \n means null
-                    if (content.matches("\\s+")) {
-                        entry.getValue().accept(null);
-                    } else {
-                        entry.getValue().accept(content);
-                    }
-
-                    iterator.remove();
-                    if (iterator.hasNext()) {
-                        entry = iterator.next();
-                        key = entry.getKey();
-                    } else {
-                        break;
-                    }
-                }
-            } else {
-                final String xmlValue = nodes.item(0).getTextContent();
-                entry.getValue().accept(xmlValue);
-            }
-            iterator.remove();
-        }
-        Assert.assertTrue("Expected map to be empty " + expectedValues, expectedValues.isEmpty());
     }
 
     private static int getInt(final XMLStreamReader reader) throws XMLStreamException {

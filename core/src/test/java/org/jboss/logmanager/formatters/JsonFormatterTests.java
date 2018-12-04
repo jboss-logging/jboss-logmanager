@@ -25,10 +25,8 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -46,7 +44,7 @@ import org.junit.Test;
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class JsonFormatterTests extends AbstractStructuredFormatterTest {
+public class JsonFormatterTests extends AbstractTest {
     private static final Map<Key, String> KEY_OVERRIDES = new HashMap<>();
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
             .ISO_OFFSET_DATE_TIME
@@ -101,35 +99,6 @@ public class JsonFormatterTests extends AbstractStructuredFormatterTest {
                 .add("product-type", "JBoss")
                 .build();
         compare(record, formatter, metaDataMap);
-    }
-
-    @Override
-    Class<? extends StructuredFormatter> getFormatterType() {
-        return JsonFormatter.class;
-    }
-
-    @Override
-    void compare(final Map<String, Consumer<String>> expectedValues, final String formattedMessage) {
-        try (JsonReader reader = Json.createReader(new StringReader(formattedMessage))) {
-            final JsonObject json = reader.readObject();
-            final Iterator<Map.Entry<String, Consumer<String>>> iterator = expectedValues.entrySet().iterator();
-            while (iterator.hasNext()) {
-                final Map.Entry<String, Consumer<String>> entry = iterator.next();
-                final String key = entry.getKey();
-                final JsonValue jsonValue = json.get(key);
-                if (jsonValue.getValueType() == ValueType.STRING) {
-                    entry.getValue().accept(json.getString(key));
-                } else if (jsonValue.getValueType() == ValueType.NUMBER) {
-                    entry.getValue().accept(json.getJsonNumber(key).toString());
-                } else if (jsonValue.getValueType() == ValueType.NULL) {
-                    entry.getValue().accept(null);
-                } else {
-                    Assert.fail(String.format("Type %s is not implemented: %s", jsonValue.getValueType(), jsonValue));
-                }
-                iterator.remove();
-            }
-            Assert.assertTrue("Expected map to be empty " + expectedValues, expectedValues.isEmpty());
-        }
     }
 
     private static int getInt(final JsonObject json, final Key key) {
