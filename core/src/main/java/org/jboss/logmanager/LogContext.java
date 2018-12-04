@@ -19,20 +19,17 @@
 
 package org.jboss.logmanager;
 
-import java.lang.ref.WeakReference;
+import org.wildfly.common.ref.Reference;
+import org.wildfly.common.ref.References;
+
 import java.security.Permission;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ConcurrentSkipListMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
 import java.util.logging.LoggingMXBean;
@@ -53,24 +50,23 @@ public final class LogContext implements AutoCloseable {
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
     private final boolean strong;
-    private final ConcurrentSkipListMap<String, AtomicInteger> loggerNames;
 
     /**
      * This lazy holder class is required to prevent a problem due to a LogContext instance being constructed
      * before the class init is complete.
      */
     private static final class LazyHolder {
-        private static final HashMap<String, LevelRef> INITIAL_LEVEL_MAP;
+        private static final HashMap<String, Reference<Level, Void>> INITIAL_LEVEL_MAP;
 
         private LazyHolder() {
         }
 
-        private static void addStrong(Map<String, LevelRef> map, Level level) {
-            map.put(level.getName().toUpperCase(), new StrongLevelRef(level));
+        private static void addStrong(Map<String, Reference<Level, Void>> map, Level level) {
+            map.put(level.getName().toUpperCase(), References.create(Reference.Type.STRONG, level, null));
         }
 
         static {
-            final HashMap<String, LevelRef> map = new HashMap<String, LevelRef>();
+            final HashMap<String, Reference<Level, Void>> map = new HashMap<String, Reference<Level, Void>>();
             addStrong(map, Level.OFF);
             addStrong(map, Level.ALL);
             addStrong(map, Level.SEVERE);
@@ -92,7 +88,7 @@ public final class LogContext implements AutoCloseable {
         }
     }
 
-    private final AtomicReference<Map<String, LevelRef>> levelMapReference;
+    private final AtomicReference<Map<String, Reference<Level, Void>>> levelMapReference;
     // Guarded by treeLock
     private final Set<AutoCloseable> closeHandlers;
 
@@ -103,9 +99,8 @@ public final class LogContext implements AutoCloseable {
 
     LogContext(final boolean strong) {
         this.strong = strong;
-        levelMapReference = new AtomicReference<Map<String, LevelRef>>(LazyHolder.INITIAL_LEVEL_MAP);
+        levelMapReference = new AtomicReference<Map<String, Reference<Level, Void>>>(LazyHolder.INITIAL_LEVEL_MAP);
         rootLogger = new LoggerNode(this);
-        loggerNames = new ConcurrentSkipListMap<String, AtomicInteger>();
         closeHandlers = new LinkedHashSet<>();
     }
 
@@ -133,6 +128,69 @@ public final class LogContext implements AutoCloseable {
      */
     public static LogContext create() {
         return create(false);
+    }
+
+    // Attachment mgmt
+
+    /**
+     * Get the attachment value for a given key, or {@code null} if there is no such attachment.
+     * Log context attachments are placed on the root logger and can also be accessed there.
+     *
+     * @param key the key
+     * @param <V> the attachment value type
+     * @return the attachment, or {@code null} if there is none for this key
+     */
+    @SuppressWarnings({ "unchecked" })
+    public <V> V getAttachment(Logger.AttachmentKey<V> key) {
+        return rootLogger.getAttachment(key);
+    }
+
+    /**
+     * Attach an object to this log context under a given key.
+     * A strong reference is maintained to the key and value for as long as this log context exists.
+     * Log context attachments are placed on the root logger and can also be accessed there.
+     *
+     * @param key the attachment key
+     * @param value the attachment value
+     * @param <V> the attachment value type
+     * @return the old attachment, if there was one
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    public <V> V attach(Logger.AttachmentKey<V> key, V value) throws SecurityException {
+        checkAccess();
+        return rootLogger.attach(key, value);
+    }
+
+    /**
+     * Attach an object to this log context under a given key, if such an attachment does not already exist.
+     * A strong reference is maintained to the key and value for as long as this log context exists.
+     * Log context attachments are placed on the root logger and can also be accessed there.
+     *
+     * @param key the attachment key
+     * @param value the attachment value
+     * @param <V> the attachment value type
+     * @return the current attachment, if there is one, or {@code null} if the value was successfully attached
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    @SuppressWarnings({ "unchecked" })
+    public <V> V attachIfAbsent(Logger.AttachmentKey<V> key, V value) throws SecurityException {
+        checkAccess();
+        return rootLogger.attachIfAbsent(key, value);
+    }
+
+    /**
+     * Remove an attachment.
+     * Log context attachments are placed on the root logger and can also be accessed there.
+     *
+     * @param key the attachment key
+     * @param <V> the attachment value type
+     * @return the old value, or {@code null} if there was none
+     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     */
+    @SuppressWarnings({ "unchecked" })
+    public <V> V detach(Logger.AttachmentKey<V> key) throws SecurityException {
+        checkAccess();
+        return rootLogger.detach(key);
     }
 
     /**
@@ -189,8 +247,8 @@ public final class LogContext implements AutoCloseable {
      */
     public Level getLevelForName(String name) throws IllegalArgumentException {
         if (name != null) {
-            final Map<String, LevelRef> map = levelMapReference.get();
-            final LogContext.LevelRef levelRef = map.get(name);
+            final Map<String, Reference<Level, Void>> map = levelMapReference.get();
+            final Reference<Level, Void> levelRef = map.get(name);
             if (levelRef != null) {
                 final Level level = levelRef.get();
                 if (level != null) {
@@ -209,21 +267,32 @@ public final class LogContext implements AutoCloseable {
      * @param level the level to register
      */
     public void registerLevel(Level level) {
+        registerLevel(level, false);
+    }
+
+    /**
+     * Register a level instance with this log context.  The level can then be looked up by name.  Any previous level
+     * registration for the given level's name will be overwritten.
+     *
+     * @param level the level to register
+     * @param strong {@code true} to strongly reference the level, or {@code false} to weakly reference it
+     */
+    public void registerLevel(Level level, boolean strong) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
         }
         for (;;) {
-            final Map<String, LevelRef> oldLevelMap = levelMapReference.get();
-            final Map<String, LevelRef> newLevelMap = new HashMap<String, LevelRef>(oldLevelMap.size());
-            for (Map.Entry<String, LevelRef> entry : oldLevelMap.entrySet()) {
+            final Map<String, Reference<Level, Void>> oldLevelMap = levelMapReference.get();
+            final Map<String, Reference<Level, Void>> newLevelMap = new HashMap<>(oldLevelMap.size());
+            for (Map.Entry<String, Reference<Level, Void>> entry : oldLevelMap.entrySet()) {
                 final String name = entry.getKey();
-                final LogContext.LevelRef levelRef = entry.getValue();
+                final Reference<Level, Void> levelRef = entry.getValue();
                 if (levelRef.get() != null) {
                     newLevelMap.put(name, levelRef);
                 }
             }
-            newLevelMap.put(level.getName(), new WeakLevelRef(level));
+            newLevelMap.put(level.getName(), References.create(strong ? Reference.Type.STRONG : Reference.Type.WEAK, level, null));
             if (levelMapReference.compareAndSet(oldLevelMap, newLevelMap)) {
                 return;
             }
@@ -242,22 +311,22 @@ public final class LogContext implements AutoCloseable {
             sm.checkPermission(CONTROL_PERMISSION);
         }
         for (;;) {
-            final Map<String, LevelRef> oldLevelMap = levelMapReference.get();
-            final LevelRef oldRef = oldLevelMap.get(level.getName());
+            final Map<String, Reference<Level, Void>> oldLevelMap = levelMapReference.get();
+            final Reference<Level, Void> oldRef = oldLevelMap.get(level.getName());
             if (oldRef == null || oldRef.get() != level) {
                 // not registered, or the registration expired naturally
                 return;
             }
-            final Map<String, LevelRef> newLevelMap = new HashMap<String, LevelRef>(oldLevelMap.size());
-            for (Map.Entry<String, LevelRef> entry : oldLevelMap.entrySet()) {
+            final Map<String, Reference<Level, Void>> newLevelMap = new HashMap<>(oldLevelMap.size());
+            for (Map.Entry<String, Reference<Level, Void>> entry : oldLevelMap.entrySet()) {
                 final String name = entry.getKey();
-                final LevelRef levelRef = entry.getValue();
+                final Reference<Level, Void> levelRef = entry.getValue();
                 final Level oldLevel = levelRef.get();
                 if (oldLevel != null && oldLevel != level) {
                     newLevelMap.put(name, levelRef);
                 }
             }
-            newLevelMap.put(level.getName(), new WeakLevelRef(level));
+            newLevelMap.put(level.getName(), References.create(Reference.Type.WEAK, level, null));
             if (levelMapReference.compareAndSet(oldLevelMap, newLevelMap)) {
                 return;
             }
@@ -319,8 +388,6 @@ public final class LogContext implements AutoCloseable {
             for (AutoCloseable handler : closeHandlers) {
                 handler.close();
             }
-            // Finally clear any logger names
-            loggerNames.clear();
         }
     }
 
@@ -334,37 +401,7 @@ public final class LogContext implements AutoCloseable {
      * @see java.util.logging.LogManager#getLoggerNames()
      */
     public Enumeration<String> getLoggerNames() {
-        final Iterator<Entry<String, AtomicInteger>> iter = loggerNames.entrySet().iterator();
-        return new Enumeration<String>() {
-            String next = null;
-            @Override
-            public boolean hasMoreElements() {
-                while (next == null) {
-                    if (iter.hasNext()) {
-                        final Entry<String, AtomicInteger> entry = iter.next();
-                        if (entry.getValue().get() > 0) {
-                            next = entry.getKey();
-                            return true;
-                        }
-                    } else {
-                        return false;
-                    }
-                }
-                return next != null;
-            }
-
-            @Override
-            public String nextElement() {
-                if (!hasMoreElements()) {
-                    throw new NoSuchElementException();
-                }
-                try {
-                    return next;
-                } finally {
-                    next = null;
-                }
-            }
-        };
+        return rootLogger.getLoggerNames();
     }
 
     /**
@@ -410,23 +447,6 @@ public final class LogContext implements AutoCloseable {
         }
     }
 
-    protected void incrementRef(final String name) {
-        AtomicInteger counter = loggerNames.get(name);
-        if (counter == null) {
-            final AtomicInteger appearing = loggerNames.putIfAbsent(name, counter = new AtomicInteger());
-            if (appearing != null) {
-                counter = appearing;
-            }
-        }
-        counter.incrementAndGet();
-    }
-
-    protected void decrementRef(final String name) {
-        AtomicInteger counter = loggerNames.get(name);
-        assert (counter != null && counter.get() > 0);
-        counter.decrementAndGet();
-    }
-
     private static SecurityException accessDenied() {
         return new SecurityException("Log context modification access denied");
     }
@@ -452,27 +472,5 @@ public final class LogContext implements AutoCloseable {
             recursivelyClose(child);
         }
         loggerNode.close();
-    }
-
-    private interface LevelRef {
-        Level get();
-    }
-
-    private static final class WeakLevelRef extends WeakReference<Level> implements LevelRef {
-        private WeakLevelRef(final Level level) {
-            super(level);
-        }
-    }
-
-    private static final class StrongLevelRef implements LevelRef {
-        private final Level level;
-
-        private StrongLevelRef(final Level level) {
-            this.level = level;
-        }
-
-        public Level get() {
-            return level;
-        }
     }
 }

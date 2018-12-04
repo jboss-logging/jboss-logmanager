@@ -19,12 +19,20 @@
 
 package org.jboss.logmanager;
 
+import org.wildfly.common.Assert;
+
 import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Filter;
@@ -81,39 +89,58 @@ public final class LogManager extends java.util.logging.LogManager {
 
     // Configuration
 
+    private final AtomicReference<LogContextConfigurator> configuratorRef = new AtomicReference<>();
+
     /**
-     * Do nothing.  Log contexts are configured on construction.
+     * Configure the system log context initially.
      */
     public void readConfiguration() {
-        // on operation
+        doConfigure(null);
     }
 
     /**
-     * Do nothing.  Log contexts are configured on construction.
+     * Configure the system log context initially withe given input stream.
      *
      * @param inputStream ignored
      */
     public void readConfiguration(InputStream inputStream) {
-        // on operation
+        Assert.checkNotNullParam("inputStream", inputStream);
+        doConfigure(inputStream);
     }
 
-    static <T> T construct(Class<? extends T> type, String className) throws IOException {
-        try {
-            Class<?> clazz = null;
-            try {
-                final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-                if (tccl != null) {
-                    clazz = Class.forName(className, true, tccl);
+    private void doConfigure(InputStream inputStream) {
+        final AtomicReference<LogContextConfigurator> configuratorRef = this.configuratorRef;
+        LogContextConfigurator configurator = configuratorRef.get();
+        if (configurator == null) {
+            synchronized (configuratorRef) {
+                configurator = configuratorRef.get();
+                if (configurator == null) {
+                    final ServiceLoader<LogContextConfigurator> serviceLoader = ServiceLoader.load(LogContextConfigurator.class);
+                    final Iterator<LogContextConfigurator> iterator = serviceLoader.iterator();
+                    List<Throwable> problems = null;
+                    for (;;) try {
+                        if (! iterator.hasNext()) break;
+                        configurator = iterator.next();
+                        break;
+                    } catch (Throwable t) {
+                        if (problems == null) problems = new ArrayList<>(4);
+                        problems.add(t);
+                    }
+                    if (configurator == null) {
+                        if (problems == null) {
+                            configuratorRef.set(configurator = LogContextConfigurator.EMPTY);
+                        } else {
+                            final ServiceConfigurationError e = new ServiceConfigurationError("Failed to configure log configurator service");
+                            for (Throwable problem : problems) {
+                                e.addSuppressed(problem);
+                            }
+                            throw e;
+                        }
+                    }
                 }
-            } catch (ClassNotFoundException ignore) {
             }
-            if (clazz == null) clazz = Class.forName(className, true, LogManager.class.getClassLoader());
-            return type.cast(clazz.getConstructor().newInstance());
-        } catch (Exception e) {
-            final IOException ioe = new IOException("Unable to load configuration class " + className);
-            ioe.initCause(e);
-            throw ioe;
         }
+        configurator.configure(LogContext.getSystemLogContext(), inputStream);
     }
 
     /**

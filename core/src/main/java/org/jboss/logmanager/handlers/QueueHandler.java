@@ -23,6 +23,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
+import org.wildfly.common.Assert;
 
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
@@ -116,6 +117,33 @@ public class QueueHandler extends ExtHandler {
         }
         synchronized (buffer) {
             this.limit = limit;
+        }
+    }
+
+    @Override
+    public void addHandler(Handler handler) throws SecurityException {
+        addHandler(handler, false);
+    }
+
+    /**
+     * Add the given handler, optionally atomically replaying the queue, allowing the delegate handler to receive
+     * all queued messages as well as all subsequent messages with no loss or reorder in between.
+     *
+     * @param handler the handler to add (must not be {@code null})
+     * @param replay {@code true} to replay the prior messages, or {@code false} to add the handler without replaying
+     * @throws SecurityException if the handler was not allowed to be added
+     */
+    public void addHandler(Handler handler, boolean replay) throws SecurityException {
+        Assert.checkNotNullParam("handler", handler);
+        if (replay) {
+            synchronized (buffer) {
+                super.addHandler(handler);
+                for (ExtLogRecord record : buffer) {
+                    handler.publish(record);
+                }
+            }
+        } else {
+            super.addHandler(handler);
         }
     }
 
