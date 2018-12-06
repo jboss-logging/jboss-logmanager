@@ -47,6 +47,7 @@
 
     <modules>
         <module>core</module>
+        <module>ext</module>
     </modules>
 
     <properties>
@@ -54,7 +55,9 @@
         <version.javax.json>1.0</version.javax.json>
         <version.org.byteman>4.0.4</version.org.byteman>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
+        <version.org.jboss.logging.jboss-logging>3.3.2.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.modules.jboss-modules>1.7.0.Final</version.org.jboss.modules.jboss-modules>
+        <version.org.kohsuke.metainf-services>1.8</version.org.kohsuke.metainf-services>
         <version.org.wildfly.common.wildfly-common>1.2.0.Final</version.org.wildfly.common.wildfly-common>
         <version.junit.junit>4.12</version.junit.junit>
 
@@ -71,10 +74,24 @@
 
     <dependencyManagement>
         <dependencies>
+            <!-- An odd dependency, but required for org.wildfly.common:wildfly-common -->
+            <dependency>
+                <groupId>org.jboss.logging</groupId>
+                <artifactId>jboss-logging</artifactId>
+                <version>${version.org.jboss.logging.jboss-logging}</version>
+            </dependency>
             <dependency>
                 <groupId>org.jboss.modules</groupId>
                 <artifactId>jboss-modules</artifactId>
                 <version>${version.org.jboss.modules.jboss-modules}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.kohsuke.metainf-services</groupId>
+                <artifactId>metainf-services</artifactId>
+                <version>${version.org.kohsuke.metainf-services}</version>
+                <!-- Optional and provided as this is only a compile-time dependency -->
+                <optional>true</optional>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.wildfly.common</groupId>
