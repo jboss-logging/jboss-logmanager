@@ -19,35 +19,47 @@
 
 package org.jboss.logmanager.errormanager;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-
 import java.util.logging.ErrorManager;
 
-import org.jboss.logmanager.StandardOutputStreams;
+import org.jboss.logmanager.ExtErrorManager;
 
 /**
- * An error manager which runs only once and writes a complete formatted error to {@code System.err}.  Caches
- * an early {@code System.err} in case it is replaced.
+ * An error manager which runs only once and delegates to the given error manager.
  */
-public final class OnlyOnceErrorManager extends ErrorManager {
+public final class OnlyOnceErrorManager extends ExtErrorManager {
 
-    private final AtomicBoolean called = new AtomicBoolean();
+    private volatile ErrorManager delegate;
+
+    /**
+     * Construct a new instance.
+     *
+     * @param delegate the delegate error manager
+     */
+    public OnlyOnceErrorManager(final ErrorManager delegate) {
+        this.delegate = delegate;
+    }
+
+    /**
+     * Construct a new instance with a {@link SimpleErrorManager} as a delegate.
+     */
+    public OnlyOnceErrorManager() {
+        this(new SimpleErrorManager());
+    }
 
     /** {@inheritDoc} */
     public void error(final String msg, final Exception ex, final int code) {
-        if (called.getAndSet(true)) {
+        ErrorManager delegate = this.delegate;
+        if (delegate == null) {
             return;
+        } else {
+            synchronized (this) {
+                delegate = this.delegate;
+                if (delegate == null) {
+                    return;
+                }
+                this.delegate = null;
+            }
         }
-        final String codeStr;
-        switch (code) {
-            case CLOSE_FAILURE: codeStr = "CLOSE_FAILURE"; break;
-            case FLUSH_FAILURE: codeStr = "FLUSH_FAILURE"; break;
-            case FORMAT_FAILURE: codeStr = "FORMAT_FAILURE"; break;
-            case GENERIC_FAILURE: codeStr = "GENERIC_FAILURE"; break;
-            case OPEN_FAILURE: codeStr = "OPEN_FAILURE"; break;
-            case WRITE_FAILURE: codeStr = "WRITE_FAILURE"; break;
-            default: codeStr = "INVALID (" + code + ")"; break;
-        }
-        StandardOutputStreams.printError(ex, "LogManager error of type %s: %s%n", codeStr, msg);
+        delegate.error(msg, ex, code);
     }
 }

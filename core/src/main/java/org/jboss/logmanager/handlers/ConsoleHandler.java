@@ -27,8 +27,7 @@ import java.io.Writer;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
-import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.Level;
+import org.jboss.logmanager.errormanager.HandlerErrorManager;
 import org.jboss.logmanager.formatters.Formatters;
 
 /**
@@ -59,28 +58,7 @@ public class ConsoleHandler extends OutputStreamHandler {
 
     private static final PrintWriter console;
 
-    private final ErrorManager localErrorManager = new ErrorManager() {
-        public void error(final String msg, final Exception ex, final int code) {
-            final ExtLogRecord record = new ExtLogRecord(Level.ERROR, "Failed to publish log record (%s[%d]): %s", ExtLogRecord.FormatStyle.PRINTF, getClass().getName());
-            final String codeStr;
-            switch (code) {
-                case ErrorManager.GENERIC_FAILURE: codeStr = "GENERIC_FAILURE"; break;
-                case ErrorManager.WRITE_FAILURE:   codeStr = "WRITE_FAILURE";   break;
-                case ErrorManager.FLUSH_FAILURE:   codeStr = "FLUSH_FAILURE";   break;
-                case ErrorManager.CLOSE_FAILURE:   codeStr = "CLOSE_FAILURE";   break;
-                case ErrorManager.OPEN_FAILURE:    codeStr = "OPEN_FAILURE";    break;
-                case ErrorManager.FORMAT_FAILURE:  codeStr = "FORMAT_FAILURE";  break;
-                default: codeStr = "Unknown Code"; break;
-            }
-            record.setParameters(new Object[] {
-                codeStr,
-                Integer.toString(code),
-                msg,
-            });
-            record.setThrown(ex);
-            publish(record);
-        }
-    };
+    private final ErrorManager localErrorManager = new HandlerErrorManager(this);
 
     static {
         final Console con = System.console();
