@@ -23,12 +23,34 @@ import java.text.MessageFormat;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.logging.Formatter;
+import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
 /**
  * A formatter which handles {@link org.jboss.logmanager.ExtLogRecord ExtLogRecord} instances.
  */
 public abstract class ExtFormatter extends Formatter {
+    /**
+     * Construct a new instance.
+     */
+    public ExtFormatter() {
+    }
+
+    /**
+     * Wrap an existing formatter with an {@link ExtFormatter}, optionally replacing message formatting with
+     * the default extended message formatting capability.
+     *
+     * @param formatter the formatter to wrap (must not be {@code null})
+     * @param formatMessages {@code true} to replace message formatting, {@code false} to let the original formatter do it
+     * @return the extended formatter (not {@code null})
+     */
+    public static ExtFormatter wrap(Formatter formatter, boolean formatMessages) {
+        if (formatter instanceof ExtFormatter && ! formatMessages) {
+            return (ExtFormatter) formatter;
+        } else {
+            return new WrappedFormatter(formatter, formatMessages);
+        }
+    }
 
     /** {@inheritDoc} */
     public final String format(final LogRecord record) {
@@ -119,5 +141,35 @@ public abstract class ExtFormatter extends Formatter {
      */
     protected String formatMessagePrintf(LogRecord record) {
         return String.format(record.getMessage(), record.getParameters());
+    }
+
+    static class WrappedFormatter extends ExtFormatter {
+        private final Formatter formatter;
+        private final boolean formatMessages;
+
+        WrappedFormatter(Formatter formatter, boolean formatMessages) {
+            this.formatter = formatter;
+            this.formatMessages = formatMessages;
+        }
+
+        @Override
+        public String format(ExtLogRecord record) {
+            return formatter.format(record);
+        }
+
+        @Override
+        public String formatMessage(LogRecord record) {
+            return formatMessages ? super.formatMessage(record) : formatter.formatMessage(record);
+        }
+
+        @Override
+        public String getHead(Handler h) {
+            return formatter.getHead(h);
+        }
+
+        @Override
+        public String getTail(Handler h) {
+            return formatter.getTail(h);
+        }
     }
 }
