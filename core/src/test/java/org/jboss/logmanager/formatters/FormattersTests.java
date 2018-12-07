@@ -27,9 +27,17 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.URLStreamHandler;
 
+import org.jboss.logmanager.Environment;
+import org.junit.Assume;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class FormattersTests {
+
+    @BeforeClass
+    public static void java8Only() {
+        Assume.assumeFalse(Environment.isModularJvm());
+    }
 
     @Test
     public void getJarName_jar() throws MalformedURLException {
