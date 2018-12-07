@@ -115,17 +115,23 @@ public final class LogManager extends java.util.logging.LogManager {
             synchronized (configuratorRef) {
                 configurator = configuratorRef.get();
                 if (configurator == null) {
-                    final ServiceLoader<LogContextConfigurator> serviceLoader = ServiceLoader.load(LogContextConfigurator.class);
-                    final Iterator<LogContextConfigurator> iterator = serviceLoader.iterator();
+                    int best = Integer.MAX_VALUE;
+                    ConfiguratorFactory factory = null;
+                    final ServiceLoader<ConfiguratorFactory> serviceLoader = ServiceLoader.load(ConfiguratorFactory.class);
+                    final Iterator<ConfiguratorFactory> iterator = serviceLoader.iterator();
                     List<Throwable> problems = null;
                     for (;;) try {
                         if (! iterator.hasNext()) break;
-                        configurator = iterator.next();
-                        break;
+                        final ConfiguratorFactory f = iterator.next();
+                        if (f.priority() < best || factory == null) {
+                            best = f.priority();
+                            factory = f;
+                        }
                     } catch (Throwable t) {
                         if (problems == null) problems = new ArrayList<>(4);
                         problems.add(t);
                     }
+                    configurator = factory == null ? null : factory.create();
                     if (configurator == null) {
                         if (problems == null) {
                             configuratorRef.set(configurator = LogContextConfigurator.EMPTY);
