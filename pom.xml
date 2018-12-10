@@ -155,6 +155,9 @@
                                     <additionalClasspathElements>
                                         <additionalClasspathElement>${java8.home}/lib/tools.jar</additionalClasspathElement>
                                     </additionalClasspathElements>
+                                    <excludes>
+                                        <exclude>org/jboss/logmanager/SystemLoggerTests.java</exclude>
+                                    </excludes>
                                 </configuration>
                             </execution>
                         </executions>
@@ -197,6 +200,18 @@
                             <additionalClasspathElements>
                                 <additionalClasspathElement>${project.build.outputDirectory}</additionalClasspathElement>
                             </additionalClasspathElements>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>test-compile-java9</id>
+                        <phase>test-compile</phase>
+                        <goals>
+                            <goal>testCompile</goal>
+                        </goals>
+                        <configuration>
+                            <release>9</release>
+                            <buildDirectory>${project.build.directory}</buildDirectory>
+                            <compileSourceRoots>${project.basedir}/src/test/java9</compileSourceRoots>
                         </configuration>
                     </execution>
                 </executions>
