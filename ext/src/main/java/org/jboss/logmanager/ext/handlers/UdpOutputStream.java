@@ -19,6 +19,7 @@
 
 package org.jboss.logmanager.ext.handlers;
 
+import java.io.Flushable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.DatagramPacket;
@@ -27,15 +28,13 @@ import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 
-import org.jboss.logmanager.handlers.FlushableCloseable;
-
 /**
  * An output stream that writes data to a {@link DatagramSocket DatagramSocket}.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings("WeakerAccess")
-public class UdpOutputStream extends OutputStream implements FlushableCloseable {
+public class UdpOutputStream extends OutputStream implements AutoCloseable, Flushable {
     private final DatagramSocket socket;
     private final SocketAddress socketAddress;
 

@@ -19,6 +19,7 @@
 
 package org.jboss.logmanager;
 
+import java.io.Flushable;
 import java.io.UnsupportedEncodingException;
 import java.security.Permission;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
@@ -31,13 +32,12 @@ import java.util.logging.LogRecord;
 import java.util.logging.LoggingPermission;
 
 import org.jboss.logmanager.errormanager.OnlyOnceErrorManager;
-import org.jboss.logmanager.handlers.FlushableCloseable;
 
 /**
  * An extended logger handler.  Use this class as a base class for log handlers which require {@code ExtLogRecord}
  * instances.
  */
-public abstract class ExtHandler extends Handler implements FlushableCloseable {
+public abstract class ExtHandler extends Handler implements AutoCloseable, Flushable {
 
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
     private volatile boolean autoFlush = true;

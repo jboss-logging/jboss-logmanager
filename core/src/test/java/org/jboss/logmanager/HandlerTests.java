@@ -23,7 +23,6 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 import org.jboss.logmanager.handlers.WriterHandler;
 import org.jboss.logmanager.handlers.OutputStreamHandler;
-import org.jboss.logmanager.handlers.NullHandler;
 import org.jboss.logmanager.handlers.FileHandler;
 import org.jboss.logmanager.formatters.PatternFormatter;
 
@@ -43,7 +42,7 @@ public final class HandlerTests {
 
     @Test
     public void testNullHandler() throws Throwable {
-        final NullHandler handler = new NullHandler();
+        final ExtHandler handler = new ExtHandler(){};
         handler.setLevel(Level.ALL);
         handler.publish(new ExtLogRecord(Level.INFO, "Test message", null));
     }

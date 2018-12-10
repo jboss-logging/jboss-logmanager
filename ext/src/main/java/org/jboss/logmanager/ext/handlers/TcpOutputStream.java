@@ -20,6 +20,7 @@
 package org.jboss.logmanager.ext.handlers;
 
 import java.io.Closeable;
+import java.io.Flushable;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
@@ -34,8 +35,6 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.net.SocketFactory;
 
-import org.jboss.logmanager.handlers.FlushableCloseable;
-
 /**
  * An output stream that writes data to a {@link Socket socket}.
  * <p/>
@@ -49,7 +48,7 @@ import org.jboss.logmanager.handlers.FlushableCloseable;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
-public class TcpOutputStream extends OutputStream implements FlushableCloseable {
+public class TcpOutputStream extends OutputStream implements AutoCloseable, Flushable {
     private static final long retryTimeout = 5L;
     private static final long maxRetryTimeout = 40L;
     private static final int maxErrors = 10;

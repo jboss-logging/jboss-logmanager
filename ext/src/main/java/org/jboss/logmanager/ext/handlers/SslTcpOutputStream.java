@@ -19,12 +19,11 @@
 
 package org.jboss.logmanager.ext.handlers;
 
+import java.io.Flushable;
 import java.io.IOException;
 import java.net.InetAddress;
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
-
-import org.jboss.logmanager.handlers.FlushableCloseable;
 
 /**
  * An output stream that writes data to a {@link java.net.Socket socket}. Uses {@link
@@ -33,7 +32,7 @@ import org.jboss.logmanager.handlers.FlushableCloseable;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
-public class SslTcpOutputStream extends TcpOutputStream implements FlushableCloseable {
+public class SslTcpOutputStream extends TcpOutputStream implements AutoCloseable, Flushable {
 
     /**
      * Creates a SSL TCP output stream.
