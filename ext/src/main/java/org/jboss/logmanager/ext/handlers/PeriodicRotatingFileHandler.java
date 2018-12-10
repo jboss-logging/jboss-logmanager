@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -29,6 +29,7 @@ import java.util.TimeZone;
 import java.util.logging.ErrorManager;
 
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.handlers.FileHandler;
 
 /**
  * A file handler which rotates the log at a preset time interval.  The interval is determined by the content of the
@@ -54,7 +55,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      *
      * @param fileName the file name
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicRotatingFileHandler(final String fileName) throws FileNotFoundException {
         super(fileName);
@@ -66,7 +67,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      * @param fileName the file name
      * @param append {@code true} to append, {@code false} to overwrite
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicRotatingFileHandler(final String fileName, final boolean append) throws FileNotFoundException {
         super(fileName, append);
@@ -78,7 +79,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      * @param file the file
      * @param suffix the format suffix to use
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicRotatingFileHandler(final File file, final String suffix) throws FileNotFoundException {
         super(file);
@@ -91,7 +92,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      * @param file the file
      * @param suffix the format suffix to use
      * @param append {@code true} to append, {@code false} to overwrite
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicRotatingFileHandler(final File file, final String suffix, final boolean append) throws FileNotFoundException {
         super(file, append);
@@ -118,7 +119,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     }
 
     /**
-     * Set the suffix string.  The string is in a format which can be understood by {@link java.text.SimpleDateFormat}.
+     * Set the suffix string.  The string is in a format which can be understood by {@link SimpleDateFormat}.
      * The period of the rotation is automatically calculated based on the suffix.
      * <p>
      * If the suffix ends with {@code .gz} or {@code .zip} the file will be compressed on rotation.

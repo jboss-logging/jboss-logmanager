@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -34,11 +34,13 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import javax.net.SocketFactory;
 
+import org.jboss.logmanager.handlers.FlushableCloseable;
+
 /**
- * An output stream that writes data to a {@link java.net.Socket socket}.
+ * An output stream that writes data to a {@link Socket socket}.
  * <p/>
- * If an {@link java.io.IOException IOException} occurs during a {@link #write(byte[], int, int)} and a {@link
- * javax.net.SocketFactory socket factory} was defined the stream will attempt to reconnect indefinitely. By default
+ * If an {@link IOException IOException} occurs during a {@link #write(byte[], int, int)} and a {@link
+ * SocketFactory socket factory} was defined the stream will attempt to reconnect indefinitely. By default
  * additional writes are discarded when reconnecting. If you set the {@link #setBlockOnReconnect(boolean) block on
  * reconnect} to {@code true}, then the reconnect will indefinitely block until the TCP stream is reconnected.
  * <p/>
@@ -69,7 +71,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
     /**
      * Creates a TCP output stream.
      * <p/>
-     * Uses the {@link javax.net.SocketFactory#getDefault() default socket factory} to create the socket.
+     * Uses the {@link SocketFactory#getDefault() default socket factory} to create the socket.
      *
      * @param address the address to connect to
      * @param port    the port to connect to
@@ -84,7 +86,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
     /**
      * Creates a TCP output stream.
      * <p>
-     * Uses the {@link javax.net.SocketFactory#getDefault() default socket factory} to create the socket.
+     * Uses the {@link SocketFactory#getDefault() default socket factory} to create the socket.
      * </p>
      *
      * @param address          the address to connect to
@@ -119,7 +121,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
     /**
      * Creates a new TCP output stream.
      * <p/>
-     * Creates a {@link java.net.Socket socket} from the {@code socketFactory} argument.
+     * Creates a {@link Socket socket} from the {@code socketFactory} argument.
      *
      * @param socketFactory the factory used to create the socket
      * @param address       the address to connect to
@@ -135,7 +137,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
     /**
      * Creates a new TCP output stream.
      * <p>
-     * Creates a {@link java.net.Socket socket} from the {@code socketFactory} argument.
+     * Creates a {@link Socket socket} from the {@code socketFactory} argument.
      * </p>
      *
      * @param socketFactory    the factory used to create the socket
@@ -272,7 +274,7 @@ public class TcpOutputStream extends OutputStream implements FlushableCloseable 
     /**
      * Returns the connected state of the TCP stream.
      * <p/>
-     * The stream is said to be disconnected when an {@link java.io.IOException} occurs during a write. Otherwise a
+     * The stream is said to be disconnected when an {@link IOException} occurs during a write. Otherwise a
      * stream is considered connected.
      *
      * @return {@code true} if the stream is connected, otherwise {@code false}

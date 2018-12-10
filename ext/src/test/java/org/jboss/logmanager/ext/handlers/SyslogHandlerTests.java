@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -27,7 +27,7 @@ import java.util.logging.Level;
 
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
+import org.jboss.logmanager.ext.handlers.SyslogHandler.SyslogType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -29,7 +29,7 @@ import org.jboss.logmanager.Level;
 import org.jboss.logmanager.MDC;
 import org.jboss.logmanager.NDC;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.jboss.logmanager.handlers.AsyncHandler.OverflowAction;
+import org.jboss.logmanager.ext.handlers.AsyncHandler.OverflowAction;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

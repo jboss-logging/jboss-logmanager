@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,18 +17,18 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.ExtHandler;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.Executors;
-
-import java.util.logging.Handler;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 import java.util.logging.ErrorManager;
+import java.util.logging.Handler;
+
+import org.jboss.logmanager.ExtHandler;
+import org.jboss.logmanager.ExtLogRecord;
 
 /**
  * An asynchronous log handler which is used to write to a handler or group of handlers which are "slow" or introduce

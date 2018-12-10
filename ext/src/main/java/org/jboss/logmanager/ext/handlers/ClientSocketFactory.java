@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.io.IOException;
 import java.net.DatagramSocket;

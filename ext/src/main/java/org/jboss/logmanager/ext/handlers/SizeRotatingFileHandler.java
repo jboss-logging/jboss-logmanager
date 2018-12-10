@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,16 +17,16 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.util.logging.ErrorManager;
 
 import org.jboss.logmanager.ExtLogRecord;
-
-import java.util.logging.ErrorManager;
+import org.jboss.logmanager.handlers.FileHandler;
 
 public class SizeRotatingFileHandler extends FileHandler {
     // by default, rotate at 10MB
@@ -47,7 +47,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      *
      * @param file the file
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public SizeRotatingFileHandler(final File file) throws FileNotFoundException {
         super(file);
@@ -59,7 +59,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param file the file
      * @param append {@code true} to append, {@code false} to overwrite
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public SizeRotatingFileHandler(final File file, final boolean append) throws FileNotFoundException {
         super(file, append);
@@ -70,7 +70,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      *
      * @param fileName the file name
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public SizeRotatingFileHandler(final String fileName) throws FileNotFoundException {
         super(fileName);
@@ -82,7 +82,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param fileName the file name
      * @param append {@code true} to append, {@code false} to overwrite
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public SizeRotatingFileHandler(final String fileName, final boolean append) throws FileNotFoundException {
         super(fileName, append);
@@ -101,7 +101,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      *
      * @param file the file
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public SizeRotatingFileHandler(final File file, final long rotateSize, final int maxBackupIndex) throws FileNotFoundException {
         super(file);
@@ -115,7 +115,7 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @param file the file
      * @param append {@code true} to append, {@code false} to overwrite
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public SizeRotatingFileHandler(final File file, final boolean append, final long rotateSize, final int maxBackupIndex) throws FileNotFoundException {
         super(file, append);
@@ -161,7 +161,7 @@ public class SizeRotatingFileHandler extends FileHandler {
 
     /**
      * Set to a value of {@code true} if the file should be rotated before the a new file is set. The rotation only
-     * happens if the file names are the same and the file has a {@link java.io.File#length() length} greater than 0.
+     * happens if the file names are the same and the file has a {@link File#length() length} greater than 0.
      *
      * @param rotateOnBoot {@code true} to rotate on boot, otherwise {@code false}
      */

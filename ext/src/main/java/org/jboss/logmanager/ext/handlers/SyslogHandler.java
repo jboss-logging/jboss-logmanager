@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.io.Closeable;
 import java.io.Flushable;
@@ -47,7 +47,7 @@ import org.wildfly.common.os.Process;
  * <p/>
  * This handler can write to syslog servers that accept the <a href="http://tools.ietf.org/html/rfc3164">RFC3164</a>
  * and <a href="http://tools.ietf.org/html/rfc5424">RFC5424</a> formats. Writes can be done via TCP, SSL over TCP or
- * UDP protocols. You can also override the {@link #setOutputStream(java.io.OutputStream) output stream} if a custom
+ * UDP protocols. You can also override the {@link #setOutputStream(OutputStream) output stream} if a custom
  * protocol is needed.
  * <p/>
  * <pre>
@@ -67,7 +67,7 @@ import org.wildfly.common.os.Process;
  *      <tr>
  *          <td>serverHostname</td>
  *          <td>The address of the syslog server</td>
- *          <td>{@link java.lang.String String}</td>
+ *          <td>{@link String String}</td>
  *          <td>localhost</td>
  *      </tr>
  *      <tr>
@@ -85,14 +85,14 @@ import org.wildfly.common.os.Process;
  *      <tr>
  *          <td>appName</td>
  *          <td>The name of the application that is logging</td>
- *          <td>{@link java.lang.String String}</td>
+ *          <td>{@link String String}</td>
  *          <td>java</td>
  *      </tr>
  *      <tr>
  *          <td>hostname</td>
  *          <td>The name of the host the messages are being sent from. See {@link #setHostname(String)} for more
  * details</td>
- *          <td>{@link java.lang.String String}</td>
+ *          <td>{@link String String}</td>
  *          <td>{@code null}</td>
  *      </tr>
  *      <tr>
@@ -111,7 +111,7 @@ import org.wildfly.common.os.Process;
  *          <td>delimiter</td>
  *          <td>The delimiter to use at the end of the message if {@link #setUseMessageDelimiter(boolean) useDelimiter}
  * is set to {@code true}</td>
- *          <td>{@link java.lang.String String}</td>
+ *          <td>{@link String String}</td>
  *          <td>For {@link Protocol#UDP UDP} {@code null} - For {@link Protocol#TCP TCP} or {@link Protocol#SSL_TCP
  * SSL_TCP} {@code \n}</td>
  *      </tr>
@@ -634,8 +634,8 @@ public class SyslogHandler extends ExtHandler {
     }
 
     /**
-     * Indicates whether or not a {@link org.jboss.logmanager.handlers.SyslogHandler.Protocol#TCP TCP} or {@link
-     * org.jboss.logmanager.handlers.SyslogHandler.Protocol#SSL_TCP SSL TCP} connection should block when attempting to
+     * Indicates whether or not a {@link SyslogHandler.Protocol#TCP TCP} or {@link
+     * SyslogHandler.Protocol#SSL_TCP SSL TCP} connection should block when attempting to
      * reconnect.
      *
      * @return {@code true} if blocking is enabled, otherwise {@code false}
@@ -647,8 +647,8 @@ public class SyslogHandler extends ExtHandler {
     }
 
     /**
-     * Enables or disables blocking when attempting to reconnect a {@link org.jboss.logmanager.handlers.SyslogHandler.Protocol#TCP
-     * TCP} or {@link org.jboss.logmanager.handlers.SyslogHandler.Protocol#SSL_TCP SSL TCP} protocol.
+     * Enables or disables blocking when attempting to reconnect a {@link SyslogHandler.Protocol#TCP
+     * TCP} or {@link SyslogHandler.Protocol#SSL_TCP SSL TCP} protocol.
      * <p/>
      * If set to {@code true} the {@code publish} methods will block when attempting to reconnect. This is only
      * advisable to be set to {@code true} if using an asynchronous handler.
@@ -1013,8 +1013,8 @@ public class SyslogHandler extends ExtHandler {
      * <p/>
      * Setting the output stream closes any already established connections or open output streams and will not open
      * any new connections until the output stream is set to {@code null}. The {@link
-     * #setProtocol(org.jboss.logmanager.handlers.SyslogHandler.Protocol) protocol}, {@link
-     * #setServerAddress(java.net.InetAddress), server address}, {@link #setServerHostname(String) server hostname} or
+     * #setProtocol(SyslogHandler.Protocol) protocol}, {@link
+     * #setServerAddress(InetAddress), server address}, {@link #setServerHostname(String) server hostname} or
      * {@link #setPort(int) port} have no effect when the output stream is set.
      *
      * @param out the output stream to write to

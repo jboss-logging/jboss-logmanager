@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -27,8 +27,10 @@ import java.net.InetAddress;
 import java.net.SocketAddress;
 import java.net.SocketException;
 
+import org.jboss.logmanager.handlers.FlushableCloseable;
+
 /**
- * An output stream that writes data to a {@link java.net.DatagramSocket DatagramSocket}.
+ * An output stream that writes data to a {@link DatagramSocket DatagramSocket}.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */

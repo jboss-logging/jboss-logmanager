@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2014 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -56,7 +56,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      *
      * @param fileName the file name
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicSizeRotatingFileHandler(final String fileName) throws FileNotFoundException {
         super(fileName);
@@ -68,7 +68,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      * @param fileName the file name
      * @param append   {@code true} to append, {@code false} to overwrite
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicSizeRotatingFileHandler(final String fileName, final boolean append) throws FileNotFoundException {
         super(fileName, append);
@@ -80,7 +80,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      * @param file   the file
      * @param suffix the format suffix to use
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicSizeRotatingFileHandler(final File file, final String suffix) throws FileNotFoundException {
         super(file, suffix);
@@ -93,7 +93,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      * @param suffix the format suffix to use
      * @param append {@code true} to append, {@code false} to overwrite
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final boolean append) throws FileNotFoundException {
         super(file, suffix, append);
@@ -107,7 +107,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      * @param rotateSize     the size the file should rotate at
      * @param maxBackupIndex the maximum number of files to backup
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final long rotateSize, final int maxBackupIndex) throws FileNotFoundException {
         super(file, suffix);
@@ -124,7 +124,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      * @param maxBackupIndex the maximum number of files to backup
      * @param append         {@code true} to append, {@code false} to overwrite
      *
-     * @throws java.io.FileNotFoundException if the file could not be found on open
+     * @throws FileNotFoundException if the file could not be found on open
      */
     public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final long rotateSize, final int maxBackupIndex, final boolean append) throws FileNotFoundException {
         super(file, suffix, append);
@@ -176,7 +176,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
 
     /**
      * Set to a value of {@code true} if the file should be rotated before the a new file is set. The rotation only
-     * happens if the file names are the same and the file has a {@link java.io.File#length() length} greater than 0.
+     * happens if the file names are the same and the file has a {@link File#length() length} greater than 0.
      *
      * @param rotateOnBoot {@code true} to rotate on boot, otherwise {@code false}
      */

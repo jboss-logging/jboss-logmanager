@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2015 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.handlers;
+package org.jboss.logmanager.ext.handlers;
 
 import java.io.Closeable;
 import java.io.Flushable;
@@ -35,6 +35,7 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.handlers.UninterruptibleOutputStream;
 
 /**
  * A handler used to communicate over a socket.
@@ -78,7 +79,7 @@ public class SocketHandler extends ExtHandler {
     private boolean initialize;
 
     /**
-     * Creates a socket handler with an address of {@linkplain java.net.InetAddress#getLocalHost() localhost} and port
+     * Creates a socket handler with an address of {@linkplain InetAddress#getLocalHost() localhost} and port
      * of {@linkplain #DEFAULT_PORT 4560}.
      *
      * @throws UnknownHostException if an error occurs attempting to retrieve the localhost

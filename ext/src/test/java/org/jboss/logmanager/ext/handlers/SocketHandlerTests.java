@@ -1,19 +1,36 @@
-package org.jboss.logmanager.handlers;
+/*
+ * JBoss, Home of Professional Open Source.
+ *
+ * Copyright 2018 Red Hat, Inc., and individual contributors
+ * as indicated by the @author tags.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.jboss.logmanager.ext.handlers;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
-import java.util.logging.Handler;
-
 import javax.net.ssl.SSLContext;
 
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.jboss.logmanager.handlers.SocketHandler.Protocol;
+import org.jboss.logmanager.ext.handlers.SocketHandler.Protocol;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -39,7 +56,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                 SocketHandler handler = createHandler(Protocol.TCP)
         ) {
             final ExtLogRecord record = createLogRecord("Test TCP handler");
-            handler.doPublish(record);
+            handler.publish(record);
             final String msg = server.timeoutPoll();
             Assert.assertNotNull(msg);
             Assert.assertEquals("Test TCP handler", msg);
@@ -53,7 +70,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                 SocketHandler handler = createHandler(Protocol.SSL_TCP)
         ) {
             final ExtLogRecord record = createLogRecord("Test TLS handler");
-            handler.doPublish(record);
+            handler.publish(record);
             final String msg = server.timeoutPoll();
             Assert.assertNotNull(msg);
             Assert.assertEquals("Test TLS handler", msg);
@@ -67,7 +84,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                 SocketHandler handler = createHandler(Protocol.UDP)
         ) {
             final ExtLogRecord record = createLogRecord("Test UDP handler");
-            handler.doPublish(record);
+            handler.publish(record);
             final String msg = server.timeoutPoll();
             Assert.assertNotNull(msg);
             Assert.assertEquals("Test UDP handler", msg);
@@ -82,7 +99,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                 SocketHandler handler = createHandler(Protocol.TCP)
         ) {
             ExtLogRecord record = createLogRecord("Test TCP handler " + port);
-            handler.doPublish(record);
+            handler.publish(record);
             String msg = server1.timeoutPoll();
             Assert.assertNotNull(msg);
             Assert.assertEquals("Test TCP handler " + port, msg);
@@ -90,7 +107,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
             // Change the port on the handler which should close the first connection and open a new one
             handler.setPort(altPort);
             record = createLogRecord("Test TCP handler " + altPort);
-            handler.doPublish(record);
+            handler.publish(record);
             msg = server2.timeoutPoll();
             Assert.assertNotNull(msg);
             Assert.assertEquals("Test TCP handler " + altPort, msg);
@@ -106,7 +123,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
         try (SocketHandler handler = createHandler(Protocol.TCP)) {
             try (SimpleServer server = SimpleServer.createTcpServer(port)) {
                 final ExtLogRecord record = createLogRecord("Test TCP handler");
-                handler.doPublish(record);
+                handler.publish(record);
                 final String msg = server.timeoutPoll();
                 Assert.assertNotNull(msg);
                 Assert.assertEquals("Test TCP handler", msg);
@@ -117,7 +134,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
 
             try (SimpleServer server = SimpleServer.createTlsServer(port)) {
                 final ExtLogRecord record = createLogRecord("Test TLS handler");
-                handler.doPublish(record);
+                handler.publish(record);
                 final String msg = server.timeoutPoll();
                 Assert.assertNotNull(msg);
                 Assert.assertEquals("Test TLS handler", msg);
@@ -134,7 +151,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                     SimpleServer server = SimpleServer.createTcpServer(port)
             ) {
                 final ExtLogRecord record = createLogRecord("Test TCP handler");
-                handler.doPublish(record);
+                handler.publish(record);
                 final String msg = server.timeoutPoll();
                 Assert.assertNotNull(msg);
                 Assert.assertEquals("Test TCP handler", msg);
@@ -143,14 +160,14 @@ public class SocketHandlerTests extends AbstractHandlerTest {
             // Publish a record to a down server, this likely won't put the handler in an error state yet. However once
             // we restart the server and loop the first socket should fail before a reconnect is attempted.
             final ExtLogRecord record = createLogRecord("Test TCP handler");
-            handler.doPublish(record);
+            handler.publish(record);
             try (
                     SimpleServer server = SimpleServer.createTcpServer(port)
             ) {
                 // Keep writing a record until a successful record is published or a timeout occurs
                 final String msg = timeout(() -> {
                     final ExtLogRecord r = createLogRecord("Test TCP handler");
-                    handler.doPublish(r);
+                    handler.publish(r);
                     try {
                         return server.poll();
                     } catch (InterruptedException e) {
