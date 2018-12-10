@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2017 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.formatters;
+package org.jboss.logmanager.ext.formatters;
 
 import java.io.Writer;
 import java.time.Instant;
@@ -31,11 +31,13 @@ import java.util.Map;
 
 import org.jboss.logmanager.ExtFormatter;
 import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.PropertyValues;
+import org.jboss.logmanager.ext.PropertyValues;
+import org.jboss.logmanager.formatters.StackTraceFormatter;
+import org.jboss.logmanager.formatters.StringBuilderWriter;
 
 /**
  * An abstract class that uses a generator to help generate structured data from a {@link
- * org.jboss.logmanager.ExtLogRecord record}.
+ * ExtLogRecord record}.
  * <p>
  * Note that including details can be expensive in terms of calculating the caller.
  * </p>
@@ -248,7 +250,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
 
                 if (isFormattedExceptionOutputType()) {
                     final StringBuilder sb = new StringBuilder();
-                    StackTraceFormatter.renderStackTrace(sb, thrown, false, -1);
+                    StackTraceFormatter.renderStackTrace(sb, thrown, -1);
                     generator.add(getKey(Key.STACK_TRACE), sb.toString());
                 }
             }
@@ -358,7 +360,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
 
     /**
      * Sets the pattern to use when formatting the date. The pattern must be a valid
-     * {@link java.time.format.DateTimeFormatter#ofPattern(String)} pattern.
+     * {@link DateTimeFormatter#ofPattern(String)} pattern.
      * <p>
      * If the pattern is {@code null} a default {@linkplain DateTimeFormatter#ISO_OFFSET_DATE_TIME formatter} will be
      * used. The {@linkplain #setZoneId(String) zone id} will always be appended to the formatter. By default the zone

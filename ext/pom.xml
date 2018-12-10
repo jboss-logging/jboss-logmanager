@@ -32,6 +32,19 @@
 
     <dependencies>
         <dependency>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
+            <!-- only required for the JsonFormatter -->
+            <optional>true</optional>
+        </dependency>
+        <!-- JSON implementation -->
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <!-- only required for the JsonFormatter, another implementation of the JSON-P API may be used as well -->
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
         </dependency>

@@ -21,11 +21,14 @@ package org.jboss.logmanager;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringWriter;
 import java.io.UncheckedIOException;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.json.Json;
+import javax.json.stream.JsonGenerator;
 
-import org.jboss.logmanager.formatters.JsonFormatter;
 import org.jboss.logmanager.handlers.FileHandler;
 
 /**
@@ -60,11 +63,35 @@ public class TestLogContextConfigurator implements LogContextConfigurator {
                 final String fileName = System.getProperty("test.log.file.name");
                 final FileHandler handler = new FileHandler(fileName, false);
                 handler.setAutoFlush(true);
-                handler.setFormatter(new JsonFormatter());
+                handler.setFormatter(new TestFormatter());
                 rootLogger.addHandler(handler);
                 rootLogger.setLevel(Level.INFO);
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    private static class TestFormatter extends ExtFormatter {
+
+        @Override
+        public String format(final ExtLogRecord record) {
+            StringWriter stringWriter = new StringWriter();
+            try (JsonGenerator generator = Json.createGenerator(stringWriter)) {
+                generator.writeStartObject();
+
+                generator.write("loggerClassName", record.getLoggerClassName());
+                generator.write("level", record.getLevel().toString());
+                generator.write("message", record.getMessage());
+                generator.writeStartObject("mdc");
+                final Map<String, String> mdc = record.getMdcCopy();
+                mdc.forEach(generator::write);
+                generator.writeEnd(); // end MDC
+
+                generator.writeEnd(); // end object
+                generator.flush();
+                stringWriter.write(System.lineSeparator());
+                return stringWriter.toString();
             }
         }
     }

@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2017 Red Hat, Inc., and individual contributors
+ * Copyright 2018 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,12 +17,12 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager;
+package org.jboss.logmanager.ext;
 
 import java.util.EnumMap;
 import java.util.Map;
 
-import org.jboss.logmanager.formatters.StructuredFormatter.Key;
+import org.jboss.logmanager.ext.formatters.StructuredFormatter.Key;
 import org.junit.Assert;
 import org.junit.Test;
 

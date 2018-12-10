@@ -54,21 +54,20 @@
             <artifactId>wildfly-common</artifactId>
         </dependency>
 
+        <!-- test dependencies -->
+
+        <!-- Used in a test formatter -->
         <dependency>
             <groupId>javax.json</groupId>
             <artifactId>javax.json-api</artifactId>
-            <!-- only required for the JsonFormatter -->
-            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
         <!-- JSON implementation -->
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.json</artifactId>
-            <!-- only required for the JsonFormatter, another implementation of the JSON-P API may be used as well -->
-            <optional>true</optional>
+            <scope>test</scope>
         </dependency>
-
-        <!-- test dependencies -->
 
         <dependency>
             <groupId>org.jboss.byteman</groupId>
