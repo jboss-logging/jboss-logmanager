@@ -27,7 +27,7 @@ import java.util.Set;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class StackTraceFormatter {
+public class StackTraceFormatter {
     private static final String CAUSED_BY_CAPTION = "Caused by: ";
     private static final String SUPPRESSED_CAPTION = "Suppressed: ";
 
@@ -39,6 +39,17 @@ class StackTraceFormatter {
     private StackTraceFormatter(final StringBuilder builder, final int suppressedDepth) {
         this.builder = builder;
         this.suppressedDepth = suppressedDepth;
+    }
+
+    /**
+     * Writes the stack trace into the builder.
+     *
+     * @param builder         the string builder ot append the stack trace to
+     * @param t               the throwable to render
+     * @param suppressedDepth the number of suppressed messages to include
+     */
+    public static void renderStackTrace(final StringBuilder builder, final Throwable t, final int suppressedDepth) {
+        renderStackTrace(builder, t, false, suppressedDepth);
     }
 
     /**

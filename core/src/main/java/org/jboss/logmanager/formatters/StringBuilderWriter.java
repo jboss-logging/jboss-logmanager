@@ -21,11 +21,11 @@ package org.jboss.logmanager.formatters;
 
 import java.io.Writer;
 
-final class StringBuilderWriter extends Writer {
+public final class StringBuilderWriter extends Writer {
 
     private final StringBuilder builder;
 
-    StringBuilderWriter() {
+    public StringBuilderWriter() {
         this(new StringBuilder());
     }
 
@@ -38,7 +38,7 @@ final class StringBuilderWriter extends Writer {
      *
      * @see StringBuilder#setLength(int)
      */
-    void clear() {
+    public void clear() {
         builder.setLength(0);
     }
 

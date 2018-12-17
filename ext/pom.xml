@@ -32,6 +32,19 @@
 
     <dependencies>
         <dependency>
+            <groupId>javax.json</groupId>
+            <artifactId>javax.json-api</artifactId>
+            <!-- only required for the JsonFormatter -->
+            <optional>true</optional>
+        </dependency>
+        <!-- JSON implementation -->
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>javax.json</artifactId>
+            <!-- only required for the JsonFormatter, another implementation of the JSON-P API may be used as well -->
+            <optional>true</optional>
+        </dependency>
+        <dependency>
             <groupId>org.jboss.logging</groupId>
             <artifactId>jboss-logging</artifactId>
         </dependency>
@@ -58,6 +71,26 @@
 
         <!-- Test dependencies -->
         <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-submit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-install</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-bmunit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
             <scope>test</scope>
@@ -69,9 +102,19 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <argLine>-Djdk.attach.allowAttachSelf=true</argLine>
                     <systemPropertyVariables>
+                        <!-- Configured for SocketHandler SSL test -->
+                        <javax.net.ssl.keyStore>${project.basedir}/src/test/resources/server-keystore.jks</javax.net.ssl.keyStore>
+                        <javax.net.ssl.keyStorePassword>testpassword</javax.net.ssl.keyStorePassword>
+                        <javax.net.ssl.trustStore>${project.basedir}/src/test/resources/client-keystore.jks</javax.net.ssl.trustStore>
+                        <javax.net.ssl.trustStorePassword>testpassword</javax.net.ssl.trustStorePassword>
+
                         <config.dir>${project.build.testOutputDirectory}${file.separator}configs</config.dir>
                         <log.dir>${project.build.directory}${file.separator}logs</log.dir>
+                        <org.jboss.test.address>${org.jboss.test.address}</org.jboss.test.address>
+                        <org.jboss.test.port>${org.jboss.test.port}</org.jboss.test.port>
+                        <org.jboss.test.alt.port>${org.jboss.test.alt.port}</org.jboss.test.alt.port>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
