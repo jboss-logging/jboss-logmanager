@@ -546,10 +546,6 @@ public abstract class StructuredFormatter extends ExtFormatter {
         return value != null && !value.isEmpty();
     }
 
-    private static boolean isNotNullOrEmpty(final Collection<?> value) {
-        return value != null && !value.isEmpty();
-    }
-
     /**
      * A generator used to create the structured output.
      */
@@ -634,8 +630,8 @@ public abstract class StructuredFormatter extends ExtFormatter {
          * @throws Exception if an error occurs while adding the data
          */
         default Generator addMetaData(final Map<String, String> metaData) throws Exception {
-            for (String key : metaData.keySet()) {
-                add(key, metaData.get(key));
+            for (Map.Entry<String, String> entry : metaData.entrySet()) {
+                add(entry.getKey(), entry.getValue());
             }
             return this;
         }

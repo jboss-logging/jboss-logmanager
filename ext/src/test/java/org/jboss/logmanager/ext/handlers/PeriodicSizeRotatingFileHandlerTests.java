@@ -392,7 +392,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         return (supportedPeriods.indexOf(period1) - supportedPeriods.indexOf(period2)) == 1;
     }
 
-    private class ErrorCreator {
+    private static final class ErrorCreator {
         private int handlerPeriod, logMessagePeriod;
         private boolean testSize;
 
