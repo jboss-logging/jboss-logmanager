@@ -212,12 +212,11 @@ public class XmlFormatter extends StructuredFormatter {
 
         @Override
         public Generator addMetaData(final Map<String, String> metaData) throws Exception {
-            for (String key : metaData.keySet()) {
+            for (Map.Entry<String, String> entry : metaData.entrySet()) {
                 writeStart("metaData");
-                xmlWriter.writeAttribute("key", key);
-                final String value = metaData.get(key);
-                if (value != null) {
-                    xmlWriter.writeCharacters(metaData.get(key));
+                xmlWriter.writeAttribute("key", entry.getKey());
+                if (entry.getValue() != null) {
+                    xmlWriter.writeCharacters(metaData.get(entry.getValue()));
                 }
                 writeEnd();
             }

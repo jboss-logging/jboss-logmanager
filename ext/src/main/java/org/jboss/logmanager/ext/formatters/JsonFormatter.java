@@ -123,7 +123,7 @@ public class JsonFormatter extends StructuredFormatter {
         return new FormatterJsonGenerator(factory.createGenerator(writer));
     }
 
-    private class FormatterJsonGenerator implements Generator {
+    private static class FormatterJsonGenerator implements Generator {
         private final JsonGenerator generator;
 
         private FormatterJsonGenerator(final JsonGenerator generator) {

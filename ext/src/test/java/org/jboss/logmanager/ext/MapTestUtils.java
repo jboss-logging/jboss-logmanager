@@ -45,12 +45,11 @@ public class MapTestUtils {
         Assert.assertTrue(failureMessage, m2.keySet().containsAll(m1.keySet()));
 
         // At this point we know that all the keys match
-        for (K key : m1.keySet()) {
-            final V value1 = m1.get(key);
-            final V value2 = m2.get(key);
+        for (Map.Entry<K, V> entry1 : m1.entrySet()) {
+            final V value2 = m2.get(entry1.getKey());
             Assert.assertEquals(
-                    String.format("Value %s from the first map does not match value %s from the second map with key %s.", value1, value2, key),
-                    value1, value2);
+                    String.format("Value %s from the first map does not match value %s from the second map with key %s.", entry1.getValue(), value2, entry1.getKey()),
+                    entry1.getValue(), value2);
         }
     }
 
