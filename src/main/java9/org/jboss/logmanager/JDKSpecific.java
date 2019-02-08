@@ -55,15 +55,6 @@ final class JDKSpecific {
         JBOSS_MODULES = jbossModules;
     }
 
-    /**
-     * Always returns {@code true}.
-     *
-     * @return {@code true}
-     */
-    static boolean isModularJvm() {
-        return true;
-    }
-
     static Class<?> findCallingClass(Set<ClassLoader> rejectClassLoaders) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
