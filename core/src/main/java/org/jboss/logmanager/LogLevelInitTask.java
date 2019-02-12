@@ -41,7 +41,7 @@ class LogLevelInitTask implements PrivilegedAction<Void> {
     public Void run() {
         // If this is a modular JVM ignore the level hack. The check here is required when the log manager is added to
         // the boot class path. The boot class path does not support multi-release JAR's.
-        if (JDKSpecific.isModularJvm()) {
+        if (Jvm.isModular()) {
             return null;
         }
         /* This mysterious-looking hack is designed to trick JDK logging into not leaking classloaders and

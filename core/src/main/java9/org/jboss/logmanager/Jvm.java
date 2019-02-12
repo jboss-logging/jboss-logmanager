@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2018 Red Hat, Inc., and individual contributors
+ * Copyright 2019 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -20,20 +20,16 @@
 package org.jboss.logmanager;
 
 /**
- * A helper for tests with specific environment information.
- *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class Environment {
+final class Jvm {
 
     /**
-     * Checks whether or not this is a modular JVM.
+     * Always returns {@code true}.
      *
-     * @return {@code true} if this is a modular JVM (Java 9+), otherwise {@code false}
-     *
-     * @see Jvm#isModular()
+     * @return {@code true}
      */
-    public static boolean isModularJvm() {
-        return Jvm.isModular();
+    static boolean isModular() {
+        return true;
     }
 }
