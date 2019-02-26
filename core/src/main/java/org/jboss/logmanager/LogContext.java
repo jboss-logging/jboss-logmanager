@@ -19,6 +19,7 @@
 
 package org.jboss.logmanager;
 
+import org.wildfly.common.Assert;
 import org.wildfly.common.ref.Reference;
 import org.wildfly.common.ref.References;
 
@@ -35,6 +36,8 @@ import java.util.logging.Level;
 import java.util.logging.LoggingMXBean;
 import java.util.logging.LoggingPermission;
 
+import static org.jboss.logmanager.LoggerNode.attachmentsFull;
+
 /**
  * A logging context, for producing isolated logging environments.
  */
@@ -50,6 +53,26 @@ public final class LogContext implements AutoCloseable {
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
     private final boolean strong;
+
+    /**
+     * The first attachment key.
+     */
+    private Logger.AttachmentKey<?> attachmentKey1;
+
+    /**
+     * The first attachment value.
+     */
+    private Object attachmentValue1;
+
+    /**
+     * The second attachment key.
+     */
+    private Logger.AttachmentKey<?> attachmentKey2;
+
+    /**
+     * The second attachment value.
+     */
+    private Object attachmentValue2;
 
     /**
      * This lazy holder class is required to prevent a problem due to a LogContext instance being constructed
@@ -140,9 +163,14 @@ public final class LogContext implements AutoCloseable {
      * @param <V> the attachment value type
      * @return the attachment, or {@code null} if there is none for this key
      */
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings("unchecked")
     public <V> V getAttachment(Logger.AttachmentKey<V> key) {
-        return rootLogger.getAttachment(key);
+        Assert.checkNotNullParam("key", key);
+        synchronized (this) {
+            if (key == attachmentKey1) return (V) attachmentValue1;
+            if (key == attachmentKey2) return (V) attachmentValue2;
+        }
+        return null;
     }
 
     /**
@@ -155,10 +183,34 @@ public final class LogContext implements AutoCloseable {
      * @param <V> the attachment value type
      * @return the old attachment, if there was one
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     * @throws IllegalArgumentException if the attachment cannot be added because the maximum has been reached
      */
+    @SuppressWarnings("unchecked")
     public <V> V attach(Logger.AttachmentKey<V> key, V value) throws SecurityException {
         checkAccess();
-        return rootLogger.attach(key, value);
+        Assert.checkNotNullParam("key", key);
+        Assert.checkNotNullParam("value", value);
+        V old;
+        synchronized (this) {
+            if (key == attachmentKey1) {
+                old = (V) attachmentValue1;
+                attachmentValue1 = value;
+            } else if (key == attachmentKey2) {
+                old = (V) attachmentValue2;
+                attachmentValue2 = value;
+            } else if (attachmentKey1 == null) {
+                old = null;
+                attachmentKey1 = key;
+                attachmentValue1 = value;
+            } else if (attachmentKey2 == null) {
+                old = null;
+                attachmentKey2 = key;
+                attachmentValue2 = value;
+            } else {
+                throw attachmentsFull();
+            }
+        }
+        return old;
     }
 
     /**
@@ -171,11 +223,32 @@ public final class LogContext implements AutoCloseable {
      * @param <V> the attachment value type
      * @return the current attachment, if there is one, or {@code null} if the value was successfully attached
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     * @throws IllegalArgumentException if the attachment cannot be added because the maximum has been reached
      */
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings("unchecked")
     public <V> V attachIfAbsent(Logger.AttachmentKey<V> key, V value) throws SecurityException {
         checkAccess();
-        return rootLogger.attachIfAbsent(key, value);
+        Assert.checkNotNullParam("key", key);
+        Assert.checkNotNullParam("value", value);
+        V old;
+        synchronized (this) {
+            if (key == attachmentKey1) {
+                old = (V) attachmentValue1;
+            } else if (key == attachmentKey2) {
+                old = (V) attachmentValue2;
+            } else if (attachmentKey1 == null) {
+                old = null;
+                attachmentKey1 = key;
+                attachmentValue1 = value;
+            } else if (attachmentKey2 == null) {
+                old = null;
+                attachmentKey2 = key;
+                attachmentValue2 = value;
+            } else {
+                throw attachmentsFull();
+            }
+        }
+        return old;
     }
 
     /**
@@ -187,10 +260,23 @@ public final class LogContext implements AutoCloseable {
      * @return the old value, or {@code null} if there was none
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
-    @SuppressWarnings({ "unchecked" })
+    @SuppressWarnings("unchecked")
     public <V> V detach(Logger.AttachmentKey<V> key) throws SecurityException {
         checkAccess();
-        return rootLogger.detach(key);
+        Assert.checkNotNullParam("key", key);
+        V old;
+        synchronized (this) {
+            if (key == attachmentKey1) {
+                old = (V) attachmentValue1;
+                attachmentValue1 = null;
+            } else if (key == attachmentKey2) {
+                old = (V) attachmentValue2;
+                attachmentValue2 = null;
+            } else {
+                old = null;
+            }
+        }
+        return old;
     }
 
     /**
