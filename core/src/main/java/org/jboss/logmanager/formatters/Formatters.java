@@ -780,7 +780,7 @@ public final class Formatters {
     public static FormatStep simpleMessageFormatStep(final ExtFormatter formatter, final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
-                builder.append(formatter.format(record));
+                builder.append(formatter.formatMessage(record));
             }
         };
     }
