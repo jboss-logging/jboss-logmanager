@@ -26,6 +26,7 @@ import java.util.logging.Handler;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.StandardOutputStreams;
 import org.jboss.logmanager.formatters.PatternFormatter;
 
@@ -43,6 +44,24 @@ public class DelayedHandler extends ExtHandler {
 
     private volatile boolean activated = false;
     private volatile boolean callerCalculationRequired = false;
+
+    private final LogContext logContext;
+
+    /**
+     * Construct a new instance.
+     */
+    public DelayedHandler() {
+        this(null);
+    }
+
+    /**
+     * Construct a new instance, with the given log context used to recheck log levels on replay.
+     *
+     * @param logContext the log context to use for level checks on replay, or {@code null} for none
+     */
+    public DelayedHandler(LogContext logContext) {
+        this.logContext = logContext;
+    }
 
     @Override
     protected void doPublish(final ExtLogRecord record) {
@@ -198,8 +217,9 @@ public class DelayedHandler extends ExtHandler {
     private synchronized void activate() {
         // Always attempt to drain the queue
         ExtLogRecord record;
+        final LogContext logContext = this.logContext;
         while ((record = logRecords.pollFirst()) != null) {
-            if (isEnabled() && isLoggable(record)) {
+            if (isEnabled() && isLoggable(record) && (logContext == null || logContext.getLogger(record.getLoggerName()).isLoggable(record.getLevel()))) {
                 publishToChildren(record);
             }
         }
