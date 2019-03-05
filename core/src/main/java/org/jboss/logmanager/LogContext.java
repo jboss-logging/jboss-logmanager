@@ -38,7 +38,7 @@ import java.util.logging.LoggingPermission;
 /**
  * A logging context, for producing isolated logging environments.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "WeakerAccess"})
 public final class LogContext implements AutoCloseable {
     private static final LogContext SYSTEM_CONTEXT = new LogContext(false);
 
@@ -377,6 +377,15 @@ public final class LogContext implements AutoCloseable {
             sm.checkPermission(SET_CONTEXT_SELECTOR_PERMISSION);
         }
         logContextSelector = newSelector;
+    }
+
+    /**
+     * Returns the currently set log context selector.
+     *
+     * @return the log context selector
+     */
+    public static LogContextSelector getLogContextSelector() {
+        return logContextSelector;
     }
 
     @Override
