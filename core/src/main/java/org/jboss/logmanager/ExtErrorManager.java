@@ -47,6 +47,7 @@ public abstract class ExtErrorManager extends ErrorManager {
             msg,
         });
         record.setThrown(ex);
+        record.setLoggerName("");
         return record;
     }
 }
