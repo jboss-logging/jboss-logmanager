@@ -43,7 +43,7 @@ public abstract class ExtErrorManager extends ErrorManager {
         final String codeStr = nameForCode(code);
         record.setParameters(new Object[] {
             codeStr,
-            Integer.toString(code),
+            Integer.valueOf(code),
             msg,
         });
         record.setThrown(ex);
