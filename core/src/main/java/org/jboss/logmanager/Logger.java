@@ -182,6 +182,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @param <V> the attachment value type
      * @return the old attachment, if there was one
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     * @throws IllegalArgumentException if the attachment cannot be added because the maximum has been reached
      */
     public <V> V attach(AttachmentKey<V> key, V value) throws SecurityException {
         LogContext.checkAccess();
@@ -197,6 +198,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @param <V> the attachment value type
      * @return the current attachment, if there is one, or {@code null} if the value was successfully attached
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     * @throws IllegalArgumentException if the attachment cannot be added because the maximum has been reached
      */
     @SuppressWarnings({ "unchecked" })
     public <V> V attachIfAbsent(AttachmentKey<V> key, V value) throws SecurityException {
