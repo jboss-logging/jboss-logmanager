@@ -136,8 +136,14 @@ final class LoggerNode implements AutoCloseable {
     LoggerNode(final LogContext context) {
         parent = null;
         fullName = "";
-        handlersUpdater.clear(this);
         this.context = context;
+        final LogContextInitializer initializer = context.getInitializer();
+        final Level initialLevel = initializer.getInitialLevel(fullName);
+        if (initialLevel != null) {
+            level = initialLevel;
+            effectiveLevel = initialLevel.intValue();
+        }
+        handlers = safeCloneHandlers(initializer.getInitialHandlers(fullName));
         children = context.createChildMap();
     }
 
@@ -154,7 +160,6 @@ final class LoggerNode implements AutoCloseable {
             throw new IllegalArgumentException("nodeName is empty, or just whitespace and has no parent");
         }
         this.parent = parent;
-        handlersUpdater.clear(this);
         if (parent.parent == null) {
             if (nodeName.isEmpty()) {
                 fullName = ".";
@@ -165,8 +170,44 @@ final class LoggerNode implements AutoCloseable {
             fullName = parent.fullName + "." + nodeName;
         }
         this.context = context;
-        effectiveLevel = parent.effectiveLevel;
+        final LogContextInitializer initializer = context.getInitializer();
+        final Level initialLevel = initializer.getInitialLevel(fullName);
+        if (initialLevel != null) {
+            level = initialLevel;
+            effectiveLevel = initialLevel.intValue();
+        } else {
+            effectiveLevel = parent.effectiveLevel;
+        }
+        handlers = safeCloneHandlers(initializer.getInitialHandlers(fullName));
         children = context.createChildMap();
+    }
+
+    static Handler[] safeCloneHandlers(Handler... initialHandlers) {
+        if (initialHandlers == null || initialHandlers.length == 0) {
+            return LogContextInitializer.NO_HANDLERS;
+        }
+        final Handler[] clone = initialHandlers.clone();
+        final int length = clone.length;
+        for (int i = 0; i < length; i++) {
+            if (clone[i] == null) {
+                // our clone contains nulls; we have to clone again to be safe
+                int cnt;
+                for (cnt = 1, i ++; i < length; i ++) {
+                    if (clone[i] == null) cnt ++;
+                }
+                final int newLen = length - cnt;
+                if (newLen == 0) {
+                    return LogContextInitializer.NO_HANDLERS;
+                }
+                final Handler[] newClone = new Handler[newLen];
+                for (int j = 0, k = 0; j < length; j ++) {
+                    if (clone[j] != null) newClone[k++] = clone[j];
+                }
+                return newClone;
+            }
+        }
+        // original contained no nulls, so carry on
+        return clone;
     }
 
     @Override
