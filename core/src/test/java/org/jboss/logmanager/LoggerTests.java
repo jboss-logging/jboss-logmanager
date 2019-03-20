@@ -41,6 +41,24 @@ public final class LoggerTests {
     }
 
     @Test
+    public void testSafeClone() {
+        assertSame(LogContextInitializer.NO_HANDLERS, LoggerNode.safeCloneHandlers());
+        assertSame(LogContextInitializer.NO_HANDLERS, LoggerNode.safeCloneHandlers((Handler) null));
+        assertSame(LogContextInitializer.NO_HANDLERS, LoggerNode.safeCloneHandlers(null, null));
+
+        Handler h1 = new NullHandler();
+        Handler h2 = new NullHandler();
+        assertArrayEquals(new Handler[] { h1, h2 }, LoggerNode.safeCloneHandlers(h1, h2));
+        assertArrayEquals(new Handler[] { h1, h2 }, LoggerNode.safeCloneHandlers(h1, h2, null));
+        assertArrayEquals(new Handler[] { h1, h2 }, LoggerNode.safeCloneHandlers(h1, null, h2));
+        assertArrayEquals(new Handler[] { h1, h2 }, LoggerNode.safeCloneHandlers(null, h1, h2));
+        assertArrayEquals(new Handler[] { h1, h2 }, LoggerNode.safeCloneHandlers(null, h1, null, h2, null));
+
+        assertArrayEquals(new Handler[] { h1 }, LoggerNode.safeCloneHandlers(null, h1));
+        assertArrayEquals(new Handler[] { h1 }, LoggerNode.safeCloneHandlers(h1, null));
+    }
+
+    @Test
     public void testCategories() {
         assertNotNull("Logger not created with category: " + LoggerTests.class.getName(), Logger.getLogger(LoggerTests.class.getName()));
         assertNotNull("Logger not created with category: Spaced Logger Name", Logger.getLogger("Spaced Logger Name"));

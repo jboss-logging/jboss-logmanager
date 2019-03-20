@@ -23,12 +23,16 @@ import org.wildfly.common.Assert;
 import org.wildfly.common.ref.Reference;
 import org.wildfly.common.ref.References;
 
+import java.security.AccessController;
 import java.security.Permission;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
@@ -43,7 +47,23 @@ import static org.jboss.logmanager.LoggerNode.attachmentsFull;
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
 public final class LogContext implements AutoCloseable {
-    private static final LogContext SYSTEM_CONTEXT = new LogContext(false);
+    private static final LogContext SYSTEM_CONTEXT = new LogContext(false, discoverDefaultInitializer());
+
+    private static LogContextInitializer discoverDefaultInitializer() {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            return AccessController.doPrivileged((PrivilegedAction<LogContextInitializer>) LogContext::discoverDefaultInitializer0);
+        } else {
+            return discoverDefaultInitializer0();
+        }
+    }
+
+    private static LogContextInitializer discoverDefaultInitializer0() {
+        // allow exceptions to bubble up, otherwise logging won't work with no indication as to why
+        final ServiceLoader<LogContextInitializer> loader = ServiceLoader.load(LogContextInitializer.class, LogContext.class.getClassLoader());
+        final Iterator<LogContextInitializer> iterator = loader.iterator();
+        return iterator.hasNext() ? iterator.next() : LogContextInitializer.DEFAULT;
+    }
 
     static final Permission CREATE_CONTEXT_PERMISSION = new RuntimePermission("createLogContext", null);
     static final Permission SET_CONTEXT_SELECTOR_PERMISSION = new RuntimePermission("setLogContextSelector", null);
@@ -53,6 +73,7 @@ public final class LogContext implements AutoCloseable {
     @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
     private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
     private final boolean strong;
+    private final LogContextInitializer initializer;
 
     /**
      * The first attachment key.
@@ -120,8 +141,9 @@ public final class LogContext implements AutoCloseable {
      */
     final Object treeLock = new Object();
 
-    LogContext(final boolean strong) {
+    LogContext(final boolean strong, LogContextInitializer initializer) {
         this.strong = strong;
+        this.initializer = initializer;
         levelMapReference = new AtomicReference<Map<String, Reference<Level, Void>>>(LazyHolder.INITIAL_LEVEL_MAP);
         rootLogger = new LoggerNode(this);
         closeHandlers = new LinkedHashSet<>();
@@ -136,11 +158,25 @@ public final class LogContext implements AutoCloseable {
      * @return a new log context
      */
     public static LogContext create(boolean strong) {
+        return create(strong, LogContextInitializer.DEFAULT);
+    }
+
+    /**
+     * Create a new log context.  If a security manager is installed, the caller must have the {@code "createLogContext"}
+     * {@link RuntimePermission RuntimePermission} to invoke this method.
+     *
+     * @param strong {@code true} if the context should use strong references, {@code false} to use (default) weak
+     *      references for automatic logger GC
+     * @param initializer the log context initializer to use (must not be {@code null})
+     * @return a new log context
+     */
+    public static LogContext create(boolean strong, LogContextInitializer initializer) {
+        Assert.checkNotNullParam("initializer", initializer);
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CREATE_CONTEXT_PERMISSION);
         }
-        return new LogContext(strong);
+        return new LogContext(strong, initializer);
     }
 
     /**
@@ -151,6 +187,17 @@ public final class LogContext implements AutoCloseable {
      */
     public static LogContext create() {
         return create(false);
+    }
+
+    /**
+     * Create a new log context.  If a security manager is installed, the caller must have the {@code "createLogContext"}
+     * {@link RuntimePermission RuntimePermission} to invoke this method.
+     *
+     * @param initializer the log context initializer to use (must not be {@code null})
+     * @return a new log context
+     */
+    public static LogContext create(LogContextInitializer initializer) {
+        return create(false, initializer);
     }
 
     // Attachment mgmt
@@ -559,6 +606,10 @@ public final class LogContext implements AutoCloseable {
 
     ConcurrentMap<String, LoggerNode> createChildMap() {
         return strong ? new CopyOnWriteMap<String, LoggerNode>() : new CopyOnWriteWeakMap<String, LoggerNode>();
+    }
+
+    LogContextInitializer getInitializer() {
+        return initializer;
     }
 
     private void recursivelyClose(final LoggerNode loggerNode) {
