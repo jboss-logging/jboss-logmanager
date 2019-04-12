@@ -33,7 +33,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>26</version>
+        <version>34</version>
     </parent>
 
     <licenses>
@@ -165,7 +165,6 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0-jboss-2</version>
                 <executions>
                     <execution>
                         <id>default-compile</id>
