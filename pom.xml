@@ -47,10 +47,9 @@
     <properties>
         <!-- Dependency versions -->
         <version.javax.json>1.0</version.javax.json>
-        <version.org.byteman>4.0.4</version.org.byteman>
+        <version.org.byteman>4.0.6</version.org.byteman>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
-        <version.org.jboss.modules.jboss-modules>1.7.0.Final</version.org.jboss.modules.jboss-modules>
-        <version.org.wildfly.common.wildfly-common>1.2.0.Final</version.org.wildfly.common.wildfly-common>
+        <version.org.jboss.modules.jboss-modules>1.9.0.Final</version.org.jboss.modules.jboss-modules>
         <version.junit.junit>4.12</version.junit.junit>
 
         <!-- Test properties -->
@@ -71,11 +70,6 @@
             <version>${version.org.jboss.modules.jboss-modules}</version>
             <scope>provided</scope>
             <optional>true</optional>
-        </dependency>
-        <dependency>
-            <groupId>org.wildfly.common</groupId>
-            <artifactId>wildfly-common</artifactId>
-            <version>${version.org.wildfly.common.wildfly-common}</version>
         </dependency>
 
         <dependency>
@@ -171,7 +165,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0-jboss-1</version>
+                <version>3.8.0-jboss-2</version>
                 <executions>
                     <execution>
                         <id>default-compile</id>
@@ -286,7 +280,7 @@
                     <dependency>
                         <groupId>biz.aQute.bnd</groupId>
                         <artifactId>biz.aQute.bndlib</artifactId>
-                        <version>3.5.0</version>
+                        <version>4.2.0</version>
                     </dependency>
                 </dependencies>
                 <configuration>
