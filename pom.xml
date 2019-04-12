@@ -33,7 +33,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>26</version>
+        <version>34</version>
     </parent>
 
     <licenses>
@@ -49,7 +49,7 @@
         <version.javax.json>1.0</version.javax.json>
         <version.org.byteman>4.0.6</version.org.byteman>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
-        <version.org.jboss.modules.jboss-modules>1.9.0.Final</version.org.jboss.modules.jboss-modules>
+        <version.org.jboss.modules.jboss-modules>1.9.1.Final</version.org.jboss.modules.jboss-modules>
         <version.junit.junit>4.12</version.junit.junit>
 
         <!-- Test properties -->
@@ -165,7 +165,6 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.8.0-jboss-2</version>
                 <executions>
                     <execution>
                         <id>default-compile</id>
