@@ -32,8 +32,8 @@
 
     <parent>
         <groupId>org.jboss</groupId>
-        <artifactId>jboss-parent-mr-jar</artifactId>
-        <version>31</version>
+        <artifactId>jboss-parent</artifactId>
+        <version>34</version>
     </parent>
 
     <licenses>
