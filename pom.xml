@@ -32,8 +32,8 @@
 
     <parent>
         <groupId>org.jboss</groupId>
-        <artifactId>jboss-parent-mr-jar</artifactId>
-        <version>31</version>
+        <artifactId>jboss-parent</artifactId>
+        <version>34</version>
     </parent>
 
     <licenses>
@@ -53,12 +53,12 @@
     <properties>
         <!-- Dependency versions -->
         <version.javax.json>1.0</version.javax.json>
-        <version.org.byteman>4.0.4</version.org.byteman>
+        <version.org.byteman>4.0.6</version.org.byteman>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
-        <version.org.jboss.logging.jboss-logging>3.3.2.Final</version.org.jboss.logging.jboss-logging>
-        <version.org.jboss.modules.jboss-modules>1.7.0.Final</version.org.jboss.modules.jboss-modules>
+        <version.org.jboss.logging.jboss-logging>3.4.0.Final</version.org.jboss.logging.jboss-logging>
+        <version.org.jboss.modules.jboss-modules>1.9.1.Final</version.org.jboss.modules.jboss-modules>
         <version.org.kohsuke.metainf-services>1.8</version.org.kohsuke.metainf-services>
-        <version.org.wildfly.common.wildfly-common>1.5.0.Alpha3</version.org.wildfly.common.wildfly-common>
+        <version.org.wildfly.common.wildfly-common>1.5.1.Final</version.org.wildfly.common.wildfly-common>
         <version.junit.junit>4.12</version.junit.junit>
 
         <!-- Test properties -->
