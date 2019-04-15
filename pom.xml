@@ -50,7 +50,7 @@
         <version.org.byteman>4.0.6</version.org.byteman>
         <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
         <version.org.jboss.modules.jboss-modules>1.9.1.Final</version.org.jboss.modules.jboss-modules>
-        <version.org.wildfly.common.wildfly-common>1.2.0.Final</version.org.wildfly.common.wildfly-common>
+        <version.org.wildfly.common.wildfly-common>1.5.1.Final</version.org.wildfly.common.wildfly-common>
         <version.junit.junit>4.12</version.junit.junit>
 
         <!-- Test properties -->
