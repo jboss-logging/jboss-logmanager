@@ -21,8 +21,6 @@ package org.jboss.logmanager.formatters;
 
 import org.jboss.logmanager.ExtLogRecord;
 
-import java.util.logging.Formatter;
-
 /**
  * A single format step which handles some part of rendering a log record.
  */
@@ -43,7 +41,7 @@ public interface FormatStep {
      * @param builder the string builder to append to
      * @param record the record being rendered
      */
-    default void render(Formatter formatter, StringBuilder builder, ExtLogRecord record) {
+    default void render(MultistepFormatter formatter, StringBuilder builder, ExtLogRecord record) {
         render(builder, record);
     }
 
