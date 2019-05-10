@@ -191,7 +191,7 @@ public final class Formatters {
             render(null, builder, record);
         }
 
-        public void render(Formatter formatter, StringBuilder builder, ExtLogRecord record) {
+        public void render(MultistepFormatter formatter, StringBuilder builder, ExtLogRecord record) {
             final int minimumWidth = this.minimumWidth;
             final int maximumWidth = this.maximumWidth;
             final boolean leftJustify = this.leftJustify;
