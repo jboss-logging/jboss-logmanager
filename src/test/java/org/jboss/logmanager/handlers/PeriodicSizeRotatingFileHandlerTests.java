@@ -185,22 +185,26 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
 
     @Test
     public void testArchiveRotateGzip() throws Exception {
-        testArchiveRotate(".yyyy-MM-dd", ".gz");
+        testArchiveRotate(".yyyy-MM-dd", ".gz", false);
+        testArchiveRotate(".yyyy-MM-dd", ".gz", true);
     }
 
     @Test
     public void testArchiveRotateZip() throws Exception {
-        testArchiveRotate(".yyyy-MM-dd", ".zip");
+        testArchiveRotate(".yyyy-MM-dd", ".zip", false);
+        testArchiveRotate(".yyyy-MM-dd", ".zip", true);
     }
 
     @Test
     public void testArchiveRotateSizeOnlyGzip() throws Exception {
-        testArchiveRotate(null, ".gz");
+        testArchiveRotate(null, ".gz", false);
+        testArchiveRotate(null, ".gz", true);
     }
 
     @Test
     public void testArchiveRotateSizeOnlyZip() throws Exception {
-        testArchiveRotate(null,".zip");
+        testArchiveRotate(null,".zip", false);
+        testArchiveRotate(null,".zip", true);
     }
 
     @Test
@@ -235,13 +239,14 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         Assert.assertTrue("Expected the last line to end with 99: " + lastLine, lastLine.endsWith("99"));
     }
 
-    private void testArchiveRotate(final String dateSuffix, final String archiveSuffix) throws Exception {
+    private void testArchiveRotate(final String dateSuffix, final String archiveSuffix, final boolean rotateOnBoot) throws Exception {
         final String currentDate = dateSuffix == null ? "" : LocalDate.now().format(DateTimeFormatter.ofPattern(dateSuffix));
         PeriodicSizeRotatingFileHandler handler = new PeriodicSizeRotatingFileHandler();
         configureHandlerDefaults(handler);
         handler.setRotateSize(1024L);
         handler.setMaxBackupIndex(2);
         handler.setFile(logFile);
+        handler.setRotateOnBoot(rotateOnBoot);
         handler.setSuffix((dateSuffix == null ? "" : dateSuffix) + archiveSuffix);
 
         // Allow a few rotates
@@ -269,6 +274,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         } else {
             Assert.fail("Unknown archive suffix: " + archiveSuffix);
         }
+        compareArchiveContents(path1, path2, logFile.getName());
 
         // Clean up files
         Files.deleteIfExists(path1);
