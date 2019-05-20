@@ -147,9 +147,7 @@ public class SizeRotatingFileHandler extends FileHandler {
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
                 rotate(file);
             }
-            super.setFile(file);
-            if (outputStream != null)
-                outputStream.currentSize = file == null ? 0L : file.length();
+            setFileInternal(file);
         }
     }
 
@@ -243,10 +241,10 @@ public class SizeRotatingFileHandler extends FileHandler {
                     return;
                 }
                 // close the old file.
-                setFile(null);
+                setFileInternal(null);
                 rotate(file);
                 // start with new file.
-                setFile(file);
+                setFileInternal(file);
             } catch (IOException e) {
                 reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
             }
@@ -301,5 +299,11 @@ public class SizeRotatingFileHandler extends FileHandler {
         } catch (Exception e) {
             reportError(String.format("Failed to move file %s to %s.", src, target), e, ErrorManager.GENERIC_FAILURE);
         }
+    }
+
+    private void setFileInternal(final File file) throws FileNotFoundException {
+        super.setFile(file);
+        if (outputStream != null)
+            outputStream.currentSize = file == null ? 0L : file.length();
     }
 }
