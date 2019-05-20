@@ -157,12 +157,14 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
 
     @Test
     public void testArchiveRotateGzip() throws Exception {
-        testArchiveRotate(".gz");
+        testArchiveRotate(".gz", false);
+        testArchiveRotate(".gz", true);
     }
 
     @Test
     public void testArchiveRotateZip() throws Exception {
-        testArchiveRotate(".zip");
+        testArchiveRotate(".zip", false);
+        testArchiveRotate(".zip", true);
     }
 
     /**
@@ -201,11 +203,12 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
         Assert.assertTrue("Expected the last line to end with 99: " + lastLine, lastLine.endsWith("99"));
     }
 
-    private void testArchiveRotate(final String archiveSuffix) throws Exception {
+    private void testArchiveRotate(final String archiveSuffix, final boolean rotateOnBoot) throws Exception {
         final SizeRotatingFileHandler handler = new SizeRotatingFileHandler();
         configureHandlerDefaults(handler);
         handler.setRotateSize(1024L);
         handler.setMaxBackupIndex(2);
+        handler.setRotateOnBoot(rotateOnBoot);
         handler.setFile(logFile);
         handler.setSuffix(archiveSuffix);
 
@@ -234,6 +237,8 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
         } else {
             Assert.fail("Unknown archive suffix: " + archiveSuffix);
         }
+
+        compareArchiveContents(path1, path2, logFile.getName());
 
         // Clean up files
         Files.deleteIfExists(path1);
