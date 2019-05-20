@@ -29,6 +29,8 @@ import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
@@ -159,5 +161,63 @@ public class AbstractHandlerTest {
             Assert.assertFalse(String.format("File %s appears to be empty in zip file %s.", expectedFileName, path), lines.isEmpty());
             Assert.assertTrue(String.format("ZIP file %s missing contents: %s", path, expectedContains), lines.get(0).contains(expectedContains));
         }
+    }
+
+    static void compareArchiveContents(final Path archive1, final Path archive2, final String expectedFileName) throws IOException {
+        Collection<String> lines1 = Collections.emptyList();
+        Collection<String> lines2 = Collections.emptyList();
+
+        if (archive1.getFileName().toString().endsWith(".zip")) {
+            lines1 = readAllLinesFromZip(archive1, expectedFileName);
+            lines2 = readAllLinesFromZip(archive2, expectedFileName);
+        } else if (archive1.getFileName().toString().endsWith(".gz")) {
+            lines1 = readAllLinesFromGzip(archive1, expectedFileName);
+            lines2 = readAllLinesFromGzip(archive2, expectedFileName);
+        } else {
+            Assert.fail(String.format("Files %s and %s are not archives.", archive1, archive2));
+        }
+
+        // Assert the contents aren't empty
+        Assert.assertFalse(String.format("Archive %s contained no data", archive1), lines1.isEmpty());
+        Assert.assertFalse(String.format("Archive %s contained no data", archive2), lines2.isEmpty());
+
+        final Collection<String> copy1 = new ArrayList<>(lines1);
+        final Collection<String> copy2 = new ArrayList<>(lines2);
+        boolean altered = copy1.removeAll(copy2);
+        if (copy1.size() == 0) {
+            Assert.fail(String.format("The contents of %s and %s are identical and should not be", archive1, archive2));
+        } else if (altered) {
+            final StringBuilder msg = new StringBuilder(1024)
+                    .append("The following contents are in both ")
+                    .append(archive1)
+                    .append(" and ")
+                    .append(archive2);
+            // Find the identical lines and report
+            for (String line : lines1) {
+                if (lines2.contains(line)) {
+                    msg.append(System.lineSeparator()).append(line);
+                }
+            }
+            Assert.fail(msg.toString());
+        }
+    }
+
+    private static Collection<String> readAllLinesFromZip(final Path path, final String expectedFileName) throws IOException {
+        try (final FileSystem zipFs = FileSystems.newFileSystem(URI.create("jar:" + path.toUri().toASCIIString()), Collections.singletonMap("create", "true"))) {
+            final Path file = zipFs.getPath(zipFs.getSeparator(), expectedFileName);
+            Assert.assertTrue(String.format("Expected file %s not found.", expectedFileName), Files.exists(file));
+            return Files.readAllLines(file, StandardCharsets.UTF_8);
+        }
+    }
+
+    private static Collection<String> readAllLinesFromGzip(final Path path, final String expectedFileName) throws IOException {
+        final Collection<String> lines = new ArrayList<>();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(Files.newInputStream(path))))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                lines.add(line);
+            }
+        }
+        return lines;
     }
 }
