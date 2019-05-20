@@ -225,5 +225,6 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         } else {
             Assert.fail("Unknown archive suffix: " + archiveSuffix);
         }
+        compareArchiveContents(rotated1, rotated2, logFile.getFileName().toString());
     }
 }
