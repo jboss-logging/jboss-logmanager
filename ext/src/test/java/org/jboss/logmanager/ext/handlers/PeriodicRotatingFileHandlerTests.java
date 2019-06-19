@@ -57,6 +57,8 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         // Create the handler
         handler = new PeriodicRotatingFileHandler(logFile.toFile(), rotateFormatter.toPattern(), false);
         handler.setFormatter(FORMATTER);
+        // Set append to true to ensure the rotated file is overwritten
+        handler.setAppend(true);
     }
 
     @After
@@ -108,6 +110,8 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         final int currentDay = cal.get(Calendar.DAY_OF_MONTH);
         final int nextDay = currentDay + 1;
+        // Set to false for this specific test
+        handler.setAppend(false);
 
         final String currentDate = sdf.format(cal.getTime());
 

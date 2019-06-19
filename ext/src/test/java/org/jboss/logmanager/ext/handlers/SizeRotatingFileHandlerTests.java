@@ -211,6 +211,8 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setRotateOnBoot(rotateOnBoot);
         handler.setFile(logFile);
         handler.setSuffix(archiveSuffix);
+        // Set append to true to ensure the rotated file is overwritten
+        handler.setAppend(true);
 
         // Allow a few rotates
         for (int i = 0; i < 100; i++) {
