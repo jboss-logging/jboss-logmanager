@@ -155,6 +155,8 @@ class SuffixRotator {
         if (compressionType == CompressionType.GZIP) {
             try {
                 archiveGzip(source, target);
+                // Delete the file after it's archived to behave like a file move or rename
+                Files.delete(source);
             } catch (Exception e) {
                 errorManager.error(String.format("Failed to compress %s to %s. Compressed file may be left on the " +
                         "filesystem corrupted.", source, target), e, ErrorManager.WRITE_FAILURE);
@@ -162,6 +164,8 @@ class SuffixRotator {
         } else if (compressionType == CompressionType.ZIP) {
             try {
                 archiveZip(source, target);
+                // Delete the file after it's archived to behave like a file move or rename
+                Files.delete(source);
             } catch (Exception e) {
                 errorManager.error(String.format("Failed to compress %s to %s. Compressed file may be left on the " +
                         "filesystem corrupted.", source, target), e, ErrorManager.WRITE_FAILURE);
