@@ -154,6 +154,8 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
                 final String suffix = getNextSuffix();
                 final SuffixRotator suffixRotator = getSuffixRotator();
                 if (suffixRotator != SuffixRotator.EMPTY && suffix != null) {
+                    // Make sure any previous files are closed before we attempt to rotate
+                    setFileInternal(null);
                     suffixRotator.rotate(getErrorManager(), file.toPath(), suffix, maxBackupIndex);
                 }
             }
