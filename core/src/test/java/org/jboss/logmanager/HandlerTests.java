@@ -171,6 +171,7 @@ public final class HandlerTests {
 
     static class MultiHandler extends ExtHandler {
         protected MultiHandler() {
+            setErrorManager(AssertingErrorManager.of());
         }
 
         public void publish(final LogRecord record) {

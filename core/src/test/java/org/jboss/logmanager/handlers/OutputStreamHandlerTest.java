@@ -18,75 +18,79 @@
  */
 package org.jboss.logmanager.handlers;
 
+import static org.hamcrest.core.Is.is;
+import static org.junit.Assert.assertThat;
+
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
-import static org.hamcrest.core.Is.is;
 
+import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.handlers.ConsoleHandler.Target;
 import org.junit.After;
-import static org.junit.Assert.assertThat;
 import org.junit.Before;
 import org.junit.Test;
 
 /**
- *
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2013 Red Hat, inc.
  */
 public class OutputStreamHandlerTest {
 
     private StringWriter out;
     private OutputStreamHandler handler;
-    
+
     private static final Formatter NO_FORMATTER = new Formatter() {
         public String format(final LogRecord record) {
             return record.getMessage();
         }
     };
-    
+
     public OutputStreamHandlerTest() {
     }
-    
+
     @Before
     public void prepareBuffer() {
         out = new StringWriter();
     }
-    
+
     @After
     public void cleanAll() throws IOException {
-       handler.flush();
-       handler.close();
-       out.close();
+        handler.flush();
+        handler.close();
+        out.close();
     }
-    
+
     @Test
     public void testSetEncoding() throws Exception {
         handler = new OutputStreamHandler();
+        handler.setErrorManager(AssertingErrorManager.of());
         handler.setEncoding("UTF-8");
         assertThat(handler.getEncoding(), is("UTF-8"));
     }
-    
-   @Test
-    public void testSetEncodingOnOutputStream() throws Exception {  
-       handler = new ConsoleHandler(Target.CONSOLE, NO_FORMATTER);
+
+    @Test
+    public void testSetEncodingOnOutputStream() throws Exception {
+        handler = new ConsoleHandler(Target.CONSOLE, NO_FORMATTER);
+        handler.setErrorManager(AssertingErrorManager.of());
         handler.setWriter(out);
         handler.setEncoding("UTF-8");
         assertThat(handler.getEncoding(), is("UTF-8"));
-       handler.publish(new ExtLogRecord(Level.INFO, "Hello World", getClass().getName()));
+        handler.publish(new ExtLogRecord(Level.INFO, "Hello World", getClass().getName()));
         assertThat(out.toString(), is("Hello World"));
     }
-    
+
     @Test
     public void testSetNullEncodingOnOutputStream() throws Exception {
         handler = new OutputStreamHandler(NO_FORMATTER);
+        handler.setErrorManager(AssertingErrorManager.of());
         handler.setWriter(out);
         handler.setEncoding(null);
         handler.publish(new ExtLogRecord(Level.INFO, "Hello World", getClass().getName()));
-        assertThat(out.toString(), is("Hello World")); 
+        assertThat(out.toString(), is("Hello World"));
     }
-    
-    
+
+
 }

@@ -49,6 +49,7 @@ public class SyslogHandlerTests {
     public void setupHandler() throws Exception {
         handler = new SyslogHandler(HOSTNAME, PORT);
         handler.setFormatter(new PatternFormatter("%s"));
+        handler.setErrorManager(AssertingErrorManager.of());
     }
 
     @After
