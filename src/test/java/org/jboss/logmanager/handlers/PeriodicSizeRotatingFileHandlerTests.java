@@ -31,9 +31,11 @@ import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.ErrorManager;
 
 import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
+import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtLogRecord;
 import org.junit.Assert;
 import org.junit.Ignore;
@@ -217,6 +219,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
     public void testFailedRotate() throws Exception {
         final PeriodicSizeRotatingFileHandler handler = new PeriodicSizeRotatingFileHandler();
         configureHandlerDefaults(handler);
+        handler.setErrorManager(AssertingErrorManager.of(ErrorManager.GENERIC_FAILURE));
         handler.setRotateSize(1024L);
         handler.setMaxBackupIndex(5);
         handler.setFile(logFile);

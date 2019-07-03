@@ -24,6 +24,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
+import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
@@ -38,6 +39,7 @@ public class QueueHandlerTests extends AbstractHandlerTest {
     @Test
     public void testQueueSize() throws Exception {
         final QueueHandler handler = new QueueHandler(5);
+        handler.setErrorManager(AssertingErrorManager.of());
 
         // Log 6 records and ensure only 5 are available
         for (int i = 0; i < 6; i++) {
@@ -62,6 +64,7 @@ public class QueueHandlerTests extends AbstractHandlerTest {
         nestedHandler.setLevel(Level.INFO);
 
         final QueueHandler handler = new QueueHandler(10);
+        handler.setErrorManager(AssertingErrorManager.of());
         handler.setLevel(Level.ERROR);
         handler.addHandler(nestedHandler);
 
@@ -83,6 +86,10 @@ public class QueueHandlerTests extends AbstractHandlerTest {
 
     static class NestedHandler extends ExtHandler {
         private final List<ExtLogRecord> records = new ArrayList<ExtLogRecord>();
+
+        NestedHandler() {
+            setErrorManager(AssertingErrorManager.of());
+        }
 
         @Override
         protected void doPublish(final ExtLogRecord record) {
