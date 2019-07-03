@@ -105,6 +105,7 @@ public class AbstractHandlerTest {
     protected static void configureHandlerDefaults(final ExtHandler handler) {
         handler.setAutoFlush(true);
         handler.setFormatter(FORMATTER);
+        handler.setErrorManager(AssertingErrorManager.of());
     }
 
     protected ExtLogRecord createLogRecord(final String msg) {

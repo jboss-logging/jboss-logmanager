@@ -29,6 +29,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
 import java.util.List;
+import java.util.logging.ErrorManager;
 
 import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
@@ -59,6 +60,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setFormatter(FORMATTER);
         // Set append to true to ensure the rotated file is overwritten
         handler.setAppend(true);
+        handler.setErrorManager(AssertingErrorManager.of());
     }
 
     @After
@@ -112,6 +114,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         final int nextDay = currentDay + 1;
         // Set to false for this specific test
         handler.setAppend(false);
+        handler.setErrorManager(AssertingErrorManager.of(ErrorManager.GENERIC_FAILURE));
 
         final String currentDate = sdf.format(cal.getTime());
 

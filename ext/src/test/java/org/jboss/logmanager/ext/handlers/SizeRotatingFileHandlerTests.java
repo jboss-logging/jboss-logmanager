@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.ErrorManager;
 
 import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
@@ -181,6 +182,7 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
     public void testFailedRotate() throws Exception {
         final SizeRotatingFileHandler handler = new SizeRotatingFileHandler();
         configureHandlerDefaults(handler);
+        handler.setErrorManager(AssertingErrorManager.of(ErrorManager.GENERIC_FAILURE));
         handler.setRotateSize(1024L);
         handler.setMaxBackupIndex(5);
         handler.setFile(logFile);

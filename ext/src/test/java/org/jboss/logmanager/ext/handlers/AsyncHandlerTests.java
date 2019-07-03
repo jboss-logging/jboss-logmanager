@@ -108,6 +108,7 @@ public class AsyncHandlerTests {
 
         BlockingQueueHandler() {
             queue = new LinkedBlockingDeque<String>();
+            setErrorManager(AssertingErrorManager.of());
         }
 
         @Override
