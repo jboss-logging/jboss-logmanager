@@ -23,6 +23,7 @@ import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 
+import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
@@ -108,6 +109,7 @@ public class AsyncHandlerTests {
 
         BlockingQueueHandler() {
             queue = new LinkedBlockingDeque<String>();
+            setErrorManager(AssertingErrorManager.of());
         }
 
         @Override

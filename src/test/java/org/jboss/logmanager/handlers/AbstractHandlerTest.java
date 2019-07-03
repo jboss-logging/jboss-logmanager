@@ -37,6 +37,7 @@ import java.util.zip.GZIPInputStream;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.junit.After;
 import org.junit.Assert;
@@ -105,6 +106,7 @@ public class AbstractHandlerTest {
     protected static void configureHandlerDefaults(final ExtHandler handler) {
         handler.setAutoFlush(true);
         handler.setFormatter(FORMATTER);
+        handler.setErrorManager(AssertingErrorManager.of());
     }
 
     protected ExtLogRecord createLogRecord(final String msg) {
