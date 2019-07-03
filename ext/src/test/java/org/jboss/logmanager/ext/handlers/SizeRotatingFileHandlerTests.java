@@ -157,6 +157,44 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
     }
 
     @Test
+    public void testBootRotateChange() throws Exception {
+        SizeRotatingFileHandler handler = new SizeRotatingFileHandler();
+        configureHandlerDefaults(handler);
+        // Enough to not rotate
+        handler.setRotateSize(5000L);
+        handler.setMaxBackupIndex(1);
+        handler.setFile(logFile);
+        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + ".1");
+
+        // The rotated file should not exist
+        Assert.assertTrue("Rotated file should not exist", Files.notExists(rotatedFile));
+
+        // Log a few records
+        for (int i = 0; i < 5; i++) {
+            handler.publish(createLogRecord("Test message: %d", i));
+        }
+
+        // Configure the handler to rotate on boot and reset the file
+        handler.setRotateOnBoot(true);
+        handler.setFile(logFile);
+
+        // Log a few records
+        for (int i = 0; i < 10; i++) {
+            handler.publish(createLogRecord("Test message: %d", i));
+        }
+
+        handler.close();
+
+        // File should have been rotated
+        Assert.assertTrue(logFile.exists());
+        Assert.assertTrue(Files.exists(rotatedFile));
+
+        // Neither file should be empty
+        Assert.assertTrue(logFile.length() > 0L);
+        Assert.assertTrue(Files.size(rotatedFile) > 0L);
+    }
+
+    @Test
     public void testArchiveRotateGzip() throws Exception {
         testArchiveRotate(".gz", false);
         testArchiveRotate(".gz", true);

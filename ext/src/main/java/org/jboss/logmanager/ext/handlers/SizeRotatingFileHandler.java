@@ -140,6 +140,8 @@ public class SizeRotatingFileHandler extends FileHandler {
         synchronized (outputLock) {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
+                // Make sure any previous files are closed before we attempt to rotate
+                setFileInternal(null);
                 suffixRotator.rotate(getErrorManager(), file.toPath(), maxBackupIndex);
             }
             setFileInternal(file);
