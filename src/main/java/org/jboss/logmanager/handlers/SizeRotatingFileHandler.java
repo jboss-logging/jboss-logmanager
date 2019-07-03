@@ -141,6 +141,8 @@ public class SizeRotatingFileHandler extends FileHandler {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
                 try {
+                    // Make sure any previous files are closed before we attempt to rotate
+                    setFileInternal(null);
                     rotate(file);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
