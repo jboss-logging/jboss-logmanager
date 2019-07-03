@@ -21,6 +21,7 @@ package org.jboss.logmanager.handlers;
 
 import java.util.logging.SimpleFormatter;
 
+import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.junit.Assert;
@@ -139,6 +140,10 @@ public class ExtHandlerTests {
 
     static class CloseHandler extends ExtHandler {
         private boolean closed = false;
+
+        CloseHandler() {
+            setErrorManager(AssertingErrorManager.of());
+        }
 
         @Override
         public void close() {

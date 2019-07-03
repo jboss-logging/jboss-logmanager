@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.LogContext;
@@ -101,6 +102,7 @@ public class DelayedHandlerTests {
         final LogContext logContext = LogContext.create();
 
         final DelayedHandler handler = new DelayedHandler();
+        handler.setErrorManager(AssertingErrorManager.of());
         final Logger rootLogger = logContext.getLogger("");
         rootLogger.addHandler(handler);
 
@@ -141,6 +143,7 @@ public class DelayedHandlerTests {
         final LogContext logContext = LogContext.create();
 
         final DelayedHandler handler = new DelayedHandler();
+        handler.setErrorManager(AssertingErrorManager.of());
         final Logger rootLogger = logContext.getLogger("");
         rootLogger.addHandler(handler);
         final Random r = new Random();
@@ -186,6 +189,7 @@ public class DelayedHandlerTests {
         final LogContext logContext = LogContext.create();
 
         final DelayedHandler handler = new DelayedHandler();
+        handler.setErrorManager(AssertingErrorManager.of());
         final Logger rootLogger = logContext.getLogger("");
         rootLogger.addHandler(handler);
         final Random r = new Random();
@@ -240,6 +244,11 @@ public class DelayedHandlerTests {
 
     public static class TestHandler extends ExtHandler {
         static final List<ExtLogRecord> MESSAGES = new ArrayList<>();
+
+        @SuppressWarnings("WeakerAccess")
+        public TestHandler() {
+            setErrorManager(AssertingErrorManager.of());
+        }
 
         @Override
         protected synchronized void doPublish(final ExtLogRecord record) {

@@ -25,6 +25,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.logging.Level;
 
+import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
@@ -49,6 +50,7 @@ public class SyslogHandlerTests {
     public void setupHandler() throws Exception {
         handler = new SyslogHandler(HOSTNAME, PORT);
         handler.setFormatter(new PatternFormatter("%s"));
+        handler.setErrorManager(AssertingErrorManager.of());
     }
 
     @After

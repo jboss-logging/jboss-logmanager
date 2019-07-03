@@ -38,6 +38,7 @@ public class FileHandlerPerformanceTests {
         handler.setLevel(Level.ALL);
         handler.setAutoFlush(true);
         handler.setEncoding("utf-8");
+        handler.setErrorManager(AssertingErrorManager.of());
     }
 
     private static void publish(final ExtHandler handler, final String msg) {

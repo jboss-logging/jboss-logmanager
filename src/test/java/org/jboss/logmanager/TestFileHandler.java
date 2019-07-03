@@ -36,10 +36,12 @@ public class TestFileHandler extends FileHandler {
 
     public TestFileHandler() {
         super();
+        setErrorManager(AssertingErrorManager.of());
     }
 
     public TestFileHandler(final String fileName, final boolean append) throws FileNotFoundException {
         super(fileName, append);
+        setErrorManager(AssertingErrorManager.of());
     }
 
     @Override

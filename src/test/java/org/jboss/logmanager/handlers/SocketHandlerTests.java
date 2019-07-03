@@ -5,10 +5,12 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
+import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 
 import javax.net.ssl.SSLContext;
 
+import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
@@ -131,6 +133,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
     @Test
     public void testTcpReconnect() throws Exception {
         try (SocketHandler handler = createHandler(Protocol.TCP)) {
+            handler.setErrorManager(AssertingErrorManager.of(ErrorManager.FLUSH_FAILURE));
 
             // Publish a record to a running server
             try (
@@ -208,6 +211,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
         handler.setAutoFlush(true);
         handler.setEncoding("utf-8");
         handler.setFormatter(new PatternFormatter("%s\n"));
+        handler.setErrorManager(AssertingErrorManager.of());
 
         return handler;
     }
