@@ -118,7 +118,8 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
      * with any log context.
      */
     public LogContext getLogContext() {
-        return AccessController.doPrivileged(logContextAction);
+        return System.getSecurityManager() == null? logContextAction.run() :
+                AccessController.doPrivileged(logContextAction);
     }
 
     /**
