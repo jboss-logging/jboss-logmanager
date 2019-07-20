@@ -765,24 +765,31 @@ public final class Formatters {
     public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String argument, final boolean extended) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(final StringBuilder builder, final ExtLogRecord record) {
-                doPrivileged(new PrivilegedAction<Void>() {
-                    public Void run() {
-                        final Throwable t = record.getThrown();
-                        if (t != null) {
-                            int depth = -1;
-                            if (argument != null) {
-                                try {
-                                    depth = Integer.parseInt(argument);
-                                } catch (NumberFormatException ignore) {
-                                }
-                            }
-                            StackTraceFormatter.renderStackTrace(builder, t, extended, depth);
+                if (System.getSecurityManager() != null)
+                    doPrivileged(new PrivilegedAction<Void>() {
+                        public Void run() {
+                            doExceptionFormatStep(builder, record, argument, extended);
+                            return null;
                         }
-                        return null;
-                    }
-                });
+                    });
+                else
+                    doExceptionFormatStep(builder, record, argument, extended);
             }
         };
+    }
+
+    private static void doExceptionFormatStep(final StringBuilder builder, final ExtLogRecord record, final String argument, final boolean extended) {
+        final Throwable t = record.getThrown();
+        if (t != null) {
+            int depth = -1;
+            if (argument != null) {
+                try {
+                    depth = Integer.parseInt(argument);
+                } catch (NumberFormatException ignore) {
+                }
+            }
+            StackTraceFormatter.renderStackTrace(builder, t, extended, depth);
+        }
     }
 
     /**
