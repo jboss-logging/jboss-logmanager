@@ -118,7 +118,8 @@ public final class CallerClassLoaderLogContextSelector implements LogContextSele
      */
     @Override
     public LogContext getLogContext() {
-        return AccessController.doPrivileged(logContextAction);
+        return System.getSecurityManager() == null? logContextAction.run() :
+                AccessController.doPrivileged(logContextAction);
     }
 
     /**
