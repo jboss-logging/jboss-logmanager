@@ -69,7 +69,8 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
     };
 
     public LogContext getLogContext() {
-        return doPrivileged(logContextAction);
+        return System.getSecurityManager() == null? logContextAction.run() :
+                doPrivileged(logContextAction);
     }
 
     /**
