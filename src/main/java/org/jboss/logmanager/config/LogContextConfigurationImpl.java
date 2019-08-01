@@ -666,14 +666,13 @@ final class LogContextConfigurationImpl implements LogContextConfiguration {
             expect(")", iterator);
             return new SimpleObjectProducer(new SubstituteFilter(pattern, replacement, true));
         } else {
-            final String name = expectName(iterator);
-            if (! filters.containsKey(name) || immediate && ! filterRefs.containsKey(name)) {
-                throw new IllegalArgumentException(String.format("No filter named \"%s\" is defined", name));
+            if (! filters.containsKey(token) || immediate && ! filterRefs.containsKey(token)) {
+                throw new IllegalArgumentException(String.format("No filter named \"%s\" is defined", token));
             }
             if (immediate) {
-                return new SimpleObjectProducer(filterRefs.get(name));
+                return new SimpleObjectProducer(filterRefs.get(token));
             } else {
-                return new RefProducer(name, filterRefs);
+                return new RefProducer(token, filterRefs);
             }
         }
     }
