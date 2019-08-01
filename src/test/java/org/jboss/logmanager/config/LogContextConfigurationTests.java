@@ -22,6 +22,7 @@ package org.jboss.logmanager.config;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Filter;
+import java.util.logging.LogRecord;
 
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
@@ -74,6 +75,51 @@ public class LogContextConfigurationTests {
         }
     }
 
+    @Test
+    public void testNamedFilter() {
+        final LogContext context = LogContext.create();
+        final LogContextConfiguration configuration = LogContextConfiguration.Factory.create(context);
+        final LoggerConfiguration loggerConfiguration = configuration.addLoggerConfiguration(LOGGER_NAME);
+        final Logger logger = context.getLogger(LOGGER_NAME);
+
+        final FilterDescription description = new FilterDescription("test", "test named filter",
+                "test named filter | filtered", true);
+
+        configuration.addFilterConfiguration(null, TestFilter.class.getName(), "test");
+        loggerConfiguration.setFilter(description.filterExpression);
+        configuration.commit();
+
+        final ExtLogRecord record = create(description.logMessage);
+
+        final Filter filter = logger.getFilter();
+        Assert.assertNotNull("Expected a filter on the logger, but one was not found: " + description, filter);
+        Assert.assertEquals("Filter.isLoggable() test failed: " + description, description.isLoggable, filter.isLoggable(record));
+        final String msg = record.getFormattedMessage();
+        Assert.assertEquals(String.format("Expected %s found %s: %n%s", description.expectedMessage, msg, description), description.expectedMessage, msg);
+    }
+
+    @Test
+    public void testEmbeddedNamedFilter() {
+        final LogContext context = LogContext.create();
+        final LogContextConfiguration configuration = LogContextConfiguration.Factory.create(context);
+        final LoggerConfiguration loggerConfiguration = configuration.addLoggerConfiguration(LOGGER_NAME);
+        final Logger logger = context.getLogger(LOGGER_NAME);
+
+        final FilterDescription description = new FilterDescription("all(test)", "test named filter",
+                "test named filter | filtered", true);
+        configuration.addFilterConfiguration(null, TestFilter.class.getName(), "test");
+        loggerConfiguration.setFilter(description.filterExpression);
+        configuration.commit();
+
+        final ExtLogRecord record = create(description.logMessage);
+
+        final Filter filter = logger.getFilter();
+        Assert.assertNotNull("Expected a filter on the logger, but one was not found: " + description, filter);
+        Assert.assertEquals("Filter.isLoggable() test failed: " + description, description.isLoggable, filter.isLoggable(record));
+        final String msg = record.getFormattedMessage();
+        Assert.assertEquals(String.format("Expected %s found %s: %n%s", description.expectedMessage, msg, description), description.expectedMessage, msg);
+    }
+
     private static ExtLogRecord create(final String message) {
         final ExtLogRecord record = new ExtLogRecord(Level.INFO, message, Logger.class.getName());
         record.setLoggerName(LOGGER_NAME);
@@ -103,6 +149,15 @@ public class LogContextConfigurationTests {
                     ", logMessage=" + logMessage +
                     ", expectedMessage=" + expectedMessage +
                     ", isLoggable=" + isLoggable + ")";
+        }
+    }
+
+    public static class TestFilter implements Filter {
+
+        @Override
+        public boolean isLoggable(final LogRecord record) {
+            record.setMessage(record.getMessage() + " | filtered");
+            return true;
         }
     }
 }
