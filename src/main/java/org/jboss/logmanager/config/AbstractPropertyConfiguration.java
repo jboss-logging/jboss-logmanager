@@ -34,10 +34,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.jboss.logmanager.ModuleFinderFactory;
 import org.jboss.logmanager.StandardOutputStreams;
-import org.jboss.modules.Module;
-import org.jboss.modules.ModuleIdentifier;
-import org.jboss.modules.ModuleLoader;
 
 /**
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
@@ -60,7 +58,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         this.constructorProperties = constructorProperties;
         final ClassLoader classLoader;
         if (moduleName != null) try {
-            classLoader = ModuleFinder.getClassLoader(moduleName);
+            classLoader = ModuleFinderFactory.getInstance().resolve(moduleName);
         } catch (Throwable e) {
             throw new IllegalArgumentException(String.format("Failed to load module \"%s\" for %s \"%s\"", moduleName, getDescription(), name), e);
         }
@@ -544,20 +542,6 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             return new SimpleObjectProducer((char) 0x00);
         } else {
             return SimpleObjectProducer.NULL_PRODUCER;
-        }
-    }
-
-    static class ModuleFinder {
-
-        private ModuleFinder() {
-        }
-
-        static ClassLoader getClassLoader(final String moduleName) throws Exception {
-            ModuleLoader moduleLoader = ModuleLoader.forClass(ModuleFinder.class);
-            if (moduleLoader == null) {
-                moduleLoader = Module.getBootModuleLoader();
-            }
-            return moduleLoader.loadModule(ModuleIdentifier.fromString(moduleName)).getClassLoader();
         }
     }
 }
