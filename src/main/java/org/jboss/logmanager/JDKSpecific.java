@@ -26,6 +26,7 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import org.jboss.modules.Module;
+import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.Version;
 
 /**
@@ -102,6 +103,12 @@ final class JDKSpecific {
                         logRecord.setSourceLineNumber(element.getLineNumber());
                         if (JBOSS_MODULES) {
                             calculateModule(logRecord, clazz);
+                        } else {
+                            // If JBoss Modules is not installed we want to defer to a possible ModuleResolver
+                            // implementation. JBoss Modules itself may have it's own implementation for cases when
+                            // the log manager is on the boot class path.
+                            logRecord.setSourceModuleName(ModuleResolverFactory.getInstance().getModuleNameOf(clazz));
+                            logRecord.setSourceModuleVersion(ModuleResolverFactory.getInstance().getModuleVersionOf(clazz));
                         }
                         return;
                     }
@@ -118,6 +125,29 @@ final class JDKSpecific {
             }
             clazz = classes[i++];
         }
+    }
+
+    static String getModuleNameOf(final Class<?> clazz) {
+        if (JBOSS_MODULES) {
+            final ClassLoader cl = clazz.getClassLoader();
+            if (cl instanceof ModuleClassLoader) {
+                return ((ModuleClassLoader) cl).getModule().getName();
+            }
+        }
+        return null;
+    }
+
+    static String getModuleVersionOf(final Class<?> clazz) {
+        if (JBOSS_MODULES) {
+            final ClassLoader cl = clazz.getClassLoader();
+            if (cl instanceof ModuleClassLoader) {
+                final Version version = ((ModuleClassLoader) cl).getModule().getVersion();
+                if (version != null) {
+                    return version.toString();
+                }
+            }
+        }
+        return null;
     }
 
     private static void calculateModule(final ExtLogRecord logRecord, final Class<?> clazz) {

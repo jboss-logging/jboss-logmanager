@@ -27,12 +27,12 @@ import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.jboss.modules.Module;
+import org.jboss.modules.ModuleClassLoader;
 import org.jboss.modules.Version;
 
 /**
@@ -77,23 +77,37 @@ final class JDKSpecific {
         WALKER.walk(new CallerCalcFunction(logRecord));
     }
 
-    static void calculateJdkModule(final ExtLogRecord logRecord, final Class<?> clazz) {
-        final java.lang.Module module = clazz.getModule();
-        if (module != null) {
-            logRecord.setSourceModuleName(module.getName());
-            final ModuleDescriptor descriptor = module.getDescriptor();
-            if (descriptor != null) {
-                final Optional<ModuleDescriptor.Version> optional = descriptor.version();
-                if (optional.isPresent()) {
-                    logRecord.setSourceModuleVersion(optional.get().toString());
-                } else {
-                    logRecord.setSourceModuleVersion(null);
-                }
+    static String getModuleNameOf(final Class<?> clazz) {
+        if (JBOSS_MODULES) {
+            final ClassLoader cl = clazz.getClassLoader();
+            if (cl instanceof ModuleClassLoader) {
+                return ((ModuleClassLoader) cl).getModule().getName();
             }
         }
+        final java.lang.Module module = clazz.getModule();
+        return module.isNamed() ? module.getName() : null;
     }
 
-    static void calculateModule(final ExtLogRecord logRecord, final Class<?> clazz) {
+    static String getModuleVersionOf(final Class<?> clazz) {
+        if (JBOSS_MODULES) {
+            final ClassLoader cl = clazz.getClassLoader();
+            if (cl instanceof ModuleClassLoader) {
+                final Version version = ((ModuleClassLoader) cl).getModule().getVersion();
+                return version == null ? null : version.toString();
+            }
+        }
+        final java.lang.Module module = clazz.getModule();
+        final ModuleDescriptor.Version version = module.isNamed() ? module.getDescriptor().version().orElse(null) : null;
+        return version == null ? null : version.toString();
+    }
+
+    private static void calculateJdkModule(final ExtLogRecord logRecord, final Class<?> clazz) {
+        // Default to the ModuleResolver instance to resolve these values.
+        logRecord.setSourceModuleName(ModuleResolverFactory.getInstance().getModuleNameOf(clazz));
+        logRecord.setSourceModuleVersion(ModuleResolverFactory.getInstance().getModuleVersionOf(clazz));
+    }
+
+    private static void calculateModule(final ExtLogRecord logRecord, final Class<?> clazz) {
         final Module module = Module.forClass(clazz);
         if (module != null) {
             logRecord.setSourceModuleName(module.getName());
@@ -131,6 +145,8 @@ final class JDKSpecific {
                     logRecord.setSourceFileName(frame.getFileName());
                     logRecord.setSourceLineNumber(frame.getLineNumber());
                     if (JBOSS_MODULES) {
+                        // If JBoss Modules is installed directly invoke retrieving the module name and version from
+                        // JBoss Modules rather than the overhead of using the ModuleResolver.
                         calculateModule(logRecord, clazz);
                     } else {
                         calculateJdkModule(logRecord, clazz);
