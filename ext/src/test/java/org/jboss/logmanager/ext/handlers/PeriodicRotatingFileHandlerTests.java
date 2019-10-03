@@ -19,18 +19,6 @@
 
 package org.jboss.logmanager.ext.handlers;
 
-import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.SimpleDateFormat;
-import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Calendar;
-import java.util.List;
-import java.util.logging.ErrorManager;
-
 import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
 import org.jboss.logmanager.ExtLogRecord;
@@ -40,6 +28,25 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.PosixFilePermissions;
+import java.text.SimpleDateFormat;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Comparator;
+import java.util.List;
+import java.util.TimeZone;
+import java.util.logging.ErrorManager;
+import java.util.stream.Collectors;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -64,7 +71,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     }
 
     @After
-    public void closeHandler() {
+    public void closeHandler() throws IOException {
         handler.close();
         handler = null;
     }
@@ -146,6 +153,296 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         Assert.assertTrue("The rotated file '" + rotatedFile.toString() + "' exists and should not", Files.notExists(rotatedFile));
     }
 
+    private List<Path> getBaseDirPaths() throws Exception {
+        System.out.println("Paths:");
+        List<Path> paths = Files.list(BASE_LOG_DIR.toPath())
+            .sorted(Comparator.comparingLong((Path p) -> p.toFile().lastModified()).reversed())
+            .collect(Collectors.toList());
+        paths.forEach(System.out::println);
+        return paths;
+    }
+
+    private List<File> getBaseDirFiles() throws Exception {
+        System.out.println("Files:");
+        List<File> files = Files.list(BASE_LOG_DIR.toPath())
+            .map(Path::toFile)
+            .sorted(Comparator.comparingLong(File::lastModified).reversed())
+            .collect(Collectors.toList());
+        files.forEach(System.out::println);
+        return files;
+    }
+
+    @Test
+    public void testPruneBasic() throws Exception {
+
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+
+        String currentDate = sdf.format(cal.getTime());
+        handler.setSuffix(".YYYY-MM-dd");
+
+        createLogRecords(10, cal, currentDate, sdf);
+
+        handler.setPruneSize("55");
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+
+        List<Path> files = getBaseDirPaths();
+
+        Assert.assertEquals(2, files.size());
+        Assert.assertEquals("periodic-rotating-file-handler.log", files.get(0).getFileName().toString());
+        Assert.assertEquals("periodic-rotating-file-handler.log." + sdf.format(cal.getTime()), files.get(1).getFileName().toString());
+
+    }
+
+    @Test
+    public void testPrunePeriods() throws Exception {
+
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+
+        String currentDate = sdf.format(cal.getTime());
+        handler.setSuffix(".YYYY-MM-dd");
+
+        createLogRecords(10, cal, currentDate, sdf);
+
+        handler.setPruneSize("5p");
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+
+        List<Path> files = getBaseDirPaths();
+        Assert.assertEquals(6, files.size());
+        Assert.assertEquals("periodic-rotating-file-handler.log", files.get(0).getFileName().toString());
+        for (int i = 0; i < 5; i++) {
+            Assert.assertEquals("periodic-rotating-file-handler.log." + sdf.format(cal.getTime()), files.get(i + 1).getFileName().toString());
+            cal.add(Calendar.DAY_OF_MONTH, -1);
+        }
+
+    }
+
+    @Test
+    public void testPruneInvalidSize() throws Exception {
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+        String currentDate = sdf.format(cal.getTime());
+        handler.setSuffix(".YYYY-MM-dd");
+        createLogRecords(10, cal, currentDate, sdf);
+
+        handler.setPruneSize("-50");
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+    }
+    @Test
+    public void testPruneInvalidPeriods() throws Exception {
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+        String currentDate = sdf.format(cal.getTime());
+        handler.setSuffix(".YYYY-MM-dd");
+        createLogRecords(10, cal, currentDate, sdf);
+
+        handler.setPruneSize("-5p");
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+    }
+
+    @Test
+    public void testPruneIgnoreExtraFilesInDir() throws Exception {
+
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+
+        Files.createFile(Paths.get(BASE_LOG_DIR.toString(), "chaff.txt"));
+
+        String currentDate = sdf.format(cal.getTime());
+        handler.setSuffix(".YYYY-MM-dd");
+
+        createLogRecords(10, cal, currentDate, sdf);
+
+        handler.setPruneSize("55");
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+
+        List<Path> files = getBaseDirPaths();
+        Assert.assertEquals(3, files.size());
+        Assert.assertEquals("periodic-rotating-file-handler.log", files.get(0).getFileName().toString());
+        Assert.assertEquals("periodic-rotating-file-handler.log." + sdf.format(cal.getTime()), files.get(1).getFileName().toString());
+        Assert.assertEquals("chaff.txt", files.get(2).getFileName().toString());
+
+    }
+
+    @Test
+    public void testPruneIgnoreFilesInNestedDir() throws Exception {
+
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+
+        Files.createDirectories(Paths.get(BASE_LOG_DIR.toString(), "nested"));
+        Files.createFile(Paths.get(BASE_LOG_DIR.toString(), "nested", "periodic-rotating-file-handler.log.2019-10-15"));
+
+        String currentDate = sdf.format(cal.getTime());
+        handler.setSuffix(".YYYY-MM-dd");
+
+        createLogRecords(10, cal, currentDate, sdf);
+
+        handler.setPruneSize("55");
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+
+        List<File> files = getBaseDirFiles();
+        Assert.assertEquals(3, files.size());
+        Assert.assertEquals("periodic-rotating-file-handler.log", files.get(0).getName());
+        Assert.assertEquals("periodic-rotating-file-handler.log." + sdf.format(cal.getTime()), files.get(1).getName());
+        Assert.assertEquals("nested", files.get(2).getName());
+    }
+
+    @Test
+    public void testPruneIgnoreSymlinks() throws Exception {
+
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
+
+        Path temp = Files.createTempFile("mytemp", ".tmp");
+        Path linkPath = Files.createLink(Paths.get(BASE_LOG_DIR.toString(), "mytemp"), temp);
+        Assert.assertTrue(linkPath.toFile().exists());
+
+        String currentDate = sdf.format(cal.getTime());
+        handler.setSuffix(".YYYY-MM-dd");
+
+        createLogRecords(10, cal, currentDate, sdf);
+
+        handler.setPruneSize("55");
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+
+        List<File> files = getBaseDirFiles();
+        Assert.assertEquals(3, files.size());
+        Assert.assertEquals("periodic-rotating-file-handler.log", files.get(0).getName());
+        Assert.assertEquals("periodic-rotating-file-handler.log." + sdf.format(cal.getTime()), files.get(1).getName());
+        Assert.assertEquals("mytemp", files.get(2).getName());
+
+    }
+
+    @Test
+    public void testPruneIgnoreFilesWithInsufficientPerms() throws Exception {
+
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
+
+        Path roFile = Files.createFile(Paths.get(BASE_LOG_DIR.toString(), "periodic-rotating-file-handler.log.foo"));
+        Assert.assertTrue(roFile.toFile().setReadable(true));
+        Assert.assertTrue(roFile.toFile().setWritable(false));
+
+        Assert.assertFalse(roFile.toFile().canWrite());
+
+        String currentDate = sdf.format(cal.getTime());
+        handler.setSuffix(".YYYY-MM-dd");
+
+        createLogRecords(10, cal, currentDate, sdf);
+
+        handler.setPruneSize("55");
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+
+        List<File> files = getBaseDirFiles();
+        Assert.assertEquals(3, files.size());
+        Assert.assertEquals("periodic-rotating-file-handler.log", files.get(0).getName());
+        Assert.assertEquals("periodic-rotating-file-handler.log." + sdf.format(cal.getTime()), files.get(1).getName());
+        Assert.assertEquals("periodic-rotating-file-handler.log.foo", files.get(2).getName());
+
+        Assert.assertTrue(roFile.toFile().setWritable(true));
+        Assert.assertTrue(roFile.toFile().setExecutable(true));
+
+    }
+
+    @Test
+    public void testPruneArchive() throws Exception {
+
+        final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        Calendar cal = Calendar.getInstance(TimeZone.getDefault());
+        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
+
+        String currentDate = sdf.format(cal.getTime());
+        handler.setSuffix(".YYYY-MM-dd.zip");
+
+        for (int i = 0; i < 10; i++) {
+
+            // Create a log message to be logged
+            ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+            record.setMillis(cal.getTimeInMillis());
+            handler.publish(record);
+
+            Assert.assertTrue("File '" + logFile + "' does not exist", Files.exists(logFile));
+
+            // Read the contents of the log file and ensure there's only one line
+            List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
+            Assert.assertEquals("More than 1 line found", 1, lines.size());
+            Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
+
+            cal.add(Calendar.DAY_OF_MONTH, 1);
+            cal.add(Calendar.MINUTE, 1);
+            currentDate = sdf.format(cal.getTime());
+        }
+
+        handler.setPruneSize("400");
+        ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+
+        cal.add(Calendar.DAY_OF_MONTH, -1);
+
+        List<Path> files = getBaseDirPaths();
+        Assert.assertEquals(2, files.size());
+        Assert.assertEquals("periodic-rotating-file-handler.log", files.get(0).getFileName().toString());
+        Assert.assertEquals("periodic-rotating-file-handler.log." + sdf.format(cal.getTime()) + ".zip", files.get(1).getFileName().toString());
+
+    }
+
+    private void createLogRecords(int number, Calendar now, String currentDate, SimpleDateFormat formatter) throws Exception {
+        for (int i = 0; i < number; i++) {
+
+            // Create a log message to be logged
+            ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
+            record.setMillis(now.getTimeInMillis());
+            handler.publish(record);
+
+            // introduce a small pause to ensure that tests are determinate
+            Thread.sleep(250L);
+
+            Assert.assertTrue("File '" + logFile + "' does not exist", Files.exists(logFile));
+
+            // Read the contents of the log file and ensure there's only one line
+            List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
+            Assert.assertEquals("More than 1 line found", 1, lines.size());
+            Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
+
+            now.add(Calendar.DAY_OF_MONTH, 1);
+            now.add(Calendar.MINUTE, 1);
+            currentDate = formatter.format(now.getTime());
+
+        }
+    }
 
     private void testRotate(final Calendar cal, final Path rotatedFile) throws Exception {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
