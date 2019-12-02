@@ -31,7 +31,7 @@ import java.util.logging.LogRecord;
 /**
  * An actual logger instance.  This is the end-user interface into the logging system.
  */
-@SuppressWarnings({ "SerializableClassWithUnconstructableAncestor" })
+@SuppressWarnings({"SerializableClassWithUnconstructableAncestor", "unused"})
 public final class Logger extends java.util.logging.Logger implements Serializable {
 
     private static final long serialVersionUID = 5093333069125075416L;
@@ -39,9 +39,11 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /**
      * The named logger tree node.
      */
-    private final LoggerNode loggerNode;
+    private final ContextualLoggerNode loggerNode;
 
     private static final String LOGGER_CLASS_NAME = Logger.class.getName();
+
+    private static volatile LoggerRouter LOGGER_ROUTER;
 
     /**
      * Static logger factory method which returns a JBoss LogManager logger.
@@ -75,12 +77,30 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
+     * Returns the current logger router if one was set.
+     *
+     * @return the logger router or {@code null}
+     */
+    public static LoggerRouter getLoggerRouter() {
+        return LOGGER_ROUTER;
+    }
+
+    /**
+     * Sets the logger router.
+     *
+     * @param loggerRouter the logger router or {@code null} not to use one
+     */
+    public static void setLoggerRouter(final LoggerRouter loggerRouter) {
+        LOGGER_ROUTER = loggerRouter;
+    }
+
+    /**
      * Construct a new instance of an actual logger.
      *
      * @param loggerNode the node in the named logger tree
      * @param name the fully-qualified name of this node
      */
-    Logger(final LoggerNode loggerNode, final String name) {
+    Logger(final ContextualLoggerNode loggerNode, final String name) {
         // Don't set up the bundle in the parent...
         super(name, null);
         // We have to propagate our level to an internal data structure in the superclass

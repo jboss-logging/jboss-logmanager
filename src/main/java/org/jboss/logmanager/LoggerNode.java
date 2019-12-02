@@ -220,13 +220,13 @@ final class LoggerNode implements AutoCloseable {
         if (sm != null) {
             return AccessController.doPrivileged(new PrivilegedAction<Logger>() {
                 public Logger run() {
-                    final Logger logger = new Logger(LoggerNode.this, fullName);
+                    final Logger logger = new Logger(ContextualLoggerNode.of(LoggerNode.this, fullName), fullName);
                     context.incrementRef(fullName);
                     return logger;
                 }
             });
         } else {
-            final Logger logger = new Logger(this, fullName);
+            final Logger logger = new Logger(ContextualLoggerNode.of(this, fullName), fullName);
             context.incrementRef(fullName);
             return logger;
         }
