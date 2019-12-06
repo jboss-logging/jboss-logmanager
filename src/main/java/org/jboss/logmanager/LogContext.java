@@ -422,6 +422,10 @@ public final class LogContext implements Protectable, AutoCloseable {
      * @param closeHandler the close handler to use
      */
     public void addCloseHandler(final AutoCloseable closeHandler) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(CONTROL_PERMISSION);
+        }
         synchronized (treeLock) {
             closeHandlers.add(closeHandler);
         }
@@ -449,6 +453,10 @@ public final class LogContext implements Protectable, AutoCloseable {
      * @param closeHandlers the close handlers to use
      */
     public void setCloseHandlers(final Collection<AutoCloseable> closeHandlers) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            sm.checkPermission(CONTROL_PERMISSION);
+        }
         synchronized (treeLock) {
             this.closeHandlers.clear();
             this.closeHandlers.addAll(closeHandlers);
