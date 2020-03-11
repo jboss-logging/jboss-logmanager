@@ -25,6 +25,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.text.DateFormatSymbols;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
@@ -462,6 +463,7 @@ public class SyslogHandler extends ExtHandler {
      * @throws IOException if an error occurs creating the UDP socket
      */
     public SyslogHandler(final InetAddress serverAddress, final int port, final Facility facility, final SyslogType syslogType, final Protocol protocol, final String hostname) throws IOException {
+        setCharsetPrivate(StandardCharsets.UTF_8);
         this.serverAddress = serverAddress;
         this.port = port;
         this.facility = facility;
