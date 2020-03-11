@@ -36,6 +36,8 @@ import org.jboss.logmanager.ExtHandler;
 public class WriterHandler extends ExtHandler {
 
     protected final Object outputLock = new Object();
+    private volatile boolean checkHeadEncoding = true;
+    private volatile boolean checkTailEncoding = true;
     private Writer writer;
 
     /**
@@ -118,10 +120,59 @@ public class WriterHandler extends ExtHandler {
         }
     }
 
+    /**
+     * Determine whether head encoding checking is turned on.
+     *
+     * @return {@code true} to check and report head encoding problems, or {@code false} to ignore them
+     */
+    public boolean isCheckHeadEncoding() {
+        return checkHeadEncoding;
+    }
+
+    /**
+     * Establish whether head encoding checking is turned on.
+     *
+     * @param checkHeadEncoding {@code true} to check and report head encoding problems, or {@code false} to ignore them
+     * @return this handler
+     */
+    public WriterHandler setCheckHeadEncoding(boolean checkHeadEncoding) {
+        this.checkHeadEncoding = checkHeadEncoding;
+        return this;
+    }
+
+    /**
+     * Determine whether tail encoding checking is turned on.
+     *
+     * @return {@code true} to check and report tail encoding problems, or {@code false} to ignore them
+     */
+    public boolean isCheckTailEncoding() {
+        return checkTailEncoding;
+    }
+
+    /**
+     * Establish whether tail encoding checking is turned on.
+     *
+     * @param checkTailEncoding {@code true} to check and report tail encoding problems, or {@code false} to ignore them
+     * @return this handler
+     */
+    public WriterHandler setCheckTailEncoding(boolean checkTailEncoding) {
+        this.checkTailEncoding = checkTailEncoding;
+        return this;
+    }
+
     private void writeHead(final Writer writer) {
         try {
             final Formatter formatter = getFormatter();
-            if (formatter != null) writer.write(formatter.getHead(this));
+            if (formatter != null) {
+                final String head = formatter.getHead(this);
+                if (checkHeadEncoding) {
+                    if (!getCharset().newEncoder().canEncode(head)) {
+                        reportError("Section header cannot be encoded into charset \"" + getCharset().name() + "\"", null, ErrorManager.GENERIC_FAILURE);
+                        return;
+                    }
+                }
+                writer.write(head);
+            }
         } catch (Exception e) {
             reportError("Error writing section header", e, ErrorManager.WRITE_FAILURE);
         }
@@ -130,7 +181,16 @@ public class WriterHandler extends ExtHandler {
     private void writeTail(final Writer writer) {
         try {
             final Formatter formatter = getFormatter();
-            if (formatter != null) writer.write(formatter.getTail(this));
+            if (formatter != null) {
+                final String tail = formatter.getTail(this);
+                if (checkTailEncoding) {
+                    if (!getCharset().newEncoder().canEncode(tail)) {
+                        reportError("Section tail cannot be encoded into charset \"" + getCharset().name() + "\"", null, ErrorManager.GENERIC_FAILURE);
+                        return;
+                    }
+                }
+                writer.write(tail);
+            }
         } catch (Exception ex) {
             reportError("Error writing section tail", ex, ErrorManager.WRITE_FAILURE);
         }
