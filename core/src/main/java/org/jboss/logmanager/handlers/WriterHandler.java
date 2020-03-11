@@ -38,6 +38,12 @@ public class WriterHandler extends ExtHandler {
     protected final Object outputLock = new Object();
     private Writer writer;
 
+    /**
+     * Construct a new instance.
+     */
+    public WriterHandler() {
+    }
+
     /** {@inheritDoc} */
     protected void doPublish(final ExtLogRecord record) {
         final String formatted;
