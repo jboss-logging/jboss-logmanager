@@ -20,7 +20,9 @@
 package org.jboss.logmanager;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.security.Permission;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
@@ -40,10 +42,12 @@ import org.jboss.logmanager.handlers.FlushableCloseable;
 public abstract class ExtHandler extends Handler implements FlushableCloseable, Protectable {
 
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
+    private static final ErrorManager DEFAULT_ERROR_MANAGER = new OnlyOnceErrorManager();
+
     private volatile boolean autoFlush = true;
     private volatile boolean enabled = true;
     private volatile boolean closeChildren;
-    private static final ErrorManager DEFAULT_ERROR_MANAGER = new OnlyOnceErrorManager();
+    private volatile Charset charset = Charset.defaultCharset();
 
     @SuppressWarnings("unused")
     private volatile Object protectKey;
@@ -360,10 +364,65 @@ public abstract class ExtHandler extends Handler implements FlushableCloseable, 
         super.setFilter(newFilter);
     }
 
+    /**
+     * Set the handler's character set by name.  This is roughly equivalent to calling {@link #setCharset(Charset)} with
+     * the results of {@link Charset#forName(String)}.
+     *
+     * @param encoding the name of the encoding
+     * @throws SecurityException if a security manager is installed and the caller does not have the {@code "control" LoggingPermission}
+     * @throws UnsupportedEncodingException if no character set could be found for the encoding name
+     */
     @Override
     public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
+        try {
+            setCharset(Charset.forName(encoding));
+        } catch (IllegalArgumentException e) {
+            final UnsupportedEncodingException e2 = new UnsupportedEncodingException("Unable to set encoding to \"" + encoding + "\"");
+            e2.initCause(e);
+            throw e2;
+        }
+    }
+
+    /**
+     * Get the name of the {@linkplain #getCharset() handler's character set}.
+     *
+     * @return the handler character set name
+     */
+    @Override
+    public String getEncoding() {
+        return getCharset().name();
+    }
+
+    /**
+     * Set the handler's character set.  If not set, the handler's character set is initialized to the platform default
+     * character set.
+     *
+     * @param charset the character set (must not be {@code null})
+     * @throws SecurityException if a security manager is installed and the caller does not have the {@code "control" LoggingPermission}
+     */
+    public void setCharset(final Charset charset) throws SecurityException {
         checkAccess(this);
-        super.setEncoding(encoding);
+        setCharsetPrivate(charset);
+    }
+
+    /**
+     * Set the handler's character set from within this handler.  If not set, the handler's character set is initialized
+     * to the platform default character set.
+     *
+     * @param charset the character set (must not be {@code null})
+     */
+    protected void setCharsetPrivate(final Charset charset) throws SecurityException {
+        Objects.requireNonNull(charset, "charset");
+        this.charset = charset;
+    }
+
+    /**
+     * Get the handler's character set.
+     *
+     * @return the character set in use (not {@code null})
+     */
+    public Charset getCharset() {
+        return charset;
     }
 
     @Override

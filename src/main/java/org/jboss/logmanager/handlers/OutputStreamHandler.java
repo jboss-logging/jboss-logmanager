@@ -22,7 +22,6 @@ package org.jboss.logmanager.handlers;
 import org.jboss.logmanager.formatters.Formatters;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.UnsupportedEncodingException;
 import java.io.Writer;
 
 import java.nio.charset.Charset;
@@ -65,34 +64,23 @@ public class OutputStreamHandler extends WriterHandler {
         setOutputStream(outputStream);
     }
 
-    /**
-     * Get the target encoding.
-     *
-     * @return the target encoding, or {@code null} if the platform default is being used
-     */
-    public String getEncoding() {
-        synchronized (outputLock) {
-            return super.getEncoding();
-        }
-    }
-
-    /**
-     * Set the target encoding.
-     *
-     * @param encoding the new encoding
-     * @throws SecurityException if you do not have sufficient permission to invoke this operation
-     * @throws java.io.UnsupportedEncodingException if the specified encoding is not supported
-     */
-    public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
+    @Override
+    protected void setCharsetPrivate(Charset charset) throws SecurityException {
         // superclass checks access
         synchronized (outputLock) {
-            charset = encoding == null ? null : Charset.forName(encoding);
-            super.setEncoding(encoding);
+            super.setCharsetPrivate(charset);
             // we only want to change the writer, not the output stream
             final OutputStream outputStream = this.outputStream;
             if (outputStream != null) {
                 super.setWriter(getNewWriter(outputStream));
             }
+        }
+    }
+
+    @Override
+    public Charset getCharset() {
+        synchronized (outputLock) {
+            return super.getCharset();
         }
     }
 
@@ -143,7 +131,6 @@ public class OutputStreamHandler extends WriterHandler {
     private Writer getNewWriter(OutputStream newOutputStream) {
         if (newOutputStream == null) return null;
         final UninterruptibleOutputStream outputStream = new UninterruptibleOutputStream(new UncloseableOutputStream(newOutputStream));
-        final Charset charset = this.charset;
-        return charset == null ? new OutputStreamWriter(outputStream) : new OutputStreamWriter(outputStream, charset);
+        return new OutputStreamWriter(outputStream, getCharset());
     }
 }
