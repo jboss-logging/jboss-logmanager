@@ -26,6 +26,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
+import java.util.function.Function;
 
 /**
  * A log context selector which chooses a log context based on the caller's classloader.
@@ -88,28 +89,29 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
     private final Set<ClassLoader> logApiClassLoaders = Collections.newSetFromMap(new CopyOnWriteMap<ClassLoader, Boolean>());
     private final boolean checkParentClassLoaders;
 
-    private final PrivilegedAction<LogContext> logContextAction = new PrivilegedAction<LogContext>() {
-        public LogContext run() {
-            final Collection<Class<?>> callingClasses = JDKSpecific.findCallingClasses(logApiClassLoaders);
-            for (Class<?> caller : callingClasses) {
-                final LogContext result = check(caller.getClassLoader());
-                if (result != null) {
-                    return result;
-                }
-            }
-            return defaultSelector.getLogContext();
-        }
+    private final Function<ClassLoader, LogContext> logContextFinder = new Function<ClassLoader, LogContext>() {
+        @Override
+        public LogContext apply(final ClassLoader classLoader) {
 
-        private LogContext check(final ClassLoader classLoader) {
             final LogContext context = contextMap.get(classLoader);
             if (context != null) {
                 return context;
             }
             final ClassLoader parent = classLoader.getParent();
-            if (parent != null && checkParentClassLoaders && ! logApiClassLoaders.contains(parent)) {
-                return check(parent);
+            if (parent != null && checkParentClassLoaders && !logApiClassLoaders.contains(parent)) {
+                return apply(parent);
             }
             return null;
+        }
+    };
+
+    private final PrivilegedAction<LogContext> logContextAction = new PrivilegedAction<LogContext>() {
+        public LogContext run() {
+            final LogContext result = JDKSpecific.logContextFinder(logApiClassLoaders, logContextFinder);
+            if (result != null) {
+                return result;
+            }
+            return defaultSelector.getLogContext();
         }
     };
 

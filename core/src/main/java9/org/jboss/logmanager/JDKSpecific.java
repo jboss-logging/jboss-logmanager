@@ -23,10 +23,8 @@ import static java.security.AccessController.doPrivileged;
 
 import java.lang.module.ModuleDescriptor;
 import java.security.PrivilegedAction;
-import java.util.Collection;
 import java.util.EnumSet;
 import java.util.Iterator;
-import java.util.LinkedHashSet;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
@@ -64,12 +62,12 @@ final class JDKSpecific {
         }
     }
 
-    static Collection<Class<?>> findCallingClasses(Set<ClassLoader> rejectClassLoaders) {
+    static LogContext logContextFinder(Set<ClassLoader> rejectClassLoaders, final Function<ClassLoader, LogContext> finder) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            return doPrivileged(new FindCallingClassesAction(rejectClassLoaders));
+            return doPrivileged(new FindCallingClassesAction(rejectClassLoaders, finder));
         } else {
-            return WALKER.walk(new FindAllWalkFunction(rejectClassLoaders));
+            return WALKER.walk(new FindAllWalkFunction(rejectClassLoaders, finder));
         }
     }
 
@@ -163,15 +161,17 @@ final class JDKSpecific {
         }
     }
 
-    static final class FindCallingClassesAction implements PrivilegedAction<Collection<Class<?>>> {
+    static final class FindCallingClassesAction implements PrivilegedAction<LogContext> {
         private final Set<ClassLoader> rejectClassLoaders;
+        private final Function<ClassLoader, LogContext> finder;
 
-        FindCallingClassesAction(final Set<ClassLoader> rejectClassLoaders) {
+        FindCallingClassesAction(final Set<ClassLoader> rejectClassLoaders, final Function<ClassLoader, LogContext> finder) {
             this.rejectClassLoaders = rejectClassLoaders;
+            this.finder = finder;
         }
 
-        public Collection<Class<?>> run() {
-            return WALKER.walk(new FindAllWalkFunction(rejectClassLoaders));
+        public LogContext run() {
+            return WALKER.walk(new FindAllWalkFunction(rejectClassLoaders, finder));
         }
     }
 
@@ -195,24 +195,29 @@ final class JDKSpecific {
         }
     }
 
-    static final class FindAllWalkFunction implements Function<Stream<StackWalker.StackFrame>, Collection<Class<?>>> {
+    static final class FindAllWalkFunction implements Function<Stream<StackWalker.StackFrame>, LogContext> {
         private final Set<ClassLoader> rejectClassLoaders;
+        private final Function<ClassLoader, LogContext> finder;
 
-        FindAllWalkFunction(final Set<ClassLoader> rejectClassLoaders) {
+        FindAllWalkFunction(final Set<ClassLoader> rejectClassLoaders, final Function<ClassLoader, LogContext> finder) {
             this.rejectClassLoaders = rejectClassLoaders;
+            this.finder = finder;
         }
 
-        public Collection<Class<?>> apply(final Stream<StackWalker.StackFrame> stream) {
-            final Collection<Class<?>> results = new LinkedHashSet<>();
+        @Override
+        public LogContext apply(final Stream<StackWalker.StackFrame> stream) {
             final Iterator<StackWalker.StackFrame> iterator = stream.iterator();
             while (iterator.hasNext()) {
                 final Class<?> clazz = iterator.next().getDeclaringClass();
                 final ClassLoader classLoader = clazz.getClassLoader();
                 if (classLoader != null && ! rejectClassLoaders.contains(classLoader)) {
-                    results.add(clazz);
+                    final LogContext result = finder.apply(classLoader);
+                    if (result != null) {
+                        return result;
+                    }
                 }
             }
-            return results;
+            return null;
         }
     }
 }
