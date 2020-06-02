@@ -23,6 +23,10 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.logging.ErrorManager;
 
 import org.jboss.logmanager.ExtLogRecord;
@@ -38,6 +42,7 @@ import org.jboss.logmanager.ExtLogRecord;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler {
+    private final AccessControlContext acc = AccessController.getContext();
     // by default, rotate at 10MB
     private long rotateSize = 0xa0000L;
     private int maxBackupIndex = 1;
@@ -148,6 +153,7 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      */
     @Override
     public void setFile(final File file) throws FileNotFoundException {
+        checkAccess(this);
         synchronized (outputLock) {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
@@ -155,11 +161,12 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
                 final SuffixRotator suffixRotator = getSuffixRotator();
                 if (suffixRotator != SuffixRotator.EMPTY && suffix != null) {
                     // Make sure any previous files are closed before we attempt to rotate
-                    setFileInternal(null);
+                    setFileInternal(null, false);
+                    // Previous actions have already performed
                     suffixRotator.rotate(getErrorManager(), file.toPath(), suffix, maxBackupIndex);
                 }
             }
-            setFileInternal(file);
+            setFileInternal(file, false);
         }
     }
 
@@ -224,19 +231,34 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
                     return;
                 }
                 // close the old file.
-                setFileInternal(null);
-                getSuffixRotator().rotate(getErrorManager(), file.toPath(), getNextSuffix(), maxBackupIndex);
+                setFileInternal(null, true);
+                getSuffixRotator().rotate(SecurityActions.getErrorManager(acc, this), file.toPath(), getNextSuffix(), maxBackupIndex);
                 // start with new file.
-                setFileInternal(file);
+                setFileInternal(file, true);
             } catch (IOException e) {
                 reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
             }
         }
     }
 
-    private void setFileInternal(final File file) throws FileNotFoundException {
-        super.setFile(file);
-        if (outputStream != null)
-            outputStream.currentSize = file == null ? 0L : file.length();
+    private void setFileInternal(final File file, final boolean doPrivileged) throws FileNotFoundException {
+        if (System.getSecurityManager() == null || !doPrivileged) {
+            super.setFile(file);
+            if (outputStream != null) {
+                outputStream.currentSize = file == null ? 0L : file.length();
+            }
+        } else {
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                try {
+                    super.setFile(file);
+                    if (outputStream != null) {
+                        outputStream.currentSize = file == null ? 0L : file.length();
+                    }
+                } catch (FileNotFoundException e) {
+                    throw new UncheckedIOException(e);
+                }
+                return null;
+            }, acc);
+        }
     }
 }
