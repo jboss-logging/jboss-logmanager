@@ -21,11 +21,16 @@ package org.jboss.logmanager.handlers;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
@@ -53,15 +58,18 @@ class SuffixRotator {
     /**
      * An empty rotation suffix.
      */
-    static final SuffixRotator EMPTY = new SuffixRotator("", "", "", CompressionType.NONE);
+    static final SuffixRotator EMPTY = new SuffixRotator(AccessController.getContext(), "", "", "", CompressionType.NONE);
 
+    private final AccessControlContext acc;
     private final String originalSuffix;
     private final String datePattern;
     private final SimpleDateFormat formatter;
     private final String compressionSuffix;
     private final CompressionType compressionType;
 
-    private SuffixRotator(final String originalSuffix, final String datePattern, final String compressionSuffix, final CompressionType compressionType) {
+    private SuffixRotator(final AccessControlContext acc, final String originalSuffix, final String datePattern,
+                          final String compressionSuffix, final CompressionType compressionType) {
+        this.acc = acc;
         this.originalSuffix = originalSuffix;
         this.datePattern = datePattern;
         this.compressionSuffix = compressionSuffix;
@@ -80,7 +88,7 @@ class SuffixRotator {
      *
      * @return the file rotator used to determine the suffix parts and rotate the file.
      */
-    static SuffixRotator parse(final String suffix) {
+    static SuffixRotator parse(final AccessControlContext acc, final String suffix) {
         if (suffix == null || suffix.isEmpty()) {
             return EMPTY;
         }
@@ -103,9 +111,9 @@ class SuffixRotator {
             }
         }
         if (compressionSuffix.isEmpty() && datePattern.isEmpty()) {
-            return new SuffixRotator(suffix, suffix, "", CompressionType.NONE);
+            return new SuffixRotator(acc, suffix, suffix, "", CompressionType.NONE);
         }
-        return new SuffixRotator(suffix, datePattern, compressionSuffix, compressionType);
+        return new SuffixRotator(acc, suffix, datePattern, compressionSuffix, compressionType);
     }
 
     /**
@@ -156,7 +164,7 @@ class SuffixRotator {
             try {
                 archiveGzip(source, target);
                 // Delete the file after it's archived to behave like a file move or rename
-                Files.delete(source);
+                deleteFile(source);
             } catch (Exception e) {
                 errorManager.error(String.format("Failed to compress %s to %s. Compressed file may be left on the " +
                         "filesystem corrupted.", source, target), e, ErrorManager.WRITE_FAILURE);
@@ -165,7 +173,7 @@ class SuffixRotator {
             try {
                 archiveZip(source, target);
                 // Delete the file after it's archived to behave like a file move or rename
-                Files.delete(source);
+                deleteFile(source);
             } catch (Exception e) {
                 errorManager.error(String.format("Failed to compress %s to %s. Compressed file may be left on the " +
                         "filesystem corrupted.", source, target), e, ErrorManager.WRITE_FAILURE);
@@ -219,13 +227,13 @@ class SuffixRotator {
             final String fileWithSuffix = source.toAbsolutePath() + rotationSuffix;
             final Path lastFile = Paths.get(fileWithSuffix + "." + maxBackupIndex + compressionSuffix);
             try {
-                Files.deleteIfExists(lastFile);
+                deleteFile(lastFile);
             } catch (Exception e) {
                 errorManager.error(String.format("Failed to delete file %s", lastFile), e, ErrorManager.GENERIC_FAILURE);
             }
             for (int i = maxBackupIndex - 1; i >= 1; i--) {
                 final Path src = Paths.get(fileWithSuffix + "." + i + compressionSuffix);
-                if (Files.exists(src)) {
+                if (fileExists(src)) {
                     final Path target = Paths.get(fileWithSuffix + "." + (i + 1) + compressionSuffix);
                     move(errorManager, src, target);
                 }
@@ -242,19 +250,23 @@ class SuffixRotator {
     }
 
     private void move(final ErrorManager errorManager, final Path src, final Path target) {
-        try {
-            Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
-        } catch (Exception e) {
-            // Report the error, but allow the rotation to continue
-            errorManager.error(String.format("Failed to move file %s to %s.", src, target), e, ErrorManager.GENERIC_FAILURE);
+        if (System.getSecurityManager() == null) {
+            try {
+                Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception e) {
+                // Report the error, but allow the rotation to continue
+                errorManager.error(String.format("Failed to move file %s to %s.", src, target), e, ErrorManager.GENERIC_FAILURE);
+            }
+        } else {
+            AccessController.doPrivileged(new MoveFileAction(errorManager, src, target), acc);
         }
     }
 
 
-    private static void archiveGzip(final Path source, final Path target) throws IOException {
+    private void archiveGzip(final Path source, final Path target) throws IOException {
         final byte[] buff = new byte[512];
-        try (final GZIPOutputStream out = new GZIPOutputStream(Files.newOutputStream(target), true)) {
-            try (final InputStream in = Files.newInputStream(source)) {
+        try (final GZIPOutputStream out = new GZIPOutputStream(newOutputStream(target), true)) {
+            try (final InputStream in = newInputStream(source)) {
                 int len;
                 while ((len = in.read(buff)) != -1) {
                     out.write(buff, 0, len);
@@ -264,18 +276,134 @@ class SuffixRotator {
         }
     }
 
-    private static void archiveZip(final Path source, final Path target) throws IOException {
+    private void archiveZip(final Path source, final Path target) throws IOException {
         final byte[] buff = new byte[512];
-        try (final ZipOutputStream out = new ZipOutputStream(Files.newOutputStream(target), StandardCharsets.UTF_8)) {
+        try (final ZipOutputStream out = new ZipOutputStream(newOutputStream(target), StandardCharsets.UTF_8)) {
             final ZipEntry entry = new ZipEntry(source.getFileName().toString());
             out.putNextEntry(entry);
-            try (final InputStream in = Files.newInputStream(source)) {
+            try (final InputStream in = newInputStream(source)) {
                 int len;
                 while ((len = in.read(buff)) != -1) {
                     out.write(buff, 0, len);
                 }
             }
             out.closeEntry();
+        }
+    }
+
+    @SuppressWarnings("UnusedReturnValue")
+    private boolean deleteFile(final Path path) throws IOException {
+        if (System.getSecurityManager() == null) {
+            return Files.deleteIfExists(path);
+        }
+        return AccessController.doPrivileged(new DeleteFileAction(path), acc);
+    }
+
+    private boolean fileExists(final Path file) {
+        if (System.getSecurityManager() == null) {
+            return Files.exists(file);
+        }
+        return AccessController.doPrivileged(new FileExistsAction(file), acc);
+    }
+
+    private InputStream newInputStream(final Path file) throws IOException {
+        if (System.getSecurityManager() == null) {
+            return Files.newInputStream(file);
+        }
+        return AccessController.doPrivileged(new InputStreamAction(file), acc);
+    }
+
+    private OutputStream newOutputStream(final Path file) throws IOException {
+        if (System.getSecurityManager() == null) {
+            return Files.newOutputStream(file);
+        }
+        return AccessController.doPrivileged(new OutputStreamAction(file), acc);
+    }
+
+    private static class DeleteFileAction implements PrivilegedAction<Boolean> {
+        private final Path file;
+
+        private DeleteFileAction(final Path file) {
+            this.file = file;
+        }
+
+        @Override
+        public Boolean run() {
+            try {
+                return Files.deleteIfExists(file);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    private static class MoveFileAction implements PrivilegedAction<Path> {
+        private final ErrorManager errorManager;
+        private final Path source;
+        private final Path target;
+
+        private MoveFileAction(final ErrorManager errorManager, final Path source, final Path target) {
+            this.errorManager = errorManager;
+            this.source = source;
+            this.target = target;
+        }
+
+        @Override
+        public Path run() {
+            try {
+                return Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
+            } catch (Exception e) {
+                // Report the error, but allow the rotation to continue
+                errorManager.error(String.format("Failed to move file %s to %s.", source, target), e, ErrorManager.GENERIC_FAILURE);
+            }
+            return null;
+        }
+    }
+
+    private static class FileExistsAction implements PrivilegedAction<Boolean> {
+        private final Path file;
+
+        private FileExistsAction(final Path file) {
+            this.file = file;
+        }
+
+        @Override
+        public Boolean run() {
+            return Files.exists(file);
+        }
+    }
+
+    private static class InputStreamAction implements PrivilegedAction<InputStream> {
+        private final Path file;
+
+        private InputStreamAction(final Path file) {
+            this.file = file;
+        }
+
+        @Override
+        public InputStream run() {
+            try {
+                return Files.newInputStream(file);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    private static class OutputStreamAction implements PrivilegedAction<OutputStream> {
+        private final Path file;
+
+        private OutputStreamAction(final Path file) {
+            this.file = file;
+        }
+
+        @Override
+        public OutputStream run() {
+            try {
+                return Files.newOutputStream(file);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 }
