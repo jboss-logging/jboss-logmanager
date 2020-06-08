@@ -22,6 +22,10 @@ package org.jboss.logmanager.ext.handlers;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.security.AccessControlContext;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
@@ -37,6 +41,7 @@ import org.jboss.logmanager.handlers.FileHandler;
  */
 public class PeriodicRotatingFileHandler extends FileHandler {
 
+    private final AccessControlContext acc = AccessController.getContext();
     private SimpleDateFormat format;
     private String nextSuffix;
     private Period period = Period.NEVER;
@@ -129,7 +134,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      * @throws IllegalArgumentException if the suffix is not valid
      */
     public void setSuffix(String suffix) throws IllegalArgumentException {
-        final SuffixRotator suffixRotator = SuffixRotator.parse(suffix);
+        final SuffixRotator suffixRotator = SuffixRotator.parse(acc, suffix);
         final String dateSuffix = suffixRotator.getDatePattern();
         final SimpleDateFormat format = new SimpleDateFormat(dateSuffix);
         format.setTimeZone(timeZone);
@@ -193,11 +198,11 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         try {
             final File file = getFile();
             // first, close the original file (some OSes won't let you move/rename a file that is open)
-            setFile(null);
+            setFileInternal(null);
             // next, rotate it
-            suffixRotator.rotate(getErrorManager(), file.toPath(), nextSuffix);
+            suffixRotator.rotate(SecurityActions.getErrorManager(acc, this), file.toPath(), nextSuffix);
             // start new file
-            setFile(file);
+            setFileInternal(file);
         } catch (IOException e) {
             reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
         }
@@ -291,6 +296,22 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             throw new NullPointerException("timeZone is null");
         }
         this.timeZone = timeZone;
+    }
+
+    private void setFileInternal(final File file) throws FileNotFoundException {
+        // At this point we should have already checked the security required
+        if (System.getSecurityManager() == null) {
+            super.setFile(file);
+        } else {
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                try {
+                    super.setFile(file);
+                } catch (FileNotFoundException e) {
+                    throw new UncheckedIOException(e);
+                }
+                return null;
+            }, acc);
+        }
     }
 
     private static <T extends Comparable<? super T>> T min(T a, T b) {
