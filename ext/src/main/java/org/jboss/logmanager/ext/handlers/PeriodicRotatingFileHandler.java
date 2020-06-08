@@ -197,6 +197,10 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     private void rollOver() {
         try {
             final File file = getFile();
+            if (file == null) {
+                // no file is set; a direct output stream or writer was specified
+                return;
+            }
             // first, close the original file (some OSes won't let you move/rename a file that is open)
             setFileInternal(null);
             // next, rotate it
