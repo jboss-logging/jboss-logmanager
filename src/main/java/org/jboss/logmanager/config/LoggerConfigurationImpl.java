@@ -310,19 +310,19 @@ final class LoggerConfigurationImpl extends AbstractBasicConfiguration<Logger, L
         }
         final int index = handlerNames.indexOf(name);
         handlerNames.remove(index);
-        configuration.addAction(new ConfigAction<Void>() {
-            public Void validate() throws IllegalArgumentException {
-                return null;
-            }
-
-            public void applyPreCreate(final Void param) {
-            }
-
-            public void applyPostCreate(final Void param) {
+        configuration.addAction(new ConfigAction<Handler>() {
+            public Handler validate() throws IllegalArgumentException {
                 final Map<String, Handler> handlerRefs = configuration.getHandlerRefs();
+                return handlerRefs.get(name);
+            }
+
+            public void applyPreCreate(final Handler param) {
+            }
+
+            public void applyPostCreate(final Handler param) {
                 final Map<String, Logger> loggerRefs = configuration.getLoggerRefs();
-                final Logger logger = (Logger) loggerRefs.get(getName());
-                logger.removeHandler(handlerRefs.get(name));
+                final Logger logger = loggerRefs.get(getName());
+                logger.removeHandler(param);
             }
 
             public void rollback() {

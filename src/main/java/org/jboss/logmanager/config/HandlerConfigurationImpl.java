@@ -375,19 +375,20 @@ final class HandlerConfigurationImpl extends AbstractPropertyConfiguration<Handl
         }
         final int index = handlerNames.indexOf(name);
         handlerNames.remove(index);
-        configuration.addAction(new ConfigAction<Void>() {
-            public Void validate() throws IllegalArgumentException {
-                return null;
+        configuration.addAction(new ConfigAction<Handler>() {
+            public Handler validate() throws IllegalArgumentException {
+                final Map<String, Handler> handlerRefs = configuration.getHandlerRefs();
+                return handlerRefs.get(name);
             }
 
-            public void applyPreCreate(final Void param) {
+            public void applyPreCreate(final Handler param) {
                 addPostConfigurationActions();
             }
 
-            public void applyPostCreate(final Void param) {
+            public void applyPostCreate(final Handler param) {
                 final Map<String, Handler> handlerRefs = configuration.getHandlerRefs();
                 final ExtHandler handler = (ExtHandler) handlerRefs.get(getName());
-                handler.removeHandler(handlerRefs.get(name));
+                handler.removeHandler(param);
             }
 
             public void rollback() {
