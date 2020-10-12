@@ -33,6 +33,7 @@ import org.jboss.logmanager.Logger;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.ext.handlers.SocketHandler.Protocol;
 import org.junit.Assert;
+import org.junit.Assume;
 import org.junit.Test;
 
 /**
@@ -43,6 +44,11 @@ public class SocketHandlerTests extends AbstractHandlerTest {
     private final InetAddress address;
     private final int port;
     private final int altPort;
+
+    // https://bugs.openjdk.java.net/browse/JDK-8219991
+    private final String JAVA_VERSION = System.getProperty("java.version");
+    private final String JDK_8219991_ERROR_MESSAGE = "https://bugs.openjdk.java.net/browse/JDK-8219991";
+    private final Boolean JDK_8219991 = JAVA_VERSION.startsWith("1.8") || (JAVA_VERSION.startsWith("11.0.8") && System.getProperty("java.vendor").contains("Oracle"));
 
     public SocketHandlerTests() throws UnknownHostException {
         address = InetAddress.getByName(System.getProperty("org.jboss.test.address", "127.0.0.1"));
@@ -121,6 +127,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
 
     @Test
     public void testProtocolChange() throws Exception {
+        Assume.assumeFalse(JDK_8219991_ERROR_MESSAGE, JDK_8219991);
         try (SocketHandler handler = createHandler(Protocol.TCP)) {
             try (SimpleServer server = SimpleServer.createTcpServer(port)) {
                 final ExtLogRecord record = createLogRecord("Test TCP handler");
@@ -184,6 +191,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
 
     @Test
     public void testTlsConfig() throws Exception {
+        Assume.assumeFalse(JDK_8219991_ERROR_MESSAGE, JDK_8219991);
         try (SimpleServer server = SimpleServer.createTlsServer(port)) {
             final LogContext logContext = LogContext.create();
             final PatternFormatter patternFormatter = new PatternFormatter("%s\n");
