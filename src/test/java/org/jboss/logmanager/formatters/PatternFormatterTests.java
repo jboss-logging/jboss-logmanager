@@ -245,7 +245,7 @@ public class PatternFormatterTests {
         formatter = new PatternFormatter("%e");
         cause.addSuppressed(suppressedLevel1);
         formatted = formatter.format(record);
-        Assert.assertTrue(formatted.contains("CIRCULAR REFERENCE:java.lang.IllegalStateException: suppressedLevel1"));
+        Assert.assertTrue(formatted.contains("CIRCULAR REFERENCE: java.lang.IllegalStateException: suppressedLevel1"));
     }
 
     @Test
