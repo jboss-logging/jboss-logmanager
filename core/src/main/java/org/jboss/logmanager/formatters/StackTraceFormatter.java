@@ -117,7 +117,9 @@ public class StackTraceFormatter {
 
     private void renderStackTrace(final StackTraceElement[] parentStack, final Throwable child, final String caption, final String prefix) {
         if (seen.contains(child)) {
-            builder.append("\t[CIRCULAR REFERENCE:")
+            builder.append(prefix)
+                    .append(caption)
+                    .append("[CIRCULAR REFERENCE: ")
                     .append(child)
                     .append(']');
             newLine();
