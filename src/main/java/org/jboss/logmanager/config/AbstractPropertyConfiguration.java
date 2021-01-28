@@ -44,6 +44,7 @@ import org.jboss.modules.ModuleLoader;
  */
 abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfiguration<T, C>> extends AbstractBasicConfiguration<T, C> implements ObjectConfigurable<T>, PropertyConfigurable {
     private final Class<? extends T> actualClass;
+    private final ClassLoader classLoader;
     private final String moduleName;
     private final String className;
     private final String[] constructorProperties;
@@ -61,11 +62,13 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         final ClassLoader classLoader;
         if (moduleName != null) try {
             classLoader = ModuleFinder.getClassLoader(moduleName);
+            this.classLoader = classLoader;
         } catch (Throwable e) {
             throw new IllegalArgumentException(String.format("Failed to load module \"%s\" for %s \"%s\"", moduleName, getDescription(), name), e);
         }
         else {
             classLoader = getClass().getClassLoader();
+            this.classLoader = null;
         }
         final Class<? extends T> actualClass;
         try {
@@ -89,18 +92,19 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             final Class<?>[] paramTypes = new Class<?>[length];
             for (int i = 0; i < length; i++) {
                 final String property = constructorProperties[i];
-                final Class<?> type = getConstructorPropertyType(actualClass, property);
+                final Class<?> type = WrappedAction.execute(() -> getConstructorPropertyType(actualClass, property), classLoader);
                 if (type == null) {
                     throw new IllegalArgumentException(String.format("No property named \"%s\" for %s \"%s\"", property, getDescription(), getName()));
                 }
                 paramTypes[i] = type;
             }
-            final Constructor<? extends T> constructor;
-            try {
-                constructor = actualClass.getConstructor(paramTypes);
-            } catch (Exception e) {
-                throw new IllegalArgumentException(String.format("Failed to locate constructor in class \"%s\" for %s \"%s\"", className, getDescription(), getName()), e);
-            }
+            final Constructor<? extends T> constructor = WrappedAction.execute(() -> {
+                try {
+                    return actualClass.getConstructor(paramTypes);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(String.format("Failed to locate constructor in class \"%s\" for %s \"%s\"", className, getDescription(), getName()), e);
+                }
+            }, classLoader);
             final Object[] params = new Object[length];
             for (int i = 0; i < length; i++) {
                 final String property = constructorProperties[i];
@@ -111,11 +115,13 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 final Object value = getConfiguration().getValue(actualClass, property, paramTypes[i], valueExpression, true).getObject();
                 params[i] = value;
             }
-            try {
-                return constructor.newInstance(params);
-            } catch (Exception e) {
-                throw new IllegalArgumentException(String.format("Failed to instantiate class \"%s\" for %s \"%s\"", className, getDescription(), getName()), e);
-            }
+            return WrappedAction.execute(() -> {
+                try {
+                    return constructor.newInstance(params);
+                } catch (Exception e) {
+                    throw new IllegalArgumentException(String.format("Failed to instantiate class \"%s\" for %s \"%s\"", className, getDescription(), getName()), e);
+                }
+            }, classLoader);
         }
 
         public void applyPreCreate(final T param) {
@@ -189,7 +195,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
     private void setPropertyValueExpression(final String propertyName, final ValueExpression<String> expression) {
         final boolean replacement = properties.containsKey(propertyName);
         final boolean constructorProp = contains(constructorProperties, propertyName);
-        final Method setter = getPropertySetter(actualClass, propertyName);
+        final Method setter = WrappedAction.execute(() -> getPropertySetter(actualClass, propertyName), classLoader);
         if (setter == null && ! constructorProp) {
             throw new IllegalArgumentException(String.format("No property \"%s\" setter found for %s \"%s\"", propertyName, getDescription(), getName()));
         }
@@ -199,11 +205,13 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 if (setter == null) {
                     return ObjectProducer.NULL_PRODUCER;
                 }
-                final Class<?> propertyType = getPropertyType(actualClass, propertyName);
-                if (propertyType == null) {
-                    throw new IllegalArgumentException(String.format("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName()));
-                }
-                return getConfiguration().getValue(actualClass, propertyName, propertyType, expression, false);
+                return WrappedAction.execute(() -> {
+                    final Class<?> propertyType = getPropertyType(actualClass, propertyName);
+                    if (propertyType == null) {
+                        throw new IllegalArgumentException(String.format("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName()));
+                    }
+                    return getConfiguration().getValue(actualClass, propertyName, propertyType, expression, false);
+                }, classLoader);
             }
 
             public void applyPreCreate(final ObjectProducer param) {
@@ -212,44 +220,48 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
 
             public void applyPostCreate(final ObjectProducer param) {
                 if (setter != null) {
-                    final T instance = getRefs().get(getName());
-                    try {
-                        setter.invoke(instance, param.getObject());
-                    } catch (Throwable e) {
-                        StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), param.getObject());
-                    }
+                    WrappedAction.execute(() -> {
+                        final T instance = getRefs().get(getName());
+                        try {
+                            setter.invoke(instance, param.getObject());
+                        } catch (Throwable e) {
+                            StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), param.getObject());
+                        }
+                    }, classLoader);
                 }
             }
 
             public void rollback() {
-                final Class<?> propertyType = getPropertyType(actualClass, propertyName);
-                if (propertyType == null) {
-                    // We don't want the rest of the rollback to fail so we'll just log a message
-                    StandardOutputStreams.printError("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName());
-                    return;
-                }
-                final ObjectProducer producer;
-                if (replacement) {
-                    properties.put(propertyName, oldValue);
-                    producer = getConfiguration().getValue(actualClass, propertyName, propertyType, oldValue, true);
-                } else {
-                    properties.remove(propertyName);
-                    producer = getDefaultValue(propertyType);
-                }
-                if (setter != null) {
-                    // Get the reference instance, the old value and reset to the old value
-                    final T instance = getRefs().get(getName());
-                    if (instance != null) {
-                        try {
-                            setter.invoke(instance, producer.getObject());
-                        } catch (Throwable e) {
-                            StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), producer.getObject());
-                        }
-                    } else {
-                        // If the instance is not available don't keep the property
-                        properties.remove(propertyName);
+                WrappedAction.execute(() -> {
+                    final Class<?> propertyType = getPropertyType(actualClass, propertyName);
+                    if (propertyType == null) {
+                        // We don't want the rest of the rollback to fail so we'll just log a message
+                        StandardOutputStreams.printError("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName());
+                        return;
                     }
-                }
+                    final ObjectProducer producer;
+                    if (replacement) {
+                        properties.put(propertyName, oldValue);
+                        producer = getConfiguration().getValue(actualClass, propertyName, propertyType, oldValue, true);
+                    } else {
+                        properties.remove(propertyName);
+                        producer = getDefaultValue(propertyType);
+                    }
+                    if (setter != null) {
+                        // Get the reference instance, the old value and reset to the old value
+                        final T instance = getRefs().get(getName());
+                        if (instance != null) {
+                            try {
+                                setter.invoke(instance, producer.getObject());
+                            } catch (Throwable e) {
+                                StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), producer.getObject());
+                            }
+                        } else {
+                            // If the instance is not available don't keep the property
+                            properties.remove(propertyName);
+                        }
+                    }
+                }, classLoader);
             }
         });
     }
@@ -262,7 +274,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         if (isRemoved()) {
             throw new IllegalArgumentException(String.format("Cannot remove property \"%s\" on %s \"%s\" (removed)", propertyName, getDescription(), getName()));
         }
-        final Method setter = getPropertySetter(actualClass, propertyName);
+        final Method setter = WrappedAction.execute(() -> getPropertySetter(actualClass, propertyName), classLoader);
         if (setter == null) {
             throw new IllegalArgumentException(String.format("No property \"%s\" setter found for %s \"%s\"", propertyName, getDescription(), getName()));
         }
@@ -270,11 +282,13 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         if (oldValue != null) {
             getConfiguration().addAction(new ConfigAction<ObjectProducer>() {
                 public ObjectProducer validate() throws IllegalArgumentException {
-                    final Class<?> propertyType = getPropertyType(actualClass, propertyName);
-                    if (propertyType == null) {
-                        throw new IllegalArgumentException(String.format("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName()));
-                    }
-                    return getDefaultValue(propertyType);
+                    return WrappedAction.execute(() -> {
+                        final Class<?> propertyType = getPropertyType(actualClass, propertyName);
+                        if (propertyType == null) {
+                            throw new IllegalArgumentException(String.format("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName()));
+                        }
+                        return getDefaultValue(propertyType);
+                    }, classLoader);
                 }
 
                 public void applyPreCreate(final ObjectProducer param) {
@@ -282,30 +296,34 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 }
 
                 public void applyPostCreate(final ObjectProducer param) {
-                    final T instance = getRefs().get(getName());
-                    try {
-                        setter.invoke(instance, param.getObject());
-                    } catch (Throwable e) {
-                        StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), param.getObject());
-                    }
+                    WrappedAction.execute(() -> {
+                        final T instance = getRefs().get(getName());
+                        try {
+                            setter.invoke(instance, param.getObject());
+                        } catch (Throwable e) {
+                            StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), param.getObject());
+                        }
+                    }, classLoader);
                 }
 
                 public void rollback() {
-                    // We need to once again determine the property type
-                    final Class<?> propertyType = getPropertyType(actualClass, propertyName);
-                    if (propertyType == null) {
-                        // We don't want the rest of the rollback to fail so we'll just log a message
-                        StandardOutputStreams.printError("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName());
-                        return;
-                    }
-                    // Get the reference instance, the old value and reset to the old value
-                    final T instance = getRefs().get(getName());
-                    final ObjectProducer producer = getConfiguration().getValue(actualClass, propertyName, propertyType, oldValue, true);
-                    try {
-                        setter.invoke(instance, producer.getObject());
-                    } catch (Throwable e) {
-                        StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), producer.getObject());
-                    }
+                    WrappedAction.execute(() -> {
+                        // We need to once again determine the property type
+                        final Class<?> propertyType = getPropertyType(actualClass, propertyName);
+                        if (propertyType == null) {
+                            // We don't want the rest of the rollback to fail so we'll just log a message
+                            StandardOutputStreams.printError("No property \"%s\" type could be determined for %s \"%s\"", propertyName, getDescription(), getName());
+                            return;
+                        }
+                        // Get the reference instance, the old value and reset to the old value
+                        final T instance = getRefs().get(getName());
+                        final ObjectProducer producer = getConfiguration().getValue(actualClass, propertyName, propertyType, oldValue, true);
+                        try {
+                            setter.invoke(instance, producer.getObject());
+                        } catch (Throwable e) {
+                            StandardOutputStreams.printError(e, "Failed to invoke setter %s with value %s%n.", setter.getName(), producer.getObject());
+                        }
+                    }, classLoader);
                 }
             });
             return true;
@@ -339,11 +357,13 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         }
         configuration.addAction(new ConfigAction<Method>() {
             public Method validate() throws IllegalArgumentException {
-                try {
-                    return actualClass.getMethod(methodName);
-                } catch (NoSuchMethodException e) {
-                    throw new IllegalArgumentException(String.format("Method '%s' not found on '%s'", methodName, actualClass.getName()));
-                }
+                return WrappedAction.execute(() -> {
+                    try {
+                        return actualClass.getMethod(methodName);
+                    } catch (NoSuchMethodException e) {
+                        throw new IllegalArgumentException(String.format("Method '%s' not found on '%s'", methodName, actualClass.getName()));
+                    }
+                }, classLoader);
             }
 
             public void applyPreCreate(final Method param) {
@@ -383,12 +403,13 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
             public Map<String, Method> validate() throws IllegalArgumentException {
                 final Map<String, Method> result = new LinkedHashMap<String, Method>();
                 for (String methodName : names) {
-                    try {
-                        result.put(methodName, actualClass.getMethod(methodName));
-                    } catch (NoSuchMethodException e) {
-                        throw new IllegalArgumentException(String.format("Method '%s' not found on '%s'", methodName, actualClass.getName()));
-                    }
-
+                    WrappedAction.execute(() -> {
+                        try {
+                            result.put(methodName, actualClass.getMethod(methodName));
+                        } catch (NoSuchMethodException e) {
+                            throw new IllegalArgumentException(String.format("Method '%s' not found on '%s'", methodName, actualClass.getName()));
+                        }
+                    }, classLoader);
                 }
                 return result;
             }
@@ -471,12 +492,14 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
                 }
 
                 public void applyPostCreate(final Method param) {
-                    final T instance = getRefs().get(getName());
-                    try {
-                        param.invoke(instance);
-                    } catch (Throwable e) {
-                        StandardOutputStreams.printError(e, "Failed to invoke method %s%n.", param.getName());
-                    }
+                    WrappedAction.execute(() -> {
+                        final T instance = getRefs().get(getName());
+                        try {
+                            param.invoke(instance);
+                        } catch (Throwable e) {
+                            StandardOutputStreams.printError(e, "Failed to invoke method %s%n.", param.getName());
+                        }
+                    }, classLoader);
                 }
 
                 public void rollback() {
@@ -493,17 +516,17 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         return getConfiguration().removePostConfigurationActions(name);
     }
 
-    static Class<?> getPropertyType(Class<?> clazz, String propertyName) {
+    private static Class<?> getPropertyType(Class<?> clazz, String propertyName) {
         final Method setter = getPropertySetter(clazz, propertyName);
         return setter != null ? setter.getParameterTypes()[0] : null;
     }
 
-    static Class<?> getConstructorPropertyType(Class<?> clazz, String propertyName) {
+   private static Class<?> getConstructorPropertyType(Class<?> clazz, String propertyName) {
         final Method getter = getPropertyGetter(clazz, propertyName);
         return getter != null ? getter.getReturnType() : getPropertyType(clazz, propertyName);
     }
 
-    static Method getPropertySetter(Class<?> clazz, String propertyName) {
+    private static Method getPropertySetter(Class<?> clazz, String propertyName) {
         final String upperPropertyName = Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
         final String set = "set" + upperPropertyName;
         for (Method method : clazz.getMethods()) {
@@ -514,7 +537,7 @@ abstract class AbstractPropertyConfiguration<T, C extends AbstractPropertyConfig
         return null;
     }
 
-    static Method getPropertyGetter(Class<?> clazz, String propertyName) {
+    private static Method getPropertyGetter(Class<?> clazz, String propertyName) {
         final String upperPropertyName = Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
         final Pattern pattern = Pattern.compile("(get|has|is)(" + Pattern.quote(upperPropertyName) + ")");
         for (Method method : clazz.getMethods()) {
