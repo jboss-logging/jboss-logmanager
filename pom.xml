@@ -220,6 +220,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <doclint>none</doclint>
+                    <javadocExecutable>${java.home}${file.separator}bin</javadocExecutable>
                 </configuration>
             </plugin>
             <plugin>
