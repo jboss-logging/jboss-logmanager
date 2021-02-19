@@ -43,7 +43,7 @@ public final class SubstituteFilter implements Filter {
      *
      * @param pattern the pattern to match
      * @param replacement the string replacement
-     * @param replaceAll {@code true} if all occurrances should be replaced; {@code false} if only the first occurrance
+     * @param replaceAll {@code true} if all occurrences should be replaced; {@code false} if only the first occurrence
      */
     public SubstituteFilter(final Pattern pattern, final String replacement, final boolean replaceAll) {
         this.pattern = pattern;
@@ -56,7 +56,7 @@ public final class SubstituteFilter implements Filter {
      *
      * @param patternString the pattern to match
      * @param replacement the string replacement
-     * @param replaceAll {@code true} if all occurrances should be replaced; {@code false} if only the first occurrance
+     * @param replaceAll {@code true} if all occurrences should be replaced; {@code false} if only the first occurrence
      */
     public SubstituteFilter(final String patternString, final String replacement, final boolean replaceAll) {
         this(Pattern.compile(patternString), replacement, replaceAll);

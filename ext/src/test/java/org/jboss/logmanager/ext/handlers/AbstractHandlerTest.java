@@ -172,8 +172,8 @@ public class AbstractHandlerTest {
             lines1 = readAllLinesFromZip(archive1, expectedFileName);
             lines2 = readAllLinesFromZip(archive2, expectedFileName);
         } else if (archive1.getFileName().toString().endsWith(".gz")) {
-            lines1 = readAllLinesFromGzip(archive1, expectedFileName);
-            lines2 = readAllLinesFromGzip(archive2, expectedFileName);
+            lines1 = readAllLinesFromGzip(archive1);
+            lines2 = readAllLinesFromGzip(archive2);
         } else {
             Assert.fail(String.format("Files %s and %s are not archives.", archive1, archive2));
         }
@@ -211,7 +211,7 @@ public class AbstractHandlerTest {
         }
     }
 
-    private static Collection<String> readAllLinesFromGzip(final Path path, final String expectedFileName) throws IOException {
+    private static Collection<String> readAllLinesFromGzip(final Path path) throws IOException {
         final Collection<String> lines = new ArrayList<>();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(Files.newInputStream(path))))) {
             String line;

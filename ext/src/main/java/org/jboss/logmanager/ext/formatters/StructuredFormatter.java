@@ -23,7 +23,6 @@ import java.io.Writer;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.IdentityHashMap;
@@ -623,7 +622,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
          * By default this processes the map and uses {@link #add(String, String)} to add entries.
          * </p>
          *
-         * @param metaData the matp of the meta data, cannot be {@code null}
+         * @param metaData the map of the meta data, cannot be {@code null}
          *
          * @return the generator
          *

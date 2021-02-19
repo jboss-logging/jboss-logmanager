@@ -159,7 +159,7 @@ final class AtomicArray<T, V> {
     }
 
     /**
-     * Atomically replace the array with a new array which does not include the first occurrance of the given value, if
+     * Atomically replace the array with a new array which does not include the first occurrence of the given value, if
      * the value is present in the array.
      *
      * @param instance the instance holding the field
@@ -205,7 +205,7 @@ final class AtomicArray<T, V> {
     }
 
     /**
-     * Atomically replace the array with a new array which does not include any occurrances of the given value, if
+     * Atomically replace the array with a new array which does not include any occurrences of the given value, if
      * the value is present in the array.
      *
      * @param instance the instance holding the field
@@ -310,7 +310,7 @@ final class AtomicArray<T, V> {
     }
 
     /**
-     * Remove a value to a sorted array.  Does not check for duplicates.  If there are multiple occurrances of a value,
+     * Remove a value to a sorted array.  Does not check for duplicates.  If there are multiple occurrences of a value,
      * there is no guarantee as to which one is removed.
      *
      * @param instance the instance holding the field
