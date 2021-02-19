@@ -121,6 +121,7 @@ public class ExtLogRecord extends LogRecord {
         hostName = original.hostName;
         processName = original.processName;
         processId = original.processId;
+        metadata = original.metadata;
     }
 
     /**
@@ -144,7 +145,7 @@ public class ExtLogRecord extends LogRecord {
     private transient boolean calculateCaller = true;
 
     private String ndc;
-    private FormatStyle formatStyle = FormatStyle.MESSAGE_FORMAT;
+    private FormatStyle formatStyle;
     private FastCopyHashMap<String, Object> mdcCopy;
     private int sourceLineNumber = -1;
     private String sourceFileName;
@@ -154,6 +155,7 @@ public class ExtLogRecord extends LogRecord {
     private long processId = -1;
     private String sourceModuleName;
     private String sourceModuleVersion;
+    private Object metadata;
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
         copyAll();
@@ -174,6 +176,7 @@ public class ExtLogRecord extends LogRecord {
         processId = fields.get("processId", -1L);
         sourceModuleName = (String) fields.get("sourceModuleName", null);
         sourceModuleVersion = (String) fields.get("sourceModuleVersion", null);
+        metadata = fields.get("metadata", null);
     }
 
     /**
@@ -617,5 +620,17 @@ public class ExtLogRecord extends LogRecord {
      */
     public void setResourceBundleName(final String name) {
         super.setResourceBundleName(name);
+    }
+
+    /**
+     * Set the metadata for this event. This could be used to pass additional information (such as SLF4J Markers).
+     * @param metadata metadata (may be null).
+     */
+    public void setMetadata(final Object metadata) {
+        this.metadata = metadata;
+    }
+
+    public Object getMetadata() {
+        return metadata;
     }
 }
