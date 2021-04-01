@@ -137,6 +137,29 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
         this.maxBackupIndex = maxBackupIndex;
     }
 
+    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final int maxAge)
+        throws FileNotFoundException {
+        super(file, suffix, maxAge);
+    }
+
+    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final int maxAge, final boolean append)
+        throws FileNotFoundException {
+        super(file, suffix, maxAge, append);
+    }
+
+    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final long rotateSize,
+        final int maxBackupIndex, final int maxAge) throws FileNotFoundException {
+        super(file, suffix, maxAge);
+        this.rotateSize = rotateSize;
+        this.maxBackupIndex = maxBackupIndex;
+    }
+
+    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final long rotateSize,
+        final int maxBackupIndex, final int maxAge, final boolean append) throws FileNotFoundException {
+        super(file, suffix, maxAge, append);
+        this.rotateSize = rotateSize;
+        this.maxBackupIndex = maxBackupIndex;
+    }
 
     @Override
     public void setOutputStream(final OutputStream outputStream) {
@@ -237,6 +260,21 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
             } catch (IOException e) {
                 reportError("Unable to rotate log file", e, ErrorManager.OPEN_FAILURE);
             }
+        }
+    }
+
+    @Override
+    protected void deleteOldFile(long fromTime) {
+        super.deleteOldFile(fromTime);
+        final File file = getFile();
+        if (file == null) {
+            // no file is set; a direct output stream or writer was specified
+            return;
+        }
+        final int maxBackupIndex = this.maxBackupIndex;
+
+        for (int i = 1; i <= maxBackupIndex; i++) {
+            getSuffixRotator().deleteFile(SecurityActions.getErrorManager(acc, this), file.toPath(), getOldSuffix() + "." + i);
         }
     }
 

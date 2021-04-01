@@ -244,6 +244,15 @@ class SuffixRotator {
         }
     }
 
+    void deleteFile(final ErrorManager errorManager, final Path source, final String suffix) {
+        final Path target = Paths.get(source + suffix + compressionSuffix);
+        try {
+            deleteFile(target);
+        } catch (Exception e) {
+            errorManager.error(String.format("Failed to delete file %s", target), e, ErrorManager.GENERIC_FAILURE);
+        }
+    }
+
     @Override
     public String toString() {
         return originalSuffix;
