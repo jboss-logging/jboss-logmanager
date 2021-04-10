@@ -19,6 +19,8 @@
 
 package org.jboss.logmanager.ext.handlers;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.IOException;
@@ -212,9 +214,7 @@ public class SyslogHandler extends ExtHandler {
          */
         // TODO (jrp) allow for a custom mapping
         public static Severity fromLevel(final Level level) {
-            if (level == null) {
-                throw new IllegalArgumentException("Level cannot be null");
-            }
+            checkNotNullParam("level", level);
             final int levelValue = level.intValue();
             if (levelValue >= org.jboss.logmanager.Level.FATAL.intValue()) {
                 return Severity.EMERGENCY;

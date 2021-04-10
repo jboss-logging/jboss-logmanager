@@ -22,6 +22,7 @@ package org.jboss.logmanager.formatters;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.security.AccessController.doPrivileged;
+import static org.wildfly.common.Assert.checkNotNullParam;
 
 import java.io.PrintWriter;
 import java.security.PrivilegedAction;
@@ -1200,9 +1201,7 @@ public final class Formatters {
      */
     public static FormatStep systemPropertyFormatStep(final String argument, final boolean leftJustify, final int minimumWidth,
                                                       final boolean truncateBeginning, final int maximumWidth) {
-        if (argument == null) {
-            throw new IllegalArgumentException("System property requires a key for the lookup");
-        }
+        checkNotNullParam("argument", argument);
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
                 // Check for a default value

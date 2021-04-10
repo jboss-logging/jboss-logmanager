@@ -19,6 +19,9 @@
 
 package org.jboss.logmanager;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.io.Flushable;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -114,9 +117,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      */
     public void addHandler(Handler handler) throws SecurityException {
         checkAccess();
-        if (handler == null) {
-            throw new NullPointerException("handler is null");
-        }
+        checkNotNullParamWithNullPointerException("handler", handler);
         handlersUpdater.add(this, handler);
     }
 
@@ -171,9 +172,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      *                           LoggingPermission(control)}
      */
     public Handler[] setHandlers(final Handler[] newHandlers) throws SecurityException {
-        if (newHandlers == null) {
-            throw new IllegalArgumentException("newHandlers is null");
-        }
+        checkNotNullParam("newHandlers", newHandlers);
         if (newHandlers.length == 0) {
             return clearHandlers();
         } else {

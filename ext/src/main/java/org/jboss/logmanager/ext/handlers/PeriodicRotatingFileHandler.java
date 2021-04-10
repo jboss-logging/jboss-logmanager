@@ -19,6 +19,8 @@
 
 package org.jboss.logmanager.ext.handlers;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -296,10 +298,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      * @param timeZone the configured time zone
      */
     public void setTimeZone(final TimeZone timeZone) {
-        if (timeZone == null) {
-            throw new NullPointerException("timeZone is null");
-        }
-        this.timeZone = timeZone;
+        this.timeZone = checkNotNullParamWithNullPointerException("timeZone", timeZone);
     }
 
     private void setFileInternal(final File file) throws FileNotFoundException {

@@ -19,6 +19,8 @@
 
 package org.jboss.logmanager.ext.handlers;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
@@ -113,11 +115,8 @@ public class AsyncHandler extends ExtHandler {
      * @param overflowAction the overflow action
      */
     public void setOverflowAction(final OverflowAction overflowAction) {
-        if (overflowAction == null) {
-            throw new NullPointerException("overflowAction is null");
-        }
         checkAccess();
-        this.overflowAction = overflowAction;
+        this.overflowAction = checkNotNullParamWithNullPointerException("overflowAction", overflowAction);
     }
 
     /** {@inheritDoc} */

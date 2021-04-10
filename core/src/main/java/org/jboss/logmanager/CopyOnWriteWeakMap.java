@@ -19,6 +19,8 @@
 
 package org.jboss.logmanager;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.AbstractMap;
@@ -86,12 +88,8 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
     }
 
     public V putIfAbsent(final K key, final V value) {
-        if (key == null) {
-            throw new IllegalArgumentException("key is null");
-        }
-        if (value == null) {
-            throw new IllegalArgumentException("value is null");
-        }
+        checkNotNullParam("key", key);
+        checkNotNullParam("value", value);
         synchronized (this) {
             final Node<K, V> oldNode = map.get(key);
             if (oldNode != null) {
@@ -120,9 +118,7 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
     }
 
     public boolean replace(final K key, final V oldValue, final V newValue) {
-        if (newValue == null) {
-            throw new IllegalArgumentException("newValue is null");
-        }
+        checkNotNullParam("newValue", newValue);
         if (oldValue == null) {
             return false;
         }
@@ -140,9 +136,7 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
     }
 
     public V replace(final K key, final V value) {
-        if (value == null) {
-            throw new IllegalArgumentException("value is null");
-        }
+        checkNotNullParam("value", value);
         synchronized (this) {
             final Node<K, V> oldNode = map.get(key);
             final V existing = oldNode.get();
@@ -183,12 +177,8 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
     }
 
     public V put(final K key, final V value) {
-        if (key == null) {
-            throw new IllegalArgumentException("key is null");
-        }
-        if (value == null) {
-            throw new IllegalArgumentException("value is null");
-        }
+        checkNotNullParam("key", key);
+        checkNotNullParam("value", value);
         synchronized (this) {
             final FastCopyHashMap<K, Node<K, V>> newMap = cleanCopyForMod();
             final Node<K, V> old = newMap.put(key, new Node<K, V>(key, value, queue));

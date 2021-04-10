@@ -19,7 +19,8 @@
 
 package org.jboss.logmanager;
 
-import org.wildfly.common.Assert;
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -227,9 +228,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void addHandler(Handler handler) throws SecurityException {
         LogContext.checkAccess();
-        if (handler == null) {
-            throw new NullPointerException("handler is null");
-        }
+        checkNotNullParamWithNullPointerException("handler", handler);
         loggerNode.addHandler(handler);
     }
 
@@ -258,9 +257,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         LogContext.checkAccess();
         final Handler[] safeHandlers = handlers.clone();
         for (Handler handler : safeHandlers) {
-            if (handler == null) {
-                throw new IllegalArgumentException("A handler is null");
-            }
+             checkNotNullParam("handler", handler);
         }
         loggerNode.setHandlers(safeHandlers);
     }
@@ -276,9 +273,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         LogContext.checkAccess();
         final Handler[] safeHandlers = handlers.clone();
         for (Handler handler : safeHandlers) {
-            if (handler == null) {
-                throw new IllegalArgumentException("A handler is null");
-            }
+             checkNotNullParam("handler", handler);
         }
         return loggerNode.setHandlers(safeHandlers);
     }
@@ -296,9 +291,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         final Handler[] safeExpectedHandlers = expected.clone();
         final Handler[] safeNewHandlers = newHandlers.clone();
         for (Handler handler : safeNewHandlers) {
-            if (handler == null) {
-                throw new IllegalArgumentException("A handler is null");
-            }
+             checkNotNullParam("handler", handler);
         }
         Handler[] oldHandlers;
         do {
@@ -857,7 +850,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      */
     @Override
     public void setResourceBundle(ResourceBundle resourceBundle) {
-        Assert.checkNotNullParam("resourceBundle", resourceBundle);
+        checkNotNullParam("resourceBundle", resourceBundle);
         LogContext.checkAccess();
         ResourceBundle old;
         do {

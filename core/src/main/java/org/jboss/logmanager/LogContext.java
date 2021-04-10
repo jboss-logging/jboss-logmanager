@@ -19,7 +19,10 @@
 
 package org.jboss.logmanager;
 
-import org.wildfly.common.Assert;
+import static org.wildfly.common.Assert.checkNotNullParam;
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
+//import org.wildfly.common.Assert;
 import org.wildfly.common.ref.Reference;
 import org.wildfly.common.ref.References;
 
@@ -171,7 +174,7 @@ public final class LogContext implements AutoCloseable {
      * @return a new log context
      */
     public static LogContext create(boolean strong, LogContextInitializer initializer) {
-        Assert.checkNotNullParam("initializer", initializer);
+        checkNotNullParam("initializer", initializer);
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(CREATE_CONTEXT_PERMISSION);
@@ -212,7 +215,7 @@ public final class LogContext implements AutoCloseable {
      */
     @SuppressWarnings("unchecked")
     public <V> V getAttachment(Logger.AttachmentKey<V> key) {
-        Assert.checkNotNullParam("key", key);
+        checkNotNullParam("key", key);
         synchronized (this) {
             if (key == attachmentKey1) return (V) attachmentValue1;
             if (key == attachmentKey2) return (V) attachmentValue2;
@@ -235,8 +238,8 @@ public final class LogContext implements AutoCloseable {
     @SuppressWarnings("unchecked")
     public <V> V attach(Logger.AttachmentKey<V> key, V value) throws SecurityException {
         checkAccess();
-        Assert.checkNotNullParam("key", key);
-        Assert.checkNotNullParam("value", value);
+        checkNotNullParam("key", key);
+        checkNotNullParam("value", value);
         V old;
         synchronized (this) {
             if (key == attachmentKey1) {
@@ -275,8 +278,8 @@ public final class LogContext implements AutoCloseable {
     @SuppressWarnings("unchecked")
     public <V> V attachIfAbsent(Logger.AttachmentKey<V> key, V value) throws SecurityException {
         checkAccess();
-        Assert.checkNotNullParam("key", key);
-        Assert.checkNotNullParam("value", value);
+        checkNotNullParam("key", key);
+        checkNotNullParam("value", value);
         V old;
         synchronized (this) {
             if (key == attachmentKey1) {
@@ -310,7 +313,7 @@ public final class LogContext implements AutoCloseable {
     @SuppressWarnings("unchecked")
     public <V> V detach(Logger.AttachmentKey<V> key) throws SecurityException {
         checkAccess();
-        Assert.checkNotNullParam("key", key);
+        checkNotNullParam("key", key);
         V old;
         synchronized (this) {
             if (key == attachmentKey1) {
@@ -502,9 +505,7 @@ public final class LogContext implements AutoCloseable {
      * @param newSelector the new selector.
      */
     public static void setLogContextSelector(LogContextSelector newSelector) {
-        if (newSelector == null) {
-            throw new NullPointerException("newSelector is null");
-        }
+        checkNotNullParamWithNullPointerException("newSelector", newSelector);
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(SET_CONTEXT_SELECTOR_PERMISSION);

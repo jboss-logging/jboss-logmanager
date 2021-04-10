@@ -19,6 +19,8 @@
 
 package org.jboss.logmanager;
 
+import static org.wildfly.common.Assert.checkNotNullParamWithNullPointerException;
+
 import java.util.Map;
 
 /**
@@ -71,12 +73,8 @@ public final class MDC {
      * @return the old value or {@code null} if there was none
      */
     public static Object putObject(String key, Object value) {
-        if (key == null) {
-            throw new NullPointerException("key is null");
-        }
-        if (value == null) {
-            throw new NullPointerException("value is null");
-        }
+        checkNotNullParamWithNullPointerException("key", key);
+        checkNotNullParamWithNullPointerException("value", value);
         return mdc.get().put(key, value);
     }
 

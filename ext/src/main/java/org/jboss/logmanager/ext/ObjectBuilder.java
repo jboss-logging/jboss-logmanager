@@ -19,6 +19,8 @@
 
 package org.jboss.logmanager.ext;
 
+import static org.wildfly.common.Assert.checkNotNullParam;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -156,9 +158,7 @@ class ObjectBuilder<T> {
      * @return a supplier which can create the object
      */
     Supplier<T> build(final Map<String, Supplier<?>> pojos) {
-        if (className == null) {
-            throw new IllegalArgumentException("className is null");
-        }
+        checkNotNullParam("className", className);
         final Map<String, String> constructorProperties = new LinkedHashMap<>(this.constructorProperties);
         final Map<String, String> properties = new LinkedHashMap<>(this.properties);
         final Set<String> postConstructMethods = new LinkedHashSet<>(this.postConstructMethods);

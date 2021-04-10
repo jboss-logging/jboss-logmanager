@@ -53,6 +53,11 @@
             <groupId>org.wildfly.common</groupId>
             <artifactId>wildfly-common</artifactId>
         </dependency>
+        <!-- An odd dependency, but required for org.wildfly.common:wildfly-common -->
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+        </dependency>
 
         <!-- test dependencies -->
 
