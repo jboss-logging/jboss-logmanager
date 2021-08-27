@@ -25,6 +25,7 @@ import java.io.IOException;
 /**
  * A locator for logger configuration.
  */
+@FunctionalInterface
 public interface ConfigurationLocator {
 
     /**
