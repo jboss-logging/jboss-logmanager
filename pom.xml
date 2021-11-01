@@ -46,9 +46,9 @@
 
     <properties>
         <!-- Dependency versions -->
-        <version.javax.json>1.0</version.javax.json>
+        <version.jakarta.json>1.1.6</version.jakarta.json>
         <version.org.byteman>4.0.6</version.org.byteman>
-        <version.org.glassfish.javax.json>1.0.4</version.org.glassfish.javax.json>
+        <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.modules.jboss-modules>1.9.1.Final</version.org.jboss.modules.jboss-modules>
         <version.org.wildfly.common.wildfly-common>1.5.1.Final</version.org.wildfly.common.wildfly-common>
         <version.junit.junit>4.13.2</version.junit.junit>
@@ -80,17 +80,17 @@
         </dependency>
 
         <dependency>
-            <groupId>javax.json</groupId>
-            <artifactId>javax.json-api</artifactId>
-            <version>${version.javax.json}</version>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <version>${version.jakarta.json}</version>
             <!-- only required for the JsonFormatter -->
             <optional>true</optional>
         </dependency>
         <!-- JSON implementation -->
         <dependency>
             <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
-            <version>${version.org.glassfish.javax.json}</version>
+            <artifactId>jakarta.json</artifactId>
+            <version>${version.org.glassfish.jakarta.json}</version>
             <!-- only required for the JsonFormatter, another implementation of the JSON-P API may be used as well -->
             <optional>true</optional>
         </dependency>
