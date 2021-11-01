@@ -171,7 +171,6 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0-jboss-1</version>
                 <executions>
                     <execution>
                         <id>default-compile</id>
