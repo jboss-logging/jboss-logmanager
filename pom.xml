@@ -33,7 +33,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>36</version>
+        <version>38</version>
     </parent>
 
     <licenses>
@@ -47,11 +47,11 @@
     <properties>
         <!-- Dependency versions -->
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
-        <version.org.byteman>4.0.6</version.org.byteman>
+        <version.org.byteman>4.0.17</version.org.byteman>
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.modules.jboss-modules>1.10.1.Final</version.org.jboss.modules.jboss-modules>
         <version.org.wildfly.common.wildfly-common>1.5.1.Final</version.org.wildfly.common.wildfly-common>
-        <version.junit.junit>4.12</version.junit.junit>
+        <version.junit.junit>4.13.2</version.junit.junit>
 
         <!-- Test properties -->
         <org.jboss.test.address>127.0.0.1</org.jboss.test.address>
@@ -171,7 +171,6 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.7.0-jboss-1</version>
                 <executions>
                     <execution>
                         <id>default-compile</id>
@@ -287,7 +286,7 @@
                     <dependency>
                         <groupId>biz.aQute.bnd</groupId>
                         <artifactId>biz.aQute.bndlib</artifactId>
-                        <version>4.2.0</version>
+                        <version>6.0.0</version>
                     </dependency>
                 </dependencies>
                 <configuration>
