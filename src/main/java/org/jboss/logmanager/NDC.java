@@ -19,17 +19,42 @@
 
 package org.jboss.logmanager;
 
-import java.util.Arrays;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Iterator;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
 /**
  * Nested diagnostic context.  This is basically a thread-local stack that holds a string which can be included
  * in a log message.
  */
 public final class NDC {
+    private static final NDCProvider ndcProvider = getDefaultNDCProvider();
 
     private NDC() {}
 
-    private static final Holder ndc = new Holder();
+    static NDCProvider getNDCProvider() {
+        return ndcProvider;
+    }
+
+    static NDCProvider getDefaultNDCProvider() {
+        return System.getSecurityManager() == null ? doGetDefaultNDCProvider() : AccessController.doPrivileged((PrivilegedAction<NDCProvider>) NDC::doGetDefaultNDCProvider);
+    }
+
+    static NDCProvider doGetDefaultNDCProvider() {
+        final ServiceLoader<NDCProvider> configLoader = ServiceLoader.load(NDCProvider.class, NDC.class.getClassLoader());
+        final Iterator<NDCProvider> iterator = configLoader.iterator();
+        for (;;) try {
+            if (! iterator.hasNext()) {
+                return new ThreadLocalNDC();
+            }
+            return iterator.next();
+        } catch (ServiceConfigurationError | RuntimeException e) {
+            System.err.print("Warning: failed to load NDC Provider: ");
+            e.printStackTrace(System.err);
+        }
+    }
 
     /**
      * Push a value on to the NDC stack, returning the new stack depth which should later be used to restore the stack.
@@ -38,12 +63,7 @@ public final class NDC {
      * @return the new stack depth
      */
     public static int push(String context) {
-        final Stack<String> stack = ndc.get();
-        try {
-            return stack.depth();
-        } finally {
-            stack.push(context);
-        }
+        return ndcProvider.push(context);
     }
 
     /**
@@ -52,19 +72,14 @@ public final class NDC {
      * @return the old topmost value
      */
     public static String pop() {
-        final Stack<String> stack = ndc.get();
-        if (stack.isEmpty()) {
-            return "";
-        } else {
-            return stack.pop();
-        }
+        return ndcProvider.pop();
     }
 
     /**
      * Clear the thread's NDC stack.
      */
     public static void clear() {
-        ndc.get().trimTo(0);
+        ndcProvider.clear();
     }
 
     /**
@@ -74,7 +89,7 @@ public final class NDC {
      * @param size the new size
      */
     public static void trimTo(int size) {
-        ndc.get().trimTo(size);
+        ndcProvider.trimTo(size);
     }
 
     /**
@@ -83,7 +98,7 @@ public final class NDC {
      * @return the stack depth
      */
     public static int getDepth() {
-        return ndc.get().depth();
+        return ndcProvider.getDepth();
     }
 
     /**
@@ -92,12 +107,7 @@ public final class NDC {
      * @return the current NDC value, or {@code ""} if there is none
      */
     public static String get() {
-        final Stack<String> stack = ndc.get();
-        if (stack.isEmpty()) {
-            return "";
-        } else {
-            return stack.toString();
-        }
+        return ndcProvider.get();
     }
 
     /**
@@ -107,70 +117,6 @@ public final class NDC {
      * @return the value or {@code null} if there is none
      */
     public static String get(int n) {
-        return ndc.get().get(n);
-    }
-
-    private static final class Holder extends ThreadLocal<Stack<String>> {
-        protected Stack<String> initialValue() {
-            return new Stack<String>();
-        }
-    }
-
-    private static final class Stack<T> {
-        @SuppressWarnings("unchecked")
-        private T[] data = (T[]) new Object[32];
-        private int sp;
-
-        public void push(T value) {
-            final int oldlen = data.length;
-            if (sp == oldlen) {
-                data = Arrays.copyOf(data, (oldlen << 1) + oldlen >>> 1);
-            }
-            data[sp++] = value;
-        }
-
-        public T pop() {
-            try {
-                return data[--sp];
-            } finally {
-                data[sp] = null;
-            }
-        }
-
-        public T top() {
-            return data[sp - 1];
-        }
-
-        public boolean isEmpty() {
-            return sp == 0;
-        }
-
-        public int depth() {
-            return sp;
-        }
-
-        public void trimTo(int max) {
-            final int sp = this.sp;
-            if (sp > max) {
-                Arrays.fill(data, max, sp - 1, null);
-                this.sp = max;
-            }
-        }
-
-        public T get(int n) {
-            return n < sp ? data[n] : null;
-        }
-
-        public String toString() {
-            final StringBuilder b = new StringBuilder();
-            final int sp = this.sp;
-            for (int i = 0; i < sp; i++) {
-                b.append(data[i]);
-                if ((i + 1) < sp) {
-                    b.append('.');
-                }
-            }
-            return b.toString();
-        }
+        return ndcProvider.get(n);
     }
 }
