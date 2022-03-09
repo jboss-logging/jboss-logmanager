@@ -48,6 +48,8 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     private long nextRollover = Long.MAX_VALUE;
     private TimeZone timeZone = TimeZone.getDefault();
     private SuffixRotator suffixRotator = SuffixRotator.EMPTY;
+    private int maxAge = -1;
+    private String oldSuffix;
 
     /**
      * Construct a new instance with no formatter and no output file.
@@ -104,6 +106,19 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         setSuffix(suffix);
     }
 
+    public PeriodicRotatingFileHandler(final File file, final String suffix, final int maxAge) throws FileNotFoundException {
+        super(file);
+        setSuffix(suffix);
+        setMaxAge(maxAge);
+    }
+
+    public PeriodicRotatingFileHandler(final File file, final String suffix, final int maxAge, final boolean append)
+        throws FileNotFoundException {
+        super(file, append);
+        setSuffix(suffix);
+        setMaxAge(maxAge);
+    }
+
     @Override
     public void setFile(final File file) throws FileNotFoundException {
         synchronized (outputLock) {
@@ -119,8 +134,25 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         final long recordMillis = record.getMillis();
         if (recordMillis >= nextRollover) {
             rollOver();
+            if (maxAge > 0)
+                deleteOldFile(recordMillis);
             calcNextRollover(recordMillis);
         }
+    }
+
+    protected void deleteOldFile(final long fromTime) {
+        final File file = getFile();
+        if (file == null) {
+            // no file is set; a direct output stream or writer was specified
+            return;
+        }
+
+        final Calendar calendar = Calendar.getInstance(timeZone);
+        calendar.setTimeInMillis(fromTime);
+        calendar.add(Calendar.DAY_OF_MONTH, -maxAge);
+        oldSuffix = format.format(new Date(calendar.getTimeInMillis()));
+
+        suffixRotator.deleteFile(SecurityActions.getErrorManager(acc, this), file.toPath(), oldSuffix);
     }
 
     /**
@@ -176,6 +208,12 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         }
     }
 
+    public void setMaxAge(int maxAge) {
+        synchronized (outputLock) {
+            this.maxAge = maxAge;
+        }
+    }
+
     /**
      * Returns the suffix to be used.
      *
@@ -183,6 +221,10 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      */
     protected final String getNextSuffix() {
         return nextSuffix;
+    }
+
+    protected final String getOldSuffix() {
+        return oldSuffix;
     }
 
     /**

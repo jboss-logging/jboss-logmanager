@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -252,13 +253,12 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setSuffix((dateSuffix == null ? "" : dateSuffix) + archiveSuffix);
         // Set append to true to ensure the rotated file is overwritten
         handler.setAppend(true);
+        handler.setMaxAge(3);
 
         // Allow a few rotates
         for (int i = 0; i < 100; i++) {
             handler.publish(createLogRecord("Test message: %d", i));
         }
-
-        handler.close();
 
         // We should end up with 3 files, 2 rotated and the default log
         final Path logDir = BASE_LOG_DIR.toPath();
@@ -281,9 +281,38 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
 
         compareArchiveContents(path1, path2, logFile.getName());
 
-        // Clean up files
-        Files.deleteIfExists(path1);
-        Files.deleteIfExists(path2);
+        ZonedDateTime date = ZonedDateTime.now();
+        ExtLogRecord record = createLogRecord("Test message!");
+        for (int j = 0; j < 3; j++) {
+            date = date.plusDays(1);
+            record.setMillis(date.toInstant().toEpochMilli());
+            for (int i = 0; i < 100; i++) {
+                handler.publish(record);
+            }
+        }
+
+        if (dateSuffix != null) {
+            Assert.assertFalse(Files.exists(path1));
+            Assert.assertFalse(Files.exists(path2));
+            Assert.assertTrue(Files.exists(
+                logDir.resolve(FILENAME + date.minusDays(2).format(DateTimeFormatter.ofPattern(dateSuffix)) + archiveSuffix)));
+            Assert.assertTrue(Files.exists(logDir
+                .resolve(FILENAME + date.minusDays(2).format(DateTimeFormatter.ofPattern(dateSuffix)) + ".1" + archiveSuffix)));
+            Assert.assertTrue(Files.exists(logDir
+                .resolve(FILENAME + date.minusDays(2).format(DateTimeFormatter.ofPattern(dateSuffix)) + ".2" + archiveSuffix)));
+            Assert.assertTrue(Files.exists(
+                logDir.resolve(FILENAME + date.minusDays(1).format(DateTimeFormatter.ofPattern(dateSuffix)) + archiveSuffix)));
+            Assert.assertTrue(Files.exists(logDir
+                .resolve(FILENAME + date.minusDays(1).format(DateTimeFormatter.ofPattern(dateSuffix)) + ".1" + archiveSuffix)));
+            Assert.assertTrue(Files.exists(logDir
+                .resolve(FILENAME + date.minusDays(1).format(DateTimeFormatter.ofPattern(dateSuffix)) + ".2" + archiveSuffix)));
+            Assert.assertTrue(Files.exists(
+                logDir.resolve(FILENAME + date.format(DateTimeFormatter.ofPattern(dateSuffix)) + ".1" + archiveSuffix)));
+            Assert.assertTrue(Files.exists(
+                logDir.resolve(FILENAME + date.format(DateTimeFormatter.ofPattern(dateSuffix)) + ".2" + archiveSuffix)));
+        }
+        handler.close();
+
     }
 
     private void testPeriodicAndSizeRotate0(int handlerPeriod, int logMessagePeriod, boolean testSize) throws Exception {

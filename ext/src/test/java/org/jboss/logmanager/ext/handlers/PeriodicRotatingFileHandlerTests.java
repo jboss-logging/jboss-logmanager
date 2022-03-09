@@ -56,7 +56,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     @Before
     public void createHandler() throws FileNotFoundException {
         // Create the handler
-        handler = new PeriodicRotatingFileHandler(logFile.toFile(), rotateFormatter.toPattern(), false);
+        handler = new PeriodicRotatingFileHandler(logFile.toFile(), rotateFormatter.toPattern(), 3, false);
         handler.setFormatter(FORMATTER);
         // Set append to true to ensure the rotated file is overwritten
         handler.setAppend(true);
@@ -149,8 +149,6 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
 
     private void testRotate(final Calendar cal, final Path rotatedFile) throws Exception {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        final int currentDay = cal.get(Calendar.DAY_OF_MONTH);
-        final int nextDay = currentDay + 1;
 
         final String currentDate = sdf.format(cal.getTime());
 
@@ -166,7 +164,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
 
         // Create a new record, increment the day by one and validate
-        cal.add(Calendar.DAY_OF_MONTH, nextDay);
+        cal.add(Calendar.DAY_OF_MONTH, 1);
         final String nextDate = sdf.format(cal.getTime());
         record = createLogRecord(Level.INFO, "Date: %s", nextDate);
         record.setMillis(cal.getTimeInMillis());
@@ -182,6 +180,20 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         lines = Files.readAllLines(rotatedFile, StandardCharsets.UTF_8);
         Assert.assertEquals("More than 1 line found", 1, lines.size());
         Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
+
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        record.setMillis(cal.getTimeInMillis());
+        handler.publish(record);
+
+        cal.add(Calendar.DAY_OF_MONTH, -3);
+        Assert.assertFalse(Files.exists(BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()))));
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        Assert.assertTrue(Files.exists(BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()))));
+        cal.add(Calendar.DAY_OF_MONTH, 1);
+        Assert.assertTrue(Files.exists(BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()))));
     }
 
     private void testArchiveRotate(final String archiveSuffix) throws Exception {
@@ -209,6 +221,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
 
         // Create a new record, increment the day by one and validate
         date = date.plusDays(1);
+        final String thirdDateSuffix = rotateFormatter.format(date);
         final String thirdDay = formatter.format(date);
         record = createLogRecord(Level.INFO, "Date: %s", thirdDay);
         record.setMillis(date.toInstant().toEpochMilli());
@@ -233,5 +246,18 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
             Assert.fail("Unknown archive suffix: " + archiveSuffix);
         }
         compareArchiveContents(rotated1, rotated2, logFile.getFileName().toString());
+
+        date = date.plusDays(1);
+        final String fourthDay = formatter.format(date);
+        record = createLogRecord(Level.INFO, "Date: %s", fourthDay);
+        record.setMillis(date.toInstant().toEpochMilli());
+        handler.publish(record);
+
+        // There are three files, not four files.
+        final Path rotated3 = logDir.resolve(FILENAME + thirdDateSuffix + archiveSuffix);
+        Assert.assertTrue(Files.exists(logFile));
+        Assert.assertFalse(Files.exists(rotated1));
+        Assert.assertTrue(Files.exists(rotated2));
+        Assert.assertTrue(Files.exists(rotated3));
     }
 }
