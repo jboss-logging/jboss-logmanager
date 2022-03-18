@@ -28,7 +28,7 @@ import java.util.Arrays;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings({"unused", "WeakerAccess"})
-final class ByteStringBuilder {
+final class ByteStringBuilder implements Appendable {
 
     private static final int INVALID_US_ASCII_CODE_POINT = 0x3f;
     private static final int INVALID_UTF_8_CODE_POINT = 0xfffd;
@@ -41,6 +41,34 @@ final class ByteStringBuilder {
 
     public ByteStringBuilder append(final boolean b) {
         appendLatin1(Boolean.toString(b));
+        return this;
+    }
+
+    @Override
+    public Appendable append(CharSequence csq) {
+        return append(csq, 0, csq.length());
+    }
+
+    @Override
+    public Appendable append(CharSequence csq, int start, int end) {
+        int c;
+        int i = start;
+        while (i < end - start) {
+            c = csq.charAt(start + i++);
+            if (Character.isHighSurrogate((char) c)) {
+                if (i < end - start) {
+                    char t = csq.charAt(start + i++);
+                    if (!Character.isLowSurrogate(t)) {
+                        c = INVALID_UTF_8_CODE_POINT;
+                    } else {
+                        c = Character.toCodePoint((char) c, t);
+                    }
+                } else {
+                    c = INVALID_UTF_8_CODE_POINT;
+                }
+            }
+            appendUtf8Raw(c);
+        }
         return this;
     }
 
