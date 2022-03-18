@@ -34,13 +34,13 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import io.smallrye.common.constraint.Assert;
+import io.smallrye.common.expression.Expression;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.StandardOutputStreams;
 import org.jboss.logmanager.ext.filters.FilterExpressions;
 import org.jboss.logmanager.filters.AcceptAllFilter;
 import org.jboss.logmanager.filters.DenyAllFilter;
-import org.wildfly.common.Assert;
-import org.wildfly.common.expression.Expression;
 
 /**
  * A utility to parse a {@code logging.properties} file and configure a {@link LogContext}.

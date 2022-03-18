@@ -19,7 +19,7 @@
 
 package org.jboss.logmanager;
 
-import org.wildfly.common.Assert;
+import io.smallrye.common.constraint.Assert;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;

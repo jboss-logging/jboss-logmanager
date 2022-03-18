@@ -19,9 +19,9 @@
 
 package org.jboss.logmanager;
 
-import org.wildfly.common.Assert;
-import org.wildfly.common.ref.Reference;
-import org.wildfly.common.ref.References;
+import io.smallrye.common.constraint.Assert;
+import io.smallrye.common.ref.Reference;
+import io.smallrye.common.ref.References;
 
 import java.security.AccessController;
 import java.security.Permission;

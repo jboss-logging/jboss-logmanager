@@ -43,7 +43,6 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
-import org.wildfly.common.os.Process;
 
 import static java.time.temporal.ChronoField.*;
 
@@ -471,7 +470,7 @@ public class SyslogHandler extends ExtHandler {
         this.serverAddress = serverAddress;
         this.port = port;
         this.facility = facility;
-        final long pid = Process.getProcessId();
+        final long pid = io.smallrye.common.os.Process.getProcessId();
         this.pid = (pid != -1 ? Long.toString(pid) : null);
         this.appName = "java";
         this.hostname = checkPrintableAscii("host name", hostname);

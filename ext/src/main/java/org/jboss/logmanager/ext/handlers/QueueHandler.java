@@ -26,9 +26,9 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
+import io.smallrye.common.constraint.Assert;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
-import org.wildfly.common.Assert;
 
 /**
  * A queue handler which retains the last few messages logged.  The handler can be used as-is to remember recent

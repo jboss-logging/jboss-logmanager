@@ -19,10 +19,10 @@
 
 package org.jboss.logmanager;
 
-import org.wildfly.common.Assert;
-import org.wildfly.common.ref.PhantomReference;
-import org.wildfly.common.ref.Reaper;
-import org.wildfly.common.ref.Reference;
+import io.smallrye.common.constraint.Assert;
+import io.smallrye.common.ref.PhantomReference;
+import io.smallrye.common.ref.Reaper;
+import io.smallrye.common.ref.Reference;
 
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
