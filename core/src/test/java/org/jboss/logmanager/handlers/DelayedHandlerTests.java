@@ -44,7 +44,7 @@ import org.wildfly.common.cpu.ProcessorInfo;
  */
 public class DelayedHandlerTests {
 
-    private static final int ITERATIONS = Integer.parseInt(System.getProperty("org.jboss.bootstrap.test.iterations", "1000"));
+    private static final int ITERATIONS = Integer.parseInt(System.getProperty("org.jboss.bootstrap.test.iterations", "190"));
 
     @After
     public void cleanup() {

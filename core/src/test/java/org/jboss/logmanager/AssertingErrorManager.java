@@ -81,7 +81,9 @@ public class AssertingErrorManager extends ErrorManager {
                     PrintWriter pw = new PrintWriter(sw)
             ) {
                 pw.printf("LogManager error of type %s: %s%n", codeStr, msg);
-                ex.printStackTrace(pw);
+                if (ex != null) {
+                    ex.printStackTrace(pw);
+                }
                 Assert.fail(sw.toString());
             } catch (IOException e) {
                 // This shouldn't happen, but just fail if it does
