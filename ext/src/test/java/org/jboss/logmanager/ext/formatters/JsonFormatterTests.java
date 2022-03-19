@@ -175,7 +175,7 @@ public class JsonFormatterTests extends AbstractTest {
         Assert.assertEquals(record.getLoggerName(), getString(json, Key.LOGGER_NAME));
         compareMaps(record.getMdcCopy(), getMap(json, Key.MDC));
         Assert.assertEquals(record.getFormattedMessage(), getString(json, Key.MESSAGE));
-        Assert.assertEquals(DATE_TIME_FORMATTER.format(Instant.ofEpochMilli(record.getMillis())),
+        Assert.assertEquals(DATE_TIME_FORMATTER.format(record.getInstant()),
                 getString(json, Key.TIMESTAMP));
         Assert.assertEquals(record.getNdc(), getString(json, Key.NDC));
         // Assert.assertEquals(record.getResourceBundle());

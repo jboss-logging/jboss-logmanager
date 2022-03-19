@@ -237,7 +237,7 @@ public class XmlFormatterTests extends AbstractTest {
                 } else if (localName.equals(Key.THREAD_NAME.getKey())) {
                     Assert.assertEquals(record.getThreadName(), getString(reader));
                 } else if (localName.equals(Key.TIMESTAMP.getKey())) {
-                    final String dateTime = DATE_TIME_FORMATTER.format(Instant.ofEpochMilli(record.getMillis()));
+                    final String dateTime = DATE_TIME_FORMATTER.format(record.getInstant());
                     Assert.assertEquals(dateTime, getString(reader));
                 }
             }

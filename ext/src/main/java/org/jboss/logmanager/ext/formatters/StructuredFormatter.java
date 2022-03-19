@@ -214,7 +214,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
             before(generator, record);
 
             // Add the default structure
-            generator.add(getKey(Key.TIMESTAMP), dateTimeFormatter.format(Instant.ofEpochMilli(record.getMillis())))
+            generator.add(getKey(Key.TIMESTAMP), dateTimeFormatter.format(record.getInstant()))
                     .add(getKey(Key.SEQUENCE), record.getSequenceNumber())
                     .add(getKey(Key.LOGGER_CLASS_NAME), record.getLoggerClassName())
                     .add(getKey(Key.LOGGER_NAME), record.getLoggerName())
