@@ -113,6 +113,7 @@ public class ExtLogRecord extends LogRecord {
             sourceModuleVersion = original.sourceModuleVersion;
         }
         formatStyle = original.formatStyle;
+        marker = original.marker;
         mdcCopy = original.mdcCopy;
         ndc = original.ndc;
         loggerClassName = original.loggerClassName;
