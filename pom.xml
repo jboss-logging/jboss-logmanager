@@ -33,7 +33,7 @@
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
-        <version>36</version>
+        <version>38</version>
     </parent>
 
     <licenses>
@@ -53,13 +53,13 @@
     <properties>
         <!-- Dependency versions -->
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
-        <version.org.byteman>4.0.6</version.org.byteman>
+        <version.org.byteman>4.0.17</version.org.byteman>
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.logging.jboss-logging>3.4.0.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.modules.jboss-modules>1.10.1.Final</version.org.jboss.modules.jboss-modules>
         <version.org.kohsuke.metainf-services>1.8</version.org.kohsuke.metainf-services>
         <version.org.wildfly.common.wildfly-common>1.5.1.Final</version.org.wildfly.common.wildfly-common>
-        <version.junit.junit>4.12</version.junit.junit>
+        <version.junit.junit>4.13.2</version.junit.junit>
 
         <!-- Test properties -->
         <org.jboss.test.address>127.0.0.1</org.jboss.test.address>
