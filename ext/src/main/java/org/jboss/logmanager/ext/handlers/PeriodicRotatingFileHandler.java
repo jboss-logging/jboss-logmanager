@@ -23,12 +23,15 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.NoSuchFileException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.text.SimpleDateFormat;
-import java.util.Calendar;
-import java.util.Date;
+import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 import java.util.TimeZone;
 import java.util.logging.ErrorManager;
 
@@ -42,10 +45,10 @@ import org.jboss.logmanager.handlers.FileHandler;
 public class PeriodicRotatingFileHandler extends FileHandler {
 
     private final AccessControlContext acc = AccessController.getContext();
-    private SimpleDateFormat format;
+    private DateTimeFormatter format;
     private String nextSuffix;
     private Period period = Period.NEVER;
-    private long nextRollover = Long.MAX_VALUE;
+    private Instant nextRollover = Instant.MAX;
     private TimeZone timeZone = TimeZone.getDefault();
     private SuffixRotator suffixRotator = SuffixRotator.EMPTY;
 
@@ -109,22 +112,22 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         synchronized (outputLock) {
             super.setFile(file);
             if (format != null && file != null && file.lastModified() > 0) {
-                calcNextRollover(file.lastModified());
+                calcNextRollover(Instant.ofEpochMilli(file.lastModified()));
             }
         }
     }
 
     /** {@inheritDoc}  This implementation checks to see if the scheduled rollover time has yet occurred. */
     protected void preWrite(final ExtLogRecord record) {
-        final long recordMillis = record.getMillis();
-        if (recordMillis >= nextRollover) {
+        Instant recordInstant = record.getInstant();
+        if (! recordInstant.isBefore(nextRollover)) {
             rollOver();
-            calcNextRollover(recordMillis);
+            calcNextRollover(recordInstant);
         }
     }
 
     /**
-     * Set the suffix string.  The string is in a format which can be understood by {@link SimpleDateFormat}.
+     * Set the suffix string.  The string is in a format which can be understood by {@link DateTimeFormatter}.
      * The period of the rotation is automatically calculated based on the suffix.
      * <p>
      * If the suffix ends with {@code .gz} or {@code .zip} the file will be compressed on rotation.
@@ -136,8 +139,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     public void setSuffix(String suffix) throws IllegalArgumentException {
         final SuffixRotator suffixRotator = SuffixRotator.parse(acc, suffix);
         final String dateSuffix = suffixRotator.getDatePattern();
-        final SimpleDateFormat format = new SimpleDateFormat(dateSuffix);
-        format.setTimeZone(timeZone);
+        final DateTimeFormatter format = DateTimeFormatter.ofPattern(dateSuffix).withZone(timeZone.toZoneId());
         final int len = dateSuffix.length();
         Period period = Period.NEVER;
         for (int i = 0; i < len; i ++) {
@@ -165,12 +167,12 @@ public class PeriodicRotatingFileHandler extends FileHandler {
             this.format = format;
             this.period = period;
             this.suffixRotator = suffixRotator;
-            final long now;
+            final Instant now;
             final File file = getFile();
             if (file != null && file.lastModified() > 0) {
-                now = file.lastModified();
+                now = Instant.ofEpochMilli(file.lastModified());
             } else {
-                now = System.currentTimeMillis();
+                now = Instant.now();
             }
             calcNextRollover(now);
         }
@@ -212,73 +214,40 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         }
     }
 
-    private void calcNextRollover(final long fromTime) {
+    private void calcNextRollover(final Instant fromTime) {
         if (period == Period.NEVER) {
-            nextRollover = Long.MAX_VALUE;
+            nextRollover = Instant.MAX;
             return;
         }
-        nextSuffix = format.format(new Date(fromTime));
-        final Calendar calendar = Calendar.getInstance(timeZone);
-        calendar.setTimeInMillis(fromTime);
+        ZonedDateTime zdt = ZonedDateTime.ofInstant(fromTime, timeZone.toZoneId());
+        nextSuffix = zdt.format(format);
         final Period period = this.period;
-        // clear out less-significant fields
+        // round up to the next field depending on the period
         switch (period) {
             default:
             case YEAR:
-                calendar.set(Calendar.MONTH, 0);
-            case MONTH:
-                // Needs to be set to the first day of the month
-                calendar.set(Calendar.DAY_OF_MONTH, 1);
-                calendar.clear(Calendar.WEEK_OF_MONTH);
-            case WEEK:
-                if (period == Period.WEEK) {
-                    calendar.set(Calendar.DAY_OF_WEEK, calendar.getFirstDayOfWeek());
-                } else {
-                    calendar.clear(Calendar.DAY_OF_WEEK);
-                }
-                calendar.clear(Calendar.DAY_OF_WEEK_IN_MONTH);
-            case DAY:
-                calendar.set(Calendar.HOUR_OF_DAY, 0);
-            case HALF_DAY:
-                if (period == Period.HALF_DAY) {
-                    calendar.set(Calendar.HOUR, 0);
-                } else {
-                    //We want both HOUR_OF_DAY and (HOUR + AM_PM) to be zeroed out
-                    //This should ensure the hour is truly zeroed out
-                    calendar.set(Calendar.HOUR, 0);
-                    calendar.set(Calendar.AM_PM, 0);
-                }
-            case HOUR:
-                calendar.set(Calendar.MINUTE, 0);
-            case MINUTE:
-                calendar.set(Calendar.SECOND, 0);
-                calendar.set(Calendar.MILLISECOND, 0);
-        }
-        // increment the relevant field
-        switch (period) {
-            case YEAR:
-                calendar.add(Calendar.YEAR, 1);
+                zdt = zdt.truncatedTo(ChronoUnit.YEARS).plusYears(1);
                 break;
             case MONTH:
-                calendar.add(Calendar.MONTH, 1);
+                zdt = zdt.truncatedTo(ChronoUnit.MONTHS).plusYears(1);
                 break;
             case WEEK:
-                calendar.add(Calendar.WEEK_OF_YEAR, 1);
+                zdt = zdt.truncatedTo(ChronoUnit.WEEKS).plusWeeks(1);
                 break;
             case DAY:
-                calendar.add(Calendar.DAY_OF_MONTH, 1);
+                zdt = zdt.truncatedTo(ChronoUnit.DAYS).plusDays(1);
                 break;
             case HALF_DAY:
-                calendar.add(Calendar.AM_PM, 1);
+                zdt = zdt.truncatedTo(ChronoUnit.HALF_DAYS).plusHours(12);
                 break;
             case HOUR:
-                calendar.add(Calendar.HOUR_OF_DAY, 1);
+                zdt = zdt.truncatedTo(ChronoUnit.HOURS).plusHours(1);
                 break;
             case MINUTE:
-                calendar.add(Calendar.MINUTE, 1);
+                zdt = zdt.truncatedTo(ChronoUnit.MINUTES).plusMinutes(1);
                 break;
         }
-        nextRollover = calendar.getTimeInMillis();
+        nextRollover = zdt.toInstant();
     }
 
     /**

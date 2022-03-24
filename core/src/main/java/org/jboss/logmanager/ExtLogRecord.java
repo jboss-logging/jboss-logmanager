@@ -98,7 +98,7 @@ public class ExtLogRecord extends LogRecord {
         super(original.getLevel(), original.getMessage());
         // LogRecord fields
         setLoggerName(original.getLoggerName());
-        setMillis(original.getMillis());
+        setInstant(original.getInstant());
         setParameters(original.getParameters());
         setResourceBundle(original.getResourceBundle());
         setResourceBundleName(original.getResourceBundleName());

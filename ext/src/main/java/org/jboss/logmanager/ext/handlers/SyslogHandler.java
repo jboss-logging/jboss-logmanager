@@ -26,12 +26,14 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
-import java.text.DateFormatSymbols;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
-import java.util.Calendar;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.format.TextStyle;
 import java.util.Collection;
-import java.util.Locale;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -42,6 +44,8 @@ import javax.net.ssl.SSLSocketFactory;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.wildfly.common.os.Process;
+
+import static java.time.temporal.ChronoField.*;
 
 /**
  * A syslog handler for logging to syslogd.
@@ -1117,6 +1121,23 @@ public class SyslogHandler extends ExtHandler {
         return facility.octal | severity.code;
     }
 
+    private static final DateTimeFormatter RFC5424_DATE = new DateTimeFormatterBuilder()
+            .appendValue(YEAR, 4)
+            .appendLiteral('-')
+            .appendValue(MONTH_OF_YEAR, 2)
+            .appendLiteral('-')
+            .appendValue(DAY_OF_MONTH, 2)
+            .appendLiteral('T')
+            .appendValue(HOUR_OF_DAY, 2)
+            .appendLiteral(':')
+            .appendValue(MINUTE_OF_HOUR, 2)
+            .appendLiteral(':')
+            .appendValue(SECOND_OF_MINUTE, 2)
+            .appendLiteral('.')
+            .appendValue(MILLI_OF_SECOND, 3)
+            .appendOffset("+HH:MM", "+00:00")
+            .toFormatter();
+
     protected byte[] createRFC5424Header(final ExtLogRecord record) throws IOException {
         final ByteStringBuilder buffer = new ByteStringBuilder(256);
         // Set the property
@@ -1124,70 +1145,8 @@ public class SyslogHandler extends ExtHandler {
         // Set the version
         buffer.appendUSASCII("1 ");
         // Set the time
-        final long millis = record.getMillis();
-        if (millis <= 0) {
-            buffer.appendUSASCII(NILVALUE_SP);
-        } else {
-            // The follow can be changed to use a formatter with Java 7 pattern is yyyy-MM-dd'T'hh:mm:ss.SSSXXX
-            final Calendar cal = Calendar.getInstance();
-            cal.setTimeInMillis(millis);
-            final int month = cal.get(Calendar.MONTH);
-            final int day = cal.get(Calendar.DAY_OF_MONTH);
-            final int hours = cal.get(Calendar.HOUR_OF_DAY);
-            final int minutes = cal.get(Calendar.MINUTE);
-            final int seconds = cal.get(Calendar.SECOND);
-            buffer.append(cal.get(Calendar.YEAR)).append('-');
-            if (month < Calendar.OCTOBER) {
-                buffer.append(0);
-            }
-            buffer.append(month + 1).append('-');
-            if (day < 10) {
-                buffer.append(0);
-            }
-            buffer.append(day).append('T');
-            if (hours < 10) {
-                buffer.append(0);
-            }
-            buffer.append(hours).append(':');
-            if (minutes < 10) {
-                buffer.append(0);
-            }
-            buffer.append(minutes).append(':');
-            if (seconds < 10) {
-                buffer.append(0);
-            }
-            buffer.append(seconds).append('.');
-            final int milliseconds = cal.get(Calendar.MILLISECOND);
-            if (milliseconds < 10) {
-                buffer.append(0).append(0);
-            } else if (milliseconds < 100) {
-                buffer.append(0);
-            }
-            buffer.append(milliseconds);
-            final int tz = cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET);
-            if (tz == 0) {
-                buffer.append("+00:00");
-            } else {
-                int tzMinutes = tz / 60000; // milliseconds to minutes
-                if (tzMinutes < 0) {
-                    tzMinutes = -tzMinutes;
-                    buffer.append('-');
-                } else {
-                    buffer.append('+');
-                }
-                final int tzHour = tzMinutes / 60; // minutes to hours
-                tzMinutes -= tzHour * 60; // subtract hours from minutes in minutes
-                if (tzHour < 10) {
-                    buffer.append(0);
-                }
-                buffer.append(tzHour).append(':');
-                if (tzMinutes < 10) {
-                    buffer.append(0);
-                }
-                buffer.append(tzMinutes);
-            }
-            buffer.append(' ');
-        }
+        RFC5424_DATE.formatTo(ZonedDateTime.ofInstant(record.getInstant(), ZoneId.systemDefault()), buffer);
+        buffer.append(' ');
         // Set the host name
         final String recordHostName = record.getHostName();
         if (hostname != null) {
@@ -1240,38 +1199,27 @@ public class SyslogHandler extends ExtHandler {
         return buffer.toArray();
     }
 
+    private static final DateTimeFormatter RFC3164_DATE = new DateTimeFormatterBuilder()
+            .parseCaseInsensitive()
+            .appendText(MONTH_OF_YEAR, TextStyle.SHORT)
+            .appendLiteral(' ')
+            .padNext(2)
+            .appendValue(DAY_OF_MONTH)
+            .appendLiteral(' ')
+            .appendValue(HOUR_OF_DAY, 2)
+            .appendLiteral(':')
+            .appendValue(MINUTE_OF_HOUR, 2)
+            .appendLiteral(':')
+            .appendValue(SECOND_OF_MINUTE, 2)
+            .toFormatter();
+
     protected byte[] createRFC3164Header(final ExtLogRecord record) throws IOException {
         final ByteStringBuilder buffer = new ByteStringBuilder(256);
         // Set the property
         buffer.append('<').append(calculatePriority(record.getLevel(), facility)).append('>');
 
         // Set the time
-        final long millis = record.getMillis();
-        final Calendar cal = Calendar.getInstance();
-        cal.setTimeInMillis((millis <= 0 ? System.currentTimeMillis() : millis));
-        final int month = cal.get(Calendar.MONTH);
-        final int day = cal.get(Calendar.DAY_OF_MONTH);
-        final int hours = cal.get(Calendar.HOUR_OF_DAY);
-        final int minutes = cal.get(Calendar.MINUTE);
-        final int seconds = cal.get(Calendar.SECOND);
-        final DateFormatSymbols formatSymbols = DateFormatSymbols.getInstance(Locale.ENGLISH);
-        buffer.appendUSASCII(formatSymbols.getShortMonths()[month]).append(' ');
-        if (day < 10) {
-            buffer.append(' ');
-        }
-        buffer.append(day).append(' ');
-        if (hours < 10) {
-            buffer.append(0);
-        }
-        buffer.append(hours).append(':');
-        if (minutes < 10) {
-            buffer.append(0);
-        }
-        buffer.append(minutes).append(':');
-        if (seconds < 10) {
-            buffer.append(0);
-        }
-        buffer.append(seconds);
+        RFC3164_DATE.formatTo(ZonedDateTime.ofInstant(record.getInstant(), ZoneId.systemDefault()), buffer);
         buffer.append(' ');
 
         // Set the host name

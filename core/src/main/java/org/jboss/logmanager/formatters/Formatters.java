@@ -25,10 +25,11 @@ import static java.security.AccessController.doPrivileged;
 
 import java.io.PrintWriter;
 import java.security.PrivilegedAction;
-import java.text.SimpleDateFormat;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayDeque;
 import java.util.Collections;
-import java.util.Date;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Locale;
@@ -443,16 +444,10 @@ public final class Formatters {
     public static FormatStep dateFormatStep(final TimeZone timeZone, final String formatString, final boolean leftJustify, final int minimumWidth,
                                             final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
-            private final ThreadLocal<SimpleDateFormat> holder = new ThreadLocal<SimpleDateFormat>() {
-                protected SimpleDateFormat initialValue() {
-                    final SimpleDateFormat dateFormat = new SimpleDateFormat(formatString == null ? "yyyy-MM-dd HH:mm:ss,SSS" : formatString);
-                    dateFormat.setTimeZone(timeZone);
-                    return dateFormat;
-                }
-            };
+            final DateTimeFormatter dtf = DateTimeFormatter.ofPattern(formatString == null ? "yyyy-MM-DD HH:mm:ss,SSS" : formatString);
 
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
-                builder.append(holder.get().format(new Date(record.getMillis())));
+                dtf.formatTo(record.getInstant().atZone(timeZone.toZoneId()), builder);
             }
         };
     }
@@ -1029,7 +1024,7 @@ public final class Formatters {
     public static FormatStep relativeTimeFormatStep(final long baseTime, final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
-                builder.append(record.getMillis() - baseTime);
+                builder.append(Duration.between(Instant.ofEpochMilli(baseTime), record.getInstant()).toMillis());
             }
         };
     }

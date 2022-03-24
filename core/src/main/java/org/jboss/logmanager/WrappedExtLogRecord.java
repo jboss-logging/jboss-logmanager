@@ -19,6 +19,7 @@
 
 package org.jboss.logmanager;
 
+import java.time.Instant;
 import java.util.ResourceBundle;
 
 import java.util.logging.Level;
@@ -177,8 +178,18 @@ class WrappedExtLogRecord extends ExtLogRecord {
         return orig.getMillis();
     }
 
+    @Deprecated
+    @SuppressWarnings("deprecation")
     public void setMillis(final long millis) {
         orig.setMillis(millis);
+    }
+
+    public Instant getInstant() {
+        return orig.getInstant();
+    }
+
+    public void setInstant(Instant instant) {
+        orig.setInstant(instant);
     }
 
     public Throwable getThrown() {
