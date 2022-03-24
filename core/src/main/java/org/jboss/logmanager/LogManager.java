@@ -84,7 +84,6 @@ public final class LogManager extends java.util.logging.LogManager {
      * well.
      */
     public LogManager() {
-        AccessController.doPrivileged(new LogLevelInitTask());
     }
 
     // Configuration
