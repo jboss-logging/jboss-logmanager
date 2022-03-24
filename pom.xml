@@ -59,7 +59,7 @@
         <version.org.jboss.modules.jboss-modules>1.10.1.Final</version.org.jboss.modules.jboss-modules>
         <version.org.kohsuke.metainf-services>1.8</version.org.kohsuke.metainf-services>
         <version.org.wildfly.common.wildfly-common>1.5.1.Final</version.org.wildfly.common.wildfly-common>
-        <version.junit.junit>4.12</version.junit.junit>
+        <version.junit.junit>4.13.2</version.junit.junit>
 
         <!-- Test properties -->
         <org.jboss.test.address>127.0.0.1</org.jboss.test.address>
