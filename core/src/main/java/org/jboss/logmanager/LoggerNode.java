@@ -24,6 +24,9 @@ import org.wildfly.common.ref.PhantomReference;
 import org.wildfly.common.ref.Reaper;
 import org.wildfly.common.ref.Reference;
 
+import java.lang.reflect.UndeclaredThrowableException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
@@ -31,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -46,6 +50,7 @@ final class LoggerNode implements AutoCloseable {
             reference.getAttachment().activeLoggers.remove(reference);
         }
     };
+    private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
 
     /**
      * The log context.
@@ -386,7 +391,26 @@ final class LoggerNode implements AutoCloseable {
         } catch (VirtualMachineError e) {
             throw e;
         } catch (Throwable t) {
-            // todo - error handler
+            ErrorManager errorManager = AccessController.doPrivileged(new PrivilegedAction<ErrorManager>() {
+                @Override
+                public ErrorManager run() {
+                    return handler.getErrorManager();
+                }
+            });
+            if (errorManager != null) {
+                Exception e;
+                if (t instanceof Exception) {
+                    e = (Exception) t;
+                } else {
+                    e = new UndeclaredThrowableException(t);
+                    e.setStackTrace(EMPTY_STACK);
+                }
+                try {
+                    errorManager.error("Handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
+                } catch (Throwable t2) {
+                    StandardOutputStreams.printError(t2, "Handler.reportError caught an exception");
+                }
+            }
         }
         if (useParentHandlers) {
             final LoggerNode parent = this.parent;
