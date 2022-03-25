@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2017 Red Hat, Inc., and individual contributors
+ * Copyright 2022 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,10 +19,16 @@
 
 package org.jboss.logmanager;
 
-import java.security.AccessController;
+import static java.security.AccessController.doPrivileged;
+
+import java.lang.module.ModuleDescriptor;
 import java.security.PrivilegedAction;
+import java.util.EnumSet;
+import java.util.Iterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import org.jboss.modules.Module;
 import org.jboss.modules.Version;
@@ -31,91 +37,61 @@ import org.jboss.modules.Version;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  */
 final class JDKSpecific {
-    private JDKSpecific() {}
 
-    private static final Gateway GATEWAY;
+    static final StackWalker WALKER = doPrivileged(new GetStackWalkerAction());
+
+    private JDKSpecific() {
+    }
+
     private static final boolean JBOSS_MODULES;
 
     static {
-        GATEWAY = AccessController.doPrivileged(new PrivilegedAction<Gateway>() {
-            public Gateway run() {
-                return new Gateway();
-            }
-        });
         boolean jbossModules = false;
         try {
+            //noinspection ResultOfMethodCallIgnored
             Module.getStartTime();
             jbossModules = true;
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
         JBOSS_MODULES = jbossModules;
     }
 
-    static final class Gateway extends SecurityManager {
-        protected Class<?>[] getClassContext() {
-            return super.getClassContext();
-        }
-    }
-
     static Class<?> findCallingClass(Set<ClassLoader> rejectClassLoaders) {
-        for (Class<?> caller : GATEWAY.getClassContext()) {
-            final ClassLoader classLoader = caller.getClassLoader();
-            if (classLoader != null && ! rejectClassLoaders.contains(classLoader)) {
-                return caller;
-            }
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            return doPrivileged(new FindCallingClassAction(rejectClassLoaders));
+        } else {
+            return WALKER.walk(new FindFirstWalkFunction(rejectClassLoaders));
         }
-        return null;
     }
 
-    static LogContext logContextFinder(Set<ClassLoader> rejectClassLoaders, final Function<ClassLoader, LogContext> finder) {
-        for (Class<?> caller : GATEWAY.getClassContext()) {
-            final ClassLoader classLoader = caller.getClassLoader();
-            if (classLoader != null && !rejectClassLoaders.contains(classLoader)) {
-                final LogContext result = finder.apply(classLoader);
-                if (result != null) {
-                    return result;
-                }
-            }
+    static LogContext logContextFinder(Set<ClassLoader> rejectClassLoaders,
+                                       final Function<ClassLoader, LogContext> finder) {
+        final SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            return doPrivileged(new FindCallingClassesAction(rejectClassLoaders, finder));
+        } else {
+            return WALKER.walk(new FindAllWalkFunction(rejectClassLoaders, finder));
         }
-        return null;
     }
 
     static void calculateCaller(ExtLogRecord logRecord) {
-        final String loggerClassName = logRecord.getLoggerClassName();
-        final StackTraceElement[] stackTrace = new Throwable().getStackTrace();
-        final Class<?>[] classes = GATEWAY.getClassContext();
-        // The stack trace may be missing classes, but the class context is not, so if we find a mismatch, we skip the class context items.
-        int i = 1, j = 0;
-        Class<?> clazz = classes[i++];
-        StackTraceElement element = stackTrace[j++];
-        boolean found = false;
-        for (;;) {
-            if (clazz.getName().equals(element.getClassName())) {
-                if (clazz.getName().equals(loggerClassName)) {
-                    // next entry could be the one we want!
-                    found = true;
+        WALKER.walk(new CallerCalcFunction(logRecord));
+    }
+
+    private static void calculateJdkModule(final ExtLogRecord logRecord, final Class<?> clazz) {
+        final java.lang.Module module = clazz.getModule();
+        if (module != null) {
+            logRecord.setSourceModuleName(module.getName());
+            final ModuleDescriptor descriptor = module.getDescriptor();
+            if (descriptor != null) {
+                final Optional<ModuleDescriptor.Version> optional = descriptor.version();
+                if (optional.isPresent()) {
+                    logRecord.setSourceModuleVersion(optional.get().toString());
                 } else {
-                    if (found) {
-                        logRecord.setSourceClassName(element.getClassName());
-                        logRecord.setSourceMethodName(element.getMethodName());
-                        logRecord.setSourceFileName(element.getFileName());
-                        logRecord.setSourceLineNumber(element.getLineNumber());
-                        if (JBOSS_MODULES) {
-                            calculateModule(logRecord, clazz);
-                        }
-                        return;
-                    }
+                    logRecord.setSourceModuleVersion(null);
                 }
-                if (j == stackTrace.length) {
-                    logRecord.setUnknownCaller();
-                    return;
-                }
-                element = stackTrace[j ++];
             }
-            if (i == classes.length) {
-                logRecord.setUnknownCaller();
-                return;
-            }
-            clazz = classes[i ++];
         }
     }
 
@@ -129,6 +105,125 @@ final class JDKSpecific {
             } else {
                 logRecord.setSourceModuleVersion(null);
             }
+        } else {
+            calculateJdkModule(logRecord, clazz);
+        }
+    }
+
+    private static final class CallerCalcFunction implements Function<Stream<StackWalker.StackFrame>, Void> {
+        private final ExtLogRecord logRecord;
+
+        CallerCalcFunction(final ExtLogRecord logRecord) {
+            this.logRecord = logRecord;
+        }
+
+        public Void apply(final Stream<StackWalker.StackFrame> stream) {
+            final String loggerClassName = logRecord.getLoggerClassName();
+            final Iterator<StackWalker.StackFrame> iterator = stream.iterator();
+            boolean found = false;
+            while (iterator.hasNext()) {
+                final StackWalker.StackFrame frame = iterator.next();
+                final Class<?> clazz = frame.getDeclaringClass();
+                if (clazz.getName().equals(loggerClassName)) {
+                    // next entry could be the one we want!
+                    found = true;
+                } else if (found) {
+                    logRecord.setSourceClassName(frame.getClassName());
+                    logRecord.setSourceMethodName(frame.getMethodName());
+                    logRecord.setSourceFileName(frame.getFileName());
+                    logRecord.setSourceLineNumber(frame.getLineNumber());
+                    if (JBOSS_MODULES) {
+                        calculateModule(logRecord, clazz);
+                    } else {
+                        calculateJdkModule(logRecord, clazz);
+                    }
+                    return null;
+                }
+            }
+            logRecord.setUnknownCaller();
+            return null;
+        }
+    }
+
+    private static final class GetStackWalkerAction implements PrivilegedAction<StackWalker> {
+        GetStackWalkerAction() {
+        }
+
+        public StackWalker run() {
+            return StackWalker.getInstance(EnumSet.of(StackWalker.Option.RETAIN_CLASS_REFERENCE));
+        }
+    }
+
+    private static final class FindCallingClassAction implements PrivilegedAction<Class<?>> {
+        private final Set<ClassLoader> rejectClassLoaders;
+
+        FindCallingClassAction(final Set<ClassLoader> rejectClassLoaders) {
+            this.rejectClassLoaders = rejectClassLoaders;
+        }
+
+        public Class<?> run() {
+            return WALKER.walk(new FindFirstWalkFunction(rejectClassLoaders));
+        }
+    }
+
+    private static final class FindCallingClassesAction implements PrivilegedAction<LogContext> {
+        private final Set<ClassLoader> rejectClassLoaders;
+        private final Function<ClassLoader, LogContext> finder;
+
+        FindCallingClassesAction(final Set<ClassLoader> rejectClassLoaders,
+                                 final Function<ClassLoader, LogContext> finder) {
+            this.rejectClassLoaders = rejectClassLoaders;
+            this.finder = finder;
+        }
+
+        public LogContext run() {
+            return WALKER.walk(new FindAllWalkFunction(rejectClassLoaders, finder));
+        }
+    }
+
+    private static final class FindFirstWalkFunction implements Function<Stream<StackWalker.StackFrame>, Class<?>> {
+        private final Set<ClassLoader> rejectClassLoaders;
+
+        FindFirstWalkFunction(final Set<ClassLoader> rejectClassLoaders) {
+            this.rejectClassLoaders = rejectClassLoaders;
+        }
+
+        public Class<?> apply(final Stream<StackWalker.StackFrame> stream) {
+            final Iterator<StackWalker.StackFrame> iterator = stream.iterator();
+            while (iterator.hasNext()) {
+                final Class<?> clazz = iterator.next().getDeclaringClass();
+                final ClassLoader classLoader = clazz.getClassLoader();
+                if (!rejectClassLoaders.contains(classLoader)) {
+                    return clazz;
+                }
+            }
+            return null;
+        }
+    }
+
+    private static final class FindAllWalkFunction implements Function<Stream<StackWalker.StackFrame>, LogContext> {
+        private final Set<ClassLoader> rejectClassLoaders;
+        private final Function<ClassLoader, LogContext> finder;
+
+        FindAllWalkFunction(final Set<ClassLoader> rejectClassLoaders, final Function<ClassLoader, LogContext> finder) {
+            this.rejectClassLoaders = rejectClassLoaders;
+            this.finder = finder;
+        }
+
+        @Override
+        public LogContext apply(final Stream<StackWalker.StackFrame> stream) {
+            final Iterator<StackWalker.StackFrame> iterator = stream.iterator();
+            while (iterator.hasNext()) {
+                final Class<?> clazz = iterator.next().getDeclaringClass();
+                final ClassLoader classLoader = clazz.getClassLoader();
+                if (classLoader != null && !rejectClassLoaders.contains(classLoader)) {
+                    final LogContext result = finder.apply(classLoader);
+                    if (result != null) {
+                        return result;
+                    }
+                }
+            }
+            return null;
         }
     }
 }
