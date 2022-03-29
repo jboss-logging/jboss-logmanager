@@ -19,6 +19,8 @@
 
 package org.jboss.logmanager;
 
+import io.smallrye.common.net.HostName;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -28,9 +30,6 @@ import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
 import java.util.logging.LogRecord;
-
-import org.wildfly.common.net.HostName;
-import org.wildfly.common.os.Process;
 
 /**
  * An extended log record, which includes additional information including MDC/NDC and correct
@@ -85,8 +84,8 @@ public class ExtLogRecord extends LogRecord {
         ndc = NDC.get();
         threadName = Thread.currentThread().getName();
         hostName = HostName.getQualifiedHostName();
-        processName = Process.getProcessName();
-        processId = Process.getProcessId();
+        processName = io.smallrye.common.os.Process.getProcessName();
+        processId = io.smallrye.common.os.Process.getProcessId();
     }
 
     /**

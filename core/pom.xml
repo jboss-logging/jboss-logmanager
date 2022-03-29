@@ -50,8 +50,20 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.common</groupId>
-            <artifactId>wildfly-common</artifactId>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-constraint</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-net</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-os</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-ref</artifactId>
         </dependency>
 
         <!-- test dependencies -->
@@ -60,6 +72,12 @@
         <dependency>
             <groupId>jakarta.json</groupId>
             <artifactId>jakarta.json-api</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <!-- Used by DelayedHandlerTests -->
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-cpu</artifactId>
             <scope>test</scope>
         </dependency>
         <!-- JSON implementation -->

@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import io.smallrye.common.cpu.ProcessorInfo;
 import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
@@ -37,7 +38,6 @@ import org.jboss.logmanager.LogContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
-import org.wildfly.common.cpu.ProcessorInfo;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>

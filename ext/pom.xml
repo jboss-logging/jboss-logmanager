@@ -65,8 +65,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.wildfly.common</groupId>
-            <artifactId>wildfly-common</artifactId>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-constraint</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-expression</artifactId>
         </dependency>
 
         <!-- Test dependencies -->
