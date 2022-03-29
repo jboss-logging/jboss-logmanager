@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2018 Red Hat, Inc., and individual contributors
+ * Copyright 2022 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,14 +17,12 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext;
+package org.jboss.logmanager.configuration;
 
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Properties;
 import java.util.function.Supplier;
 import java.util.logging.ErrorManager;
@@ -38,7 +36,7 @@ import io.smallrye.common.constraint.Assert;
 import io.smallrye.common.expression.Expression;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.StandardOutputStreams;
-import org.jboss.logmanager.ext.filters.FilterExpressions;
+import org.jboss.logmanager.configuration.filters.FilterExpressions;
 import org.jboss.logmanager.filters.AcceptAllFilter;
 import org.jboss.logmanager.filters.DenyAllFilter;
 
@@ -54,15 +52,14 @@ public class PropertyConfigurator {
 
     private final LogContext logContext;
     private final Properties properties;
-    private final Map<String, Supplier<ErrorManager>> errorManagers = new HashMap<>();
-    private final Map<String, Supplier<Filter>> filters = new HashMap<>();
-    private final Map<String, Supplier<Formatter>> formatters = new HashMap<>();
-    private final Map<String, Supplier<Handler>> handlers = new HashMap<>();
-    private final Map<String, Supplier<?>> pojos = new HashMap<>();
+    private final ContextConfiguration contextConfiguration;
 
     private PropertyConfigurator(final LogContext logContext, final Properties properties) {
         this.logContext = logContext;
         this.properties = properties;
+        ContextConfiguration config = new ContextConfiguration();
+        final ContextConfiguration current = logContext.attachIfAbsent(ContextConfiguration.CONTEXT_CONFIGURATION_KEY, config);
+        contextConfiguration = (current == null ? config : current);
     }
 
     /**
@@ -126,7 +123,7 @@ public class PropertyConfigurator {
         final String filterName = getStringProperty(getKey("logger", loggerName, "filter"));
         if (filterName != null) {
             if (configureFilter(filterName)) {
-                logger.setFilter(filters.get(filterName).get());
+                logger.setFilter(contextConfiguration.getFilter(filterName));
             }
         }
 
@@ -134,7 +131,7 @@ public class PropertyConfigurator {
         final String[] handlerNames = getStringCsvArray(getKey("logger", loggerName, "handlers"));
         for (String name : handlerNames) {
             if (configureHandler(name)) {
-                logger.addHandler(handlers.get(name).get());
+                logger.addHandler(contextConfiguration.getHandler(name));
             }
         }
 
@@ -152,7 +149,7 @@ public class PropertyConfigurator {
     }
 
     private boolean configureHandler(final String handlerName) {
-        if (handlers.containsKey(handlerName)) {
+        if (contextConfiguration.hasHandler(handlerName)) {
             // already configured!
             return true;
         }
@@ -162,7 +159,7 @@ public class PropertyConfigurator {
             return false;
         }
 
-        final ObjectBuilder<Handler> handlerBuilder = ObjectBuilder.of(logContext, Handler.class, className)
+        final ObjectBuilder<Handler> handlerBuilder = ObjectBuilder.of(logContext, contextConfiguration, Handler.class, className)
                 .setModuleName(getStringProperty(getKey("handler", handlerName, "module")))
                 .addPostConstructMethods(getStringCsvArray(getKey("handler", handlerName, "postConfiguration")));
 
@@ -176,7 +173,7 @@ public class PropertyConfigurator {
         final String filter = getStringProperty(getKey("handler", handlerName, "filter"));
         if (filter != null) {
             if (configureFilter(filter)) {
-                handlerBuilder.addDefinedProperty("filter", Filter.class, filters.get(filter));
+                handlerBuilder.addDefinedProperty("filter", Filter.class, contextConfiguration.getFilters().get(filter));
             }
         }
         final String levelName = getStringProperty(getKey("handler", handlerName, "level"));
@@ -186,13 +183,15 @@ public class PropertyConfigurator {
         final String formatterName = getStringProperty(getKey("handler", handlerName, "formatter"));
         if (formatterName != null) {
             if (configureFormatter(formatterName)) {
-                handlerBuilder.addDefinedProperty("formatter", Formatter.class, formatters.get(formatterName));
+                handlerBuilder.addDefinedProperty("formatter", Formatter.class, contextConfiguration.getFormatters()
+                        .get(formatterName));
             }
         }
         final String errorManagerName = getStringProperty(getKey("handler", handlerName, "errorManager"));
         if (errorManagerName != null) {
             if (configureErrorManager(errorManagerName)) {
-                handlerBuilder.addDefinedProperty("errorManager", ErrorManager.class, errorManagers.get(errorManagerName));
+                handlerBuilder.addDefinedProperty("errorManager", ErrorManager.class, contextConfiguration.getErrorManagers()
+                        .get(errorManagerName));
             }
         }
 
@@ -201,7 +200,7 @@ public class PropertyConfigurator {
             final List<Supplier<Handler>> subhandlers = new ArrayList<>();
             for (String name : handlerNames) {
                 if (configureHandler(name)) {
-                    subhandlers.add(handlers.get(name));
+                    subhandlers.add(contextConfiguration.getHandlers().get(name));
                 }
             }
             handlerBuilder.addDefinedProperty("handlers", Handler[].class, new Supplier<Handler[]>() {
@@ -220,12 +219,12 @@ public class PropertyConfigurator {
                 }
             });
         }
-        handlers.putIfAbsent(handlerName, handlerBuilder.build(pojos));
+        contextConfiguration.addHandler(handlerName, handlerBuilder.build());
         return true;
     }
 
     private boolean configureFormatter(final String formatterName) {
-        if (filters.containsKey(formatterName)) {
+        if (contextConfiguration.hasFilter(formatterName)) {
             // already configured!
             return true;
         }
@@ -234,16 +233,16 @@ public class PropertyConfigurator {
             StandardOutputStreams.printError("Formatter %s is not defined%n", formatterName);
             return false;
         }
-        final ObjectBuilder<Formatter> formatterBuilder = ObjectBuilder.of(logContext, Formatter.class, className)
+        final ObjectBuilder<Formatter> formatterBuilder = ObjectBuilder.of(logContext, contextConfiguration, Formatter.class, className)
                 .setModuleName(getStringProperty(getKey("formatter", formatterName, "module")))
                 .addPostConstructMethods(getStringCsvArray(getKey("formatter", formatterName, "postConfiguration")));
         configureProperties(formatterBuilder, "formatter", formatterName);
-        formatters.putIfAbsent(formatterName, formatterBuilder.build(pojos));
+        contextConfiguration.addFormatter(formatterName, formatterBuilder.build());
         return true;
     }
 
     private boolean configureErrorManager(final String errorManagerName) {
-        if (errorManagers.containsKey(errorManagerName)) {
+        if (contextConfiguration.hasErrorManager(errorManagerName)) {
             // already configured!
             return true;
         }
@@ -252,16 +251,16 @@ public class PropertyConfigurator {
             StandardOutputStreams.printError("Error manager %s is not defined%n", errorManagerName);
             return false;
         }
-        final ObjectBuilder<ErrorManager> errorManagerBuilder = ObjectBuilder.of(logContext, ErrorManager.class, className)
+        final ObjectBuilder<ErrorManager> errorManagerBuilder = ObjectBuilder.of(logContext, contextConfiguration, ErrorManager.class, className)
                 .setModuleName(getStringProperty(getKey("errorManager", errorManagerName, "module")))
                 .addPostConstructMethods(getStringCsvArray(getKey("errorManager", errorManagerName, "postConfiguration")));
         configureProperties(errorManagerBuilder, "errorManager", errorManagerName);
-        errorManagers.putIfAbsent(errorManagerName, errorManagerBuilder.build(pojos));
+        contextConfiguration.addErrorManager(errorManagerName, errorManagerBuilder.build());
         return true;
     }
 
     private boolean configureFilter(final String filterName) {
-        if (filters.containsKey(filterName)) {
+        if (contextConfiguration.hasFilter(filterName)) {
             return true;
         }
         // First determine if we're using a defined filters or filters expression. We assume a defined filters if there is
@@ -269,27 +268,27 @@ public class PropertyConfigurator {
         String filterValue = getStringProperty(getKey("filter", filterName), true, false);
         if (filterValue == null) {
             // We are a filters expression, parse the expression and create a filters
-            filters.putIfAbsent(filterName, () -> FilterExpressions.parse(logContext, filterName));
+            contextConfiguration.addFilter(filterName, () -> FilterExpressions.parse(logContext, filterName));
         } else {
             // The AcceptAllFilter and DenyAllFilter are singletons.
             if (AcceptAllFilter.class.getName().equals(filterValue)) {
-                filters.putIfAbsent(filterName, AcceptAllFilter::getInstance);
+                contextConfiguration.addFilter(filterName, AcceptAllFilter::getInstance);
             } else if (DenyAllFilter.class.getName().equals(filterValue)) {
-                filters.putIfAbsent(filterName, DenyAllFilter::getInstance);
+                contextConfiguration.addFilter(filterName, DenyAllFilter::getInstance);
             } else {
                 // We assume we're a defined filter
-                final ObjectBuilder<Filter> filterBuilder = ObjectBuilder.of(logContext, Filter.class, filterValue)
+                final ObjectBuilder<Filter> filterBuilder = ObjectBuilder.of(logContext, contextConfiguration, Filter.class, filterValue)
                         .setModuleName(getStringProperty(getKey("filter", filterName, "module")))
                         .addPostConstructMethods(getStringCsvArray(getKey("filter", filterName, "postConfiguration")));
                 configureProperties(filterBuilder, "errorManager", filterName);
-                filters.putIfAbsent(filterName, filterBuilder.build(pojos));
+                contextConfiguration.addFilter(filterName, filterBuilder.build());
             }
         }
         return true;
     }
 
     private void configurePojos(final String pojoName) {
-        if (pojos.containsKey(pojoName)) {
+        if (contextConfiguration.hasObject(pojoName)) {
             // already configured!
             return;
         }
@@ -298,11 +297,11 @@ public class PropertyConfigurator {
             StandardOutputStreams.printError("POJO %s is not defined%n", pojoName);
             return;
         }
-        final ObjectBuilder<Object> pojoBuilder = ObjectBuilder.of(logContext, Object.class, className)
+        final ObjectBuilder<Object> pojoBuilder = ObjectBuilder.of(logContext, contextConfiguration, Object.class, className)
                 .setModuleName(getStringProperty(getKey("pojo", pojoName, "module")))
                 .addPostConstructMethods(getStringCsvArray(getKey("pojo", pojoName, "postConfiguration")));
         configureProperties(pojoBuilder, "pojo", pojoName);
-        pojos.putIfAbsent(pojoName, pojoBuilder.build(pojos));
+        contextConfiguration.addObject(pojoName, pojoBuilder.build());
     }
 
     private String getStringProperty(final String key) {
