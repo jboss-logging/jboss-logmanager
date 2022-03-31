@@ -68,10 +68,6 @@
             <groupId>io.smallrye.common</groupId>
             <artifactId>smallrye-common-constraint</artifactId>
         </dependency>
-        <dependency>
-            <groupId>io.smallrye.common</groupId>
-            <artifactId>smallrye-common-expression</artifactId>
-        </dependency>
 
         <!-- Test dependencies -->
         <dependency>
@@ -114,7 +110,6 @@
                         <javax.net.ssl.trustStore>${project.basedir}/src/test/resources/client-keystore.jks</javax.net.ssl.trustStore>
                         <javax.net.ssl.trustStorePassword>testpassword</javax.net.ssl.trustStorePassword>
 
-                        <config.dir>${project.build.testOutputDirectory}${file.separator}configs</config.dir>
                         <log.dir>${project.build.directory}${file.separator}logs</log.dir>
                         <org.jboss.test.address>${org.jboss.test.address}</org.jboss.test.address>
                         <org.jboss.test.port>${org.jboss.test.port}</org.jboss.test.port>

@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2018 Red Hat, Inc., and individual contributors
+ * Copyright 2022 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext;
+package org.jboss.logmanager.configuration;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -46,6 +46,7 @@ import org.jboss.modules.ModuleLoader;
 class ObjectBuilder<T> {
 
     private final LogContext logContext;
+    private final ContextConfiguration contextConfiguration;
     private final Class<? extends T> baseClass;
     private final String className;
     private final Map<String, String> constructorProperties;
@@ -54,8 +55,10 @@ class ObjectBuilder<T> {
     private final Set<String> postConstructMethods;
     private String moduleName;
 
-    private ObjectBuilder(final LogContext logContext, final Class<? extends T> baseClass, final String className) {
+    private ObjectBuilder(final LogContext logContext, final ContextConfiguration contextConfiguration,
+                          final Class<? extends T> baseClass, final String className) {
         this.logContext = logContext;
+        this.contextConfiguration = contextConfiguration;
         this.baseClass = baseClass;
         this.className = className;
         constructorProperties = new LinkedHashMap<>();
@@ -74,8 +77,9 @@ class ObjectBuilder<T> {
      *
      * @return a new {@link ObjectBuilder}
      */
-    static <T> ObjectBuilder<T> of(final LogContext logContext, final Class<? extends T> baseClass, final String className) {
-        return new ObjectBuilder<>(logContext, baseClass, className);
+    static <T> ObjectBuilder<T> of(final LogContext logContext, final ContextConfiguration contextConfiguration,
+                                   final Class<? extends T> baseClass, final String className) {
+        return new ObjectBuilder<>(logContext, contextConfiguration, baseClass, className);
     }
 
     /**
@@ -151,18 +155,15 @@ class ObjectBuilder<T> {
     /**
      * Creates a the object when the {@linkplain Supplier#get() supplier} value is accessed.
      *
-     * @param pojos a map of objects to be used when the value of a property is a name of a POJO object
-     *
      * @return a supplier which can create the object
      */
-    Supplier<T> build(final Map<String, Supplier<?>> pojos) {
+    Supplier<T> build() {
         if (className == null) {
             throw new IllegalArgumentException("className is null");
         }
         final Map<String, String> constructorProperties = new LinkedHashMap<>(this.constructorProperties);
         final Map<String, String> properties = new LinkedHashMap<>(this.properties);
         final Set<String> postConstructMethods = new LinkedHashSet<>(this.postConstructMethods);
-        final Map<String, Supplier<?>> objects = new LinkedHashMap<>(pojos);
         final String moduleName = this.moduleName;
         return () -> {
             final ClassLoader classLoader;
@@ -192,7 +193,7 @@ class ObjectBuilder<T> {
                     throw new IllegalArgumentException(String.format("No property named \"%s\" in \"%s\"", property, className));
                 }
                 paramTypes[i] = type;
-                params[i] = getValue(actualClass, property, type, entry.getValue(), objects);
+                params[i] = getValue(actualClass, property, type, entry.getValue());
                 i++;
             }
             final Constructor<? extends T> constructor;
@@ -214,7 +215,7 @@ class ObjectBuilder<T> {
                 if (type == null) {
                     throw new IllegalArgumentException(String.format("Failed to determine type for setter \"%s\" on type \"%s\"", method.getName(), className));
                 }
-                setters.put(method, getValue(actualClass, entry.getKey(), type, entry.getValue(), objects));
+                setters.put(method, getValue(actualClass, entry.getKey(), type, entry.getValue()));
             }
 
             // Define known type parameters
@@ -257,8 +258,7 @@ class ObjectBuilder<T> {
         };
     }
 
-    @SuppressWarnings("unchecked")
-    private Object getValue(final Class<?> objClass, final String propertyName, final Class<?> paramType, final String value, final Map<String, Supplier<?>> objects) {
+    private Object getValue(final Class<?> objClass, final String propertyName, final Class<?> paramType, final String value) {
         if (value == null) {
             if (paramType.isPrimitive()) {
                 throw new IllegalArgumentException(String.format("Cannot assign null value to primitive property \"%s\" of %s", propertyName, objClass));
@@ -296,10 +296,14 @@ class ObjectBuilder<T> {
             return Level.parse(value);
         } else if (paramType.isEnum()) {
             return Enum.valueOf(paramType.asSubclass(Enum.class), value);
-        } else if (objects.containsKey(value)) {
-            return objects.get(value).get();
+        } else if (contextConfiguration.hasObject(value)) {
+            return contextConfiguration.getObject(value);
         } else if (definedPropertiesContains(propertyName)) {
-            return findDefinedProperty(propertyName).value.get();
+            final PropertyValue propertyValue = findDefinedProperty(propertyName);
+            if (propertyValue == null) {
+                throw new IllegalArgumentException("Unknown parameter type for property " + propertyName + " on " + objClass);
+            }
+            return propertyValue.value.get();
         } else {
             throw new IllegalArgumentException("Unknown parameter type for property " + propertyName + " on " + objClass);
         }
