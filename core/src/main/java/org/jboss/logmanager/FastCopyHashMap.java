@@ -492,6 +492,14 @@ class FastCopyHashMap<K, V> extends AbstractMap<K, V> implements Map<K, V>, Clon
       return values;
    }
 
+   public static <K, V> FastCopyHashMap<K, V> of(Map<K, V> map) {
+      if (map instanceof FastCopyHashMap) {
+         return (FastCopyHashMap<K, V>) map;
+      } else {
+         return new FastCopyHashMap<>(map);
+      }
+   }
+
    @SuppressWarnings("unchecked")
    private void readObject(java.io.ObjectInputStream s) throws IOException, ClassNotFoundException
    {

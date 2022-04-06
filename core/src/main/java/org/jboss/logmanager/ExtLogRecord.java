@@ -203,7 +203,7 @@ public class ExtLogRecord extends LogRecord {
      */
     public void copyMdc() {
         if (mdcCopy == null) {
-            mdcCopy = MDC.fastCopyObject();
+            mdcCopy = FastCopyHashMap.of(MDC.getMDCProvider().copyObject());
         }
     }
 
@@ -228,9 +228,7 @@ public class ExtLogRecord extends LogRecord {
      * @return a copy of the MDC map
      */
     public Map<String, String> getMdcCopy() {
-        if (mdcCopy == null) {
-            mdcCopy = MDC.fastCopyObject();
-        }
+        copyMdc();
         // Create a new map with string values
         final FastCopyHashMap<String, String> newMdc = new FastCopyHashMap<String, String>();
         for (Map.Entry<String, Object> entry : mdcCopy.entrySet()) {
