@@ -37,7 +37,6 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.logging.Level;
-import java.util.logging.LoggingMXBean;
 import java.util.logging.LoggingPermission;
 
 import static org.jboss.logmanager.LoggerNode.attachmentsFull;
@@ -70,8 +69,6 @@ public final class LogContext implements AutoCloseable {
     static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
 
     private final LoggerNode rootLogger;
-    @SuppressWarnings({ "ThisEscapedInObjectConstruction" })
-    private final LoggingMXBean mxBean = new LoggingMXBeanImpl(this);
     private final boolean strong;
     private final LogContextInitializer initializer;
 
@@ -360,15 +357,6 @@ public final class LogContext implements AutoCloseable {
         final LoggerNode node = rootLogger.getIfExists(loggerName);
         if (node == null) return null;
         return node.getAttachment(key);
-    }
-
-    /**
-     * Get the {@code LoggingMXBean} associated with this log context.
-     *
-     * @return the {@code LoggingMXBean} instance
-     */
-    public LoggingMXBean getLoggingMXBean() {
-        return mxBean;
     }
 
     /**
