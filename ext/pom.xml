@@ -28,6 +28,9 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
+    <name>JBoss Log Manager (Extensions)</name>
+    <description>Misc. extensions and utilities for JBoss Log Manager</description>
+
     <artifactId>jboss-logmanager-ext</artifactId>
 
     <dependencies>
