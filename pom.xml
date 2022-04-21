@@ -55,7 +55,7 @@
         <!-- Dependency versions -->
         <version.io.smallrye.common.smallrye-common>1.11.0</version.io.smallrye.common.smallrye-common>
         <version.jakarta.json.jakarta-json-api>1.1.6</version.jakarta.json.jakarta-json-api>
-        <version.org.byteman>4.0.17</version.org.byteman>
+        <version.org.byteman>4.0.18</version.org.byteman>
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.logging.jboss-logging>3.4.0.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.modules.jboss-modules>1.10.1.Final</version.org.jboss.modules.jboss-modules>
@@ -188,6 +188,12 @@
                 <configuration>
                     <doclint>none</doclint>
                     <javadocExecutable>${java.home}${file.separator}bin</javadocExecutable>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <release>11</release>
                 </configuration>
             </plugin>
         </plugins>
