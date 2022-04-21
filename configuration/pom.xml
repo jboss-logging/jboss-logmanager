@@ -28,7 +28,10 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>configuration</artifactId>
+    <name>JBoss Log Manager (Configuration)</name>
+    <description>A configuration manager for JBoss LogManager</description>
+
+    <artifactId>jboss-logmanager-configuration</artifactId>
 
     <dependencies>
         <dependency>
