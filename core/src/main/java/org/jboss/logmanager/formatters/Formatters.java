@@ -616,7 +616,7 @@ public final class Formatters {
             public String getSegmentedSubject(final ExtLogRecord record) {
                 final String hostName = record.getHostName();
                 // Check for a specified precision. This is not passed to the constructor because we want truncate
-                // segments from the right intsead of the left.
+                // segments from the right instead of the left.
                 if (precision != null && PRECISION_INT_PATTERN.matcher(precision).matches()) {
                     int count = Integer.parseInt(precision);
                     int end = 0;

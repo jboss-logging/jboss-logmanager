@@ -20,7 +20,6 @@
 package org.jboss.logmanager;
 
 import org.jboss.logmanager.ExtLogRecord.FormatStyle;
-import org.jboss.logmanager.formatters.PatternFormatter;
 import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.*;
@@ -35,9 +34,7 @@ import org.jboss.logmanager.filters.LevelRangeFilter;
 import org.jboss.logmanager.filters.RegexFilter;
 import org.jboss.logmanager.filters.SubstituteFilter;
 
-import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
-import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 

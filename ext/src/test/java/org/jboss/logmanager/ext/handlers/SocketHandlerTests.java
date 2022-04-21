@@ -226,7 +226,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
 
     private static <R> R timeout(final Supplier<R> supplier, final int timeout) throws InterruptedException {
         R value = null;
-        long t = timeout * 1000;
+        long t = timeout * 1000L;
         final long sleep = 100L;
         while (t > 0) {
             final long before = System.currentTimeMillis();

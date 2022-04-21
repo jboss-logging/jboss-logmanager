@@ -373,7 +373,7 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
                     addError(e);
                     final long timeout;
                     if (attempts++ > 0L) {
-                        timeout = (10 * attempts);
+                        timeout = (10L * attempts);
                     } else {
                         timeout = retryTimeout;
                     }
