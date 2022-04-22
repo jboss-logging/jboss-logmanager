@@ -39,10 +39,11 @@
             <artifactId>jakarta.json-api</artifactId>
             <!-- only required for the JsonFormatter -->
             <optional>true</optional>
+            <scope>provided</scope>
         </dependency>
         <!-- JSON implementation -->
         <dependency>
-            <groupId>org.glassfish</groupId>
+            <groupId>org.eclipse.parsson</groupId>
             <artifactId>jakarta.json</artifactId>
             <!-- only required for the JsonFormatter, another implementation of the JSON-P API may be used as well -->
             <optional>true</optional>

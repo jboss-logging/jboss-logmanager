@@ -24,10 +24,10 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
-import javax.json.Json;
-import javax.json.JsonValue;
-import javax.json.stream.JsonGenerator;
-import javax.json.stream.JsonGeneratorFactory;
+import jakarta.json.Json;
+import jakarta.json.JsonValue;
+import jakarta.json.stream.JsonGenerator;
+import jakarta.json.stream.JsonGeneratorFactory;
 
 import org.jboss.logmanager.ext.PropertyValues;
 
@@ -94,7 +94,7 @@ public class JsonFormatter extends StructuredFormatter {
      */
     public boolean isPrettyPrint() {
         synchronized (config) {
-            return (config.containsKey(javax.json.stream.JsonGenerator.PRETTY_PRINTING) ? (Boolean) config.get(javax.json.stream.JsonGenerator.PRETTY_PRINTING) : false);
+            return (config.containsKey(jakarta.json.stream.JsonGenerator.PRETTY_PRINTING) ? (Boolean) config.get(jakarta.json.stream.JsonGenerator.PRETTY_PRINTING) : false);
         }
     }
 
