@@ -82,7 +82,7 @@
         </dependency>
         <!-- JSON implementation -->
         <dependency>
-            <groupId>org.glassfish</groupId>
+            <groupId>org.eclipse.parsson</groupId>
             <artifactId>jakarta.json</artifactId>
             <scope>test</scope>
         </dependency>

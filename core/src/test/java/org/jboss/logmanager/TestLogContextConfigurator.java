@@ -26,8 +26,8 @@ import java.io.UncheckedIOException;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.json.Json;
-import javax.json.stream.JsonGenerator;
+import jakarta.json.Json;
+import jakarta.json.stream.JsonGenerator;
 
 import org.jboss.logmanager.handlers.FileHandler;
 
