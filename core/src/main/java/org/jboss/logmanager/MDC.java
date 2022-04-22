@@ -19,16 +19,42 @@
 
 package org.jboss.logmanager;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.Iterator;
 import java.util.Map;
+import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 
 /**
  * Mapped diagnostic context.  This is a thread-local map used to hold loggable information.
  */
 public final class MDC {
+    private static final MDCProvider mdcProvider = getDefaultMDCProvider();
 
     private MDC() {}
 
-    private static final Holder mdc = new Holder();
+    static MDCProvider getMDCProvider() {
+        return mdcProvider;
+    }
+
+    private static MDCProvider getDefaultMDCProvider() {
+        return System.getSecurityManager() == null ? doGetDefaultMDCProvider() : AccessController.doPrivileged((PrivilegedAction<MDCProvider>) MDC::doGetDefaultMDCProvider);
+    }
+
+    private static MDCProvider doGetDefaultMDCProvider() {
+        final ServiceLoader<MDCProvider> configLoader = ServiceLoader.load(MDCProvider.class, MDC.class.getClassLoader());
+        final Iterator<MDCProvider> iterator = configLoader.iterator();
+        for (;;) try {
+            if (! iterator.hasNext()) {
+                return new ThreadLocalMDC();
+            }
+            return iterator.next();
+        } catch (ServiceConfigurationError | RuntimeException e) {
+            System.err.print("Warning: failed to load MDC Provider: ");
+            e.printStackTrace(System.err);
+        }
+    }
 
     /**
      * Get the value for a key, or {@code null} if there is no mapping.
@@ -37,8 +63,7 @@ public final class MDC {
      * @return the value
      */
     public static String get(String key) {
-        final Object value = getObject(key);
-        return value == null ? null : value.toString();
+        return mdcProvider.get(key);
     }
 
     /**
@@ -48,7 +73,7 @@ public final class MDC {
      * @return the value
      */
     public static Object getObject(String key) {
-        return mdc.get().get(key);
+        return mdcProvider.getObject(key);
     }
 
     /**
@@ -59,8 +84,7 @@ public final class MDC {
      * @return the old value or {@code null} if there was none
      */
     public static String put(String key, String value) {
-        final Object oldValue = putObject(key, value);
-        return oldValue == null ? null : oldValue.toString();
+        return mdcProvider.put(key, value);
     }
 
     /**
@@ -71,13 +95,7 @@ public final class MDC {
      * @return the old value or {@code null} if there was none
      */
     public static Object putObject(String key, Object value) {
-        if (key == null) {
-            throw new NullPointerException("key is null");
-        }
-        if (value == null) {
-            throw new NullPointerException("value is null");
-        }
-        return mdc.get().put(key, value);
+        return mdcProvider.putObject(key, value);
     }
 
     /**
@@ -87,8 +105,7 @@ public final class MDC {
      * @return the old value or {@code null} if there was none
      */
     public static String remove(String key) {
-        final Object oldValue = removeObject(key);
-        return oldValue == null ? null : oldValue.toString();
+        return mdcProvider.remove(key);
     }
 
     /**
@@ -98,7 +115,7 @@ public final class MDC {
      * @return the old value or {@code null} if there was none
      */
     public static Object removeObject(String key) {
-        return mdc.get().remove(key);
+        return mdcProvider.removeObject(key);
     }
 
     /**
@@ -107,15 +124,7 @@ public final class MDC {
      * @return a copy of the map
      */
     public static Map<String, String> copy() {
-        return fastCopy();
-    }
-
-    static FastCopyHashMap<String, String> fastCopy() {
-        final FastCopyHashMap<String, String> result = new FastCopyHashMap<String, String>();
-        for (Map.Entry<String, Object> entry : mdc.get().entrySet()) {
-            result.put(entry.getKey(), entry.getValue().toString());
-        }
-        return result;
+        return mdcProvider.copy();
     }
 
     /**
@@ -124,30 +133,13 @@ public final class MDC {
      * @return a copy of the map
      */
     public static Map<String, Object> copyObject() {
-        return fastCopyObject();
-    }
-
-    static FastCopyHashMap<String, Object> fastCopyObject() {
-        return mdc.get().clone();
+        return mdcProvider.copyObject();
     }
 
     /**
      * Clear the current MDC map.
      */
     public static void clear() {
-        mdc.get().clear();
-    }
-
-    private static final class Holder extends InheritableThreadLocal<FastCopyHashMap<String, Object>> {
-
-        @Override
-        protected FastCopyHashMap<String, Object> childValue(final FastCopyHashMap<String, Object> parentValue) {
-            return new FastCopyHashMap<String, Object>(parentValue);
-        }
-
-        @Override
-        protected FastCopyHashMap<String, Object> initialValue() {
-            return new FastCopyHashMap<String, Object>();
-        }
+        mdcProvider.clear();
     }
 }
