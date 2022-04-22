@@ -1,0 +1,7 @@
+name: org.jboss.logmanager.configuration
+
+requires:
+  - module: io.smallrye.common.expression
+  - module: org.jboss.logmanager
+  - module: org.jboss.modules
+    static: true

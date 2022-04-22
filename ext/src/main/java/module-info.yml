@@ -1,0 +1,22 @@
+name: org.jboss.logmanager.ext
+
+opens:
+  - package: org.jboss.logmanager.ext.formatters
+    to:
+     - org.jboss.logmanager.configuration
+  - package: org.jboss.logmanager.ext.handlers
+    to:
+     - org.jboss.logmanager.configuration
+
+requires:
+  - module: io.smallrye.common.constraint
+
+  - module: jakarta.json-api
+    static: true
+
+  - module: org.jboss.logging
+
+  - module: org.jboss.logmanager
+
+  - module: org.jboss.modules
+    static: true

@@ -1,0 +1,23 @@
+name: org.jboss.logmanager
+
+opens:
+  - package: org.jboss.logmanager.errormanager
+    to:
+      - org.jboss.logmanager.configuration
+  - package: org.jboss.logmanager.filters
+    to:
+      - org.jboss.logmanager.configuration
+  - package: org.jboss.logmanager.formatters
+    to:
+     - org.jboss.logmanager.configuration
+  - package: org.jboss.logmanager.handlers
+    to:
+     - org.jboss.logmanager.configuration
+
+requires:
+  - module: io.smallrye.common.constraint
+  - module: io.smallrye.common.net
+  - module: io.smallrye.common.os
+  - module: io.smallrye.common.ref
+  - module: org.jboss.modules
+    static: true

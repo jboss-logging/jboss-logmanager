@@ -67,6 +67,9 @@
         <org.jboss.test.port>4560</org.jboss.test.port>
         <org.jboss.test.alt.port>14560</org.jboss.test.alt.port>
 
+        <!-- Plugin versions -->
+        <version.io.github.dmlloyd.module-info>1.2</version.io.github.dmlloyd.module-info>
+
         <skipTests>false</skipTests>
         <skipITs>${skipTests}</skipITs>
         <skipUTs>${skipTests}</skipUTs>
@@ -179,6 +182,20 @@
                     <configuration>
                         <skipTests>${skipUTs}</skipTests>
                     </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>io.github.dmlloyd.module-info</groupId>
+                    <artifactId>module-info</artifactId>
+                    <version>${version.io.github.dmlloyd.module-info}</version>
+                    <executions>
+                        <execution>
+                            <id>module-info</id>
+                            <phase>process-classes</phase>
+                            <goals>
+                                <goal>generate</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>
