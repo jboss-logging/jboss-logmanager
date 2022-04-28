@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext.handlers;
+package org.jboss.logmanager.handlers;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -101,13 +101,13 @@ class SuffixRotator {
         if (compressionIndex != -1) {
             compressionSuffix = suffix.substring(compressionIndex);
             datePattern = suffix.substring(0, compressionIndex);
-            compressionType = SuffixRotator.CompressionType.GZIP;
+            compressionType = CompressionType.GZIP;
         } else {
             compressionIndex = lSuffix.indexOf(".zip");
             if (compressionIndex != -1) {
                 compressionSuffix = suffix.substring(compressionIndex);
                 datePattern = suffix.substring(0, compressionIndex);
-                compressionType = SuffixRotator.CompressionType.ZIP;
+                compressionType = CompressionType.ZIP;
             }
         }
         if (compressionSuffix.isEmpty() && datePattern.isEmpty()) {

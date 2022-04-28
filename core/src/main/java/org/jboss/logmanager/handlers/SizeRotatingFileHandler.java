@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext.handlers;
+package org.jboss.logmanager.handlers;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -30,7 +30,6 @@ import java.security.PrivilegedAction;
 import java.util.logging.ErrorManager;
 
 import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.handlers.FileHandler;
 
 public class SizeRotatingFileHandler extends FileHandler {
     private final AccessControlContext acc = AccessController.getContext();

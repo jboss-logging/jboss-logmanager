@@ -17,7 +17,15 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext.handlers;
+package org.jboss.logmanager.handlers;
+
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
+import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoField.YEAR;
 
 import java.io.Closeable;
 import java.io.Flushable;
@@ -43,8 +51,6 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
-
-import static java.time.temporal.ChronoField.*;
 
 /**
  * A syslog handler for logging to syslogd.
@@ -639,8 +645,8 @@ public class SyslogHandler extends ExtHandler {
     }
 
     /**
-     * Indicates whether or not a {@link SyslogHandler.Protocol#TCP TCP} or {@link
-     * SyslogHandler.Protocol#SSL_TCP SSL TCP} connection should block when attempting to
+     * Indicates whether or not a {@link Protocol#TCP TCP} or {@link
+     * Protocol#SSL_TCP SSL TCP} connection should block when attempting to
      * reconnect.
      *
      * @return {@code true} if blocking is enabled, otherwise {@code false}
@@ -652,8 +658,8 @@ public class SyslogHandler extends ExtHandler {
     }
 
     /**
-     * Enables or disables blocking when attempting to reconnect a {@link SyslogHandler.Protocol#TCP
-     * TCP} or {@link SyslogHandler.Protocol#SSL_TCP SSL TCP} protocol.
+     * Enables or disables blocking when attempting to reconnect a {@link Protocol#TCP
+     * TCP} or {@link Protocol#SSL_TCP SSL TCP} protocol.
      * <p/>
      * If set to {@code true} the {@code publish} methods will block when attempting to reconnect. This is only
      * advisable to be set to {@code true} if using an asynchronous handler.
@@ -1018,7 +1024,7 @@ public class SyslogHandler extends ExtHandler {
      * <p/>
      * Setting the output stream closes any already established connections or open output streams and will not open
      * any new connections until the output stream is set to {@code null}. The {@link
-     * #setProtocol(SyslogHandler.Protocol) protocol}, {@link
+     * #setProtocol(Protocol) protocol}, {@link
      * #setServerAddress(InetAddress), server address}, {@link #setServerHostname(String) server hostname} or
      * {@link #setPort(int) port} have no effect when the output stream is set.
      *

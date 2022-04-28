@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext.handlers;
+package org.jboss.logmanager.handlers;
 
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;

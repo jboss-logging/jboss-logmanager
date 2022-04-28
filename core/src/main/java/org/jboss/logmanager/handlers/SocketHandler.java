@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext.handlers;
+package org.jboss.logmanager.handlers;
 
 import java.io.Closeable;
 import java.io.Flushable;
@@ -35,7 +35,6 @@ import javax.net.ssl.SSLSocketFactory;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.handlers.UninterruptibleOutputStream;
 
 /**
  * A handler used to communicate over a socket.

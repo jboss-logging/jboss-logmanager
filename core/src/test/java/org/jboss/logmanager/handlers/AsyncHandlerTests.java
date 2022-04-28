@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext.handlers;
+package org.jboss.logmanager.handlers;
 
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -28,8 +28,8 @@ import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.MDC;
 import org.jboss.logmanager.NDC;
+import org.jboss.logmanager.handlers.AsyncHandler.OverflowAction;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.jboss.logmanager.ext.handlers.AsyncHandler.OverflowAction;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

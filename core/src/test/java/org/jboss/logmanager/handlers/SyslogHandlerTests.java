@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext.handlers;
+package org.jboss.logmanager.handlers;
 
 import java.io.ByteArrayOutputStream;
 import java.io.UnsupportedEncodingException;
@@ -26,8 +26,8 @@ import java.util.Calendar;
 import java.util.logging.Level;
 
 import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.jboss.logmanager.ext.handlers.SyslogHandler.SyslogType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;

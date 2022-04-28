@@ -17,14 +17,12 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext.handlers;
+package org.jboss.logmanager.handlers;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.nio.file.Files;
-import java.nio.file.NoSuchFileException;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -36,7 +34,6 @@ import java.util.TimeZone;
 import java.util.logging.ErrorManager;
 
 import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.handlers.FileHandler;
 
 /**
  * A file handler which rotates the log at a preset time interval.  The interval is determined by the content of the

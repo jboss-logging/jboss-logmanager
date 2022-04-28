@@ -17,7 +17,7 @@
  * limitations under the License.
  */
 
-package org.jboss.logmanager.ext.handlers;
+package org.jboss.logmanager.handlers;
 
 import java.io.UnsupportedEncodingException;
 import java.net.InetAddress;
@@ -30,8 +30,8 @@ import javax.net.ssl.SSLContext;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
+import org.jboss.logmanager.handlers.SocketHandler.Protocol;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.jboss.logmanager.ext.handlers.SocketHandler.Protocol;
 import org.junit.Assert;
 import org.junit.Assume;
 import org.junit.Test;
