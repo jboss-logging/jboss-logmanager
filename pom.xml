@@ -23,18 +23,17 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <name>JBoss Log Manager (Parent)</name>
-    <description>An implementation of java.util.logging.LogManager</description>
-    <groupId>org.jboss.logmanager</groupId>
-    <artifactId>jboss-logmanager-parent</artifactId>
-    <packaging>pom</packaging>
-    <version>3.0.0.Final-SNAPSHOT</version>
-
     <parent>
         <groupId>org.jboss</groupId>
         <artifactId>jboss-parent</artifactId>
         <version>39</version>
     </parent>
+
+    <name>JBoss Log Manager</name>
+    <description>An implementation of java.util.logging.LogManager</description>
+    <groupId>org.jboss.logmanager</groupId>
+    <artifactId>jboss-logmanager</artifactId>
+    <version>3.0.0.Final-SNAPSHOT</version>
 
     <licenses>
         <license>
@@ -43,13 +42,6 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
-
-
-    <modules>
-        <module>core</module>
-        <module>ext</module>
-        <module>configuration</module>
-    </modules>
 
     <properties>
         <!-- Dependency versions -->
@@ -76,28 +68,8 @@
 
         <jdk.min.version>11</jdk.min.version>
     </properties>
-
     <dependencyManagement>
         <dependencies>
-            <!-- An odd dependency, but required for org.wildfly.common:wildfly-common -->
-            <dependency>
-                <groupId>org.jboss.logging</groupId>
-                <artifactId>jboss-logging</artifactId>
-                <version>${version.org.jboss.logging.jboss-logging}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.jboss.modules</groupId>
-                <artifactId>jboss-modules</artifactId>
-                <version>${version.org.jboss.modules.jboss-modules}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.kohsuke.metainf-services</groupId>
-                <artifactId>metainf-services</artifactId>
-                <version>${version.org.kohsuke.metainf-services}</version>
-                <!-- Optional and provided as this is only a compile-time dependency -->
-                <optional>true</optional>
-                <scope>provided</scope>
-            </dependency>
             <dependency>
                 <groupId>io.smallrye.common</groupId>
                 <artifactId>smallrye-common-bom</artifactId>
@@ -105,84 +77,106 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-
-            <dependency>
-                <groupId>jakarta.json</groupId>
-                <artifactId>jakarta.json-api</artifactId>
-                <version>${version.jakarta.json.jakarta-json-api}</version>
-            </dependency>
-            <!-- JSON implementation -->
-            <dependency>
-                <groupId>org.eclipse.parsson</groupId>
-                <artifactId>jakarta.json</artifactId>
-                <version>${version.org.eclipse.parsson.jakarta.json}</version>
-            </dependency>
-
-            <!-- test dependencies -->
-
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman</artifactId>
-                <version>${version.org.byteman}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-submit</artifactId>
-                <version>${version.org.byteman}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-install</artifactId>
-                <version>${version.org.byteman}</version>
-                <scope>test</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>org.jboss.byteman</groupId>
-                <artifactId>byteman-bmunit</artifactId>
-                <version>${version.org.byteman}</version>
-                <scope>test</scope>
-            </dependency>
-            <dependency>
-                <groupId>junit</groupId>
-                <artifactId>junit</artifactId>
-                <version>${version.junit.junit}</version>
-                <scope>test</scope>
-            </dependency>
         </dependencies>
     </dependencyManagement>
+    <dependencies>
+        <!-- An odd dependency, but required for org.wildfly.common:wildfly-common -->
+        <dependency>
+            <groupId>org.jboss.logging</groupId>
+            <artifactId>jboss-logging</artifactId>
+            <version>${version.org.jboss.logging.jboss-logging}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.jboss.modules</groupId>
+            <artifactId>jboss-modules</artifactId>
+            <version>${version.org.jboss.modules.jboss-modules}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.kohsuke.metainf-services</groupId>
+            <artifactId>metainf-services</artifactId>
+            <version>${version.org.kohsuke.metainf-services}</version>
+            <!-- Optional and provided as this is only a compile-time dependency -->
+            <optional>true</optional>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- SmallRye -->
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-constraint</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-cpu</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-expression</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-net</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-os</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.smallrye.common</groupId>
+            <artifactId>smallrye-common-ref</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>jakarta.json</groupId>
+            <artifactId>jakarta.json-api</artifactId>
+            <version>${version.jakarta.json.jakarta-json-api}</version>
+        </dependency>
+        <!-- JSON implementation -->
+        <dependency>
+            <groupId>org.eclipse.parsson</groupId>
+            <artifactId>jakarta.json</artifactId>
+            <version>${version.org.eclipse.parsson.jakarta.json}</version>
+        </dependency>
+
+        <!-- test dependencies -->
+
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman</artifactId>
+            <version>${version.org.byteman}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-submit</artifactId>
+            <version>${version.org.byteman}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-install</artifactId>
+            <version>${version.org.byteman}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jboss.byteman</groupId>
+            <artifactId>byteman-bmunit</artifactId>
+            <version>${version.org.byteman}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>${version.junit.junit}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
     <build>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <artifactId>maven-failsafe-plugin</artifactId>
-                    <configuration>
-                        <skipTests>${skipTests}</skipTests>
-                        <skipITs>${skipITs}</skipITs>
-                    </configuration>
-                    <executions>
-                        <execution>
-                            <goals>
-                                <goal>integration-test</goal>
-                                <goal>verify</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                </plugin>
-                <plugin>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <configuration>
-                        <skipTests>${skipUTs}</skipTests>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-        <plugins>            
+        <plugins>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
@@ -195,6 +189,84 @@
                 <configuration>
                     <release>11</release>
                 </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <skipTests>${skipTests}</skipTests>
+                    <skipITs>${skipITs}</skipITs>
+                    <systemPropertyVariables>
+                        <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
+                    </systemPropertyVariables>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>integration-test</goal>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <configuration>
+                    <skipTests>${skipUTs}</skipTests>
+                    <includes>
+                        <include>**/*Tests.java</include>
+                    </includes>
+                    <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.attach.allowAttachSelf=true</argLine>
+                    <systemPropertyVariables>
+                        <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+
+                        <!-- Configured for SocketHandler SSL test -->
+                        <javax.net.ssl.keyStore>${project.basedir}/src/test/resources/server-keystore.jks</javax.net.ssl.keyStore>
+                        <javax.net.ssl.keyStorePassword>testpassword</javax.net.ssl.keyStorePassword>
+                        <javax.net.ssl.trustStore>${project.basedir}/src/test/resources/client-keystore.jks</javax.net.ssl.trustStore>
+                        <javax.net.ssl.trustStorePassword>testpassword</javax.net.ssl.trustStorePassword>
+
+                        <log.dir>${project.build.directory}${file.separator}logs</log.dir>
+                        <org.jboss.test.address>${org.jboss.test.address}</org.jboss.test.address>
+                        <org.jboss.test.port>${org.jboss.test.port}</org.jboss.test.port>
+                        <org.jboss.test.alt.port>${org.jboss.test.alt.port}</org.jboss.test.alt.port>
+
+                        <config.dir>${project.build.testOutputDirectory}${file.separator}configs</config.dir>
+                    </systemPropertyVariables>
+                    <trimStackTrace>false</trimStackTrace>
+                </configuration>
+            </plugin>
+            <plugin>
+                <artifactId>maven-enforcer-plugin</artifactId>
+            </plugin>
+            <!-- Adding OSGI metadata to the JAR without changing the packaging type. -->
+            <plugin>
+                <groupId>org.apache.felix</groupId>
+                <artifactId>maven-bundle-plugin</artifactId>
+                <extensions>true</extensions>
+                <dependencies>
+                    <dependency>
+                        <groupId>biz.aQute.bnd</groupId>
+                        <artifactId>biz.aQute.bndlib</artifactId>
+                        <version>3.5.0</version>
+                    </dependency>
+                </dependencies>
+                <configuration>
+                    <instructions>
+                        <_fixupmessages>"Classes found in the wrong directory";is:=warning</_fixupmessages>
+                        <Export-Package>
+                            ${project.groupId}.*;version=${project.version};-split-package:=error
+                        </Export-Package>
+                    </instructions>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>bundle-manifest</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
