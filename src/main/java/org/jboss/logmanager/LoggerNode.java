@@ -19,17 +19,18 @@
 
 package org.jboss.logmanager;
 
-import io.smallrye.common.constraint.Assert;
-import io.smallrye.common.ref.PhantomReference;
-import io.smallrye.common.ref.Reaper;
-import io.smallrye.common.ref.Reference;
-
+import java.lang.invoke.ConstantBootstraps;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -38,6 +39,11 @@ import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+
+import io.smallrye.common.constraint.Assert;
+import io.smallrye.common.ref.PhantomReference;
+import io.smallrye.common.ref.Reaper;
+import io.smallrye.common.ref.Reference;
 
 /**
  * A node in the tree of logger names.  Maintains weak references to children and a strong reference to its parent.
@@ -51,6 +57,7 @@ final class LoggerNode implements AutoCloseable {
         }
     };
     private static final StackTraceElement[] EMPTY_STACK = new StackTraceElement[0];
+    private static final VarHandle attachmentHandle = ConstantBootstraps.fieldVarHandle(MethodHandles.lookup(), "attachments", VarHandle.class, LoggerNode.class, Map.class);
 
     /**
      * The log context.
@@ -116,6 +123,8 @@ final class LoggerNode implements AutoCloseable {
      * The second attachment value.
      */
     private Object attachmentValue2;
+
+    private volatile Map<Logger.AttachmentKey<?>, Object> attachments = Collections.emptyMap();
 
     /**
      * The atomic updater for the {@link #handlers} field.
@@ -234,6 +243,7 @@ final class LoggerNode implements AutoCloseable {
             attachmentValue1 = null;
             attachmentKey2 = null;
             attachmentValue2 = null;
+            attachmentHandle.set(this, Collections.emptyMap());
             children.clear();
         }
     }
@@ -456,37 +466,22 @@ final class LoggerNode implements AutoCloseable {
     @SuppressWarnings({ "unchecked" })
     <V> V getAttachment(final Logger.AttachmentKey<V> key) {
         Assert.checkNotNullParam("key", key);
-        synchronized (this) {
-            if (key == attachmentKey1) return (V) attachmentValue1;
-            if (key == attachmentKey2) return (V) attachmentValue2;
-        }
-        return null;
+        return (V) attachments.get(key);
     }
 
     @SuppressWarnings({ "unchecked" })
     <V> V attach(final Logger.AttachmentKey<V> key, final V value) {
         Assert.checkNotNullParam("key", key);
         Assert.checkNotNullParam("value", value);
+
+        Map<Logger.AttachmentKey<?>, Object> oldAttachments;
+        Map<Logger.AttachmentKey<?>, Object> newAttachments;
         V old;
-        synchronized (this) {
-            if (key == attachmentKey1) {
-                old = (V) attachmentValue1;
-                attachmentValue1 = value;
-            } else if (key == attachmentKey2) {
-                old = (V) attachmentValue2;
-                attachmentValue2 = value;
-            } else if (attachmentKey1 == null) {
-                old = null;
-                attachmentKey1 = key;
-                attachmentValue1 = value;
-            } else if (attachmentKey2 == null) {
-                old = null;
-                attachmentKey2 = key;
-                attachmentValue2 = value;
-            } else {
-                throw attachmentsFull();
-            }
-        }
+        do {
+            oldAttachments = attachments;
+            newAttachments = new HashMap<>(oldAttachments);
+            old = (V) newAttachments.put(key, value);
+        } while (!attachmentHandle.compareAndSet(this, oldAttachments, Map.copyOf(newAttachments)));
         return old;
     }
 
@@ -494,43 +489,41 @@ final class LoggerNode implements AutoCloseable {
     <V> V attachIfAbsent(final Logger.AttachmentKey<V> key, final V value) {
         Assert.checkNotNullParam("key", key);
         Assert.checkNotNullParam("value", value);
-        V old;
-        synchronized (this) {
-            if (key == attachmentKey1) {
-                old = (V) attachmentValue1;
-            } else if (key == attachmentKey2) {
-                old = (V) attachmentValue2;
-            } else if (attachmentKey1 == null) {
-                old = null;
-                attachmentKey1 = key;
-                attachmentValue1 = value;
-            } else if (attachmentKey2 == null) {
-                old = null;
-                attachmentKey2 = key;
-                attachmentValue2 = value;
-            } else {
-                throw attachmentsFull();
+        Map<Logger.AttachmentKey<?>, Object> oldAttachments;
+        Map<Logger.AttachmentKey<?>, Object> newAttachments;
+        do {
+            oldAttachments = attachments;
+            if (oldAttachments.containsKey(key)) {
+                return (V) oldAttachments.get(key);
             }
-        }
-        return old;
+            newAttachments = new HashMap<>(oldAttachments);
+            newAttachments.put(key, value);
+        } while (!attachmentHandle.compareAndSet(this, oldAttachments, Map.copyOf(newAttachments)));
+        return null;
     }
 
     @SuppressWarnings({ "unchecked" })
     public <V> V detach(final Logger.AttachmentKey<V> key) {
         Assert.checkNotNullParam("key", key);
-        V old;
-        synchronized (this) {
-            if (key == attachmentKey1) {
-                old = (V) attachmentValue1;
-                attachmentValue1 = null;
-            } else if (key == attachmentKey2) {
-                old = (V) attachmentValue2;
-                attachmentValue2 = null;
-            } else {
-                old = null;
+        Map<Logger.AttachmentKey<?>, Object> oldAttachments;
+        Map<Logger.AttachmentKey<?>, Object> newAttachments;
+        V result;
+        int size;
+        do {
+            oldAttachments = attachments;
+            result = (V) oldAttachments.get(key);
+            if (result == null) {
+                return null;
             }
-        }
-        return old;
+            size = oldAttachments.size();
+            if (size == 1) {
+                // special case - the new map is empty
+                newAttachments = Collections.emptyMap();
+            } else {
+                newAttachments = new HashMap<>(oldAttachments);
+            }
+        } while (!attachmentHandle.compareAndSet(this, oldAttachments, size == 1 ? newAttachments : Map.copyOf(newAttachments)));
+        return result;
     }
 
     String getFullName() {
