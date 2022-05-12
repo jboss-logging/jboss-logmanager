@@ -33,7 +33,7 @@ public class DefaultConfiguratorFactory implements ConfiguratorFactory {
 
     @Override
     public LogContextConfigurator create() {
-        return new DefaultLogContextConfigurator();
+        return new PropertyLogContextConfigurator();
     }
 
     @Override

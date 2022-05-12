@@ -19,9 +19,11 @@
 
 package org.jboss.logmanager.configuration;
 
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.ErrorManager;
@@ -29,6 +31,7 @@ import java.util.logging.Filter;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 
+import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
 
 /**
@@ -47,23 +50,65 @@ import org.jboss.logmanager.Logger;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings({ "UnusedReturnValue", "unused" })
-public class ContextConfiguration {
+public class ContextConfiguration implements AutoCloseable {
     public static final Logger.AttachmentKey<ContextConfiguration> CONTEXT_CONFIGURATION_KEY = new Logger.AttachmentKey<>();
-    private final Map<String, Supplier<ErrorManager>> errorManagers;
-    private final Map<String, Supplier<Filter>> filters;
-    private final Map<String, Supplier<Formatter>> formatters;
-    private final Map<String, Supplier<Handler>> handlers;
-    private final Map<String, Supplier<Object>> objects;
+    private final LogContext context;
+    private final Map<String, ConfigurationResource<ErrorManager>> errorManagers;
+    private final Map<String, ConfigurationResource<Filter>> filters;
+    private final Map<String, ConfigurationResource<Formatter>> formatters;
+    private final Map<String, ConfigurationResource<Handler>> handlers;
+    private final Map<String, ConfigurationResource<Object>> objects;
 
     /**
      * Creates a new context configuration.
      */
-    public ContextConfiguration() {
+    public ContextConfiguration(final LogContext context) {
+        this.context = context;
         errorManagers = new ConcurrentHashMap<>();
         handlers = new ConcurrentHashMap<>();
         formatters = new ConcurrentHashMap<>();
         filters = new ConcurrentHashMap<>();
         objects = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Returns the {@linkplain LogContext context} for this configuration.
+     *
+     * @return the context for this configuration
+     */
+    public LogContext getContext() {
+        return context;
+    }
+
+    /**
+     * Checks if the logger exists in this context.
+     *
+     * @param name the logger name
+     *
+     * @return {@code true} if the logger exists in this context, otherwise {@code false}
+     */
+    public boolean hasLogger(final String name) {
+        return getContext().getLoggerIfExists(Objects.requireNonNull(name, "The name cannot be null")) != null;
+    }
+
+    /**
+     * Gets the logger if it exists.
+     *
+     * @param name the name of the logger
+     *
+     * @return the logger or {@code null} if the logger does not exist
+     */
+    public Logger getLogger(final String name) {
+        return getContext().getLogger(Objects.requireNonNull(name, "The name cannot be null"));
+    }
+
+    /**
+     * Returns an unmodifiable set of the configured logger names
+     *
+     * @return an unmodified set of the logger names
+     */
+    public Set<String> getLoggers() {
+        return Set.copyOf(Collections.list(getContext().getLoggerNames()));
     }
 
     /**
@@ -79,7 +124,7 @@ public class ContextConfiguration {
             return removeErrorManager(name);
         }
         return errorManagers.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(errorManager));
+                ConfigurationResource.of(errorManager));
     }
 
     /**
@@ -140,7 +185,7 @@ public class ContextConfiguration {
             return removeHandler(name);
         }
         return handlers.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(handler));
+                ConfigurationResource.of(handler));
     }
 
     /**
@@ -201,7 +246,7 @@ public class ContextConfiguration {
             return removeFormatter(name);
         }
         return formatters.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(formatter));
+                ConfigurationResource.of(formatter));
     }
 
     /**
@@ -262,7 +307,7 @@ public class ContextConfiguration {
             return removeFilter(name);
         }
         return filters.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(filter));
+                ConfigurationResource.of(filter));
     }
 
     /**
@@ -324,7 +369,7 @@ public class ContextConfiguration {
             return removeObject(name);
         }
         return objects.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(object));
+                ConfigurationResource.of(object));
     }
 
     /**
@@ -372,28 +417,30 @@ public class ContextConfiguration {
         return Collections.unmodifiableMap(objects);
     }
 
-    private static class SingletonSupplier<T> implements Supplier<T> {
-        private final Supplier<T> supplier;
-        private volatile T instance;
+    @Override
+    public void close() throws Exception {
+        context.close();
+        // TODO (jrp) these are not really thread safe
+        closeResources(handlers.values());
+        handlers.clear();
+        closeResources(filters.values());
+        filters.clear();
+        closeResources(formatters.values());
+        formatters.clear();
+        closeResources(errorManagers.values());
+        errorManagers.clear();
+        closeResources(objects.values());
+        objects.clear();
+    }
 
-        private SingletonSupplier(final Supplier<T> supplier) {
-            this.supplier = supplier;
-        }
-
-        static <T> Supplier<T> of(final Supplier<T> supplier) {
-            return new SingletonSupplier<>(supplier);
-        }
-
-        @Override
-        public T get() {
-            if (instance == null) {
-                synchronized (this) {
-                    if (instance == null) {
-                        instance = supplier.get();
-                    }
-                }
+    private static void closeResources(final Collection<? extends AutoCloseable> closeables) {
+        for (var closeable : closeables) {
+            try {
+                closeable.close();
+            } catch (Throwable ignore) {
+                // do nothing
             }
-            return instance;
         }
     }
+
 }

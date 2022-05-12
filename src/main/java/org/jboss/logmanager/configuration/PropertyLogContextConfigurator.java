@@ -58,11 +58,12 @@ import org.jboss.logmanager.handlers.ConsoleHandler;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class DefaultLogContextConfigurator implements LogContextConfigurator {
+public class PropertyLogContextConfigurator implements LogContextConfigurator {
 
     @Override
     public void configure(final LogContext logContext, final InputStream inputStream) {
         final InputStream configIn = inputStream != null ? inputStream : findConfiguration();
+        final LogContext context = logContext == null ? LogContext.getLogContext() : logContext;
 
         // Configure the log context based on a property file
         if (configIn != null) {
@@ -72,19 +73,20 @@ public class DefaultLogContextConfigurator implements LogContextConfigurator {
             } catch (IOException e) {
                 throw new RuntimeException("Failed to configure log manager with configuration file.", e);
             }
-            PropertyConfigurator.configure(logContext, properties);
+            final PropertyContextConfiguration configurator = PropertyContextConfiguration.configure(context, properties);
+            context.attachIfAbsent(ContextConfiguration.CONTEXT_CONFIGURATION_KEY, configurator);
         } else {
             // Next check the service loader
             final Iterator<LogContextConfigurator> serviceLoader = ServiceLoader.load(LogContextConfigurator.class).iterator();
             if (serviceLoader.hasNext()) {
-                serviceLoader.next().configure(logContext, inputStream);
+                serviceLoader.next().configure(context, null);
             } else {
                 // Configure a default console handler, pattern formatter and associated with the root logger
                 final ConsoleHandler handler = new ConsoleHandler(
                         new PatternFormatter("%d{yyyy-MM-dd'T'HH:mm:ssXXX} %-5p [%c] (%t) %s%e%n"));
                 handler.setLevel(Level.INFO);
                 handler.setAutoFlush(true);
-                final Logger rootLogger = logContext.getLogger("");
+                final Logger rootLogger = context.getLogger("");
                 rootLogger.setLevel(Level.INFO);
                 rootLogger.addHandler(handler);
             }
@@ -107,6 +109,6 @@ public class DefaultLogContextConfigurator implements LogContextConfigurator {
                     return stream;
             } catch (Exception ignore) {
             }
-        return DefaultLogContextConfigurator.class.getResourceAsStream("logging.properties");
+        return PropertyLogContextConfigurator.class.getResourceAsStream("logging.properties");
     }
 }

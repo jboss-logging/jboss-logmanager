@@ -82,7 +82,7 @@ public class PropertyConfigurationTests {
                             Reader reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8)) {
                         final Properties properties = new Properties();
                         properties.load(reader);
-                        PropertyConfigurator.configure(logContext, properties);
+                        PropertyContextConfiguration.configure(logContext, properties);
                     } catch (Exception e) {
                         final StringWriter writer = new StringWriter();
                         writer.append("Failed to configure ")
@@ -97,7 +97,7 @@ public class PropertyConfigurationTests {
     @Test
     public void testSimple() {
         final Properties config = defaultProperties();
-        PropertyConfigurator.configure(logContext, config);
+        PropertyContextConfiguration.configure(logContext, config);
         testDefault(2, 1);
     }
 
@@ -111,7 +111,7 @@ public class PropertyConfigurationTests {
 
         config.setProperty("handler.TEST", TestHandler.class.getName());
 
-        PropertyConfigurator.configure(logContext, config);
+        PropertyContextConfiguration.configure(logContext, config);
         testDefault(3, 1);
 
         final Logger logger = logContext.getLoggerIfExists(loggerName);
@@ -137,7 +137,7 @@ public class PropertyConfigurationTests {
 
         config.setProperty("errorManager.TEST", TestErrorManager.class.getName());
 
-        PropertyConfigurator.configure(logContext, config);
+        PropertyContextConfiguration.configure(logContext, config);
         testDefault(2, 2);
 
         final Logger rootLogger = logContext.getLogger("");
@@ -154,7 +154,7 @@ public class PropertyConfigurationTests {
     public void testPojo() {
         final Properties config = defaultProperties();
         addPojoConfiguration(config);
-        PropertyConfigurator.configure(logContext, config);
+        PropertyContextConfiguration.configure(logContext, config);
         testDefault(2, 2);
 
         final Logger rootLogger = logContext.getLogger("");
@@ -174,7 +174,7 @@ public class PropertyConfigurationTests {
         final Properties config = defaultProperties();
         config.setProperty("handler.TEST", TestHandler.class.getName());
 
-        PropertyConfigurator.configure(logContext, config);
+        PropertyContextConfiguration.configure(logContext, config);
         testDefault(2, 1);
 
         // The test handler should not have been activated
@@ -186,7 +186,7 @@ public class PropertyConfigurationTests {
         final Properties config = defaultProperties();
         config.setProperty("formatter.TEST", TestFormatter.class.getName());
 
-        PropertyConfigurator.configure(logContext, config);
+        PropertyContextConfiguration.configure(logContext, config);
         testDefault(2, 1);
 
         // The test handler should not have been activated
@@ -198,7 +198,7 @@ public class PropertyConfigurationTests {
         final Properties config = defaultProperties();
         config.setProperty("errorManager.TEST", TestErrorManager.class.getName());
 
-        PropertyConfigurator.configure(logContext, config);
+        PropertyContextConfiguration.configure(logContext, config);
         testDefault(2, 1);
 
         // The test handler should not have been activated
@@ -210,7 +210,7 @@ public class PropertyConfigurationTests {
         final Properties config = defaultProperties();
         config.setProperty("filter.TEST", TestFilter.class.getName());
 
-        PropertyConfigurator.configure(logContext, config);
+        PropertyContextConfiguration.configure(logContext, config);
         testDefault(2, 1);
 
         // The test handler should not have been activated
