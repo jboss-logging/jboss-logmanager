@@ -34,7 +34,7 @@ import org.jboss.logmanager.ExtLogRecord;
 public class SizeRotatingFileHandler extends FileHandler {
     private final AccessControlContext acc = AccessController.getContext();
     // by default, rotate at 10MB
-    private long rotateSize = 0xa0000L;
+    private long rotateSize = 0xa00000L;
     private int maxBackupIndex = 1;
     private CountingOutputStream outputStream;
     private boolean rotateOnBoot;
