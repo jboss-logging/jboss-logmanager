@@ -465,7 +465,7 @@ public final class Formatters {
     public static FormatStep dateFormatStep(final TimeZone timeZone, final String formatString, final boolean leftJustify, final int minimumWidth,
                                             final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
-            final DateTimeFormatter dtf = DateTimeFormatter.ofPattern(formatString == null ? "yyyy-MM-DD HH:mm:ss,SSS" : formatString);
+            final DateTimeFormatter dtf = createDateTimeFormatter(formatString);
 
             public ItemType getItemType() {
                 return ItemType.DATE;
@@ -475,6 +475,17 @@ public final class Formatters {
                 dtf.formatTo(record.getInstant().atZone(timeZone.toZoneId()), builder);
             }
         };
+    }
+
+    private static DateTimeFormatter createDateTimeFormatter(String formatString) {
+        if ((formatString == null) || "ISO8601".equals(formatString)) { // Logback uses 'ISO8601'
+            return DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS");
+        } else if ("ISO_LOCAL_DATE_TIME".equals(formatString)) {
+            return DateTimeFormatter.ISO_LOCAL_DATE_TIME;
+        } else if ("ISO_OFFSET_DATE_TIME".equals(formatString)) {
+            return DateTimeFormatter.ISO_OFFSET_DATE_TIME;
+        }
+        return DateTimeFormatter.ofPattern(formatString);
     }
 
     /**
