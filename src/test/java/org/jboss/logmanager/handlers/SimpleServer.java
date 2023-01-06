@@ -61,6 +61,12 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         return server;
     }
 
+    static SimpleServer createTcpServer() throws IOException {
+        final SimpleServer server = new TcpServer(ServerSocketFactory.getDefault(), new LinkedBlockingDeque<>());
+        server.start();
+        return server;
+    }
+
 
     static SimpleServer createTlsServer(final int port) throws IOException, GeneralSecurityException {
         final SimpleServer server = new TcpServer(SSLServerSocketFactory.getDefault(), new LinkedBlockingDeque<>(), port);
@@ -68,8 +74,15 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         return server;
     }
 
-    static SimpleServer createUdpServer(final int port) throws IOException {
-        final SimpleServer server = new UdpServer(new LinkedBlockingDeque<>(), port);
+
+    static SimpleServer createTlsServer() throws IOException, GeneralSecurityException {
+        final SimpleServer server = new TcpServer(SSLServerSocketFactory.getDefault(), new LinkedBlockingDeque<>());
+        server.start();
+        return server;
+    }
+
+    static SimpleServer createUdpServer() throws IOException {
+        final SimpleServer server = new UdpServer(new LinkedBlockingDeque<>());
         server.start();
         return server;
     }
@@ -96,6 +109,8 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         service.awaitTermination(30, TimeUnit.SECONDS);
     }
 
+    abstract int getPort();
+
     private static class TcpServer extends SimpleServer {
         private final BlockingQueue<String> data;
         private final AtomicBoolean closed = new AtomicBoolean(true);
@@ -105,6 +120,12 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         private TcpServer(final ServerSocketFactory serverSocketFactory, final BlockingQueue<String> data, final int port) throws IOException {
             super(data);
             this.serverSocket = serverSocketFactory.createServerSocket(port);
+            this.data = data;
+        }
+
+        private TcpServer(final ServerSocketFactory serverSocketFactory, final BlockingQueue<String> data) throws IOException {
+            super(data);
+            this.serverSocket = serverSocketFactory.createServerSocket(0);
             this.data = data;
         }
 
@@ -151,6 +172,11 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
                 super.close();
             }
         }
+
+        @Override
+        int getPort() {
+            return serverSocket.getLocalPort();
+        }
     }
 
     private static class UdpServer extends SimpleServer {
@@ -158,10 +184,10 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         private final AtomicBoolean closed = new AtomicBoolean(true);
         private final DatagramSocket socket;
 
-        private UdpServer(final BlockingQueue<String> data, final int port) throws SocketException {
+        private UdpServer(final BlockingQueue<String> data) throws SocketException {
             super(data);
             this.data = data;
-            socket = new DatagramSocket(port);
+            socket = new DatagramSocket();
         }
 
         @Override
@@ -201,6 +227,11 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
             } finally {
                 super.close();
             }
+        }
+
+        @Override
+        int getPort() {
+            return socket.getLocalPort();
         }
     }
 }
