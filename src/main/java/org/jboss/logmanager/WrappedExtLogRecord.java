@@ -158,6 +158,12 @@ class WrappedExtLogRecord extends ExtLogRecord {
         orig.setMessage(message);
     }
 
+    @Override
+    public void setMessage(String message, FormatStyle formatStyle) {
+        super.setMessage(message, formatStyle);
+        orig.setMessage(message);
+    }
+
     public Object[] getParameters() {
         return orig.getParameters();
     }
