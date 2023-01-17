@@ -506,6 +506,27 @@ public final class FilterTests {
         assertEquals("null", logRecord.getFormattedMessage());
     }
 
+    @Test
+    public void substitutionFilterWithLogRecord(){
+        final AtomicReference<String> result = new AtomicReference<String>();
+        final Handler handler = new MessageCheckingHandler(result);
+        final Logger logger = Logger.getLogger("filterTest");
+        final Filter filter = new SubstituteFilter(Pattern.compile("test"),"lunch",true);
+
+        logger.setUseParentHandlers(false);
+        logger.addHandler(handler);
+        logger.setLevel(Level.INFO);
+        logger.setFilter(filter);
+        handler.setLevel(Level.INFO);
+
+        final LogRecord record = new LogRecord(Level.INFO,"{0}");
+        record.setLoggerName("filterTest");
+        record.setParameters(new Object[]{"test"});
+
+        logger.log(record);
+        assertEquals("The substitution was not correctly applied","lunch",result.get());
+    }
+
 
 
     private static final class MessageCheckingHandler extends Handler {
