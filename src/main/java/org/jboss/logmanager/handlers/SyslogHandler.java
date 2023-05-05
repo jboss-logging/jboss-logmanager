@@ -526,7 +526,7 @@ public class SyslogHandler extends ExtHandler {
                 }
 
                 // Trailer in bytes
-                final byte[] trailer = delimiter == null ? new byte[] {0x00} : delimiter.getBytes();
+                final byte[] trailer = delimiter == null ? new byte[] {0x00} : delimiter.getBytes(StandardCharsets.UTF_8);
 
                 // Buffer currently only has the header
                 final int maxMsgLen = maxLen - (header.length + (useDelimiter ? trailer.length : 0));
