@@ -131,7 +131,8 @@ public class DelayedHandler extends ExtHandler {
             publishToNestedHandlers(record);
             super.doPublish(record);
         } else {
-            synchronized (this) {
+            lock.lock();
+            try {
                 // Check one more time to see if we've been activated before queuing the messages
                 if (activated) {
                     publishToNestedHandlers(record);
@@ -154,6 +155,8 @@ public class DelayedHandler extends ExtHandler {
                     }
                     enqueueOrdered(q, record);
                 }
+            } finally {
+                lock.unlock();
             }
         }
     }
@@ -165,7 +168,7 @@ public class DelayedHandler extends ExtHandler {
      * @param record the record
      */
     private void enqueueOrdered(Deque<ExtLogRecord> q, ExtLogRecord record) {
-        assert Thread.holdsLock(this);
+        assert lock.isHeldByCurrentThread();
         ExtLogRecord last = q.peekLast();
         if (last != null) {
             // check the ordering
@@ -185,7 +188,7 @@ public class DelayedHandler extends ExtHandler {
     }
 
     private Supplier<ExtLogRecord> drain() {
-        assert Thread.holdsLock(this);
+        assert lock.isHeldByCurrentThread();
         if (queues.isEmpty()) {
             return () -> null;
         }
@@ -233,14 +236,15 @@ public class DelayedHandler extends ExtHandler {
     @Override
     public final void close() throws SecurityException {
         checkAccess();
-        synchronized (this) {
+        lock.lock();
+        try {
             if (!queues.isEmpty()) {
                 Formatter formatter = getFormatter();
                 if (formatter == null) {
                     formatter = new PatternFormatter("%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n");
                 }
                 StandardOutputStreams.printError("The DelayedHandler was closed before any children handlers were " +
-                        "configured. Messages will be written to stderr.");
+                    "configured. Messages will be written to stderr.");
                 // Always attempt to drain the queue
                 Supplier<ExtLogRecord> drain = drain();
                 ExtLogRecord record;
@@ -248,6 +252,8 @@ public class DelayedHandler extends ExtHandler {
                     StandardOutputStreams.printError(formatter.format(record));
                 }
             }
+        } finally {
+            lock.unlock();
         }
         activated = false;
         super.close();
@@ -353,16 +359,21 @@ public class DelayedHandler extends ExtHandler {
         return activated;
     }
 
-    private synchronized void activate() {
-        // Always attempt to drain the queue
-        ExtLogRecord record;
-        final LogContext logContext = this.logContext;
-        Supplier<ExtLogRecord> drain = drain();
-        while ((record = drain.get()) != null) {
-            if (isEnabled() && isLoggable(record) && (logContext == null || logContext.getLogger(record.getLoggerName()).isLoggable(record.getLevel()))) {
-                publishToNestedHandlers(record);
+    private void activate() {
+        lock.lock();
+        try {
+            // Always attempt to drain the queue
+            ExtLogRecord record;
+            final LogContext logContext = this.logContext;
+            Supplier<ExtLogRecord> drain = drain();
+            while ((record = drain.get()) != null) {
+                if (isEnabled() && isLoggable(record) && (logContext == null || logContext.getLogger(record.getLoggerName()).isLoggable(record.getLevel()))) {
+                    publishToNestedHandlers(record);
+                }
             }
+            activated = true;
+        } finally {
+            lock.unlock();
         }
-        activated = true;
     }
 }

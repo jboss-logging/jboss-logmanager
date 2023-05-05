@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
@@ -217,7 +218,9 @@ final class LoggerNode implements AutoCloseable {
 
     @Override
     public void close() {
-        synchronized (context.treeLock) {
+        final ReentrantLock treeLock = context.treeLock;
+        treeLock.lock();
+        try {
             // Reset everything to defaults
             filter = null;
             if ("".equals(fullName)) {
@@ -235,6 +238,8 @@ final class LoggerNode implements AutoCloseable {
             attachmentKey2 = null;
             attachmentValue2 = null;
             children.clear();
+        } finally {
+            treeLock.unlock();
         }
     }
 
@@ -419,9 +424,9 @@ final class LoggerNode implements AutoCloseable {
     }
 
     void setLevel(final Level newLevel) {
-        final LogContext context = this.context;
-        final Object lock = context.treeLock;
-        synchronized (lock) {
+        final ReentrantLock treeLock = context.treeLock;
+        treeLock.lock();
+        try {
             final int oldEffectiveLevel = effectiveLevel;
             final int newEffectiveLevel;
             if (newLevel != null) {
@@ -446,6 +451,8 @@ final class LoggerNode implements AutoCloseable {
                     }
                 }
             }
+        } finally {
+            treeLock.unlock();
         }
     }
 
@@ -554,10 +561,12 @@ final class LoggerNode implements AutoCloseable {
             final Filter filter = this.filter;
             return filter == null || filter.isLoggable(record);
         }
-        final LogContext context = this.context;
-        final Object lock = context.treeLock;
-        synchronized (lock) {
+        final ReentrantLock treeLock = context.treeLock;
+        treeLock.lock();
+        try {
             return isLoggable(this, record);
+        } finally {
+            treeLock.unlock();
         }
     }
 

@@ -25,6 +25,7 @@ import java.nio.charset.Charset;
 import java.security.Permission;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Formatter;
@@ -43,6 +44,15 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
 
     private static final ErrorManager DEFAULT_ERROR_MANAGER = new OnlyOnceErrorManager();
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
+
+    protected final ReentrantLock lock = new ReentrantLock();
+
+    // we keep our own copies of these fields so that they are protected with *our* lock:
+    private volatile Filter filter;
+    private volatile Formatter formatter;
+    private volatile Level level = Level.ALL;
+    private volatile ErrorManager errorManager = new ErrorManager();
+    // (skip `encoding` because we replace it with `charset` below)
 
     private volatile boolean autoFlush = true;
     private volatile boolean enabled = true;
@@ -330,13 +340,34 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     @Override
     public void setFormatter(final Formatter newFormatter) throws SecurityException {
         checkAccess();
-        super.setFormatter(newFormatter);
+        Objects.requireNonNull(newFormatter);
+        lock.lock();
+        try {
+            formatter = newFormatter;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Formatter getFormatter() {
+        return formatter;
     }
 
     @Override
     public void setFilter(final Filter newFilter) throws SecurityException {
         checkAccess();
-        super.setFilter(newFilter);
+        lock.lock();
+        try {
+            filter = newFilter;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Filter getFilter() {
+        return filter;
     }
 
     /**
@@ -349,7 +380,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      */
     @Override
     public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
-        try {
+        if (encoding != null) try {
             setCharset(Charset.forName(encoding));
         } catch (IllegalArgumentException e) {
             final UnsupportedEncodingException e2 = new UnsupportedEncodingException("Unable to set encoding to \"" + encoding + "\"");
@@ -388,7 +419,12 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      */
     protected void setCharsetPrivate(final Charset charset) throws SecurityException {
         Objects.requireNonNull(charset, "charset");
-        this.charset = charset;
+        lock.lock();
+        try {
+            this.charset = charset;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -402,14 +438,36 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
 
     @Override
     public void setErrorManager(final ErrorManager em) {
+        Objects.requireNonNull(em);
         checkAccess();
-        super.setErrorManager(em);
+        lock.lock();
+        try {
+            errorManager = em;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public ErrorManager getErrorManager() {
+        return errorManager;
     }
 
     @Override
     public void setLevel(final Level newLevel) throws SecurityException {
+        Objects.requireNonNull(newLevel);
         checkAccess();
-        super.setLevel(newLevel);
+        lock.lock();
+        try {
+            level = newLevel;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    @Override
+    public Level getLevel() {
+        return level;
     }
 
     /**

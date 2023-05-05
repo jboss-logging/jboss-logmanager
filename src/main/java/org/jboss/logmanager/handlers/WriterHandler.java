@@ -35,7 +35,6 @@ import org.jboss.logmanager.ExtHandler;
  */
 public class WriterHandler extends ExtHandler {
 
-    protected final Object outputLock = new Object();
     private volatile boolean checkHeadEncoding = true;
     private volatile boolean checkTailEncoding = true;
     private Writer writer;
@@ -61,7 +60,8 @@ public class WriterHandler extends ExtHandler {
             return;
         }
         try {
-            synchronized (outputLock) {
+            lock.lock();
+            try {
                 if (writer == null) {
                     return;
                 }
@@ -73,6 +73,8 @@ public class WriterHandler extends ExtHandler {
                 writer.write(formatted);
                 // only flush if something was written
                 super.doPublish(record);
+            } finally {
+                lock.unlock();
             }
         } catch (Exception ex) {
             reportError("Error writing log message", ex, ErrorManager.WRITE_FAILURE);
@@ -101,7 +103,8 @@ public class WriterHandler extends ExtHandler {
         Writer oldWriter = null;
         boolean ok = false;
         try {
-            synchronized (outputLock) {
+            lock.lock();
+            try {
                 oldWriter = this.writer;
                 if (oldWriter != null) {
                     writeTail(oldWriter);
@@ -113,6 +116,8 @@ public class WriterHandler extends ExtHandler {
                     this.writer = null;
                 }
                 ok = true;
+            } finally {
+                lock.unlock();
             }
         } finally {
             safeClose(oldWriter);
@@ -201,8 +206,11 @@ public class WriterHandler extends ExtHandler {
      */
     public void flush() {
         // todo - maybe this synch is not really needed... if there's a perf detriment, drop it
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             safeFlush(writer);
+        } finally {
+            lock.unlock();
         }
         super.flush();
     }

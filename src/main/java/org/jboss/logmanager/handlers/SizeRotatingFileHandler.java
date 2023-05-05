@@ -129,9 +129,12 @@ public class SizeRotatingFileHandler extends FileHandler {
 
     /** {@inheritDoc} */
     public void setOutputStream(final OutputStream outputStream) {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.outputStream = outputStream == null ? null : new CountingOutputStream(outputStream);
             super.setOutputStream(this.outputStream);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -142,7 +145,8 @@ public class SizeRotatingFileHandler extends FileHandler {
      */
     public void setFile(final File file) throws FileNotFoundException {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             // Check for a rotate
             if (rotateOnBoot && maxBackupIndex > 0 && file != null && file.exists() && file.length() > 0L) {
                 // Make sure any previous files are closed before we attempt to rotate
@@ -150,6 +154,8 @@ public class SizeRotatingFileHandler extends FileHandler {
                 suffixRotator.rotate(getErrorManager(), file.toPath(), maxBackupIndex);
             }
             setFileInternal(file, false);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -159,8 +165,11 @@ public class SizeRotatingFileHandler extends FileHandler {
      * @return {@code true} if file should rotate on boot, otherwise {@code false}/
      */
     public boolean isRotateOnBoot() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return rotateOnBoot;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -172,8 +181,11 @@ public class SizeRotatingFileHandler extends FileHandler {
      */
     public void setRotateOnBoot(final boolean rotateOnBoot) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.rotateOnBoot = rotateOnBoot;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -184,8 +196,11 @@ public class SizeRotatingFileHandler extends FileHandler {
      */
     public void setRotateSize(final long rotateSize) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.rotateSize = rotateSize;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -196,8 +211,11 @@ public class SizeRotatingFileHandler extends FileHandler {
      */
     public void setMaxBackupIndex(final int maxBackupIndex) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.maxBackupIndex = maxBackupIndex;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -233,8 +251,11 @@ public class SizeRotatingFileHandler extends FileHandler {
      */
     public void setSuffix(final String suffix) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.suffixRotator = SuffixRotator.parse(acc, suffix);
+        } finally {
+            lock.unlock();
         }
     }
 

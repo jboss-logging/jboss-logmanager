@@ -42,6 +42,7 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.util.Collection;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
@@ -318,7 +319,6 @@ public class SyslogHandler extends ExtHandler {
         }
     }
 
-    private final Object outputLock = new Object();
     private InetAddress serverAddress;
     private int port;
     private String appName;
@@ -509,7 +509,8 @@ public class SyslogHandler extends ExtHandler {
 
     @Override
     public final void doPublish(final ExtLogRecord record) {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             init();
             if (out == null) {
                 throw new IllegalStateException("The syslog handler has been closed.");
@@ -533,7 +534,7 @@ public class SyslogHandler extends ExtHandler {
                 // Can't write the message if the header and trailer are bigger than the allowed length
                 if (maxMsgLen < 1) {
                     throw new IOException(String.format("The header and delimiter length, %d, is greater than the message length, %d, allows.",
-                            (header.length + (useDelimiter ? trailer.length : 0)), maxLen));
+                        (header.length + (useDelimiter ? trailer.length : 0)), maxLen));
                 }
 
                 // Get the message
@@ -569,6 +570,8 @@ public class SyslogHandler extends ExtHandler {
             } catch (IOException e) {
                 reportError("Could not write to syslog", e, ErrorManager.WRITE_FAILURE);
             }
+        } finally {
+            lock.unlock();
         }
         super.doPublish(record);
     }
@@ -602,17 +605,23 @@ public class SyslogHandler extends ExtHandler {
 
     @Override
     public void close() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             safeClose(out);
             out = null;
+        } finally {
+            lock.unlock();
         }
         super.close();
     }
 
     @Override
     public void flush() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             safeFlush(out);
+        } finally {
+            lock.unlock();
         }
         super.flush();
     }
@@ -623,8 +632,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the app name being used
      */
     public String getAppName() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return appName;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -639,8 +651,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setAppName(final String appName) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.appName = checkPrintableAscii("app name", appName);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -652,8 +667,11 @@ public class SyslogHandler extends ExtHandler {
      * @return {@code true} if blocking is enabled, otherwise {@code false}
      */
     public boolean isBlockOnReconnect() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return blockOnReconnect;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -669,11 +687,14 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setBlockOnReconnect(final boolean blockOnReconnect) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.blockOnReconnect = blockOnReconnect;
             if (out instanceof TcpOutputStream) {
                 ((TcpOutputStream) out).setBlockOnReconnect(blockOnReconnect);
             }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -684,9 +705,12 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setClientSocketFactory(final ClientSocketFactory clientSocketFactory) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.clientSocketFactory = clientSocketFactory;
             initializeConnection = true;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -727,8 +751,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the pid or {@code null} if the pid could not be determined
      */
     public String getPid() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return pid;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -738,8 +765,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the port
      */
     public int getPort() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return port;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -753,9 +783,12 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setPort(final int port) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.port = port;
             initializeConnection = true;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -765,8 +798,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the facility
      */
     public Facility getFacility() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return facility;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -780,8 +816,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setFacility(final Facility facility) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.facility = facility;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -791,8 +830,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the host name
      */
     public String getHostname() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return hostname;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -803,8 +845,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the maximum length, in bytes, of the message allowed to be sent
      */
     public int getMaxLength() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return maxLen;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -816,8 +861,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setMaxLength(final int maxLen) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.maxLen = maxLen;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -829,8 +877,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public String getMessageDelimiter() {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return delimiter;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -842,8 +893,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setMessageDelimiter(final String delimiter) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.delimiter = delimiter;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -853,8 +907,11 @@ public class SyslogHandler extends ExtHandler {
      * @return {@code true} to append the message with a delimiter, otherwise {@code false}
      */
     public boolean isUseMessageDelimiter() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return useDelimiter;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -865,8 +922,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setUseMessageDelimiter(final boolean useDelimiter) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.useDelimiter = useDelimiter;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -889,8 +949,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setHostname(final String hostname) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.hostname = checkPrintableAscii("host name", hostname);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -903,8 +966,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the message transfer type
      */
     public boolean isUseCountingFraming() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return useCountingFraming;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -921,8 +987,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setUseCountingFraming(final boolean useCountingFraming) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.useCountingFraming = useCountingFraming;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -948,8 +1017,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the server address
      */
     public InetAddress getServerAddress() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return serverAddress;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -963,9 +1035,12 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setServerAddress(final InetAddress serverAddress) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.serverAddress = serverAddress;
             initializeConnection = true;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -975,8 +1050,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the syslog type
      */
     public SyslogType getSyslogType() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return syslogType;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -990,8 +1068,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setSyslogType(final SyslogType syslogType) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.syslogType = syslogType;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -1001,8 +1082,11 @@ public class SyslogHandler extends ExtHandler {
      * @return the protocol
      */
     public Protocol getProtocol() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return protocol;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -1013,9 +1097,12 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setProtocol(final Protocol type) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.protocol = type;
             initializeConnection = true;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -1041,8 +1128,11 @@ public class SyslogHandler extends ExtHandler {
      * @return {@code true} if the message should be truncated if too large, otherwise {@code false}
      */
     public boolean isTruncate() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return truncate;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -1057,8 +1147,11 @@ public class SyslogHandler extends ExtHandler {
      */
     public void setTruncate(final boolean truncate) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.truncate = truncate;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -1066,7 +1159,8 @@ public class SyslogHandler extends ExtHandler {
         OutputStream oldOut = null;
         boolean ok = false;
         try {
-            synchronized (outputLock) {
+            lock.lock();
+            try {
                 initializeConnection = false;
                 oldOut = this.out;
                 if (oldOut != null) {
@@ -1075,6 +1169,8 @@ public class SyslogHandler extends ExtHandler {
                 this.out = out;
                 ok = true;
                 this.outputStreamSet = (out != null && outputStreamSet);
+            } finally {
+                lock.unlock();
             }
         } finally {
             safeClose(oldOut);
@@ -1261,12 +1357,15 @@ public class SyslogHandler extends ExtHandler {
     }
 
     private ClientSocketFactory getClientSocketFactory() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             if (clientSocketFactory != null) {
                 return clientSocketFactory;
             }
             final SocketFactory socketFactory = (protocol == Protocol.SSL_TCP ? SSLSocketFactory.getDefault() : SocketFactory.getDefault());
             return ClientSocketFactory.of(socketFactory, serverAddress, port);
+        } finally {
+            lock.unlock();
         }
     }
 

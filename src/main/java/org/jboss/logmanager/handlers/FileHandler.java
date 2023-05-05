@@ -125,8 +125,11 @@ public class FileHandler extends OutputStreamHandler {
      * @param append {@code true} to append, {@code false} to overwrite
      */
     public void setAppend(final boolean append) {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.append = append;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -137,7 +140,8 @@ public class FileHandler extends OutputStreamHandler {
      * @throws FileNotFoundException if an error occurs opening the file
      */
     public void setFile(File file) throws FileNotFoundException {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             if (file == null) {
                 this.file = null;
                 setOutputStream(null);
@@ -165,6 +169,8 @@ public class FileHandler extends OutputStreamHandler {
                     safeClose(fos);
                 }
             }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -174,8 +180,11 @@ public class FileHandler extends OutputStreamHandler {
      * @return the file
      */
     public File getFile() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return file;
+        } finally {
+            lock.unlock();
         }
     }
 

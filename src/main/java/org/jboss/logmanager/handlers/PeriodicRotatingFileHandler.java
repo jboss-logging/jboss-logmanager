@@ -106,11 +106,14 @@ public class PeriodicRotatingFileHandler extends FileHandler {
 
     @Override
     public void setFile(final File file) throws FileNotFoundException {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             super.setFile(file);
             if (format != null && file != null && file.lastModified() > 0) {
                 calcNextRollover(Instant.ofEpochMilli(file.lastModified()));
             }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -160,7 +163,8 @@ public class PeriodicRotatingFileHandler extends FileHandler {
                 case 'S': throw new IllegalArgumentException("Rotating by second or millisecond is not supported");
             }
         }
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.format = format;
             this.period = period;
             this.suffixRotator = suffixRotator;
@@ -172,6 +176,8 @@ public class PeriodicRotatingFileHandler extends FileHandler {
                 now = Instant.now();
             }
             calcNextRollover(now);
+        } finally {
+            lock.unlock();
         }
     }
 
