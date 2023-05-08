@@ -87,9 +87,7 @@ public class QueueHandler extends ExtHandler {
                 if (buffer.size() == limit) { buffer.removeFirst(); }
                 buffer.addLast(record);
             }
-            for (Handler handler : getHandlers()) {
-                handler.publish(record);
-            }
+            publishToNestedHandlers(record);
         }
     }
 

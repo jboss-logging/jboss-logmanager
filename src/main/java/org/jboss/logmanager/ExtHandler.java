@@ -88,8 +88,29 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      * @param record the log record to publish
      */
     public void publish(final ExtLogRecord record) {
-        if (enabled && record != null && isLoggable(record)) {
+        if (enabled && record != null && isLoggable(record)) try {
             doPublish(record);
+        } catch (Exception e) {
+            reportError("Handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
+        } catch (Throwable ignored) {
+        }
+    }
+
+    /**
+     * Publish a log record to each nested handler.
+     *
+     * @param record the log record to publish
+     */
+    protected void publishToNestedHandlers(final ExtLogRecord record) {
+        if (record != null) {
+            for (Handler handler : getHandlers()) try {
+                if (handler != null) {
+                    handler.publish(record);
+                }
+            } catch (Exception e) {
+                reportError(handler, "Nested handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
+            } catch (Throwable ignored) {
+            }
         }
     }
 
@@ -427,6 +448,32 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
             }
         }
         return false;
+    }
+
+    @Override
+    protected void reportError(String msg, Exception ex, int code) {
+        super.reportError(msg, ex, code);
+    }
+
+    /**
+     * Report an error using a handler's specific error manager, if any.
+     *
+     * @param handler the handler
+     * @param msg the error message
+     * @param ex the exception
+     * @param code the error code
+     */
+    public static void reportError(Handler handler, String msg, Exception ex, int code) {
+        if (handler != null) {
+            ErrorManager errorManager = handler.getErrorManager();
+            if (errorManager != null) try {
+                errorManager.error(msg, ex, code);
+            } catch (Exception ex2) {
+                // use the same message as the JDK
+                System.err.println("Handler.reportError caught:");
+                ex2.printStackTrace();
+            }
+        }
     }
 
     private static boolean formatterRequiresCallerCalculation(final Formatter formatter) {

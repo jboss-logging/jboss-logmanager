@@ -128,13 +128,13 @@ public class DelayedHandler extends ExtHandler {
     protected void doPublish(final ExtLogRecord record) {
         // If activated just delegate
         if (activated) {
-            publishToChildren(record);
+            publishToNestedHandlers(record);
             super.doPublish(record);
         } else {
             synchronized (this) {
                 // Check one more time to see if we've been activated before queuing the messages
                 if (activated) {
-                    publishToChildren(record);
+                    publishToNestedHandlers(record);
                     super.doPublish(record);
                 } else {
                     // Determine if we need to calculate the caller information before we queue the record
@@ -360,15 +360,9 @@ public class DelayedHandler extends ExtHandler {
         Supplier<ExtLogRecord> drain = drain();
         while ((record = drain.get()) != null) {
             if (isEnabled() && isLoggable(record) && (logContext == null || logContext.getLogger(record.getLoggerName()).isLoggable(record.getLevel()))) {
-                publishToChildren(record);
+                publishToNestedHandlers(record);
             }
         }
         activated = true;
-    }
-
-    private void publishToChildren(final ExtLogRecord record) {
-        for (Handler handler : handlers) {
-            handler.publish(record);
-        }
     }
 }
