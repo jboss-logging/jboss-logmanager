@@ -58,6 +58,19 @@ public interface LogContextInitializer {
     }
 
     /**
+     * Get the minimum (most verbose) level allowed for the given logger name.  If the initializer returns a
+     * {@code null} level for the root logger, then a level of {@link java.util.logging.Level#ALL ALL} will be used.
+     * <p>
+     * The default implementation returns {@code null}.
+     *
+     * @param loggerName the logger name (must not be {@code null})
+     * @return the level to use, or {@code null} to inherit the level from the parent
+     */
+    default Level getMinimumLevel(String loggerName) {
+        return null;
+    }
+
+    /**
      * Get the initial set of handlers to configure for the given logger name.
      * <p>
      * The default implementation returns {@link #NO_HANDLERS}.  A value of {@code null} is considered
