@@ -36,6 +36,7 @@ import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.LoggingPermission;
 
@@ -136,7 +137,7 @@ public final class LogContext implements AutoCloseable {
     /**
      * This lock is taken any time a change is made which affects multiple nodes in the hierarchy.
      */
-    final Object treeLock = new Object();
+    final ReentrantLock treeLock = new ReentrantLock();
 
     LogContext(final boolean strong, LogContextInitializer initializer) {
         this.strong = strong;
@@ -511,13 +512,16 @@ public final class LogContext implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        synchronized (treeLock) {
+        treeLock.lock();
+        try {
             // First we want to close all loggers
             recursivelyClose(rootLogger);
             // Next process the close handlers associated with this log context
             for (AutoCloseable handler : closeHandlers) {
                 handler.close();
             }
+        } finally {
+            treeLock.unlock();
         }
     }
 
@@ -548,8 +552,11 @@ public final class LogContext implements AutoCloseable {
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
         }
-        synchronized (treeLock) {
+        treeLock.lock();
+        try {
             closeHandlers.add(closeHandler);
+        } finally {
+            treeLock.unlock();
         }
     }
 
@@ -559,8 +566,11 @@ public final class LogContext implements AutoCloseable {
      * @return the current close handlers
      */
     public Set<AutoCloseable> getCloseHandlers() {
-        synchronized (treeLock) {
+        treeLock.lock();
+        try {
             return new LinkedHashSet<>(closeHandlers);
+        } finally {
+            treeLock.unlock();
         }
     }
 
@@ -579,9 +589,12 @@ public final class LogContext implements AutoCloseable {
         if (sm != null) {
             sm.checkPermission(CONTROL_PERMISSION);
         }
-        synchronized (treeLock) {
+        treeLock.lock();
+        try {
             this.closeHandlers.clear();
             this.closeHandlers.addAll(closeHandlers);
+        } finally {
+            treeLock.unlock();
         }
     }
 
@@ -609,7 +622,7 @@ public final class LogContext implements AutoCloseable {
     }
 
     private void recursivelyClose(final LoggerNode loggerNode) {
-        assert Thread.holdsLock(treeLock);
+        assert treeLock.isHeldByCurrentThread();
         for (LoggerNode child : loggerNode.getChildren()) {
             recursivelyClose(child);
         }

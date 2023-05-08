@@ -33,6 +33,8 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+
 import javax.net.SocketFactory;
 
 /**
@@ -53,7 +55,7 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
     private static final long maxRetryTimeout = 40L;
     private static final int maxErrors = 10;
 
-    protected final Object outputLock = new Object();
+    protected final ReentrantLock outputLock = new ReentrantLock();
 
     private final ClientSocketFactory socketFactory;
     private final Deque<Exception> errors = new ArrayDeque<Exception>(maxErrors);
@@ -182,65 +184,70 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
 
     @Override
     public void write(final byte[] b, final int off, final int len) throws IOException {
-        synchronized (outputLock) {
-            try {
-                checkReconnect();
-                if (connected) {
-                    socket.getOutputStream().write(b, off, len);
-                }
-            } catch (SocketException e) {
-                if (isReconnectAllowed()) {
-                    // Close the previous socket
-                    safeClose(socket);
-                    connected = false;
-                    addError(e);
-                    // Handle the reconnection
-                    reconnectThread = createThread();
-                    if (blockOnReconnect) {
-                        reconnectThread.run();
-                        // We should be reconnected, try to write again
-                        write(b, off, len);
-                    } else {
-                        reconnectThread.start();
-                    }
-                } else {
-                    throw e;
-                }
+        outputLock.lock();
+        try {
+            checkReconnect();
+            if (connected) {
+                socket.getOutputStream().write(b, off, len);
             }
+        } catch (SocketException e) {
+            if (isReconnectAllowed()) {
+                // Close the previous socket
+                safeClose(socket);
+                connected = false;
+                addError(e);
+                // Handle the reconnection
+                reconnectThread = createThread();
+                if (blockOnReconnect) {
+                    reconnectThread.run();
+                    // We should be reconnected, try to write again
+                    write(b, off, len);
+                } else {
+                    reconnectThread.start();
+                }
+            } else {
+                throw e;
+            }
+        } finally {
+            outputLock.unlock();
         }
     }
 
     @Override
     public void flush() throws IOException {
-        synchronized (outputLock) {
-            try {
-                if (socket != null) {
-                    socket.getOutputStream().flush();
-                }
-            } catch (SocketException e) {
-                // This should likely never be hit, but should attempt to reconnect if it does happen
-                if (isReconnectAllowed()) {
-                    // Close the previous socket
-                    safeClose(socket);
-                    // Reconnection should be attempted on the next write if allowed
-                    connected = false;
-                    addError(e);
-                } else {
-                    throw e;
-                }
+        outputLock.lock();
+        try {
+            if (socket != null) {
+                socket.getOutputStream().flush();
             }
+        } catch (SocketException e) {
+            // This should likely never be hit, but should attempt to reconnect if it does happen
+            if (isReconnectAllowed()) {
+                // Close the previous socket
+                safeClose(socket);
+                // Reconnection should be attempted on the next write if allowed
+                connected = false;
+                addError(e);
+            } else {
+                throw e;
+            }
+        } finally {
+            outputLock.unlock();
         }
     }
 
     @Override
     public void close() throws IOException {
-        synchronized (outputLock) {
+        outputLock.lock();
+        try {
             if (reconnectThread != null) {
                 reconnectThread.interrupt();
             }
             if (socket != null) {
                 socket.close();
             }
+        } finally {
+            outputLock.unlock();
         }
     }
 
@@ -250,8 +257,11 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
      * @return {@code true} if blocking is enabled, otherwise {@code false}
      */
     public boolean isBlockOnReconnect() {
-        synchronized (outputLock) {
+        outputLock.lock();
+        try {
             return blockOnReconnect;
+        } finally {
+            outputLock.unlock();
         }
     }
 
@@ -265,8 +275,11 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
      *                         discarding any new messages coming in
      */
     public void setBlockOnReconnect(final boolean blockOnReconnect) {
-        synchronized (outputLock) {
+        outputLock.lock();
+        try {
             this.blockOnReconnect = blockOnReconnect;
+        } finally {
+            outputLock.unlock();
         }
     }
 
@@ -279,8 +292,11 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
      * @return {@code true} if the stream is connected, otherwise {@code false}
      */
     public boolean isConnected() {
-        synchronized (outputLock) {
+        outputLock.lock();
+        try {
             return connected;
+        } finally {
+            outputLock.unlock();
         }
     }
 
@@ -356,7 +372,8 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
                 Socket socket = null;
                 try {
                     socket = socketFactory.createSocket();
-                    synchronized (outputLock) {
+                    outputLock.lock();
+                    try {
                         // Unlikely but if we've been interrupted due to a close, we should shutdown
                         if (Thread.currentThread().isInterrupted()) {
                             safeClose(socket);
@@ -367,6 +384,8 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
                             TcpOutputStream.this.reconnectThread = null;
                             connected = true;
                         }
+                    } finally {
+                        outputLock.unlock();
                     }
                 } catch (IOException e) {
                     connected = false;
@@ -381,8 +400,11 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
                     try {
                         TimeUnit.SECONDS.sleep(Math.min(timeout, maxRetryTimeout));
                     } catch (InterruptedException ignore) {
-                        synchronized (outputLock) {
+                        outputLock.lock();
+                        try {
                             TcpOutputStream.this.connected = false;
+                        } finally {
+                            outputLock.unlock();
                         }
                         break;
                     }

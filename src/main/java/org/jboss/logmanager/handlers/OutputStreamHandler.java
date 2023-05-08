@@ -66,30 +66,39 @@ public class OutputStreamHandler extends WriterHandler {
     @Override
     protected void setCharsetPrivate(Charset charset) throws SecurityException {
         // superclass checks access
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             super.setCharsetPrivate(charset);
             // we only want to change the writer, not the output stream
             final OutputStream outputStream = this.outputStream;
             if (outputStream != null) {
                 super.setWriter(getNewWriter(outputStream));
             }
+        } finally {
+            lock.unlock();
         }
     }
 
     public Charset getCharset() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return super.getCharset();
+        } finally {
+            lock.unlock();
         }
     }
 
     /** {@inheritDoc}  Setting a writer will replace any target output stream. */
     public void setWriter(final Writer writer) {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             super.setWriter(writer);
             final OutputStream oldStream = this.outputStream;
             outputStream = null;
             safeFlush(oldStream);
             safeClose(oldStream);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -108,7 +117,8 @@ public class OutputStreamHandler extends WriterHandler {
         checkAccess();
         // Close the writer, then close the old stream, then establish the new stream with a new writer.
         try {
-            synchronized (outputLock) {
+            lock.lock();
+            try {
                 final OutputStream oldStream = this.outputStream;
                 // do not close the old stream if creating the writer fails
                 final Writer writer = getNewWriter(outputStream);
@@ -119,6 +129,8 @@ public class OutputStreamHandler extends WriterHandler {
                     safeFlush(oldStream);
                     safeClose(oldStream);
                 }
+            } finally {
+                lock.unlock();
             }
         } catch (Exception e) {
             reportError("Error opening output stream", e, ErrorManager.OPEN_FAILURE);

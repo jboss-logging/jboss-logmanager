@@ -65,8 +65,6 @@ public class SocketHandler extends ExtHandler {
     @SuppressWarnings("WeakerAccess")
     public static final int DEFAULT_PORT = 4560;
 
-    private final Object outputLock = new Object();
-
     // All the following fields are guarded by outputLock
     private ClientSocketFactory clientSocketFactory;
     private SocketFactory socketFactory;
@@ -206,7 +204,8 @@ public class SocketHandler extends ExtHandler {
             return;
         }
         try {
-            synchronized (outputLock) {
+            lock.lock();
+            try {
                 if (initialize) {
                     initialize();
                     initialize = false;
@@ -216,6 +215,8 @@ public class SocketHandler extends ExtHandler {
                 }
                 writer.write(formatted);
                 super.doPublish(record);
+            } finally {
+                lock.unlock();
             }
         } catch (Exception e) {
             reportError("Error writing log message", e, ErrorManager.WRITE_FAILURE);
@@ -224,8 +225,11 @@ public class SocketHandler extends ExtHandler {
 
     @Override
     public void flush() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             safeFlush(writer);
+        } finally {
+            lock.unlock();
         }
         super.flush();
     }
@@ -233,10 +237,13 @@ public class SocketHandler extends ExtHandler {
     @Override
     public void close() throws SecurityException {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             safeClose(writer);
             writer = null;
             initialize = true;
+        } finally {
+            lock.unlock();
         }
         super.close();
     }
@@ -260,12 +267,15 @@ public class SocketHandler extends ExtHandler {
      */
     public void setAddress(final InetAddress address) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             if (!this.address.equals(address)) {
                 initialize = true;
                 clientSocketFactory = null;
             }
             this.address = address;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -290,8 +300,11 @@ public class SocketHandler extends ExtHandler {
      * @return {@code true} if blocking is enabled, otherwise {@code false}
      */
     public boolean isBlockOnReconnect() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             return blockOnReconnect;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -307,9 +320,12 @@ public class SocketHandler extends ExtHandler {
      */
     public void setBlockOnReconnect(final boolean blockOnReconnect) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.blockOnReconnect = blockOnReconnect;
             initialize = true;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -333,7 +349,8 @@ public class SocketHandler extends ExtHandler {
      */
     public void setProtocol(final Protocol protocol) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             if (protocol == null) {
                 this.protocol = Protocol.TCP;
             }
@@ -342,6 +359,8 @@ public class SocketHandler extends ExtHandler {
                 initialize = true;
             }
             this.protocol = protocol;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -364,12 +383,15 @@ public class SocketHandler extends ExtHandler {
      */
     public void setPort(final int port) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             if (this.port != port) {
                 initialize = true;
                 clientSocketFactory = null;
             }
             this.port = port;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -388,10 +410,13 @@ public class SocketHandler extends ExtHandler {
      */
     public void setSocketFactory(final SocketFactory socketFactory) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.socketFactory = socketFactory;
             this.clientSocketFactory = null;
             initialize = true;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -403,9 +428,12 @@ public class SocketHandler extends ExtHandler {
      */
     public void setClientSocketFactory(final ClientSocketFactory clientSocketFactory) {
         checkAccess();
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             this.clientSocketFactory = clientSocketFactory;
             initialize = true;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -459,7 +487,8 @@ public class SocketHandler extends ExtHandler {
     }
 
     private ClientSocketFactory getClientSocketFactory() {
-        synchronized (outputLock) {
+        lock.lock();
+        try {
             if (clientSocketFactory != null) {
                 return clientSocketFactory;
             }
@@ -477,6 +506,8 @@ public class SocketHandler extends ExtHandler {
                 clientSocketFactory = ClientSocketFactory.of(socketFactory, address, port);
             }
             return clientSocketFactory;
+        } finally {
+            lock.unlock();
         }
     }
 

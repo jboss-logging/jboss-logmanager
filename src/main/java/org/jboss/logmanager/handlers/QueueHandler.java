@@ -72,7 +72,8 @@ public class QueueHandler extends ExtHandler {
     }
 
     protected void doPublish(final ExtLogRecord record) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             if (isLoggable(record)) {
                 // Determine if we need to calculate the caller information before we queue the record
                 if (isCallerCalculationRequired()) {
@@ -88,6 +89,8 @@ public class QueueHandler extends ExtHandler {
                 buffer.addLast(record);
             }
             publishToNestedHandlers(record);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -98,8 +101,11 @@ public class QueueHandler extends ExtHandler {
      * @return the queue length limit
      */
     public int getLimit() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return limit;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -113,8 +119,11 @@ public class QueueHandler extends ExtHandler {
         if (limit < 1) {
             throw badQueueLength();
         }
-        synchronized (buffer) {
+        lock.lock();
+        try {
             this.limit = limit;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -134,11 +143,14 @@ public class QueueHandler extends ExtHandler {
     public void addHandler(Handler handler, boolean replay) throws SecurityException {
         Assert.checkNotNullParam("handler", handler);
         if (replay) {
-            synchronized (buffer) {
+            lock.lock();
+            try {
                 super.addHandler(handler);
                 for (ExtLogRecord record : buffer) {
                     handler.publish(record);
                 }
+            } finally {
+                lock.unlock();
             }
         } else {
             super.addHandler(handler);
@@ -151,8 +163,11 @@ public class QueueHandler extends ExtHandler {
      * @return the copy of the queue
      */
     public ExtLogRecord[] getQueue() {
-        synchronized (buffer) {
-            return buffer.toArray(new ExtLogRecord[buffer.size()]);
+        lock.lock();
+        try {
+            return buffer.toArray(ExtLogRecord[]::new);
+        } finally {
+            lock.unlock();
         }
     }
 
