@@ -149,24 +149,6 @@ public final class LogManager extends java.util.logging.LogManager {
     }
 
     /**
-     * Do nothing.  Properties and their listeners are not supported.
-     *
-     * @param l ignored
-     */
-    public void addPropertyChangeListener(PropertyChangeListener l) {
-        // no operation - properties are never changed
-    }
-
-    /**
-     * Do nothing.  Properties and their listeners are not supported.
-     *
-     * @param l ignored
-     */
-    public void removePropertyChangeListener(PropertyChangeListener l) {
-        // no operation - properties are never changed
-    }
-
-    /**
      * Does nothing.
      *
      * @param mapper not used
