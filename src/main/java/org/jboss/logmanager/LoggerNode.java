@@ -30,6 +30,7 @@ import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -132,7 +133,12 @@ final class LoggerNode implements AutoCloseable {
      * The effective level.  May only be modified when the context's level change lock is held; in addition, changing
      * this field must be followed immediately by recursively updating the effective loglevel of the child tree.
      */
-    private volatile int effectiveLevel = Logger.INFO_INT;
+    private volatile int effectiveLevel;
+
+    /**
+     * The effective minimum level, which may not be modified.
+     */
+    private final int effectiveMinLevel;
 
     /**
      * Construct a new root instance.
@@ -144,10 +150,14 @@ final class LoggerNode implements AutoCloseable {
         fullName = "";
         this.context = context;
         final LogContextInitializer initializer = context.getInitializer();
+        final Level minLevel = initializer.getMinimumLevel(fullName);
+        effectiveMinLevel = Objects.requireNonNullElse(minLevel, Level.ALL).intValue();
         final Level initialLevel = initializer.getInitialLevel(fullName);
         if (initialLevel != null) {
             level = initialLevel;
             effectiveLevel = initialLevel.intValue();
+        } else {
+            effectiveLevel = Logger.INFO_INT;
         }
         handlers = safeCloneHandlers(initializer.getInitialHandlers(fullName));
         children = context.createChildMap();
@@ -177,6 +187,8 @@ final class LoggerNode implements AutoCloseable {
         }
         this.context = context;
         final LogContextInitializer initializer = context.getInitializer();
+        final Level minLevel = initializer.getMinimumLevel(fullName);
+        effectiveMinLevel = minLevel != null ? minLevel.intValue() : parent.effectiveMinLevel;
         final Level initialLevel = initializer.getInitialLevel(fullName);
         if (initialLevel != null) {
             level = initialLevel;
@@ -228,7 +240,7 @@ final class LoggerNode implements AutoCloseable {
                 effectiveLevel = Level.INFO.intValue();
             } else {
                 level = null;
-                effectiveLevel = Level.INFO.intValue();
+                effectiveLevel = parent.effectiveLevel;
             }
             handlersUpdater.clear(this);
             useParentFilter = false;
@@ -353,7 +365,13 @@ final class LoggerNode implements AutoCloseable {
     }
 
     int getEffectiveLevel() {
+        // this can be inlined
         return effectiveLevel;
+    }
+
+    boolean isLoggableLevel(int level) {
+        // this can be inlined
+        return level != Logger.OFF_INT && level >= effectiveMinLevel && level >= effectiveLevel;
     }
 
     Handler[] getHandlers() {
