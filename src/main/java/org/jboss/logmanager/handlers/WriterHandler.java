@@ -125,6 +125,11 @@ public class WriterHandler extends ExtHandler {
         }
     }
 
+    Writer getWriter() {
+        assert lock.isHeldByCurrentThread();
+        return writer;
+    }
+
     /**
      * Determine whether head encoding checking is turned on.
      *

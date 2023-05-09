@@ -20,10 +20,15 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.Console;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
+import java.util.Objects;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
@@ -130,6 +135,83 @@ public class ConsoleHandler extends OutputStreamHandler {
         super.setErrorManager(em);
     }
 
+    private static final String ESC = Character.toString(27);
+
+    /**
+     * Write a PNG image to the console log, if it is supported.
+     * The image data stream must be closed by the caller.
+     *
+     * @param imageData the PNG image data stream to write (must not be {@code null})
+     * @param columns the number of text columns to occupy (0 for automatic)
+     * @param rows the number of text rows to occupy (0 for automatic)
+     * @return {@code true} if the image was written, or {@code false} if image support isn't found
+     * @throws IOException if the stream failed while writing the image
+     */
+    public boolean writeImagePng(InputStream imageData, int columns, int rows) throws IOException {
+        Objects.requireNonNull(imageData, "imageData");
+        columns = Math.max(0, columns);
+        rows = Math.max(0, rows);
+        if (! isGraphicsSupportPassivelyDetected()) {
+            // no graphics
+            return false;
+        }
+        lock.lock();
+        try {
+            // clear out any pending stuff
+            final Writer writer = getWriter();
+            if (writer == null) return false;
+            // start with the header
+            try (OutputStream os = Base64.getEncoder().wrap(new OutputStream() {
+                final byte[] buffer = new byte[2048];
+                int pos = 0;
+
+                public void write(final int b) throws IOException {
+                    if (pos == buffer.length) more();
+                    buffer[pos++] = (byte) b;
+                }
+
+                public void write(final byte[] b, int off, int len) throws IOException {
+                    while (len > 0) {
+                        if (pos == buffer.length) {
+                            more();
+                        }
+                        final int cnt = Math.min(len, buffer.length - pos);
+                        System.arraycopy(b, off, buffer, pos, cnt);
+                        pos += cnt;
+                        off += cnt;
+                        len -= cnt;
+                    }
+                }
+
+                void more() throws IOException {
+                    writer.write("m=1;");
+                    writer.write(new String(buffer, 0, pos, StandardCharsets.US_ASCII));
+                    writer.write(ESC + "\\");
+                    // set up next segment
+                    writer.write(ESC + "_G");
+                    pos = 0;
+                }
+
+                public void close() throws IOException {
+                    writer.write("m=0;");
+                    writer.write(new String(buffer, 0, pos, StandardCharsets.US_ASCII));
+                    writer.write(ESC + "\\\n");
+                    writer.flush();
+                    pos = 0;
+                }
+            })) {
+                // set the header
+                writer.write(String.format(ESC + "_Gf=100,a=T,c=%d,r=%d,", Integer.valueOf(columns), Integer.valueOf(rows)));
+                // write the data in encoded chunks
+                imageData.transferTo(os);
+            }
+            // OK
+            return true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
     /**
      * Get the local error manager.  This is an error manager that will publish errors to this console handler.
      * The console handler itself should not use this error manager.
@@ -202,6 +284,7 @@ public class ConsoleHandler extends OutputStreamHandler {
         final String term = System.getenv("TERM");
         final String termProgram = System.getenv("TERM_PROGRAM");
         return term != null && (term.equalsIgnoreCase("kitty")
+                || term.equalsIgnoreCase("xterm-kitty")
                 || term.equalsIgnoreCase("wezterm")
                 || term.equalsIgnoreCase("konsole")
         ) || termProgram != null && termProgram.equalsIgnoreCase("wezterm");
