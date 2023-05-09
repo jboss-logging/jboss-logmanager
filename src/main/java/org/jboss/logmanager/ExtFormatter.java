@@ -21,6 +21,7 @@ package org.jboss.logmanager;
 
 import java.text.MessageFormat;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
@@ -170,6 +171,45 @@ public abstract class ExtFormatter extends Formatter {
         @Override
         public String getTail(Handler h) {
             return formatter.getTail(h);
+        }
+    }
+
+    /**
+     * A base class for formatters which wrap other formatters.
+     */
+    public abstract static class Delegating extends ExtFormatter {
+        /**
+         * The delegate formatter.
+         */
+        protected final ExtFormatter delegate;
+
+        /**
+         * Construct a new instance.
+         *
+         * @param delegate the delegate formatter (must not be {@code null})
+         */
+        public Delegating(final ExtFormatter delegate) {
+            this.delegate = Objects.requireNonNull(delegate, "delegate");
+        }
+
+        public String format(final ExtLogRecord record) {
+            return delegate.format(record);
+        }
+
+        public String formatMessage(final LogRecord record) {
+            return delegate.formatMessage(record);
+        }
+
+        public boolean isCallerCalculationRequired() {
+            return delegate.isCallerCalculationRequired();
+        }
+
+        public String getHead(final Handler h) {
+            return delegate.getHead(h);
+        }
+
+        public String getTail(final Handler h) {
+            return delegate.getTail(h);
         }
     }
 }
