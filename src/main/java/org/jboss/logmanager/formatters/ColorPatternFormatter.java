@@ -21,6 +21,7 @@ package org.jboss.logmanager.formatters;
 
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
+import org.jboss.logmanager.handlers.ConsoleHandler;
 
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
@@ -51,17 +52,6 @@ public class ColorPatternFormatter extends PatternFormatter {
     public ColorPatternFormatter(int darken, final String pattern) {
         this(darken);
         setPattern(pattern);
-    }
-
-    static final boolean trueColor = determineTrueColor();
-
-    static boolean determineTrueColor() {
-        final String colorterm = System.getenv("COLORTERM");
-        return (colorterm != null && (colorterm.contains("truecolor") || colorterm.contains("24bit")));
-    }
-
-    static boolean isTrueColor() {
-        return trueColor;
     }
 
     public void setSteps(final FormatStep[] steps) {
@@ -146,6 +136,8 @@ public class ColorPatternFormatter extends PatternFormatter {
     static final class ColorStep implements FormatStep {
         private final int r, g, b;
         private final FormatStep delegate;
+        // capture current console state
+        private final boolean trueColor = ConsoleHandler.isTrueColor();
 
         ColorStep(final FormatStep delegate, final int r, final int g, final int b, final int darken) {
             this.r = r >>> darken;
@@ -155,7 +147,7 @@ public class ColorPatternFormatter extends PatternFormatter {
         }
 
         public void render(final Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
-            ColorUtil.startFgColor(builder, isTrueColor(), r, g, b);
+            ColorUtil.startFgColor(builder, trueColor, r, g, b);
             delegate.render(formatter, builder, record);
             ColorUtil.endFgColor(builder);
         }
@@ -183,6 +175,8 @@ public class ColorPatternFormatter extends PatternFormatter {
         private static final int SATURATION = 66;
         private final FormatStep delegate;
         private final int darken;
+        // capture current console state
+        private final boolean trueColor = ConsoleHandler.isTrueColor();
 
         LevelColorStep(final FormatStep delegate, final int darken) {
             this.delegate = delegate;
@@ -195,7 +189,7 @@ public class ColorPatternFormatter extends PatternFormatter {
             int r = ((level < 300 ? 0 : (level - 300) * (255 - SATURATION) / 300) + SATURATION) >>> darken;
             int g = ((300 - abs(level - 300)) * (255 - SATURATION) / 300 + SATURATION) >>> darken;
             int b = ((level > 300 ? 0 : level * (255 - SATURATION) / 300) + SATURATION) >>> darken;
-            ColorUtil.startFgColor(builder, isTrueColor(), r, g, b);
+            ColorUtil.startFgColor(builder, trueColor, r, g, b);
             delegate.render(formatter, builder, record);
             ColorUtil.endFgColor(builder);
         }
@@ -211,11 +205,5 @@ public class ColorPatternFormatter extends PatternFormatter {
         public boolean isCallerInformationRequired() {
             return false;
         }
-    }
-
-    static final class TrueColorHolder {
-        private TrueColorHolder() {}
-
-        static final boolean trueColor = ColorPatternFormatter.determineTrueColor();
     }
 }

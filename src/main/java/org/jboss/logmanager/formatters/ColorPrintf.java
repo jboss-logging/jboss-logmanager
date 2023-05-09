@@ -27,8 +27,11 @@ import java.util.Formattable;
 import java.util.Locale;
 import java.util.UUID;
 
+import org.jboss.logmanager.handlers.ConsoleHandler;
+
 class ColorPrintf extends Printf {
     private final int darken;
+    private final boolean trueColor = ConsoleHandler.isTrueColor();
 
     ColorPrintf(final int darken) {
         super(Locale.getDefault());
@@ -72,11 +75,11 @@ class ColorPrintf extends Printf {
 
     protected void formatPlainString(final StringBuilder target, final Object item, final GeneralFlags genFlags, final int width, final int precision) {
         if (item instanceof Class || item instanceof Executable || item instanceof Field) {
-            ColorUtil.startFgColor(target, ColorPatternFormatter.trueColor, 0xff >>> darken, 0xff >>> darken, 0xdd >>> darken);
+            ColorUtil.startFgColor(target, trueColor, 0xff >>> darken, 0xff >>> darken, 0xdd >>> darken);
         } else if (item instanceof UUID) {
-            ColorUtil.startFgColor(target, ColorPatternFormatter.trueColor, 0xdd >>> darken, 0xff >>> darken, 0xdd >>> darken);
+            ColorUtil.startFgColor(target, trueColor, 0xdd >>> darken, 0xff >>> darken, 0xdd >>> darken);
         } else {
-            ColorUtil.startFgColor(target, ColorPatternFormatter.trueColor, 0xdd >>> darken, 0xdd >>> darken, 0xdd >>> darken);
+            ColorUtil.startFgColor(target, trueColor, 0xdd >>> darken, 0xdd >>> darken, 0xdd >>> darken);
         }
         super.formatPlainString(target, item, genFlags, width, precision);
         ColorUtil.endFgColor(target);

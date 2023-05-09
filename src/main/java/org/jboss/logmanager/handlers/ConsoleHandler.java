@@ -160,4 +160,50 @@ public class ConsoleHandler extends OutputStreamHandler {
     public void setOutputStream(final OutputStream outputStream) {
         super.setOutputStream(wrap(outputStream));
     }
+
+    /**
+     * Determine whether the console exists.
+     * If the console does not exist, then the standard output stream will be used when {@link Target#CONSOLE} is
+     * selected as {@linkplain #setTarget(Target) the output target}.
+     *
+     * @return {@code true} if there is a console, {@code false} otherwise
+     */
+    public static boolean hasConsole() {
+        return console != null;
+    }
+
+    /**
+     * Determine whether the console supports truecolor output.
+     * This call may be expensive, so the result should be captured for the lifetime of any formatter making use of
+     * this information.
+     *
+     * @return {@code true} if the console exists and supports truecolor output; {@code false} otherwise
+     */
+    public static boolean isTrueColor() {
+        if (! hasConsole()) {
+            return false;
+        }
+        final String colorterm = System.getenv("COLORTERM");
+        return colorterm != null && (colorterm.contains("truecolor") || colorterm.contains("24bit"));
+    }
+
+    /**
+     * Determine whether the console can be passively detected to support graphical output.
+     * This call may be expensive, so the result should be captured for the lifetime of any formatter making use of
+     * this information.
+     *
+     * @return {@code true} if the console exists and supports graphical output; {@code false} otherwise or if
+     *  graphical support cannot be passively detected
+     */
+    public static boolean isGraphicsSupportPassivelyDetected() {
+        if (! hasConsole()) {
+            return false;
+        }
+        final String term = System.getenv("TERM");
+        final String termProgram = System.getenv("TERM_PROGRAM");
+        return term != null && (term.equalsIgnoreCase("kitty")
+                || term.equalsIgnoreCase("wezterm")
+                || term.equalsIgnoreCase("konsole")
+        ) || termProgram != null && termProgram.equalsIgnoreCase("wezterm");
+    }
 }
