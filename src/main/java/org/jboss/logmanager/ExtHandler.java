@@ -25,6 +25,7 @@ import java.nio.charset.Charset;
 import java.security.Permission;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
@@ -46,6 +47,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     private static final Permission CONTROL_PERMISSION = new LoggingPermission("control", null);
 
     protected final ReentrantLock lock = new ReentrantLock();
+    protected final Condition condition = lock.newCondition();
 
     // we keep our own copies of these fields so that they are protected with *our* lock:
     private volatile Filter filter;

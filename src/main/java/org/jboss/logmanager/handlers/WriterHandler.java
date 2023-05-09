@@ -24,6 +24,10 @@ import java.io.Writer;
 import java.io.Closeable;
 import java.io.Flushable;
 
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiFunction;
+import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
@@ -245,5 +249,91 @@ public class WriterHandler extends ExtHandler {
         } catch (Exception e) {
             reportError("Error on flush", e, ErrorManager.FLUSH_FAILURE);
         } catch (Throwable ignored) {}
+    }
+
+
+    /**
+     * Do some operation while holding the output lock.
+     *
+     * @param arg1 the first argument (usually {@code this})
+     * @param arg2 the second argument
+     * @param operation the operation to execute (must not be {@code null})
+     * @return the result of the operation
+     * @param <T> the first argument type
+     * @param <U> the second argument type
+     * @param <R> the return type
+     */
+    protected <T, U, R> R doLocked(T arg1, U arg2, BiFunction<T, U, R> operation) {
+        lock.lock();
+        try {
+            return operation.apply(arg1, arg2);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Do some operation while holding the output lock.
+     *
+     * @param arg the argument (usually {@code this})
+     * @param operation the operation to execute (must not be {@code null})
+     * @return the result of the operation
+     * @param <T> the argument type
+     * @param <R> the return type
+     */
+    protected <T, R> R doLocked(T arg, Function<T, R> operation) {
+        return doLocked(operation, arg, Function::apply);
+    }
+
+    /**
+     * Do some operation while holding the output lock.
+     *
+     * @param operation the operation to execute (must not be {@code null})
+     * @return the result of the operation
+     * @param <R> the return type
+     */
+    protected <R> R doLocked(Supplier<R> operation) {
+        return doLocked(operation, Supplier::get);
+    }
+
+    /**
+     * Determine whether the current thread holds the output lock.
+     *
+     * @return {@code true} if the current thread holds the output lock, or {@code false} if it does not
+     */
+    protected boolean currentThreadHoldsLock() {
+        return lock.isHeldByCurrentThread();
+    }
+
+    /**
+     * Await a notification on the output lock.
+     *
+     * @throws InterruptedException if the operation is interrupted
+     */
+    protected void awaitLock() throws InterruptedException {
+        condition.await();
+    }
+
+    /**
+     * Await a notification on the output lock for the given amount of time.
+     *
+     * @throws InterruptedException if the operation is interrupted
+     */
+    protected void awaitLock(long millis) throws InterruptedException {
+        condition.await(millis, TimeUnit.MILLISECONDS);
+    }
+
+    /**
+     * Unblock one thread which is waiting on one of the {@code awaitLock(*)} methods.
+     */
+    protected void notifyLock() {
+        condition.notify();
+    }
+
+    /**
+     * Unblock all threads which are waiting on one of the {@code awaitLock(*)} methods.
+     */
+    protected void notifyAllLock() {
+        condition.notifyAll();
     }
 }
