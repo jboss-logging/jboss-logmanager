@@ -138,6 +138,11 @@ public class OutputStreamHandler extends WriterHandler {
         }
     }
 
+    OutputStream getOutputStream() {
+        assert lock.isHeldByCurrentThread();
+        return outputStream;
+    }
+
     private Writer getNewWriter(OutputStream newOutputStream) {
         if (newOutputStream == null) return null;
         final UninterruptibleOutputStream outputStream = new UninterruptibleOutputStream(new UncloseableOutputStream(newOutputStream));
