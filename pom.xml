@@ -24,9 +24,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.jboss</groupId>
-        <artifactId>jboss-parent</artifactId>
-        <version>39</version>
+        <groupId>org.jboss.logging</groupId>
+        <artifactId>logging-parent</artifactId>
+        <version>1.0.0.Final</version>
     </parent>
 
     <name>JBoss Log Manager</name>
@@ -38,10 +38,19 @@
     <licenses>
         <license>
             <name>Apache License 2.0</name>
-            <url>http://repository.jboss.org/licenses/apache-2.0.txt</url>
+            <url>https://repository.jboss.org/licenses/apache-2.0.txt</url>
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+
+    <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false"
+         child.scm.url.inherit.append.path="false">
+        <connection>scm:git:git://github.com/jboss-logging/jboss-logmanager.git</connection>
+        <developerConnection>scm:git:git@github.com:jboss-logging/jboss-logmanager.git</developerConnection>
+        <url>https://github.com/jboss-logging/jboss-logmanager/tree/main/</url>
+        <tag>HEAD</tag>
+    </scm>
 
     <properties>
         <!-- Dependency versions -->
@@ -63,10 +72,6 @@
         <skipITs>${skipTests}</skipITs>
         <skipUTs>${skipTests}</skipUTs>
 
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-
-        <jdk.min.version>11</jdk.min.version>
         <client.jvm.jpms.args></client.jvm.jpms.args>
     </properties>
     <dependencyManagement>
@@ -187,9 +192,6 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <release>11</release>
-                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-failsafe-plugin</artifactId>
