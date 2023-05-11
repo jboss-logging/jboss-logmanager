@@ -43,7 +43,8 @@ abstract class FlagSet<E extends Enum<E>> extends AbstractSet<E> {
             }
 
             public E next() {
-                if (! hasNext()) throw new NoSuchElementException();
+                if (!hasNext())
+                    throw new NoSuchElementException();
                 int lob = Integer.lowestOneBit(bits);
                 bits &= ~lob;
                 return values()[Integer.numberOfTrailingZeros(lob)];
@@ -99,7 +100,7 @@ abstract class FlagSet<E extends Enum<E>> extends AbstractSet<E> {
     }
 
     public boolean equals(final Object o) {
-        return o.getClass() == getClass() && ((FlagSet<?>)o).value == value || super.equals(o);
+        return o.getClass() == getClass() && ((FlagSet<?>) o).value == value || super.equals(o);
     }
 
     public void forbid(final E flag) {
@@ -109,7 +110,7 @@ abstract class FlagSet<E extends Enum<E>> extends AbstractSet<E> {
     }
 
     public void forbidAll() {
-        if (! isEmpty()) {
+        if (!isEmpty()) {
             throw notAllowed(this);
         }
     }

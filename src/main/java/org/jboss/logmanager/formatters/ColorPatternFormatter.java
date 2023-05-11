@@ -19,14 +19,14 @@
 
 package org.jboss.logmanager.formatters;
 
-import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.Level;
-import org.jboss.logmanager.handlers.ConsoleHandler;
+import static java.lang.Math.abs;
 
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
-import static java.lang.Math.abs;
+import org.jboss.logmanager.ExtLogRecord;
+import org.jboss.logmanager.Level;
+import org.jboss.logmanager.handlers.ConsoleHandler;
 
 /**
  * A pattern formatter that colorizes the pattern in a fixed manner.
@@ -124,7 +124,8 @@ public class ColorPatternFormatter extends PatternFormatter {
     public String formatMessage(final LogRecord logRecord) {
         if (logRecord instanceof ExtLogRecord) {
             final ExtLogRecord record = (ExtLogRecord) logRecord;
-            if (record.getFormatStyle() != ExtLogRecord.FormatStyle.PRINTF || record.getParameters() == null || record.getParameters().length == 0) {
+            if (record.getFormatStyle() != ExtLogRecord.FormatStyle.PRINTF || record.getParameters() == null
+                    || record.getParameters().length == 0) {
                 return colorizePlain(super.formatMessage(record));
             }
             return printf.format(record.getMessage(), record.getParameters());

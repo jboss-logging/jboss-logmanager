@@ -133,7 +133,8 @@ public class AbstractHandlerTest {
      * @throws IOException if an error occurs while reading the GZIP file
      */
     static void validateGzipContents(final Path path, final String expectedContains) throws IOException {
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(Files.newInputStream(path))))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new GZIPInputStream(Files.newInputStream(path))))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 if (line.contains(expectedContains)) {
@@ -154,17 +155,22 @@ public class AbstractHandlerTest {
      *
      * @throws IOException if an error occurs reading the zip file
      */
-    static void validateZipContents(final Path path, final String expectedFileName, final String expectedContains) throws IOException {
-        try (final FileSystem zipFs = FileSystems.newFileSystem(URI.create("jar:" +  path.toUri().toASCIIString()), Collections.singletonMap("create", "true"))) {
+    static void validateZipContents(final Path path, final String expectedFileName, final String expectedContains)
+            throws IOException {
+        try (final FileSystem zipFs = FileSystems.newFileSystem(URI.create("jar:" + path.toUri().toASCIIString()),
+                Collections.singletonMap("create", "true"))) {
             final Path file = zipFs.getPath(zipFs.getSeparator(), expectedFileName);
             Assert.assertTrue(String.format("Expected file %s not found.", expectedFileName), Files.exists(file));
             final List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-            Assert.assertFalse(String.format("File %s appears to be empty in zip file %s.", expectedFileName, path), lines.isEmpty());
-            Assert.assertTrue(String.format("ZIP file %s missing contents: %s", path, expectedContains), lines.get(0).contains(expectedContains));
+            Assert.assertFalse(String.format("File %s appears to be empty in zip file %s.", expectedFileName, path),
+                    lines.isEmpty());
+            Assert.assertTrue(String.format("ZIP file %s missing contents: %s", path, expectedContains),
+                    lines.get(0).contains(expectedContains));
         }
     }
 
-    static void compareArchiveContents(final Path archive1, final Path archive2, final String expectedFileName) throws IOException {
+    static void compareArchiveContents(final Path archive1, final Path archive2, final String expectedFileName)
+            throws IOException {
         Collection<String> lines1 = Collections.emptyList();
         Collection<String> lines2 = Collections.emptyList();
 
@@ -204,7 +210,8 @@ public class AbstractHandlerTest {
     }
 
     private static Collection<String> readAllLinesFromZip(final Path path, final String expectedFileName) throws IOException {
-        try (final FileSystem zipFs = FileSystems.newFileSystem(URI.create("jar:" + path.toUri().toASCIIString()), Collections.singletonMap("create", "true"))) {
+        try (final FileSystem zipFs = FileSystems.newFileSystem(URI.create("jar:" + path.toUri().toASCIIString()),
+                Collections.singletonMap("create", "true"))) {
             final Path file = zipFs.getPath(zipFs.getSeparator(), expectedFileName);
             Assert.assertTrue(String.format("Expected file %s not found.", expectedFileName), Files.exists(file));
             return Files.readAllLines(file, StandardCharsets.UTF_8);
@@ -213,7 +220,8 @@ public class AbstractHandlerTest {
 
     private static Collection<String> readAllLinesFromGzip(final Path path) throws IOException {
         final Collection<String> lines = new ArrayList<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(new GZIPInputStream(Files.newInputStream(path))))) {
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(new GZIPInputStream(Files.newInputStream(path))))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 lines.add(line);

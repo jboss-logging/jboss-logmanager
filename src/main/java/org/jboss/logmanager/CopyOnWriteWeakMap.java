@@ -35,7 +35,9 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
     private static final FastCopyHashMap EMPTY = new FastCopyHashMap(32, 0.25f);
 
     @SuppressWarnings({ "unchecked" })
-    private FastCopyHashMap<K, Node<K, V>> empty() { return (FastCopyHashMap<K, Node<K, V>>) EMPTY; }
+    private FastCopyHashMap<K, Node<K, V>> empty() {
+        return (FastCopyHashMap<K, Node<K, V>>) EMPTY;
+    }
 
     private volatile FastCopyHashMap<K, Node<K, V>> map = empty();
 
@@ -96,10 +98,11 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
             final Node<K, V> oldNode = map.get(key);
             if (oldNode != null) {
                 final V val = oldNode.get();
-                if (val != null) return val;
+                if (val != null)
+                    return val;
             }
             final FastCopyHashMap<K, Node<K, V>> newMap = cleanCopyForMod();
-            newMap.put(key, new Node<K,V>(key, value, queue));
+            newMap.put(key, new Node<K, V>(key, value, queue));
             map = newMap;
             return null;
         }
@@ -168,7 +171,8 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
     }
 
     public boolean containsValue(final Object value) {
-        if (value == null) return false;
+        if (value == null)
+            return false;
         for (Node<K, V> node : map.values()) {
             if (value.equals(node.get())) {
                 return true;
@@ -198,7 +202,8 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
     }
 
     public V remove(final Object key) {
-        if (key == null) return null;
+        if (key == null)
+            return null;
         synchronized (this) {
             final FastCopyHashMap<K, Node<K, V>> newMap = cleanCopyForRemove();
             final Node<K, V> old = newMap.remove(key);
@@ -218,7 +223,8 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         final Map<K, V> copyMap = new HashMap<K, V>();
         for (Node<K, V> node : snapshot.values()) {
             final V value = node.get();
-            if (value == null) continue;
+            if (value == null)
+                continue;
             final K key = node.getKey();
             copyMap.put(key, value);
         }
@@ -245,7 +251,8 @@ final class CopyOnWriteWeakMap<K, V> extends AbstractMap<K, V> implements Concur
         }
 
         void clear() {
-            while (poll() != null);
+            while (poll() != null)
+                ;
         }
     }
 }

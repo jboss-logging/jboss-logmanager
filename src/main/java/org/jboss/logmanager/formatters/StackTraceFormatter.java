@@ -62,7 +62,7 @@ public class StackTraceFormatter {
      * @param suppressedDepth the number of suppressed messages to include
      */
     static void renderStackTrace(final StringBuilder builder, final Throwable t,
-                                 @SuppressWarnings("unused") final boolean extended, final int suppressedDepth) {
+            @SuppressWarnings("unused") final boolean extended, final int suppressedDepth) {
         new StackTraceFormatter(builder, suppressedDepth).renderStackTrace(t);
     }
 
@@ -96,7 +96,7 @@ public class StackTraceFormatter {
     }
 
     private void renderStackTrace(final StackTraceElement[] parentStack, final Throwable child, final String caption,
-                                  final String prefix) {
+            final String prefix) {
         if (seen.contains(child)) {
             builder.append(prefix)
                     .append(caption)

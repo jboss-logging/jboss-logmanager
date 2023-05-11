@@ -23,8 +23,8 @@ import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 
 /**
-* @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
-*/
+ * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
+ */
 public class AcceptFilter implements Filter {
 
     @Override

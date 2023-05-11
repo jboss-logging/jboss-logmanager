@@ -19,8 +19,8 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.io.OutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 
 /**
  * An output stream wrapper which drops calls to the {@code close()} method.

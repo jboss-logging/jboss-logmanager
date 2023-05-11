@@ -44,9 +44,11 @@ public class BannerFormatterTests {
         Assert.assertEquals(FALLBACK_OK, fallbackSupplier.get());
         TextBannerFormatter tbf = new TextBannerFormatter(fallbackSupplier, emptyFormatter);
         Assert.assertEquals(FALLBACK_OK, tbf.getHead(null));
-        tbf = new TextBannerFormatter(TextBannerFormatter.createResourceSupplier("non-existent-banner.txt", fallbackSupplier), emptyFormatter);
+        tbf = new TextBannerFormatter(TextBannerFormatter.createResourceSupplier("non-existent-banner.txt", fallbackSupplier),
+                emptyFormatter);
         Assert.assertEquals(FALLBACK_OK, tbf.getHead(null));
-        tbf = new TextBannerFormatter(TextBannerFormatter.createResourceSupplier("test-banner.txt", fallbackSupplier), emptyFormatter);
+        tbf = new TextBannerFormatter(TextBannerFormatter.createResourceSupplier("test-banner.txt", fallbackSupplier),
+                emptyFormatter);
         final InputStream is = BannerFormatterTests.class.getResourceAsStream("/test-banner.txt");
         Assert.assertNotNull(is);
         try (is) {
@@ -59,15 +61,18 @@ public class BannerFormatterTests {
             tbf = new TextBannerFormatter(TextBannerFormatter.createFileSupplier(tempFile, fallbackSupplier), emptyFormatter);
             Assert.assertEquals(TEST_BANNER_FILE, tbf.getHead(null));
             // and, the URL version...
-            tbf = new TextBannerFormatter(TextBannerFormatter.createUrlSupplier(tempFile.toUri().toURL(), fallbackSupplier), emptyFormatter);
+            tbf = new TextBannerFormatter(TextBannerFormatter.createUrlSupplier(tempFile.toUri().toURL(), fallbackSupplier),
+                    emptyFormatter);
             Assert.assertEquals(TEST_BANNER_FILE, tbf.getHead(null));
         } finally {
             try {
                 Files.delete(tempFile);
-            } catch (Throwable ignored) {}
+            } catch (Throwable ignored) {
+            }
         }
         // non-existent file
-        tbf = new TextBannerFormatter(TextBannerFormatter.createFileSupplier(Path.of("does not exist"), fallbackSupplier), emptyFormatter);
+        tbf = new TextBannerFormatter(TextBannerFormatter.createFileSupplier(Path.of("does not exist"), fallbackSupplier),
+                emptyFormatter);
         Assert.assertEquals(FALLBACK_OK, tbf.getHead(null));
     }
 }

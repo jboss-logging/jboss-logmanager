@@ -19,8 +19,6 @@
 
 package org.jboss.logmanager;
 
-import io.smallrye.common.net.HostName;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -28,8 +26,9 @@ import java.text.MessageFormat;
 import java.util.Map;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
-
 import java.util.logging.LogRecord;
+
+import io.smallrye.common.net.HostName;
 
 /**
  * An extended log record, which includes additional information including MDC/NDC and correct
@@ -59,10 +58,10 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Construct a new instance.  Grabs the current NDC immediately.  MDC is deferred.
+     * Construct a new instance. Grabs the current NDC immediately. MDC is deferred.
      *
-     * @param level a logging level value
-     * @param msg the raw non-localized logging message (may be null)
+     * @param level           a logging level value
+     * @param msg             the raw non-localized logging message (may be null)
      * @param loggerClassName the name of the logger class
      */
     public ExtLogRecord(final java.util.logging.Level level, final String msg, final String loggerClassName) {
@@ -70,14 +69,15 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Construct a new instance.  Grabs the current NDC immediately.  MDC is deferred.
+     * Construct a new instance. Grabs the current NDC immediately. MDC is deferred.
      *
-     * @param level a logging level value
-     * @param msg the raw non-localized logging message (may be null)
-     * @param formatStyle the parameter format style to use
+     * @param level           a logging level value
+     * @param msg             the raw non-localized logging message (may be null)
+     * @param formatStyle     the parameter format style to use
      * @param loggerClassName the name of the logger class
      */
-    public ExtLogRecord(final java.util.logging.Level level, final String msg, final FormatStyle formatStyle, final String loggerClassName) {
+    public ExtLogRecord(final java.util.logging.Level level, final String msg, final FormatStyle formatStyle,
+            final String loggerClassName) {
         super(level, msg);
         this.formatStyle = formatStyle == null ? FormatStyle.MESSAGE_FORMAT : formatStyle;
         this.loggerClassName = loggerClassName;
@@ -124,7 +124,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Wrap a JDK log record.  If the target record is already an {@code ExtLogRecord}, it is simply returned.  Otherwise
+     * Wrap a JDK log record. If the target record is already an {@code ExtLogRecord}, it is simply returned. Otherwise
      * a wrapper record is created and returned.
      *
      * @param rec the original record
@@ -179,7 +179,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Disable caller calculation for this record.  If the caller has already been calculated, leave it; otherwise
+     * Disable caller calculation for this record. If the caller has already been calculated, leave it; otherwise
      * set the caller to {@code "unknown"}.
      */
     public void disableCallerCalculation() {
@@ -189,7 +189,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Copy all fields and prepare this object to be passed to another thread or to be serialized.  Calling this method
+     * Copy all fields and prepare this object to be passed to another thread or to be serialized. Calling this method
      * more than once has no additional effect and will not incur extra copies.
      */
     public void copyAll() {
@@ -198,7 +198,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Copy the MDC.  Call this method before passing this log record to another thread.  Calling this method
+     * Copy the MDC. Call this method before passing this log record to another thread. Calling this method
      * more than once has no additional effect and will not incur extra copies.
      */
     public void copyMdc() {
@@ -218,12 +218,12 @@ public class ExtLogRecord extends LogRecord {
         if (mdcCopy == null) {
             return MDC.get(key);
         }
-        final Object value =  mdcCopy.get(key);
+        final Object value = mdcCopy.get(key);
         return value == null ? null : value.toString();
     }
 
     /**
-     * Get a copy of all the MDC properties for this log record.  If the MDC has not yet been copied, this method will copy it.
+     * Get a copy of all the MDC properties for this log record. If the MDC has not yet been copied, this method will copy it.
      *
      * @return a copy of the MDC map
      */
@@ -240,9 +240,9 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Change an MDC value on this record.  If the MDC has not yet been copied, this method will copy it.
+     * Change an MDC value on this record. If the MDC has not yet been copied, this method will copy it.
      *
-     * @param key the key to set
+     * @param key   the key to set
      * @param value the value to set it to
      * @return the old value, if any
      */
@@ -253,7 +253,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Remove an MDC value on this record.  If the MDC has not yet been copied, this method will copy it.
+     * Remove an MDC value on this record. If the MDC has not yet been copied, this method will copy it.
      *
      * @param key the key to remove
      * @return the old value, if any
@@ -321,7 +321,7 @@ public class ExtLogRecord extends LogRecord {
      * Find the first stack frame below the call to the logger, and populate the log record with that information.
      */
     private void calculateCaller() {
-        if (! calculateCaller) {
+        if (!calculateCaller) {
             return;
         }
         calculateCaller = false;
@@ -487,14 +487,16 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Get the resource key, if any.  If the log message is not localized, then the key is {@code null}.
+     * Get the resource key, if any. If the log message is not localized, then the key is {@code null}.
      *
      * @return the resource key
      */
     public String getResourceKey() {
         final String msg = getMessage();
-        if (msg == null) return null;
-        if (getResourceBundleName() == null && getResourceBundle() == null) return null;
+        if (msg == null)
+            return null;
+        if (getResourceBundleName() == null && getResourceBundle() == null)
+            return null;
         return msg;
     }
 
@@ -571,7 +573,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Set the raw message.  Any cached formatted message is discarded.  The parameter format is set to be
+     * Set the raw message. Any cached formatted message is discarded. The parameter format is set to be
      * {@link java.text.MessageFormat}-style.
      *
      * @param message the new raw message
@@ -581,10 +583,10 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Set the raw message.  Any cached formatted message is discarded.  The parameter format is set according to the
+     * Set the raw message. Any cached formatted message is discarded. The parameter format is set according to the
      * given argument.
      *
-     * @param message the new raw message
+     * @param message     the new raw message
      * @param formatStyle the format style to use
      */
     public void setMessage(final String message, final FormatStyle formatStyle) {
@@ -593,7 +595,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Set the parameters to the log message.  Any cached formatted message is discarded.
+     * Set the parameters to the log message. Any cached formatted message is discarded.
      *
      * @param parameters the log message parameters. (may be null)
      */
@@ -602,7 +604,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Set the localization resource bundle.  Any cached formatted message is discarded.
+     * Set the localization resource bundle. Any cached formatted message is discarded.
      *
      * @param bundle localization bundle (may be null)
      */
@@ -611,7 +613,7 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
-     * Set the localization resource bundle name.  Any cached formatted message is discarded.
+     * Set the localization resource bundle name. Any cached formatted message is discarded.
      *
      * @param name localization bundle name (may be null)
      */

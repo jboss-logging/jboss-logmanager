@@ -50,7 +50,8 @@ import org.jboss.logmanager.handlers.ConsoleHandler;
  * Locating the {@code logging.properties} happens in the following order:
  * <ul>
  * <li>The {@code logging.configuration} system property is checked</li>
- * <li>The current threads {@linkplain ClassLoader#getResourceAsStream(String)}  class loader} for a {@code logging.properties}</li>
+ * <li>The current threads {@linkplain ClassLoader#getResourceAsStream(String)} class loader} for a
+ * {@code logging.properties}</li>
  * <li>Finally {@link Class#getResourceAsStream(String)} is used to locate a {@code logging.properties}</li>
  * </ul>
  * </p>
@@ -79,7 +80,8 @@ public class DefaultLogContextConfigurator implements LogContextConfigurator {
                 serviceLoader.next().configure(logContext, inputStream);
             } else {
                 // Configure a default console handler, pattern formatter and associated with the root logger
-                final ConsoleHandler handler = new ConsoleHandler(new PatternFormatter("%d{yyyy-MM-dd'T'HH:mm:ssXXX} %-5p [%c] (%t) %s%e%n"));
+                final ConsoleHandler handler = new ConsoleHandler(
+                        new PatternFormatter("%d{yyyy-MM-dd'T'HH:mm:ssXXX} %-5p [%c] (%t) %s%e%n"));
                 handler.setLevel(Level.INFO);
                 handler.setAutoFlush(true);
                 final Logger rootLogger = logContext.getLogger("");
@@ -91,17 +93,20 @@ public class DefaultLogContextConfigurator implements LogContextConfigurator {
 
     private static InputStream findConfiguration() {
         final String propLoc = System.getProperty("logging.configuration");
-        if (propLoc != null) try {
-            return new URL(propLoc).openStream();
-        } catch (IOException e) {
-            StandardOutputStreams.printError("Unable to read the logging configuration from '%s' (%s)%n", propLoc, e);
-        }
+        if (propLoc != null)
+            try {
+                return new URL(propLoc).openStream();
+            } catch (IOException e) {
+                StandardOutputStreams.printError("Unable to read the logging configuration from '%s' (%s)%n", propLoc, e);
+            }
         final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        if (tccl != null) try {
-            final InputStream stream = tccl.getResourceAsStream("logging.properties");
-            if (stream != null) return stream;
-        } catch (Exception ignore) {
-        }
+        if (tccl != null)
+            try {
+                final InputStream stream = tccl.getResourceAsStream("logging.properties");
+                if (stream != null)
+                    return stream;
+            } catch (Exception ignore) {
+            }
         return DefaultLogContextConfigurator.class.getResourceAsStream("logging.properties");
     }
 }

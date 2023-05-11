@@ -26,12 +26,13 @@ import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
-import io.smallrye.common.constraint.Assert;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 
+import io.smallrye.common.constraint.Assert;
+
 /**
- * A queue handler which retains the last few messages logged.  The handler can be used as-is to remember recent
+ * A queue handler which retains the last few messages logged. The handler can be used as-is to remember recent
  * messages, or one or more handlers may be nested, which allows this handler to "replay" messages to the child
  * handler(s) upon request.
  *
@@ -85,7 +86,9 @@ public class QueueHandler extends ExtHandler {
                     // Copy the MDC over
                     record.copyMdc();
                 }
-                if (buffer.size() == limit) { buffer.removeFirst(); }
+                if (buffer.size() == limit) {
+                    buffer.removeFirst();
+                }
                 buffer.addLast(record);
             }
             publishToNestedHandlers(record);
@@ -95,7 +98,7 @@ public class QueueHandler extends ExtHandler {
     }
 
     /**
-     * Get the queue length limit.  This is the number of messages that will be saved before old messages roll off
+     * Get the queue length limit. This is the number of messages that will be saved before old messages roll off
      * of the queue.
      *
      * @return the queue length limit
@@ -110,7 +113,7 @@ public class QueueHandler extends ExtHandler {
     }
 
     /**
-     * Set the queue length limit.  This is the number of messages that will be saved before old messages roll off
+     * Set the queue length limit. This is the number of messages that will be saved before old messages roll off
      * of the queue.
      *
      * @param limit the queue length limit
@@ -137,7 +140,7 @@ public class QueueHandler extends ExtHandler {
      * all queued messages as well as all subsequent messages with no loss or reorder in between.
      *
      * @param handler the handler to add (must not be {@code null})
-     * @param replay {@code true} to replay the prior messages, or {@code false} to add the handler without replaying
+     * @param replay  {@code true} to replay the prior messages, or {@code false} to add the handler without replaying
      * @throws SecurityException if the handler was not allowed to be added
      */
     public void addHandler(Handler handler, boolean replay) throws SecurityException {
@@ -200,11 +203,12 @@ public class QueueHandler extends ExtHandler {
      */
     public void replay() {
         final Handler[] handlers = getHandlers();
-        if (handlers.length > 0) for (ExtLogRecord record : getQueue()) {
-            for (Handler handler : handlers) {
-                handler.publish(record);
+        if (handlers.length > 0)
+            for (ExtLogRecord record : getQueue()) {
+                for (Handler handler : handlers) {
+                    handler.publish(record);
+                }
             }
-        }
     }
 
     private static IllegalArgumentException badQueueLength() {

@@ -44,7 +44,7 @@ import org.jboss.logmanager.formatters.PatternFormatter;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
+@SuppressWarnings({ "unused", "WeakerAccess" })
 public class DelayedHandler extends ExtHandler {
 
     private final Map<java.util.logging.Level, Deque<ExtLogRecord>> queues = new HashMap<>();
@@ -98,7 +98,7 @@ public class DelayedHandler extends ExtHandler {
      * The given queue limit value is used to limit the length of each level queue.
      * The warning threshold specifies that only queues with the threshold level or higher will report overrun errors.
      *
-     * @param queueLimit the queue limit
+     * @param queueLimit    the queue limit
      * @param warnThreshold the threshold level to report queue overruns for
      */
     public DelayedHandler(int queueLimit, Level warnThreshold) {
@@ -110,8 +110,8 @@ public class DelayedHandler extends ExtHandler {
      * The given queue limit value is used to limit the length of each level queue.
      * The warning threshold specifies that only queues with the threshold level or higher will report overrun errors.
      *
-     * @param logContext the log context to use for level checks on replay, or {@code null} for none
-     * @param queueLimit the queue limit
+     * @param logContext    the log context to use for level checks on replay, or {@code null} for none
+     * @param queueLimit    the queue limit
      * @param warnThreshold the threshold level to report queue overruns for
      */
     public DelayedHandler(LogContext logContext, int queueLimit, Level warnThreshold) {
@@ -151,7 +151,9 @@ public class DelayedHandler extends ExtHandler {
                     Level level = record.getLevel();
                     Deque<ExtLogRecord> q = queues.computeIfAbsent(level, DelayedHandler::newDeque);
                     if (q.size() >= queueLimit && level.intValue() >= warnThreshold.intValue()) {
-                        reportError("The delayed handler's queue was overrun and log record(s) were lost. Did you forget to configure logging?", null, ErrorManager.WRITE_FAILURE);
+                        reportError(
+                                "The delayed handler's queue was overrun and log record(s) were lost. Did you forget to configure logging?",
+                                null, ErrorManager.WRITE_FAILURE);
                     }
                     enqueueOrdered(q, record);
                 }
@@ -164,7 +166,7 @@ public class DelayedHandler extends ExtHandler {
     /**
      * Enqueue the log record such that the queue's order (by sequence number) is maintained.
      *
-     * @param q the queue
+     * @param q      the queue
      * @param record the record
      */
     private void enqueueOrdered(Deque<ExtLogRecord> q, ExtLogRecord record) {
@@ -206,7 +208,7 @@ public class DelayedHandler extends ExtHandler {
             public ExtLogRecord get() {
                 ExtLogRecord min = null;
                 int minIdx = 0;
-                for (int i = 0; i < size; i ++) {
+                for (int i = 0; i < size; i++) {
                     ExtLogRecord item = current.get(i);
                     if (compareSeq(min, item) > 0) {
                         min = item;
@@ -244,7 +246,7 @@ public class DelayedHandler extends ExtHandler {
                     formatter = new PatternFormatter("%d{yyyy-MM-dd HH:mm:ss,SSS} %-5p [%c] (%t) %s%e%n");
                 }
                 StandardOutputStreams.printError("The DelayedHandler was closed before any children handlers were " +
-                    "configured. Messages will be written to stderr.");
+                        "configured. Messages will be written to stderr.");
                 // Always attempt to drain the queue
                 Supplier<ExtLogRecord> drain = drain();
                 ExtLogRecord record;
@@ -367,7 +369,8 @@ public class DelayedHandler extends ExtHandler {
             final LogContext logContext = this.logContext;
             Supplier<ExtLogRecord> drain = drain();
             while ((record = drain.get()) != null) {
-                if (isEnabled() && isLoggable(record) && (logContext == null || logContext.getLogger(record.getLoggerName()).isLoggable(record.getLevel()))) {
+                if (isEnabled() && isLoggable(record)
+                        && (logContext == null || logContext.getLogger(record.getLoggerName()).isLoggable(record.getLevel()))) {
                     publishToNestedHandlers(record);
                 }
             }

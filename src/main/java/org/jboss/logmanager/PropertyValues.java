@@ -60,7 +60,8 @@ public class PropertyValues {
      * @return a map of the key value pairs or an empty map if the string is {@code null} or empty
      */
     public static Map<String, String> stringToMap(final String s) {
-        if (s == null || s.isEmpty()) return Collections.emptyMap();
+        if (s == null || s.isEmpty())
+            return Collections.emptyMap();
 
         final Map<String, String> map = new LinkedHashMap<>();
 
@@ -82,7 +83,8 @@ public class PropertyValues {
                                     continue;
                                 }
                             }
-                            throw new IllegalStateException("Escape character found at invalid position " + i + ". Only characters '=' and '\\' need to be escaped for a key.");
+                            throw new IllegalStateException("Escape character found at invalid position " + i
+                                    + ". Only characters '=' and '\\' need to be escaped for a key.");
                         }
                         case '=': {
                             state = VALUE;
@@ -105,7 +107,8 @@ public class PropertyValues {
                                     continue;
                                 }
                             }
-                            throw new IllegalStateException("Escape character found at invalid position " + i + ". Only characters ',' and '\\' need to be escaped for a value.");
+                            throw new IllegalStateException("Escape character found at invalid position " + i
+                                    + ". Only characters ',' and '\\' need to be escaped for a value.");
                         }
                         case ',': {
                             // Only add if the key isn't empty
@@ -173,7 +176,6 @@ public class PropertyValues {
         return stringToEnumMap(enumType, s, true);
     }
 
-
     /**
      * Parses a string of key/value pairs into an {@linkplain EnumMap enum map}.
      * <p>
@@ -199,9 +201,11 @@ public class PropertyValues {
      * @return a map of the key value pairs or an empty map if the string is {@code null} or empty
      */
     @SuppressWarnings("SameParameterValue")
-    public static <E extends Enum<E>> EnumMap<E, String> stringToEnumMap(final Class<E> enumType, final String s, final boolean convertKeyCase) {
+    public static <E extends Enum<E>> EnumMap<E, String> stringToEnumMap(final Class<E> enumType, final String s,
+            final boolean convertKeyCase) {
         final EnumMap<E, String> result = new EnumMap<>(enumType);
-        if (s == null || s.isEmpty()) return result;
+        if (s == null || s.isEmpty())
+            return result;
 
         final StringBuilder key = new StringBuilder();
         final StringBuilder value = new StringBuilder();
@@ -241,7 +245,8 @@ public class PropertyValues {
                                     continue;
                                 }
                             }
-                            throw new IllegalStateException("Escape character found at invalid position " + i + ". Only characters ',' and '\\' need to be escaped for a value.");
+                            throw new IllegalStateException("Escape character found at invalid position " + i
+                                    + ". Only characters ',' and '\\' need to be escaped for a value.");
                         }
                         case ',': {
                             // Only add if the key isn't empty

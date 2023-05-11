@@ -21,6 +21,7 @@ package org.jboss.logmanager.formatters;
 
 import java.io.Writer;
 import java.util.Map;
+
 import javax.xml.stream.XMLOutputFactory;
 import javax.xml.stream.XMLStreamException;
 import javax.xml.stream.XMLStreamWriter;
@@ -41,7 +42,7 @@ import org.jboss.logmanager.PropertyValues;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"WeakerAccess", "unused", "SameParameterValue"})
+@SuppressWarnings({ "WeakerAccess", "unused", "SameParameterValue" })
 public class XmlFormatter extends StructuredFormatter {
 
     public static final String DEFAULT_NAMESPACE = "urn:jboss:logmanager:formatter:1.0";
@@ -89,7 +90,7 @@ public class XmlFormatter extends StructuredFormatter {
     public XmlFormatter(final Map<Key, String> keyOverrides) {
         super(keyOverrides);
         if (keyOverrides == null || keyOverrides.isEmpty()) {
-            namespaceUri =  DEFAULT_NAMESPACE;
+            namespaceUri = DEFAULT_NAMESPACE;
         } else {
             namespaceUri = null;
         }
@@ -272,17 +273,19 @@ public class XmlFormatter extends StructuredFormatter {
         }
 
         private void safeFlush(final XMLStreamWriter flushable) {
-            if (flushable != null) try {
-                flushable.flush();
-            } catch (Throwable ignore) {
-            }
+            if (flushable != null)
+                try {
+                    flushable.flush();
+                } catch (Throwable ignore) {
+                }
         }
 
         private void safeClose(final XMLStreamWriter closeable) {
-            if (closeable != null) try {
-                closeable.close();
-            } catch (Throwable ignore) {
-            }
+            if (closeable != null)
+                try {
+                    closeable.close();
+                } catch (Throwable ignore) {
+                }
         }
     }
 }

@@ -42,11 +42,11 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
 import java.time.format.TextStyle;
 import java.util.Collection;
-import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -61,6 +61,7 @@ import org.jboss.logmanager.ExtLogRecord;
  * UDP protocols. You can also override the {@link #setOutputStream(OutputStream) output stream} if a custom
  * protocol is needed.
  * <p/>
+ *
  * <pre>
  * <table border="1">
  *  <thead>
@@ -104,7 +105,9 @@ import org.jboss.logmanager.ExtLogRecord;
  *          <td>The name of the host the messages are being sent from. See {@link #setHostname(String)} for more
  * details</td>
  *          <td>{@link String String}</td>
- *          <td>{@code null}</td>
+ *          <td>{@code
+ * null
+ * }</td>
  *      </tr>
  *      <tr>
  *          <td>syslogType</td>
@@ -121,9 +124,13 @@ import org.jboss.logmanager.ExtLogRecord;
  *      <tr>
  *          <td>delimiter</td>
  *          <td>The delimiter to use at the end of the message if {@link #setUseMessageDelimiter(boolean) useDelimiter}
- * is set to {@code true}</td>
+ * is set to {@code
+ * true
+ * }</td>
  *          <td>{@link String String}</td>
- *          <td>For {@link Protocol#UDP UDP} {@code null} - For {@link Protocol#TCP TCP} or {@link Protocol#SSL_TCP
+ *          <td>For {@link Protocol#UDP UDP} {@code
+ * null
+ * } - For {@link Protocol#TCP TCP} or {@link Protocol#SSL_TCP
  * SSL_TCP} {@code \n}</td>
  *      </tr>
  *      <tr>
@@ -131,24 +138,35 @@ import org.jboss.logmanager.ExtLogRecord;
  *          <td>Whether or not the message should be appended with a {@link #setMessageDelimiter(String)
  * delimiter}</td>
  *          <td>{@code boolean}</td>
- *          <td>For {@link Protocol#UDP UDP} {@code false} - For {@link Protocol#TCP TCP} or {@link Protocol#SSL_TCP
- * SSL_TCP} {@code true}</td>
+ *          <td>For {@link Protocol#UDP UDP} {@code
+ * false
+ * } - For {@link Protocol#TCP TCP} or {@link Protocol#SSL_TCP
+ * SSL_TCP} {@code
+ * true
+ * }</td>
  *      </tr>
  *      <tr>
  *          <td>useCountingFraming</td>
  *          <td>Prefixes the size of the message, mainly used for {@link Protocol#TCP TCP} or {@link Protocol#SSL_TCP
- * SSL_TCP}, connections to the message being sent to the syslog server. See <a href="http://tools.ietf.org/html/rfc6587#section-3.4.1">http://tools.ietf.org/html/rfc6587</a>
+ * SSL_TCP}, connections to the message being sent to the syslog server. See <a href=
+"http://tools.ietf.org/html/rfc6587#section-3.4.1">http://tools.ietf.org/html/rfc6587</a>
  * for more details on framing types.</td>
  *          <td>{@code boolean}</td>
- *          <td>{@code false}</td>
+ *          <td>{@code
+ * false
+ * }</td>
  *      </tr>
  *      <tr>
  *          <td>truncate</td>
  *          <td>Whether or not a message, including the header, should truncate the message if the length in bytes is
- * greater than the {@link #setMaxLength(int) maximum length}. If set to {@code false} messages will be split and sent
+ * greater than the {@link #setMaxLength(int) maximum length}. If set to {@code
+ * false
+ * } messages will be split and sent
  * with the same header values.</td>
  *          <td>{@code boolean}</td>
- *          <td>{@code true}</td>
+ *          <td>{@code
+ * true
+ * }</td>
  *      </tr>
  *      <tr>
  *          <td>maxLength</td>
@@ -164,7 +182,7 @@ import org.jboss.logmanager.ExtLogRecord;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
+@SuppressWarnings({ "WeakerAccess", "unused" })
 public class SyslogHandler extends ExtHandler {
 
     /**
@@ -228,7 +246,8 @@ public class SyslogHandler extends ExtHandler {
             final int levelValue = level.intValue();
             if (levelValue >= org.jboss.logmanager.Level.FATAL.intValue()) {
                 return Severity.EMERGENCY;
-            } else if (levelValue >= org.jboss.logmanager.Level.SEVERE.intValue() || levelValue >= org.jboss.logmanager.Level.ERROR.intValue()) {
+            } else if (levelValue >= org.jboss.logmanager.Level.SEVERE.intValue()
+                    || levelValue >= org.jboss.logmanager.Level.ERROR.intValue()) {
                 return Severity.ERROR;
             } else if (levelValue >= org.jboss.logmanager.Level.WARN.intValue() || levelValue >= Level.WARNING.intValue()) {
                 return Severity.WARNING;
@@ -293,12 +312,14 @@ public class SyslogHandler extends ExtHandler {
      */
     public static enum SyslogType {
         /**
-         * Formats the message according the the RFC-5424 specification (<a href="http://tools.ietf.org/html/rfc5424#section-6">http://tools.ietf.org/html/rfc5424#section-6</a>
+         * Formats the message according the the RFC-5424 specification
+         * (<a href="http://tools.ietf.org/html/rfc5424#section-6">http://tools.ietf.org/html/rfc5424#section-6</a>
          */
         RFC5424,
 
         /**
-         * Formats the message according the the RFC-3164 specification (<a href="http://tools.ietf.org/html/rfc3164#section-4.1">http://tools.ietf.org/html/rfc3164#section-4.1</a>
+         * Formats the message according the the RFC-3164 specification
+         * (<a href="http://tools.ietf.org/html/rfc3164#section-4.1">http://tools.ietf.org/html/rfc3164#section-4.1</a>
          */
         RFC3164,
     }
@@ -385,7 +406,8 @@ public class SyslogHandler extends ExtHandler {
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
-    public SyslogHandler(final String serverHostname, final int port, final Facility facility, final String hostname) throws IOException {
+    public SyslogHandler(final String serverHostname, final int port, final Facility facility, final String hostname)
+            throws IOException {
         this(serverHostname, port, facility, null, hostname);
     }
 
@@ -401,7 +423,8 @@ public class SyslogHandler extends ExtHandler {
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
-    public SyslogHandler(final InetAddress serverAddress, final int port, final Facility facility, final String hostname) throws IOException {
+    public SyslogHandler(final InetAddress serverAddress, final int port, final Facility facility, final String hostname)
+            throws IOException {
         this(serverAddress, port, facility, null, hostname);
     }
 
@@ -418,7 +441,8 @@ public class SyslogHandler extends ExtHandler {
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
-    public SyslogHandler(final String serverHostname, final int port, final Facility facility, final SyslogType syslogType, final String hostname) throws IOException {
+    public SyslogHandler(final String serverHostname, final int port, final Facility facility, final SyslogType syslogType,
+            final String hostname) throws IOException {
         this(InetAddress.getByName(serverHostname), port, facility, syslogType, hostname);
     }
 
@@ -435,7 +459,8 @@ public class SyslogHandler extends ExtHandler {
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
-    public SyslogHandler(final InetAddress serverAddress, final int port, final Facility facility, final SyslogType syslogType, final String hostname) throws IOException {
+    public SyslogHandler(final InetAddress serverAddress, final int port, final Facility facility, final SyslogType syslogType,
+            final String hostname) throws IOException {
         this(serverAddress, port, facility, syslogType, null, hostname);
     }
 
@@ -453,7 +478,8 @@ public class SyslogHandler extends ExtHandler {
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
-    public SyslogHandler(final String serverHostname, final int port, final Facility facility, final SyslogType syslogType, final Protocol protocol, final String hostname) throws IOException {
+    public SyslogHandler(final String serverHostname, final int port, final Facility facility, final SyslogType syslogType,
+            final Protocol protocol, final String hostname) throws IOException {
         this(InetAddress.getByName(serverHostname), port, facility, syslogType, protocol, hostname);
     }
 
@@ -471,7 +497,8 @@ public class SyslogHandler extends ExtHandler {
      *
      * @throws IOException if an error occurs creating the UDP socket
      */
-    public SyslogHandler(final InetAddress serverAddress, final int port, final Facility facility, final SyslogType syslogType, final Protocol protocol, final String hostname) throws IOException {
+    public SyslogHandler(final InetAddress serverAddress, final int port, final Facility facility, final SyslogType syslogType,
+            final Protocol protocol, final String hostname) throws IOException {
         setCharsetPrivate(StandardCharsets.UTF_8);
         this.serverAddress = serverAddress;
         this.port = port;
@@ -527,14 +554,15 @@ public class SyslogHandler extends ExtHandler {
                 }
 
                 // Trailer in bytes
-                final byte[] trailer = delimiter == null ? new byte[] {0x00} : delimiter.getBytes(StandardCharsets.UTF_8);
+                final byte[] trailer = delimiter == null ? new byte[] { 0x00 } : delimiter.getBytes(StandardCharsets.UTF_8);
 
                 // Buffer currently only has the header
                 final int maxMsgLen = maxLen - (header.length + (useDelimiter ? trailer.length : 0));
                 // Can't write the message if the header and trailer are bigger than the allowed length
                 if (maxMsgLen < 1) {
-                    throw new IOException(String.format("The header and delimiter length, %d, is greater than the message length, %d, allows.",
-                        (header.length + (useDelimiter ? trailer.length : 0)), maxLen));
+                    throw new IOException(String.format(
+                            "The header and delimiter length, %d, is greater than the message length, %d, allows.",
+                            (header.length + (useDelimiter ? trailer.length : 0)), maxLen));
                 }
 
                 // Get the message
@@ -592,7 +620,8 @@ public class SyslogHandler extends ExtHandler {
         }
         payload.append(header);
         payload.append(message);
-        if (useDelimiter) payload.append(trailer);
+        if (useDelimiter)
+            payload.append(trailer);
         out.write(payload.toArray());
         // If this is a TcpOutputStream print any errors that may have occurred
         if (out instanceof TcpOutputStream) {
@@ -720,8 +749,9 @@ public class SyslogHandler extends ExtHandler {
      *
      * @return {@code false}
      *
-     * @deprecated escaping message values is not required per <a href="http://tools.ietf.org/html/rfc5424#section-6.2">RFC5424</a>
-     * and is no longer supported in this handler
+     * @deprecated escaping message values is not required per
+     *             <a href="http://tools.ietf.org/html/rfc5424#section-6.2">RFC5424</a>
+     *             and is no longer supported in this handler
      */
     @Deprecated
     public boolean isEscapeEnabled() {
@@ -737,8 +767,9 @@ public class SyslogHandler extends ExtHandler {
      *
      * @param escapeEnabled {@code true} to escape characters, {@code false} to not escape characters
      *
-     * @deprecated escaping message values is not required per <a href="http://tools.ietf.org/html/rfc5424#section-6.2">RFC5424</a>
-     * and is no longer supported in this handler
+     * @deprecated escaping message values is not required per
+     *             <a href="http://tools.ietf.org/html/rfc5424#section-6.2">RFC5424</a>
+     *             and is no longer supported in this handler
      */
     @Deprecated
     public void setEscapeEnabled(final boolean escapeEnabled) {
@@ -1174,30 +1205,34 @@ public class SyslogHandler extends ExtHandler {
             }
         } finally {
             safeClose(oldOut);
-            if (!ok) safeClose(out);
+            if (!ok)
+                safeClose(out);
         }
     }
 
     static void safeClose(final Closeable closeable) {
-        if (closeable != null) try {
-            closeable.close();
-        } catch (Exception ignore) {
-            // ignore
-        }
+        if (closeable != null)
+            try {
+                closeable.close();
+            } catch (Exception ignore) {
+                // ignore
+            }
     }
 
     static void safeFlush(final Flushable flushable) {
-        if (flushable != null) try {
-            flushable.flush();
-        } catch (Exception ignore) {
-            // ignore
-        }
+        if (flushable != null)
+            try {
+                flushable.flush();
+            } catch (Exception ignore) {
+                // ignore
+            }
     }
 
     private void init() {
         if (initializeConnection && !outputStreamSet) {
             if (serverAddress == null || port < 0 || protocol == null) {
-                throw new IllegalStateException("Invalid connection parameters. The port, server address and protocol must be set.");
+                throw new IllegalStateException(
+                        "Invalid connection parameters. The port, server address and protocol must be set.");
             }
             initializeConnection = false;
             final OutputStream out;
@@ -1362,7 +1397,8 @@ public class SyslogHandler extends ExtHandler {
             if (clientSocketFactory != null) {
                 return clientSocketFactory;
             }
-            final SocketFactory socketFactory = (protocol == Protocol.SSL_TCP ? SSLSocketFactory.getDefault() : SocketFactory.getDefault());
+            final SocketFactory socketFactory = (protocol == Protocol.SSL_TCP ? SSLSocketFactory.getDefault()
+                    : SocketFactory.getDefault());
             return ClientSocketFactory.of(socketFactory, serverAddress, port);
         } finally {
             lock.unlock();
@@ -1372,7 +1408,8 @@ public class SyslogHandler extends ExtHandler {
     private static String checkPrintableAscii(final String name, final String value) {
         if (value != null && PRINTABLE_ASCII_PATTERN.matcher(value).find()) {
             final String upper = Character.toUpperCase(name.charAt(0)) + name.substring(1);
-            throw new IllegalArgumentException(String.format("%s '%s' is invalid. The %s must be printable ASCII characters with no spaces.", upper, value, name));
+            throw new IllegalArgumentException(String.format(
+                    "%s '%s' is invalid. The %s must be printable ASCII characters with no spaces.", upper, value, name));
         }
         return value;
     }

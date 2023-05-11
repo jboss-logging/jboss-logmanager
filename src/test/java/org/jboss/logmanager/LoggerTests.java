@@ -19,18 +19,18 @@
 
 package org.jboss.logmanager;
 
-import org.jboss.logmanager.filters.RegexFilter;
-import org.jboss.logmanager.formatters.PatternFormatter;
-import org.junit.Test;
 import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
 
-import java.util.concurrent.atomic.AtomicBoolean;
+import org.jboss.logmanager.filters.RegexFilter;
+import org.jboss.logmanager.formatters.PatternFormatter;
+import org.junit.Test;
 
 public final class LoggerTests {
 
@@ -59,10 +59,12 @@ public final class LoggerTests {
 
     @Test
     public void testCategories() {
-        assertNotNull("Logger not created with category: " + LoggerTests.class.getName(), Logger.getLogger(LoggerTests.class.getName()));
+        assertNotNull("Logger not created with category: " + LoggerTests.class.getName(),
+                Logger.getLogger(LoggerTests.class.getName()));
         assertNotNull("Logger not created with category: Spaced Logger Name", Logger.getLogger("Spaced Logger Name"));
         assertNotNull("Logger not created with category: /../Weird/Path", Logger.getLogger("/../Weird/Path"));
-        assertNotNull("Logger not created with category: random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?", Logger.getLogger("random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?"));
+        assertNotNull("Logger not created with category: random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?",
+                Logger.getLogger("random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?"));
     }
 
     @Test
@@ -78,9 +80,12 @@ public final class LoggerTests {
         boolean f2 = false;
         boolean f3 = false;
         for (Handler handler : logger.getHandlers()) {
-            if (handler == h1) f1 = true;
-            if (handler == h2) f2 = true;
-            if (handler == h3) f3 = true;
+            if (handler == h1)
+                f1 = true;
+            if (handler == h2)
+                f2 = true;
+            if (handler == h3)
+                f3 = true;
         }
         assertTrue("Handler 1 missing", f1);
         assertTrue("Handler 2 missing", f2);
@@ -97,7 +102,8 @@ public final class LoggerTests {
         boolean f1 = false;
         final Handler[] handlers = logger.getHandlers();
         for (Handler handler : handlers) {
-            if (handler == h1) f1 = true;
+            if (handler == h1)
+                f1 = true;
         }
         assertTrue("Handler 1 missing", f1);
         assertEquals("Extra handlers missing", 3, handlers.length);
@@ -117,9 +123,12 @@ public final class LoggerTests {
         boolean f2 = false;
         boolean f3 = false;
         for (Handler handler : logger.getHandlers()) {
-            if (handler == h1) f1 = true;
-            if (handler == h2) f2 = true;
-            if (handler == h3) f3 = true;
+            if (handler == h1)
+                f1 = true;
+            if (handler == h2)
+                f2 = true;
+            if (handler == h3)
+                f3 = true;
         }
         assertFalse("Handler 1 wasn't removed", f1);
         assertTrue("Handler 2 missing", f2);
@@ -149,9 +158,12 @@ public final class LoggerTests {
         boolean f2 = false;
         boolean f3 = false;
         for (Handler handler : logger.getHandlers()) {
-            if (handler == h1) f1 = true;
-            if (handler == h2) f2 = true;
-            if (handler == h3) f3 = true;
+            if (handler == h1)
+                f1 = true;
+            if (handler == h2)
+                f2 = true;
+            if (handler == h3)
+                f3 = true;
         }
         assertFalse("Handler 1 wasn't removed", f1);
         assertFalse("Handler 2 wasn't removed", f2);

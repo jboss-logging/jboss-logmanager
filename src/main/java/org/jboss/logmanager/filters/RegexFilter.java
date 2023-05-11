@@ -20,15 +20,14 @@
 package org.jboss.logmanager.filters;
 
 import java.text.MessageFormat;
+import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 import java.util.regex.Pattern;
-
-import java.util.logging.Filter;
 
 import org.jboss.logmanager.ExtLogRecord;
 
 /**
- * A regular-expression-based filter.  Used to exclude log records which match or don't match the expression.  The
+ * A regular-expression-based filter. Used to exclude log records which match or don't match the expression. The
  * regular expression is checked against the raw (unformatted) message.
  */
 public final class RegexFilter implements Filter {

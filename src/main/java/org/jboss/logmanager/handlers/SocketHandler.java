@@ -30,6 +30,7 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -41,7 +42,7 @@ import org.jboss.logmanager.ExtLogRecord;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
+@SuppressWarnings({ "unused", "WeakerAccess" })
 public class SocketHandler extends ExtHandler {
 
     /**
@@ -144,7 +145,8 @@ public class SocketHandler extends ExtHandler {
      * @throws UnknownHostException if an error occurs resolving the hostname
      * @see #SocketHandler(ClientSocketFactory, Protocol)
      */
-    public SocketHandler(final SocketFactory socketFactory, final Protocol protocol, final String hostname, final int port) throws UnknownHostException {
+    public SocketHandler(final SocketFactory socketFactory, final Protocol protocol, final String hostname, final int port)
+            throws UnknownHostException {
         this(socketFactory, protocol, InetAddress.getByName(hostname), port);
     }
 
@@ -160,7 +162,8 @@ public class SocketHandler extends ExtHandler {
      *
      * @see #SocketHandler(ClientSocketFactory, Protocol)
      */
-    public SocketHandler(final SocketFactory socketFactory, final Protocol protocol, final InetAddress address, final int port) {
+    public SocketHandler(final SocketFactory socketFactory, final Protocol protocol, final InetAddress address,
+            final int port) {
         this.socketFactory = socketFactory;
         this.clientSocketFactory = null;
         this.address = address;
@@ -514,7 +517,8 @@ public class SocketHandler extends ExtHandler {
     private void writeHead(final Writer writer) {
         try {
             final Formatter formatter = getFormatter();
-            if (formatter != null) writer.write(formatter.getHead(this));
+            if (formatter != null)
+                writer.write(formatter.getHead(this));
         } catch (Exception e) {
             reportError("Error writing section header", e, ErrorManager.WRITE_FAILURE);
         }
@@ -523,7 +527,8 @@ public class SocketHandler extends ExtHandler {
     private void writeTail(final Writer writer) {
         try {
             final Formatter formatter = getFormatter();
-            if (formatter != null) writer.write(formatter.getTail(this));
+            if (formatter != null)
+                writer.write(formatter.getTail(this));
         } catch (Exception ex) {
             reportError("Error writing section tail", ex, ErrorManager.WRITE_FAILURE);
         }
@@ -531,7 +536,8 @@ public class SocketHandler extends ExtHandler {
 
     private void safeClose(Closeable c) {
         try {
-            if (c != null) c.close();
+            if (c != null)
+                c.close();
         } catch (Exception e) {
             reportError("Error closing resource", e, ErrorManager.CLOSE_FAILURE);
         } catch (Throwable ignored) {
@@ -540,7 +546,8 @@ public class SocketHandler extends ExtHandler {
 
     private void safeFlush(Flushable f) {
         try {
-            if (f != null) f.flush();
+            if (f != null)
+                f.flush();
         } catch (Exception e) {
             reportError("Error on flush", e, ErrorManager.FLUSH_FAILURE);
         } catch (Throwable ignored) {

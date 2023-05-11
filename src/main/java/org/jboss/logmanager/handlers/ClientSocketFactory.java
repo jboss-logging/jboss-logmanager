@@ -26,6 +26,7 @@ import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.net.SocketAddress;
 import java.net.SocketException;
+
 import javax.net.SocketFactory;
 
 /**
@@ -106,7 +107,8 @@ public interface ClientSocketFactory {
      */
     static ClientSocketFactory of(final SocketFactory socketFactory, final InetAddress address, final int port) {
         if (address == null || port < 0) {
-            throw new IllegalArgumentException(String.format("The address cannot be null (%s) and the port must be a positive integer (%d)", address, port));
+            throw new IllegalArgumentException(String
+                    .format("The address cannot be null (%s) and the port must be a positive integer (%d)", address, port));
         }
         final SocketFactory factory = (socketFactory == null ? SocketFactory.getDefault() : socketFactory);
         return new ClientSocketFactory() {

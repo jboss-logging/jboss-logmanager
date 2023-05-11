@@ -67,7 +67,7 @@ final class NumericFlags extends FlagSet<NumericFlag> {
         NumericFlags set = ALL_SETS.get(bits);
         if (set == null) {
             set = new NumericFlags(bits);
-            if (! ALL_SETS.compareAndSet(bits, null, set)) {
+            if (!ALL_SETS.compareAndSet(bits, null, set)) {
                 NumericFlags appearing = ALL_SETS.get(bits);
                 if (appearing != null) {
                     set = appearing;

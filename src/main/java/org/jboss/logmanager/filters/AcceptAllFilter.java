@@ -26,7 +26,8 @@ import java.util.logging.LogRecord;
  * An accept-all filter.
  */
 public final class AcceptAllFilter implements Filter {
-    private AcceptAllFilter() {}
+    private AcceptAllFilter() {
+    }
 
     private static final AcceptAllFilter INSTANCE = new AcceptAllFilter();
 

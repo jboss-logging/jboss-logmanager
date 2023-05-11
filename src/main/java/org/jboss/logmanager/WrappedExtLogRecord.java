@@ -21,7 +21,6 @@ package org.jboss.logmanager;
 
 import java.time.Instant;
 import java.util.ResourceBundle;
-
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
@@ -84,7 +83,7 @@ class WrappedExtLogRecord extends ExtLogRecord {
     }
 
     public String getSourceClassName() {
-        if (! resolved) {
+        if (!resolved) {
             resolve();
         }
         return super.getSourceClassName();
@@ -97,7 +96,7 @@ class WrappedExtLogRecord extends ExtLogRecord {
     }
 
     public String getSourceMethodName() {
-        if (! resolved) {
+        if (!resolved) {
             resolve();
         }
         return super.getSourceMethodName();
@@ -126,7 +125,7 @@ class WrappedExtLogRecord extends ExtLogRecord {
     }
 
     public int getSourceLineNumber() {
-        if (! resolved) {
+        if (!resolved) {
             resolve();
         }
         return super.getSourceLineNumber();
@@ -138,7 +137,7 @@ class WrappedExtLogRecord extends ExtLogRecord {
     }
 
     public String getSourceFileName() {
-        if (! resolved) {
+        if (!resolved) {
             resolve();
         }
         return super.getSourceFileName();

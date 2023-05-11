@@ -23,15 +23,14 @@ import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
-
 import java.util.logging.Handler;
 
 /**
- * Utility for snapshot/copy-on-write arrays.  To use these methods, two things are required: an immutable array
+ * Utility for snapshot/copy-on-write arrays. To use these methods, two things are required: an immutable array
  * stored on a volatile field, and an instance of
  * {@link java.util.concurrent.atomic.AtomicReferenceFieldUpdater AtomicReferenceFieldUpdater}
- * which corresponds to that field.  Some of these methods perform multi-step operations; if the array field value is
- * changed in the middle of such an operation, the operation is retried.  To avoid spinning, in some situations it
+ * which corresponds to that field. Some of these methods perform multi-step operations; if the array field value is
+ * changed in the middle of such an operation, the operation is retried. To avoid spinning, in some situations it
  * may be advisable to hold a write lock to prevent multiple concurrent updates.
  *
  * @param <T> the type which contains the target field
@@ -46,7 +45,7 @@ final class AtomicArray<T, V> {
     /**
      * Construct an instance.
      *
-     * @param updater the field updater
+     * @param updater       the field updater
      * @param componentType the component class
      */
     public AtomicArray(AtomicReferenceFieldUpdater<T, V[]> updater, Class<V> componentType) {
@@ -58,18 +57,18 @@ final class AtomicArray<T, V> {
     /**
      * Convenience method to create an instance.
      *
-     * @param updater the field updater
+     * @param updater       the field updater
      * @param componentType the component class
-     * @param <T> the type which contains the target field
-     * @param <V> the array value type
+     * @param <T>           the type which contains the target field
+     * @param <V>           the array value type
      * @return the new instance
      */
     public static <T, V> AtomicArray<T, V> create(AtomicReferenceFieldUpdater<T, V[]> updater, Class<V> componentType) {
-        return new AtomicArray<T,V>(updater, componentType);
+        return new AtomicArray<T, V>(updater, componentType);
     }
 
     /**
-     * Convenience method to set the field value to the empty array.  Empty array instances are shared.
+     * Convenience method to set the field value to the empty array. Empty array instances are shared.
      *
      * @param instance the instance holding the field
      */
@@ -81,7 +80,7 @@ final class AtomicArray<T, V> {
      * Update the value of this array.
      *
      * @param instance the instance holding the field
-     * @param value the new value
+     * @param value    the new value
      */
     public void set(T instance, V[] value) {
         updater.set(instance, value);
@@ -91,7 +90,7 @@ final class AtomicArray<T, V> {
      * Atomically get and update the value of this array.
      *
      * @param instance the instance holding the field
-     * @param value the new value
+     * @param value    the new value
      */
     public V[] getAndSet(T instance, V[] value) {
         return updater.getAndSet(instance, value);
@@ -108,7 +107,7 @@ final class AtomicArray<T, V> {
      * Atomically replace the array with a new array which is one element longer, and which includes the given value.
      *
      * @param instance the instance holding the field
-     * @param value the updated value
+     * @param value    the updated value
      */
     public void add(T instance, V value) {
         final AtomicReferenceFieldUpdater<T, V[]> updater = this.updater;
@@ -125,11 +124,12 @@ final class AtomicArray<T, V> {
 
     /**
      * Atomically replace the array with a new array which is one element longer, and which includes the given value,
-     * if the value is not already present within the array.  This method does a linear search for the target value.
+     * if the value is not already present within the array. This method does a linear search for the target value.
      *
      * @param instance the instance holding the field
-     * @param value the updated value
-     * @param identity {@code true} if comparisons should be done using reference identity, or {@code false} to use the {@code equals()} method
+     * @param value    the updated value
+     * @param identity {@code true} if comparisons should be done using reference identity, or {@code false} to use the
+     *                 {@code equals()} method
      * @return {@code true} if the value was added, or {@code false} if it was already present
      */
     public boolean addIfAbsent(T instance, V value, boolean identity) {
@@ -163,8 +163,9 @@ final class AtomicArray<T, V> {
      * the value is present in the array.
      *
      * @param instance the instance holding the field
-     * @param value the updated value
-     * @param identity {@code true} if comparisons should be done using reference identity, or {@code false} to use the {@code equals()} method
+     * @param value    the updated value
+     * @param identity {@code true} if comparisons should be done using reference identity, or {@code false} to use the
+     *                 {@code equals()} method
      * @return {@code true} if the value was removed, or {@code false} if it was not present
      */
     public boolean remove(T instance, V value, boolean identity) {
@@ -209,8 +210,9 @@ final class AtomicArray<T, V> {
      * the value is present in the array.
      *
      * @param instance the instance holding the field
-     * @param value the updated value
-     * @param identity {@code true} if comparisons should be done using reference identity, or {@code false} to use the {@code equals()} method
+     * @param value    the updated value
+     * @param identity {@code true} if comparisons should be done using reference identity, or {@code false} to use the
+     *                 {@code equals()} method
      * @return the number of values removed
      */
     public int removeAll(T instance, V value, boolean identity) {
@@ -247,8 +249,8 @@ final class AtomicArray<T, V> {
                     newVal = emptyArray;
                 } else {
                     newVal = newInstance(componentType, newLen);
-                    for (int i = 0, j = 0; i < oldLen; i ++) {
-                        if (! removeSlots[i]) {
+                    for (int i = 0, j = 0; i < oldLen; i++) {
+                        if (!removeSlots[i]) {
                             newVal[j++] = oldVal[i];
                         }
                     }
@@ -261,10 +263,10 @@ final class AtomicArray<T, V> {
     }
 
     /**
-     * Add a value to a sorted array.  Does not check for duplicates.
+     * Add a value to a sorted array. Does not check for duplicates.
      *
-     * @param instance the instance holding the field
-     * @param value the value to add
+     * @param instance   the instance holding the field
+     * @param value      the value to add
      * @param comparator a comparator, or {@code null} to use natural ordering
      */
     public void add(T instance, V value, Comparator<? super V> comparator) {
@@ -284,10 +286,10 @@ final class AtomicArray<T, V> {
     }
 
     /**
-     * Add a value to a sorted array if it is not already present.  Does not check for duplicates.
+     * Add a value to a sorted array if it is not already present. Does not check for duplicates.
      *
-     * @param instance the instance holding the field
-     * @param value the value to add
+     * @param instance   the instance holding the field
+     * @param value      the value to add
      * @param comparator a comparator, or {@code null} to use natural ordering
      */
     public boolean addIfAbsent(T instance, V value, Comparator<? super V> comparator) {
@@ -310,11 +312,11 @@ final class AtomicArray<T, V> {
     }
 
     /**
-     * Remove a value to a sorted array.  Does not check for duplicates.  If there are multiple occurrences of a value,
+     * Remove a value to a sorted array. Does not check for duplicates. If there are multiple occurrences of a value,
      * there is no guarantee as to which one is removed.
      *
-     * @param instance the instance holding the field
-     * @param value the value to remove
+     * @param instance   the instance holding the field
+     * @param value      the value to remove
      * @param comparator a comparator, or {@code null} to use natural ordering
      */
     public boolean remove(T instance, V value, Comparator<? super V> comparator) {
@@ -342,7 +344,7 @@ final class AtomicArray<T, V> {
     /**
      * Sort an array.
      *
-     * @param instance the instance holding the field
+     * @param instance   the instance holding the field
      * @param comparator a comparator, or {@code null} to use natural ordering
      */
     public void sort(T instance, Comparator<? super V> comparator) {
@@ -361,7 +363,7 @@ final class AtomicArray<T, V> {
     }
 
     private static int insertionPoint(int searchResult) {
-        return searchResult > 0 ? searchResult : - (searchResult + 1);
+        return searchResult > 0 ? searchResult : -(searchResult + 1);
     }
 
     @SuppressWarnings({ "unchecked" })
@@ -379,8 +381,8 @@ final class AtomicArray<T, V> {
      * Compare and set the array.
      *
      * @param instance the instance holding the field
-     * @param expect the expected value
-     * @param update the update value
+     * @param expect   the expected value
+     * @param update   the update value
      * @return {@code true} if the value was updated or {@code false} if the expected value did not match
      */
     public boolean compareAndSet(final T instance, final V[] expect, final V[] update) {

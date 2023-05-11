@@ -43,7 +43,7 @@ public final class ThreadLocalLogContextSelector implements LogContextSelector {
      * Construct a new instance.
      *
      * @param securityKey the security key required to push or pop a log context.
-     * @param delegate the selector to delegate to if no context is chosen
+     * @param delegate    the selector to delegate to if no context is chosen
      */
     public ThreadLocalLogContextSelector(final Object securityKey, final LogContextSelector delegate) {
         this.securityKey = securityKey;
@@ -59,7 +59,7 @@ public final class ThreadLocalLogContextSelector implements LogContextSelector {
      * Get and set the log context.
      *
      * @param securityKey the security key to check (ignored if none was set on construction)
-     * @param newValue the new log context value, or {@code null} to clear
+     * @param newValue    the new log context value, or {@code null} to clear
      * @return the previous log context value, or {@code null} if none was set
      */
     public LogContext getAndSet(Object securityKey, LogContext newValue) {
@@ -69,7 +69,10 @@ public final class ThreadLocalLogContextSelector implements LogContextSelector {
         try {
             return context.get();
         } finally {
-            if (newValue == null) context.remove(); else context.set(newValue);
+            if (newValue == null)
+                context.remove();
+            else
+                context.set(newValue);
         }
     }
 }

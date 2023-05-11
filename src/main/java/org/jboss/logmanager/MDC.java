@@ -27,33 +27,36 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**
- * Mapped diagnostic context.  This is a thread-local map used to hold loggable information.
+ * Mapped diagnostic context. This is a thread-local map used to hold loggable information.
  */
 public final class MDC {
     private static final MDCProvider mdcProvider = getDefaultMDCProvider();
 
-    private MDC() {}
+    private MDC() {
+    }
 
     static MDCProvider getMDCProvider() {
         return mdcProvider;
     }
 
     private static MDCProvider getDefaultMDCProvider() {
-        return System.getSecurityManager() == null ? doGetDefaultMDCProvider() : AccessController.doPrivileged((PrivilegedAction<MDCProvider>) MDC::doGetDefaultMDCProvider);
+        return System.getSecurityManager() == null ? doGetDefaultMDCProvider()
+                : AccessController.doPrivileged((PrivilegedAction<MDCProvider>) MDC::doGetDefaultMDCProvider);
     }
 
     private static MDCProvider doGetDefaultMDCProvider() {
         final ServiceLoader<MDCProvider> configLoader = ServiceLoader.load(MDCProvider.class, MDC.class.getClassLoader());
         final Iterator<MDCProvider> iterator = configLoader.iterator();
-        for (;;) try {
-            if (! iterator.hasNext()) {
-                return new ThreadLocalMDC();
+        for (;;)
+            try {
+                if (!iterator.hasNext()) {
+                    return new ThreadLocalMDC();
+                }
+                return iterator.next();
+            } catch (ServiceConfigurationError | RuntimeException e) {
+                System.err.print("Warning: failed to load MDC Provider: ");
+                e.printStackTrace(System.err);
             }
-            return iterator.next();
-        } catch (ServiceConfigurationError | RuntimeException e) {
-            System.err.print("Warning: failed to load MDC Provider: ");
-            e.printStackTrace(System.err);
-        }
     }
 
     /**
@@ -79,7 +82,7 @@ public final class MDC {
     /**
      * Set the value of a key, returning the old value (if any) or {@code null} if there was none.
      *
-     * @param key the key
+     * @param key   the key
      * @param value the new value
      * @return the old value or {@code null} if there was none
      */
@@ -90,7 +93,7 @@ public final class MDC {
     /**
      * Set the value of a key, returning the old value (if any) or {@code null} if there was none.
      *
-     * @param key the key
+     * @param key   the key
      * @param value the new value
      * @return the old value or {@code null} if there was none
      */
@@ -119,7 +122,7 @@ public final class MDC {
     }
 
     /**
-     * Get a copy of the MDC map.  This is a relatively expensive operation.
+     * Get a copy of the MDC map. This is a relatively expensive operation.
      *
      * @return a copy of the map
      */
@@ -128,7 +131,7 @@ public final class MDC {
     }
 
     /**
-     * Get a copy of the MDC map.  This is a relatively expensive operation.
+     * Get a copy of the MDC map. This is a relatively expensive operation.
      *
      * @return a copy of the map
      */

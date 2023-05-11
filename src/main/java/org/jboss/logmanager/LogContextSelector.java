@@ -20,7 +20,7 @@
 package org.jboss.logmanager;
 
 /**
- * A mechanism for determining what the current log context is.  This method is used primarily when constructing
+ * A mechanism for determining what the current log context is. This method is used primarily when constructing
  * new loggers to determine what context the constructed logger should be installed into.
  */
 public interface LogContextSelector {

@@ -53,7 +53,7 @@ public class FileHandler extends OutputStreamHandler {
      * Construct a new instance with the given formatter and output file.
      *
      * @param formatter the formatter
-     * @param file the file
+     * @param file      the file
      * @throws FileNotFoundException if the file could not be found on open
      */
     public FileHandler(final Formatter formatter, final File file) throws FileNotFoundException {
@@ -65,8 +65,8 @@ public class FileHandler extends OutputStreamHandler {
      * Construct a new instance with the given formatter, output file, and append setting.
      *
      * @param formatter the formatter
-     * @param file the file
-     * @param append {@code true} to append, {@code false} to overwrite
+     * @param file      the file
+     * @param append    {@code true} to append, {@code false} to overwrite
      * @throws FileNotFoundException if the file could not be found on open
      */
     public FileHandler(final Formatter formatter, final File file, final boolean append) throws FileNotFoundException {
@@ -88,7 +88,7 @@ public class FileHandler extends OutputStreamHandler {
     /**
      * Construct a new instance with the given output file and append setting.
      *
-     * @param file the file
+     * @param file   the file
      * @param append {@code true} to append, {@code false} to overwrite
      * @throws FileNotFoundException if the file could not be found on open
      */
@@ -111,7 +111,7 @@ public class FileHandler extends OutputStreamHandler {
      * Construct a new instance with the given output file and append setting.
      *
      * @param fileName the file name
-     * @param append {@code true} to append, {@code false} to overwrite
+     * @param append   {@code true} to append, {@code false} to overwrite
      * @throws FileNotFoundException if the file could not be found on open
      */
     public FileHandler(final String fileName, final boolean append) throws FileNotFoundException {
@@ -160,12 +160,12 @@ public class FileHandler extends OutputStreamHandler {
                     this.file = file;
                     ok = true;
                 } finally {
-                    if (! ok) {
+                    if (!ok) {
                         safeClose(bos);
                     }
                 }
             } finally {
-                if (! ok) {
+                if (!ok) {
                     safeClose(fos);
                 }
             }

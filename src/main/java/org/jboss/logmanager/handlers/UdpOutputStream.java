@@ -49,7 +49,7 @@ public class UdpOutputStream extends OutputStream implements AutoCloseable, Flus
 
     @Override
     public void write(final int b) throws IOException {
-        final byte[] msg = new byte[] {(byte) b};
+        final byte[] msg = new byte[] { (byte) b };
         final DatagramPacket packet = new DatagramPacket(msg, 1, socketAddress);
         socket.send(packet);
     }

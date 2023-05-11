@@ -52,7 +52,6 @@ public class LogContextCloseTests {
         TestHandler.POJO_OBJECT = null;
     }
 
-
     @Test
     public void testCloseLogContext() throws Exception {
         LogContext logContext = LogContext.create();
@@ -127,7 +126,8 @@ public class LogContextCloseTests {
         Assert.assertTrue("Expected the useParentHandlers to be true for the root logger", rootLogger.getUseParentHandlers());
         final Collection<LoggerNode> children = rootLogger.getChildren();
         if (!children.isEmpty()) {
-            final StringBuilder msg = new StringBuilder("Expected no children to be remaining on the root logger. Remaining loggers: ");
+            final StringBuilder msg = new StringBuilder(
+                    "Expected no children to be remaining on the root logger. Remaining loggers: ");
             final Iterator<LoggerNode> iter = children.iterator();
             while (iter.hasNext()) {
                 msg.append('\'').append(iter.next().getFullName()).append('\'');
@@ -155,7 +155,8 @@ public class LogContextCloseTests {
         final Handler[] handlers = logger.getHandlers();
         Assert.assertNull("Expected the filter to be null for logger " + loggerName, logger.getFilter());
         Assert.assertTrue("Empty handlers expected for logger " + loggerName, handlers == null || handlers.length == 0);
-        Assert.assertEquals("Expected the level to be " + expectedLevel + " for logger " + loggerName, expectedLevel, logger.getLevel());
+        Assert.assertEquals("Expected the level to be " + expectedLevel + " for logger " + loggerName, expectedLevel,
+                logger.getLevel());
         Assert.assertFalse("Expected the useParentFilters to be false for logger " + loggerName, logger.getUseParentFilters());
         Assert.assertTrue("Expected the useParentHandlers to be true for logger " + loggerName, logger.getUseParentHandlers());
     }
@@ -164,7 +165,6 @@ public class LogContextCloseTests {
         Assert.assertTrue(String.format("The configuration should not have any %s names, but found: %s", description, names),
                 names.isEmpty());
     }
-
 
     @SuppressWarnings("unused")
     public static class TestFilter implements Filter {
@@ -203,7 +203,7 @@ public class LogContextCloseTests {
         }
     }
 
-    @SuppressWarnings({"unused", "WeakerAccess"})
+    @SuppressWarnings({ "unused", "WeakerAccess" })
     public static class TestHandler extends ExtHandler {
         private static PojoObject POJO_OBJECT;
         private static Handler[] HANDLERS;
@@ -241,7 +241,7 @@ public class LogContextCloseTests {
                 throw new RuntimeException("Cannot add a null handler");
             }
             if (HANDLERS == null) {
-                HANDLERS = new Handler[] {handler};
+                HANDLERS = new Handler[] { handler };
             } else {
                 final int len = HANDLERS.length + 1;
                 HANDLERS = Arrays.copyOf(HANDLERS, len);

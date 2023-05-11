@@ -19,7 +19,7 @@
 
 package org.jboss.logmanager.formatters;
 
-import io.smallrye.common.constraint.Assert;
+import static java.lang.Math.max;
 
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -55,7 +55,7 @@ import java.util.Objects;
 import java.util.TimeZone;
 import java.util.UnknownFormatConversionException;
 
-import static java.lang.Math.max;
+import io.smallrye.common.constraint.Assert;
 
 /**
  * A string formatter which can be customized.
@@ -131,7 +131,8 @@ class Printf {
                 }
             } else if (state == ST_PCT || state == ST_DOLLAR) {
                 if (state == ST_PCT && cp == '<') {
-                    if (lastArgIdx == -1) throw new IllegalFormatFlagsException("<");
+                    if (lastArgIdx == -1)
+                        throw new IllegalFormatFlagsException("<");
                     argIdx = lastArgIdx;
                     continue;
                 }
@@ -144,25 +145,29 @@ class Printf {
                     case ' ': {
                         numFlags.forbid(NumericFlag.SPACE_POSITIVE);
                         numFlags = numFlags.with(NumericFlag.SPACE_POSITIVE);
-                        if (numFlags.contains(NumericFlag.SIGN)) numFlags.forbid(NumericFlag.SPACE_POSITIVE);
+                        if (numFlags.contains(NumericFlag.SIGN))
+                            numFlags.forbid(NumericFlag.SPACE_POSITIVE);
                         continue;
                     }
                     case '+': {
                         numFlags.forbid(NumericFlag.SIGN);
                         numFlags = numFlags.with(NumericFlag.SIGN);
-                        if (numFlags.contains(NumericFlag.SPACE_POSITIVE)) numFlags.forbid(NumericFlag.SIGN);
+                        if (numFlags.contains(NumericFlag.SPACE_POSITIVE))
+                            numFlags.forbid(NumericFlag.SIGN);
                         continue;
                     }
                     case '0': {
                         numFlags.forbid(NumericFlag.ZERO_PAD);
                         numFlags = numFlags.with(NumericFlag.ZERO_PAD);
-                        if (genFlags.contains(GeneralFlag.LEFT_JUSTIFY)) numFlags.forbid(NumericFlag.ZERO_PAD);
+                        if (genFlags.contains(GeneralFlag.LEFT_JUSTIFY))
+                            numFlags.forbid(NumericFlag.ZERO_PAD);
                         continue;
                     }
                     case '-': {
                         genFlags.forbid(GeneralFlag.LEFT_JUSTIFY);
                         genFlags = genFlags.with(GeneralFlag.LEFT_JUSTIFY);
-                        if (numFlags.contains(NumericFlag.ZERO_PAD)) genFlags.forbid(GeneralFlag.LEFT_JUSTIFY);
+                        if (numFlags.contains(NumericFlag.ZERO_PAD))
+                            genFlags.forbid(GeneralFlag.LEFT_JUSTIFY);
                         continue;
                     }
                     case '(': {
@@ -186,7 +191,8 @@ class Printf {
                 // time-specific format specifiers
                 numFlags.forbidAll();
                 genFlags.forbid(GeneralFlag.ALTERNATE);
-                if (precision != -1) throw precisionException(precision);
+                if (precision != -1)
+                    throw precisionException(precision);
                 if (argVal == null) {
                     formatPlainString(destination, null, genFlags, width, -1);
                     continue;
@@ -209,24 +215,29 @@ class Printf {
                 switch (cp) {
                     // locale-based names
                     case 'A': {
-                        formatTimeTextField(destination, ta, ChronoField.DAY_OF_WEEK, getDateFormatSymbols().getWeekdays(), genFlags, width);
+                        formatTimeTextField(destination, ta, ChronoField.DAY_OF_WEEK, getDateFormatSymbols().getWeekdays(),
+                                genFlags, width);
                         break;
                     }
                     case 'a': {
-                        formatTimeTextField(destination, ta, ChronoField.DAY_OF_WEEK, getDateFormatSymbols().getShortWeekdays(), genFlags, width);
+                        formatTimeTextField(destination, ta, ChronoField.DAY_OF_WEEK, getDateFormatSymbols().getShortWeekdays(),
+                                genFlags, width);
                         break;
                     }
                     case 'B': {
-                        formatTimeTextField(destination, ta, ChronoField.MONTH_OF_YEAR, getDateFormatSymbols().getMonths(), genFlags, width);
+                        formatTimeTextField(destination, ta, ChronoField.MONTH_OF_YEAR, getDateFormatSymbols().getMonths(),
+                                genFlags, width);
                         break;
                     }
                     case 'h': // synonym for 'b'
                     case 'b': {
-                        formatTimeTextField(destination, ta, ChronoField.MONTH_OF_YEAR, getDateFormatSymbols().getShortMonths(), genFlags, width);
+                        formatTimeTextField(destination, ta, ChronoField.MONTH_OF_YEAR, getDateFormatSymbols().getShortMonths(),
+                                genFlags, width);
                         break;
                     }
                     case 'p': {
-                        formatTimeTextField(destination, ta, ChronoField.AMPM_OF_DAY, getDateFormatSymbols().getAmPmStrings(), genFlags, width);
+                        formatTimeTextField(destination, ta, ChronoField.AMPM_OF_DAY, getDateFormatSymbols().getAmPmStrings(),
+                                genFlags, width);
                         break;
                     }
 
@@ -313,9 +324,11 @@ class Printf {
                     // compositions
                     case 'c': {
                         final StringBuilder b = new StringBuilder();
-                        formatTimeTextField(b, ta, ChronoField.DAY_OF_WEEK, getDateFormatSymbols().getShortWeekdays(), genFlags, -1);
+                        formatTimeTextField(b, ta, ChronoField.DAY_OF_WEEK, getDateFormatSymbols().getShortWeekdays(), genFlags,
+                                -1);
                         b.append(' ');
-                        formatTimeTextField(b, ta, ChronoField.MONTH_OF_YEAR, getDateFormatSymbols().getShortMonths(), genFlags, -1);
+                        formatTimeTextField(b, ta, ChronoField.MONTH_OF_YEAR, getDateFormatSymbols().getShortMonths(), genFlags,
+                                -1);
                         b.append(' ');
                         formatTimeField(b, ta, ChronoField.DAY_OF_MONTH, genFlags, -1, 2);
                         b.append(' ');
@@ -369,7 +382,8 @@ class Printf {
                         b.append(':');
                         formatTimeField(b, ta, ChronoField.SECOND_OF_MINUTE, genFlags, -1, 2);
                         b.append(' ');
-                        formatTimeTextField(b, ta, ChronoField.AMPM_OF_DAY, getDateFormatSymbols().getAmPmStrings(), genFlags.with(GeneralFlag.UPPERCASE), width);
+                        formatTimeTextField(b, ta, ChronoField.AMPM_OF_DAY, getDateFormatSymbols().getAmPmStrings(),
+                                genFlags.with(GeneralFlag.UPPERCASE), width);
                         appendStr(destination, genFlags, width, -1, b.toString());
                         break;
                     }
@@ -441,12 +455,14 @@ class Printf {
                 // capture argument
                 if (argIdx != -1) {
                     if (argIdx - 1 >= params.length) {
-                        throw new MissingFormatArgumentException(format.substring(start, cp == 't' || cp == 'T' ? i + 2 : i + 1));
+                        throw new MissingFormatArgumentException(
+                                format.substring(start, cp == 't' || cp == 'T' ? i + 2 : i + 1));
                     }
                     argVal = params[argIdx - 1];
                 } else {
                     if (crs >= params.length) {
-                        throw new MissingFormatArgumentException(format.substring(start, cp == 't' || cp == 'T' ? i + 2 : i + 1));
+                        throw new MissingFormatArgumentException(
+                                format.substring(start, cp == 't' || cp == 'T' ? i + 2 : i + 1));
                     }
                     argVal = params[crs++];
                     argIdx = crs; // crs is 0-based, argIdx & lastArgIdx are 1-based
@@ -456,7 +472,8 @@ class Printf {
                 case '%': {
                     genFlags.forbidAllBut(GeneralFlag.LEFT_JUSTIFY); // but it's ignored anyway
                     numFlags.forbidAll();
-                    if (precision != -1 || state == ST_PREC) throw precisionException(precision);
+                    if (precision != -1 || state == ST_PREC)
+                        throw precisionException(precision);
                     formatPercent(destination);
                     break;
                 }
@@ -469,8 +486,10 @@ class Printf {
                 case 'b': {
                     numFlags.forbidAll();
                     genFlags.forbid(GeneralFlag.ALTERNATE);
-                    if (Character.isUpperCase(cp)) genFlags = genFlags.with(GeneralFlag.UPPERCASE);
-                    if (argVal != null && ! (argVal instanceof Boolean)) throw new IllegalFormatConversionException((char)cp, argVal.getClass());
+                    if (Character.isUpperCase(cp))
+                        genFlags = genFlags.with(GeneralFlag.UPPERCASE);
+                    if (argVal != null && !(argVal instanceof Boolean))
+                        throw new IllegalFormatConversionException((char) cp, argVal.getClass());
                     formatBoolean(destination, checkType(cp, argVal, Boolean.class), genFlags, width, precision);
                     break;
                 }
@@ -478,8 +497,10 @@ class Printf {
                 case 'c': {
                     numFlags.forbidAll();
                     genFlags.forbidAllBut(GeneralFlag.LEFT_JUSTIFY);
-                    if (Character.isUpperCase(cp)) genFlags = genFlags.with(GeneralFlag.UPPERCASE);
-                    if (precision != -1 || state == ST_PREC) throw precisionException(precision);
+                    if (Character.isUpperCase(cp))
+                        genFlags = genFlags.with(GeneralFlag.UPPERCASE);
+                    if (precision != -1 || state == ST_PREC)
+                        throw precisionException(precision);
                     int cpa;
                     if (argVal == null) {
                         appendStr(destination, genFlags, width, precision, "null");
@@ -496,8 +517,10 @@ class Printf {
                 }
                 case 'd': {
                     genFlags.forbid(GeneralFlag.ALTERNATE);
-                    if (precision != -1 || state == ST_PREC) throw precisionException(precision);
-                    formatDecimalInteger(destination, checkType(cp, argVal, Number.class, Byte.class, Short.class, Integer.class, Long.class, BigInteger.class), genFlags, numFlags, width);
+                    if (precision != -1 || state == ST_PREC)
+                        throw precisionException(precision);
+                    formatDecimalInteger(destination, checkType(cp, argVal, Number.class, Byte.class, Short.class,
+                            Integer.class, Long.class, BigInteger.class), genFlags, numFlags, width);
                     break;
                 }
                 case 'E':
@@ -505,8 +528,10 @@ class Printf {
                 case 'f':
                 case 'G':
                 case 'g': {
-                    if (Character.isUpperCase(cp)) genFlags = genFlags.with(GeneralFlag.UPPERCASE);
-                    if (argVal != null && ! (argVal instanceof Float) && ! (argVal instanceof Double) && ! (argVal instanceof BigDecimal)) {
+                    if (Character.isUpperCase(cp))
+                        genFlags = genFlags.with(GeneralFlag.UPPERCASE);
+                    if (argVal != null && !(argVal instanceof Float) && !(argVal instanceof Double)
+                            && !(argVal instanceof BigDecimal)) {
                         throw new IllegalFormatConversionException((char) cp, argVal.getClass());
                     }
                     Number item = checkType(cp, argVal, Number.class, Float.class, Double.class, BigDecimal.class);
@@ -537,14 +562,17 @@ class Printf {
                 }
                 case 'o': {
                     numFlags.forbidAllBut(NumericFlag.ZERO_PAD);
-                    if (precision != -1 || state == ST_PREC) throw precisionException(precision);
-                    formatOctalInteger(destination, checkType(cp, argVal, Number.class, Byte.class, Short.class, Integer.class, Long.class, BigInteger.class), genFlags, numFlags, width);
+                    if (precision != -1 || state == ST_PREC)
+                        throw precisionException(precision);
+                    formatOctalInteger(destination, checkType(cp, argVal, Number.class, Byte.class, Short.class, Integer.class,
+                            Long.class, BigInteger.class), genFlags, numFlags, width);
                     break;
                 }
                 case 's':
                 case 'S': {
                     numFlags.forbidAll();
-                    if (Character.isUpperCase(cp)) genFlags = genFlags.with(GeneralFlag.UPPERCASE);
+                    if (Character.isUpperCase(cp))
+                        genFlags = genFlags.with(GeneralFlag.UPPERCASE);
                     if (argVal instanceof Formattable) {
                         formatFormattableString(destination, (Formattable) argVal, genFlags, width, precision);
                     } else {
@@ -554,16 +582,20 @@ class Printf {
                 }
                 case 'T':
                 case 't': {
-                    if (Character.isUpperCase(cp)) genFlags = genFlags.with(GeneralFlag.UPPERCASE);
+                    if (Character.isUpperCase(cp))
+                        genFlags = genFlags.with(GeneralFlag.UPPERCASE);
                     state = ST_TIME;
                     continue;
                 }
                 case 'X':
                 case 'x': {
                     numFlags.forbidAllBut(NumericFlag.ZERO_PAD);
-                    if (Character.isUpperCase(cp)) genFlags = genFlags.with(GeneralFlag.UPPERCASE);
-                    if (precision != -1 || state == ST_PREC) throw precisionException(precision);
-                    formatHexInteger(destination, checkType(cp, argVal, Number.class, Byte.class, Short.class, Integer.class, Long.class, BigInteger.class), genFlags, numFlags, width);
+                    if (Character.isUpperCase(cp))
+                        genFlags = genFlags.with(GeneralFlag.UPPERCASE);
+                    if (precision != -1 || state == ST_PREC)
+                        throw precisionException(precision);
+                    formatHexInteger(destination, checkType(cp, argVal, Number.class, Byte.class, Short.class, Integer.class,
+                            Long.class, BigInteger.class), genFlags, numFlags, width);
                     break;
                 }
                 default: {
@@ -597,14 +629,17 @@ class Printf {
         return dfs;
     }
 
-    protected void formatTimeTextField(final StringBuilder target, final TemporalAccessor ta, final TemporalField field, final String[] symbols, final GeneralFlags genFlags, final int width) {
+    protected void formatTimeTextField(final StringBuilder target, final TemporalAccessor ta, final TemporalField field,
+            final String[] symbols, final GeneralFlags genFlags, final int width) {
         final int baseIdx = ta.get(field);
         // fix offset fields
-        final int idx = field == ChronoField.MONTH_OF_YEAR ? baseIdx - 1 : field == ChronoField.DAY_OF_WEEK ? (baseIdx + 1) % 7 : baseIdx;
+        final int idx = field == ChronoField.MONTH_OF_YEAR ? baseIdx - 1
+                : field == ChronoField.DAY_OF_WEEK ? (baseIdx + 1) % 7 : baseIdx;
         appendStr(target, genFlags, width, -1, symbols[idx]);
     }
 
-    protected void formatTimeZoneId(final StringBuilder target, final TemporalAccessor ta, final GeneralFlags genFlags, final int width) {
+    protected void formatTimeZoneId(final StringBuilder target, final TemporalAccessor ta, final GeneralFlags genFlags,
+            final int width) {
         final boolean upper = genFlags.contains(GeneralFlag.UPPERCASE);
         final ZoneId zoneId = ta.query(TemporalQueries.zone());
         if (zoneId == null) {
@@ -620,32 +655,36 @@ class Printf {
         appendStr(target, genFlags, width, -1, output);
     }
 
-    protected void formatTimeZoneOffset(final StringBuilder target, final TemporalAccessor ta, final GeneralFlags genFlags, final int width) {
+    protected void formatTimeZoneOffset(final StringBuilder target, final TemporalAccessor ta, final GeneralFlags genFlags,
+            final int width) {
         final int offset = ta.get(ChronoField.OFFSET_SECONDS);
         final int absOffset = Math.abs(offset);
         final int minutes = (absOffset / 60) % 60;
         final int hours = (absOffset / 3600);
         final boolean lj = genFlags.contains(GeneralFlag.LEFT_JUSTIFY);
-        if (width > 5 && ! lj) {
+        if (width > 5 && !lj) {
             appendSpaces(target, width - 5);
         }
         target.append(offset > 0 ? '+' : '-');
-        if (hours < 10) target.append('0');
+        if (hours < 10)
+            target.append('0');
         target.append(hours);
-        if (minutes < 10) target.append('0');
+        if (minutes < 10)
+            target.append('0');
         target.append(minutes);
         if (width > 5 && lj) {
             appendSpaces(target, width - 5);
         }
     }
 
-    protected void formatTimeField(final StringBuilder target, final TemporalAccessor ta, final TemporalField field, final GeneralFlags genFlags, final int width, final int zeroPad) {
+    protected void formatTimeField(final StringBuilder target, final TemporalAccessor ta, final TemporalField field,
+            final GeneralFlags genFlags, final int width, final int zeroPad) {
         final long val = ta.getLong(field);
         final String valStr = Long.toString(val);
         final int length = valStr.length();
         final int extLen = max(zeroPad, length);
         final boolean lj = genFlags.contains(GeneralFlag.LEFT_JUSTIFY);
-        if (width > extLen && ! lj) {
+        if (width > extLen && !lj) {
             appendSpaces(target, width - extLen);
         }
         if (zeroPad > length) {
@@ -665,11 +704,15 @@ class Printf {
         target.append(System.lineSeparator());
     }
 
-    protected void formatFormattableString(StringBuilder target, Formattable formattable, GeneralFlags genFlags, int width, int precision) {
+    protected void formatFormattableString(StringBuilder target, Formattable formattable, GeneralFlags genFlags, int width,
+            int precision) {
         int fmtFlags = 0;
-        if (genFlags.contains(GeneralFlag.LEFT_JUSTIFY)) fmtFlags |= FormattableFlags.LEFT_JUSTIFY;
-        if (genFlags.contains(GeneralFlag.UPPERCASE)) fmtFlags |= FormattableFlags.UPPERCASE;
-        if (genFlags.contains(GeneralFlag.ALTERNATE)) fmtFlags |= FormattableFlags.ALTERNATE;
+        if (genFlags.contains(GeneralFlag.LEFT_JUSTIFY))
+            fmtFlags |= FormattableFlags.LEFT_JUSTIFY;
+        if (genFlags.contains(GeneralFlag.UPPERCASE))
+            fmtFlags |= FormattableFlags.UPPERCASE;
+        if (genFlags.contains(GeneralFlag.ALTERNATE))
+            fmtFlags |= FormattableFlags.ALTERNATE;
         // make a dummy Formatter to appease the constraints of the API
         formattable.formatTo(new Formatter(target), fmtFlags, width, precision);
     }
@@ -679,7 +722,8 @@ class Printf {
     }
 
     protected void formatBoolean(StringBuilder target, Object item, GeneralFlags genFlags, int width, int precision) {
-        appendStr(target, genFlags, width, precision, item instanceof Boolean ? item.toString() : Boolean.toString(item != null));
+        appendStr(target, genFlags, width, precision,
+                item instanceof Boolean ? item.toString() : Boolean.toString(item != null));
     }
 
     protected void formatHashCode(StringBuilder target, Object item, GeneralFlags genFlags, int width, int precision) {
@@ -694,7 +738,8 @@ class Printf {
         }
     }
 
-    protected void formatDecimalInteger(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags, int width) {
+    protected void formatDecimalInteger(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags,
+            int width) {
         if (item == null) {
             appendStr(target, genFlags, width, -1, "null");
         } else {
@@ -723,7 +768,8 @@ class Printf {
         }
     }
 
-    protected void formatOctalInteger(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags, int width) {
+    protected void formatOctalInteger(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags,
+            int width) {
         if (item == null) {
             appendStr(target, genFlags, width, -1, "null");
         } else {
@@ -732,15 +778,18 @@ class Printf {
             final boolean lj = genFlags.contains(GeneralFlag.LEFT_JUSTIFY);
             if (numFlags.contains(NumericFlag.ZERO_PAD)) {
                 // write zeros first
-                if (addRadix) target.append('0');
+                if (addRadix)
+                    target.append('0');
                 appendZeros(target, fillCount);
             } else if (lj) {
-                if (addRadix) target.append('0');
+                if (addRadix)
+                    target.append('0');
             } else {
                 // ! LEFT_JUSTIFY
                 // write spaces first
                 appendSpaces(target, fillCount);
-                if (addRadix) target.append('0');
+                if (addRadix)
+                    target.append('0');
             }
             appendOctal(target, item);
             if (lj) {
@@ -749,7 +798,8 @@ class Printf {
         }
     }
 
-    protected void formatHexInteger(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags, int width) {
+    protected void formatHexInteger(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags,
+            int width) {
         if (item == null) {
             appendStr(target, genFlags, width, -1, "null");
         } else {
@@ -759,15 +809,18 @@ class Printf {
             final boolean lj = genFlags.contains(GeneralFlag.LEFT_JUSTIFY);
             if (numFlags.contains(NumericFlag.ZERO_PAD)) {
                 // write zeros first
-                if (addRadix) target.append(upper ? "0X" : "0x");
+                if (addRadix)
+                    target.append(upper ? "0X" : "0x");
                 appendZeros(target, fillCount);
             } else if (lj) {
-                if (addRadix) target.append(upper ? "0X" : "0x");
+                if (addRadix)
+                    target.append(upper ? "0X" : "0x");
             } else {
                 // ! LEFT_JUSTIFY
                 // write spaces first
                 appendSpaces(target, fillCount);
-                if (addRadix) target.append(upper ? "0X" : "0x");
+                if (addRadix)
+                    target.append(upper ? "0X" : "0x");
             }
             appendHex(target, item, upper);
             if (lj) {
@@ -776,7 +829,8 @@ class Printf {
         }
     }
 
-    protected void formatFloatingPointSci(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags, int width, int precision) {
+    protected void formatFloatingPointSci(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags,
+            int width, int precision) {
         if (item == null) {
             appendStr(target, genFlags, width, precision, "null");
         } else {
@@ -787,19 +841,23 @@ class Printf {
             } else {
                 sym.setExponentSeparator(upper ? "E+" : "e+");
             }
-            formatDFP(target, item, genFlags, numFlags, width, precision == -1 ? 6 : precision == 0 ? 1 : precision, true, sym, "0.#E00");
+            formatDFP(target, item, genFlags, numFlags, width, precision == -1 ? 6 : precision == 0 ? 1 : precision, true, sym,
+                    "0.#E00");
         }
     }
 
-    protected void formatFloatingPointDecimal(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags, int width, int precision) {
+    protected void formatFloatingPointDecimal(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags,
+            int width, int precision) {
         if (item == null) {
             appendStr(target, genFlags, width, precision, "null");
         } else {
-            formatDFP(target, item, genFlags, numFlags, width, precision == 0 ? 1 : precision, false, DecimalFormatSymbols.getInstance(locale), "0.#");
+            formatDFP(target, item, genFlags, numFlags, width, precision == 0 ? 1 : precision, false,
+                    DecimalFormatSymbols.getInstance(locale), "0.#");
         }
     }
 
-    protected void formatFloatingPointGeneral(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags, int width, int precision) {
+    protected void formatFloatingPointGeneral(StringBuilder target, Number item, GeneralFlags genFlags, NumericFlags numFlags,
+            int width, int precision) {
         if (item == null) {
             appendStr(target, genFlags, width, precision, "null");
         } else {
@@ -823,10 +881,12 @@ class Printf {
         }
     }
 
-    private void formatDFP(final StringBuilder target, final Number item, final GeneralFlags genFlags, final NumericFlags numFlags, final int width, final int precision, final boolean oneIntDigit, final DecimalFormatSymbols sym, final String s) {
-        if (! (item instanceof BigDecimal)) {
+    private void formatDFP(final StringBuilder target, final Number item, final GeneralFlags genFlags,
+            final NumericFlags numFlags, final int width, final int precision, final boolean oneIntDigit,
+            final DecimalFormatSymbols sym, final String s) {
+        if (!(item instanceof BigDecimal)) {
             final double dv = item.doubleValue();
-            if (! Double.isFinite(dv)) {
+            if (!Double.isFinite(dv)) {
                 appendStr(target, genFlags, width, -1, Double.toString(dv));
                 return;
             }
@@ -848,8 +908,8 @@ class Printf {
             fmt.setNegativeSuffix("");
         }
         fmt.setGroupingUsed(numFlags.contains(NumericFlag.LOCALE_GROUPING_SEPARATORS));
-        fmt.setMinimumFractionDigits(precision == - 1 ? 1 : precision);
-        fmt.setMaximumFractionDigits(precision == - 1 ? Integer.MAX_VALUE : precision);
+        fmt.setMinimumFractionDigits(precision == -1 ? 1 : precision);
+        fmt.setMaximumFractionDigits(precision == -1 ? Integer.MAX_VALUE : precision);
         fmt.setMinimumIntegerDigits(1);
         if (oneIntDigit) {
             fmt.setMaximumIntegerDigits(1);
@@ -859,7 +919,7 @@ class Printf {
         final int end = iterator.getEndIndex();
         final boolean lj = genFlags.contains(GeneralFlag.LEFT_JUSTIFY);
         final boolean zp = numFlags.contains(NumericFlag.ZERO_PAD);
-        if (! lj && ! zp && width > end) {
+        if (!lj && !zp && width > end) {
             appendSpaces(target, width - end);
         }
         while (iterator.getAttribute(NumberFormat.Field.SIGN) != null) {
@@ -926,9 +986,12 @@ class Printf {
                 int max = ((bl + 2) / 3) * 3;
                 for (int i = 0; i < max; i += 3) {
                     int val = 0;
-                    if (bi.testBit(max - i    )) val |= 0b100;
-                    if (bi.testBit(max - i - 1)) val |= 0b010;
-                    if (bi.testBit(max - i - 2)) val |= 0b001;
+                    if (bi.testBit(max - i))
+                        val |= 0b100;
+                    if (bi.testBit(max - i - 1))
+                        val |= 0b010;
+                    if (bi.testBit(max - i - 2))
+                        val |= 0b001;
                     target.append(val);
                 }
             }
@@ -957,18 +1020,24 @@ class Printf {
                 int max = ((bl + 3) / 4) * 4;
                 for (int i = 0; i < max; i += 4) {
                     int val = 0;
-                    if (bi.testBit(max - i    )) val |= 0b1000;
-                    if (bi.testBit(max - i - 1)) val |= 0b0100;
-                    if (bi.testBit(max - i - 2)) val |= 0b0010;
-                    if (bi.testBit(max - i - 3)) val |= 0b0001;
-                    if (val > 9) val += upper ? 'A' : 'a' - 10;
+                    if (bi.testBit(max - i))
+                        val |= 0b1000;
+                    if (bi.testBit(max - i - 1))
+                        val |= 0b0100;
+                    if (bi.testBit(max - i - 2))
+                        val |= 0b0010;
+                    if (bi.testBit(max - i - 3))
+                        val |= 0b0001;
+                    if (val > 9)
+                        val += upper ? 'A' : 'a' - 10;
                     target.append((char) (val > 9 ? val - 10 + (upper ? 'A' : 'a') : val + '0'));
                 }
             }
         }
     }
 
-    private void appendChar(final StringBuilder target, GeneralFlags genFlags, final int width, final int precision, final char c) {
+    private void appendChar(final StringBuilder target, GeneralFlags genFlags, final int width, final int precision,
+            final char c) {
         if (genFlags.contains(GeneralFlag.UPPERCASE) && Character.isLowerCase(c)) {
             appendStr(target, genFlags, width, precision, Character.toString(c));
         } else if (width <= 1) {
@@ -982,7 +1051,8 @@ class Printf {
         }
     }
 
-    private void appendStr(final StringBuilder target, GeneralFlags genFlags, final int width, final int precision, final String itemStr) {
+    private void appendStr(final StringBuilder target, GeneralFlags genFlags, final int width, final int precision,
+            final String itemStr) {
         String str = genFlags.contains(GeneralFlag.UPPERCASE) ? itemStr.toUpperCase(locale) : itemStr;
         if (width == -1 && precision == -1) {
             target.append(str);
@@ -1008,11 +1078,14 @@ class Printf {
 
     @SafeVarargs
     private static <T> T checkType(int convCp, Object arg, Class<T> commonType, Class<? extends T>... allowedSubTypes) {
-        if (arg == null) return null;
+        if (arg == null)
+            return null;
         if (commonType.isInstance(arg)) {
-            if (allowedSubTypes.length == 0) return commonType.cast(arg);
+            if (allowedSubTypes.length == 0)
+                return commonType.cast(arg);
             for (Class<? extends T> subType : allowedSubTypes) {
-                if (subType.isInstance(arg)) return commonType.cast(arg);
+                if (subType.isInstance(arg))
+                    return commonType.cast(arg);
             }
         }
         throw new IllegalFormatConversionException((char) convCp, arg.getClass());

@@ -32,7 +32,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-public class JBossLoggerFinder  extends System.LoggerFinder {
+public class JBossLoggerFinder extends System.LoggerFinder {
     private static final Map<System.Logger.Level, java.util.logging.Level> LEVELS = new EnumMap<>(System.Logger.Level.class);
     private static final AtomicBoolean LOGGED = new AtomicBoolean(false);
     private static volatile boolean PROPERTY_SET = false;
@@ -71,7 +71,8 @@ public class JBossLoggerFinder  extends System.LoggerFinder {
         final java.util.logging.Logger logger = java.util.logging.Logger.getLogger(name);
         if (!logger.getClass().getName().equals("org.jboss.logmanager.Logger")) {
             if (LOGGED.compareAndSet(false, true)) {
-                logger.log(Level.ERROR, "The LogManager accessed before the \"java.util.logging.manager\" system property was set to \"org.jboss.logmanager.LogManager\". Results may be unexpected.");
+                logger.log(Level.ERROR,
+                        "The LogManager accessed before the \"java.util.logging.manager\" system property was set to \"org.jboss.logmanager.LogManager\". Results may be unexpected.");
             }
         }
         return new JBossSystemLogger(logger);
@@ -97,7 +98,8 @@ public class JBossLoggerFinder  extends System.LoggerFinder {
 
         @Override
         public void log(final Level level, final ResourceBundle bundle, final String msg, final Throwable thrown) {
-            final ExtLogRecord record = new ExtLogRecord(LEVELS.getOrDefault(level, java.util.logging.Level.INFO), msg, LOGGER_CLASS_NAME);
+            final ExtLogRecord record = new ExtLogRecord(LEVELS.getOrDefault(level, java.util.logging.Level.INFO), msg,
+                    LOGGER_CLASS_NAME);
             record.setThrown(thrown);
             record.setResourceBundle(bundle);
             delegate.log(record);
@@ -105,7 +107,8 @@ public class JBossLoggerFinder  extends System.LoggerFinder {
 
         @Override
         public void log(final Level level, final ResourceBundle bundle, final String format, final Object... params) {
-            final ExtLogRecord record = new ExtLogRecord(LEVELS.getOrDefault(level, java.util.logging.Level.INFO), format, ExtLogRecord.FormatStyle.MESSAGE_FORMAT, LOGGER_CLASS_NAME);
+            final ExtLogRecord record = new ExtLogRecord(LEVELS.getOrDefault(level, java.util.logging.Level.INFO), format,
+                    ExtLogRecord.FormatStyle.MESSAGE_FORMAT, LOGGER_CLASS_NAME);
             record.setParameters(params);
             record.setResourceBundle(bundle);
             delegate.log(record);

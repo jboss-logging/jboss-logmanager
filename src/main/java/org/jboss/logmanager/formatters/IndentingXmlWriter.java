@@ -21,6 +21,7 @@ package org.jboss.logmanager.formatters;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
 import javax.xml.namespace.NamespaceContext;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -81,7 +82,8 @@ class IndentingXmlWriter implements XMLStreamWriter, XMLStreamConstants {
     }
 
     @Override
-    public void writeStartElement(final String prefix, final String localName, final String namespaceURI) throws XMLStreamException {
+    public void writeStartElement(final String prefix, final String localName, final String namespaceURI)
+            throws XMLStreamException {
         newline();
         indent();
         delegate.writeStartElement(prefix, localName, namespaceURI);
@@ -99,7 +101,8 @@ class IndentingXmlWriter implements XMLStreamWriter, XMLStreamConstants {
     }
 
     @Override
-    public void writeEmptyElement(final String prefix, final String localName, final String namespaceURI) throws XMLStreamException {
+    public void writeEmptyElement(final String prefix, final String localName, final String namespaceURI)
+            throws XMLStreamException {
         newline();
         indent();
         delegate.writeEmptyElement(prefix, localName, namespaceURI);
@@ -148,12 +151,14 @@ class IndentingXmlWriter implements XMLStreamWriter, XMLStreamConstants {
     }
 
     @Override
-    public void writeAttribute(final String prefix, final String namespaceURI, final String localName, final String value) throws XMLStreamException {
+    public void writeAttribute(final String prefix, final String namespaceURI, final String localName, final String value)
+            throws XMLStreamException {
         delegate.writeAttribute(prefix, namespaceURI, localName, value);
     }
 
     @Override
-    public void writeAttribute(final String namespaceURI, final String localName, final String value) throws XMLStreamException {
+    public void writeAttribute(final String namespaceURI, final String localName, final String value)
+            throws XMLStreamException {
         delegate.writeAttribute(namespaceURI, localName, value);
     }
 

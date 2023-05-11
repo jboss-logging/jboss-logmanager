@@ -19,17 +19,17 @@
 
 package org.jboss.logmanager.handlers;
 
-import org.jboss.logmanager.formatters.Formatters;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
-
 import java.nio.charset.Charset;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
+import org.jboss.logmanager.formatters.Formatters;
+
 /**
- * An output stream handler which supports any {@code OutputStream}, using the specified encoding.  If no encoding is
+ * An output stream handler which supports any {@code OutputStream}, using the specified encoding. If no encoding is
  * specified, the platform default is used.
  */
 public class OutputStreamHandler extends WriterHandler {
@@ -56,7 +56,7 @@ public class OutputStreamHandler extends WriterHandler {
      * Construct a new instance.
      *
      * @param outputStream the output stream to use
-     * @param formatter the formatter to use
+     * @param formatter    the formatter to use
      */
     public OutputStreamHandler(final OutputStream outputStream, final Formatter formatter) {
         setFormatter(formatter);
@@ -88,7 +88,7 @@ public class OutputStreamHandler extends WriterHandler {
         }
     }
 
-    /** {@inheritDoc}  Setting a writer will replace any target output stream. */
+    /** {@inheritDoc} Setting a writer will replace any target output stream. */
     public void setWriter(final Writer writer) {
         lock.lock();
         try {
@@ -103,7 +103,7 @@ public class OutputStreamHandler extends WriterHandler {
     }
 
     /**
-     * Set the output stream to write to.  The output stream will then belong to this handler; when the handler is
+     * Set the output stream to write to. The output stream will then belong to this handler; when the handler is
      * closed or a new writer or output stream is set, this output stream will be closed.
      *
      * @param outputStream the new output stream or {@code null} for none
@@ -144,8 +144,10 @@ public class OutputStreamHandler extends WriterHandler {
     }
 
     private Writer getNewWriter(OutputStream newOutputStream) {
-        if (newOutputStream == null) return null;
-        final UninterruptibleOutputStream outputStream = new UninterruptibleOutputStream(new UncloseableOutputStream(newOutputStream));
+        if (newOutputStream == null)
+            return null;
+        final UninterruptibleOutputStream outputStream = new UninterruptibleOutputStream(
+                new UncloseableOutputStream(newOutputStream));
         return new OutputStreamWriter(outputStream, getCharset());
     }
 }

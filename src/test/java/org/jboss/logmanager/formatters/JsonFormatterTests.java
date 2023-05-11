@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import jakarta.json.Json;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
@@ -45,8 +46,7 @@ import org.junit.Test;
  */
 public class JsonFormatterTests extends AbstractTest {
     private static final Map<Key, String> KEY_OVERRIDES = new HashMap<>();
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
-            .ISO_OFFSET_DATE_TIME
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME
             .withZone(ZoneId.systemDefault());
 
     @Before
@@ -87,13 +87,13 @@ public class JsonFormatterTests extends AbstractTest {
         formatter.setPrintDetails(true);
         formatter.setMetaData("context-id=context1");
         ExtLogRecord record = createLogRecord("Test formatted %s", "message");
-        Map<String, String> metaDataMap = MapBuilder.<String, String>create()
+        Map<String, String> metaDataMap = MapBuilder.<String, String> create()
                 .add("context-id", "context1")
                 .build();
         compare(record, formatter, metaDataMap);
 
         formatter.setMetaData("vendor=Red Hat\\, Inc.,product-type=JBoss");
-        metaDataMap = MapBuilder.<String, String>create()
+        metaDataMap = MapBuilder.<String, String> create()
                 .add("vendor", "Red Hat, Inc.")
                 .add("product-type", "JBoss")
                 .build();
@@ -197,7 +197,8 @@ public class JsonFormatterTests extends AbstractTest {
         validateStackTrace(json, hasFormatted, hasStructured);
     }
 
-    private static void validateStackTrace(final JsonObject json, final boolean validateFormatted, final boolean validateStructured) {
+    private static void validateStackTrace(final JsonObject json, final boolean validateFormatted,
+            final boolean validateStructured) {
         if (validateFormatted) {
             Assert.assertNotNull(json.get(getKey(Key.STACK_TRACE)));
         }

@@ -33,7 +33,8 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
     @SuppressWarnings("unchecked")
     private volatile FastCopyHashMap<K, V> map = EMPTY;
 
-    private static final AtomicReferenceFieldUpdater<CopyOnWriteMap, FastCopyHashMap> mapUpdater = AtomicReferenceFieldUpdater.newUpdater(CopyOnWriteMap.class, FastCopyHashMap.class, "map");
+    private static final AtomicReferenceFieldUpdater<CopyOnWriteMap, FastCopyHashMap> mapUpdater = AtomicReferenceFieldUpdater
+            .newUpdater(CopyOnWriteMap.class, FastCopyHashMap.class, "map");
 
     public V get(final Object key) {
         return map.get(key);
@@ -63,7 +64,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
             oldVal = map;
             newVal = oldVal.clone();
             result = newVal.put(key, value);
-        } while (! mapUpdater.compareAndSet(this, oldVal, newVal));
+        } while (!mapUpdater.compareAndSet(this, oldVal, newVal));
         return result;
     }
 
@@ -72,12 +73,12 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
         V result;
         do {
             oldVal = map;
-            if (! oldVal.containsKey(key)) {
+            if (!oldVal.containsKey(key)) {
                 return null;
             }
             newVal = oldVal.clone();
             result = newVal.remove(key);
-        } while (! mapUpdater.compareAndSet(this, oldVal, newVal));
+        } while (!mapUpdater.compareAndSet(this, oldVal, newVal));
         return result;
     }
 
@@ -99,7 +100,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
             }
             newVal = oldVal.clone();
             newVal.put(key, value);
-        } while (! mapUpdater.compareAndSet(this, oldVal, newVal));
+        } while (!mapUpdater.compareAndSet(this, oldVal, newVal));
         return null;
     }
 
@@ -118,7 +119,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
             } else {
                 return false;
             }
-        } while (! mapUpdater.compareAndSet(this, oldVal, newVal));
+        } while (!mapUpdater.compareAndSet(this, oldVal, newVal));
         return true;
     }
 
@@ -132,7 +133,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
             } else {
                 return false;
             }
-        } while (! mapUpdater.compareAndSet(this, oldVal, newVal));
+        } while (!mapUpdater.compareAndSet(this, oldVal, newVal));
         return true;
     }
 
@@ -147,7 +148,7 @@ final class CopyOnWriteMap<K, V> extends AbstractMap<K, V> implements Concurrent
             } else {
                 return null;
             }
-        } while (! mapUpdater.compareAndSet(this, oldVal, newVal));
+        } while (!mapUpdater.compareAndSet(this, oldVal, newVal));
         return result;
     }
 

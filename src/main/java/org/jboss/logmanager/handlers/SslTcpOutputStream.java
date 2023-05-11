@@ -22,6 +22,7 @@ package org.jboss.logmanager.handlers;
 import java.io.Flushable;
 import java.io.IOException;
 import java.net.InetAddress;
+
 import javax.net.SocketFactory;
 import javax.net.ssl.SSLSocketFactory;
 
@@ -31,7 +32,7 @@ import javax.net.ssl.SSLSocketFactory;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
+@SuppressWarnings({ "unused", "WeakerAccess" })
 public class SslTcpOutputStream extends TcpOutputStream implements AutoCloseable, Flushable {
 
     /**
@@ -92,7 +93,8 @@ public class SslTcpOutputStream extends TcpOutputStream implements AutoCloseable
      *
      * @throws IOException if an I/O error occurs when creating the socket
      */
-    public SslTcpOutputStream(final SocketFactory socketFactory, final InetAddress address, final int port, final boolean blockOnReconnect) throws IOException {
+    public SslTcpOutputStream(final SocketFactory socketFactory, final InetAddress address, final int port,
+            final boolean blockOnReconnect) throws IOException {
         super(socketFactory, address, port, blockOnReconnect);
     }
 }

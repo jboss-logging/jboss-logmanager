@@ -19,22 +19,22 @@
 
 package org.jboss.logmanager;
 
-import org.junit.Test;
 import static org.junit.Assert.*;
-import org.jboss.logmanager.handlers.WriterHandler;
-import org.jboss.logmanager.handlers.OutputStreamHandler;
-import org.jboss.logmanager.handlers.FileHandler;
-import org.jboss.logmanager.formatters.PatternFormatter;
 
-import java.util.logging.Formatter;
-
-import java.io.StringWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.util.logging.Formatter;
 import java.util.logging.Handler;
 import java.util.logging.LogRecord;
+
+import org.jboss.logmanager.formatters.PatternFormatter;
+import org.jboss.logmanager.handlers.FileHandler;
+import org.jboss.logmanager.handlers.OutputStreamHandler;
+import org.jboss.logmanager.handlers.WriterHandler;
+import org.junit.Test;
 
 public final class HandlerTests {
 
@@ -42,7 +42,8 @@ public final class HandlerTests {
 
     @Test
     public void testNullHandler() throws Throwable {
-        final ExtHandler handler = new ExtHandler(){};
+        final ExtHandler handler = new ExtHandler() {
+        };
         handler.setLevel(Level.ALL);
         handler.publish(new ExtLogRecord(Level.INFO, "Test message", null));
     }
@@ -102,7 +103,8 @@ public final class HandlerTests {
                 final FileInputStream is = new FileInputStream(tempFile);
                 try {
                     int r;
-                    while ((r = is.read()) != -1) os.write(r);
+                    while ((r = is.read()) != -1)
+                        os.write(r);
                     assertEquals("Test message", new String(os.toByteArray(), "utf-8"));
                     tempFile.deleteOnExit();
                 } finally {

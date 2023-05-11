@@ -24,7 +24,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.logging.ErrorManager;
 import java.util.logging.Handler;
 
 import org.jboss.logmanager.ExtHandler;
@@ -44,14 +43,15 @@ public class AsyncHandler extends ExtHandler {
     @SuppressWarnings("unused")
     private volatile int state;
 
-    private static final AtomicIntegerFieldUpdater<AsyncHandler> stateUpdater = AtomicIntegerFieldUpdater.newUpdater(AsyncHandler.class, "state");
+    private static final AtomicIntegerFieldUpdater<AsyncHandler> stateUpdater = AtomicIntegerFieldUpdater
+            .newUpdater(AsyncHandler.class, "state");
 
     private static final int DEFAULT_QUEUE_LENGTH = 512;
 
     /**
      * Construct a new instance.
      *
-     * @param queueLength the queue length
+     * @param queueLength   the queue length
      * @param threadFactory the thread factory to use to construct the handler thread
      */
     public AsyncHandler(final int queueLength, final ThreadFactory threadFactory) {

@@ -79,8 +79,7 @@ public class PropertyConfigurationTests {
                 .forEach((configFile) -> {
                     try (
                             LogContext logContext = LogContext.create();
-                            Reader reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8)
-                    ) {
+                            Reader reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8)) {
                         final Properties properties = new Properties();
                         properties.load(reader);
                         PropertyConfigurator.configure(logContext, properties);

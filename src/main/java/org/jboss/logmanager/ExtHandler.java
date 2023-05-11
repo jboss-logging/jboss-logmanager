@@ -37,7 +37,7 @@ import java.util.logging.LoggingPermission;
 import org.jboss.logmanager.errormanager.OnlyOnceErrorManager;
 
 /**
- * An extended logger handler.  Use this class as a base class for log handlers which require {@code ExtLogRecord}
+ * An extended logger handler. Use this class as a base class for log handlers which require {@code ExtLogRecord}
  * instances.
  */
 public abstract class ExtHandler extends Handler implements AutoCloseable, Flushable {
@@ -60,7 +60,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     private volatile Charset charset = Charset.defaultCharset();
 
     /**
-     * The sub-handlers for this handler.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
+     * The sub-handlers for this handler. May only be updated using the {@link #handlersUpdater} atomic updater. The array
      * instance should not be modified (treat as immutable).
      */
     @SuppressWarnings("unused")
@@ -69,7 +69,8 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     /**
      * The atomic updater for the {@link #handlers} field.
      */
-    protected static final AtomicArray<ExtHandler, Handler> handlersUpdater = AtomicArray.create(AtomicReferenceFieldUpdater.newUpdater(ExtHandler.class, Handler[].class, "handlers"), Handler.class);
+    protected static final AtomicArray<ExtHandler, Handler> handlersUpdater = AtomicArray
+            .create(AtomicReferenceFieldUpdater.newUpdater(ExtHandler.class, Handler[].class, "handlers"), Handler.class);
 
     /**
      * Construct a new instance.
@@ -98,12 +99,13 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      * @param record the log record to publish
      */
     public void publish(final ExtLogRecord record) {
-        if (enabled && record != null && isLoggable(record)) try {
-            doPublish(record);
-        } catch (Exception e) {
-            reportError("Handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
-        } catch (Throwable ignored) {
-        }
+        if (enabled && record != null && isLoggable(record))
+            try {
+                doPublish(record);
+            } catch (Exception e) {
+                reportError("Handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
+            } catch (Throwable ignored) {
+            }
     }
 
     /**
@@ -113,30 +115,32 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      */
     protected void publishToNestedHandlers(final ExtLogRecord record) {
         if (record != null) {
-            for (Handler handler : getHandlers()) try {
-                if (handler != null) {
-                    handler.publish(record);
+            for (Handler handler : getHandlers())
+                try {
+                    if (handler != null) {
+                        handler.publish(record);
+                    }
+                } catch (Exception e) {
+                    reportError(handler, "Nested handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
+                } catch (Throwable ignored) {
                 }
-            } catch (Exception e) {
-                reportError(handler, "Nested handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
-            } catch (Throwable ignored) {
-            }
         }
     }
 
     /**
-     * Do the actual work of publication; the record will have been filtered already.  The default implementation
+     * Do the actual work of publication; the record will have been filtered already. The default implementation
      * does nothing except to flush if the {@code autoFlush} property is set to {@code true}; if this behavior is to be
      * preserved in a subclass then this method should be called after the record is physically written.
      *
      * @param record the log record to publish
      */
     protected void doPublish(final ExtLogRecord record) {
-        if (autoFlush) flush();
+        if (autoFlush)
+            flush();
     }
 
     /**
-     * Add a sub-handler to this handler.  Some handler types do not utilize sub-handlers.
+     * Add a sub-handler to this handler. Some handler types do not utilize sub-handlers.
      *
      * @param handler the handler to add
      *
@@ -152,7 +156,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     }
 
     /**
-     * Remove a sub-handler from this handler.  Some handler types do not utilize sub-handlers.
+     * Remove a sub-handler from this handler. Some handler types do not utilize sub-handlers.
      *
      * @param handler the handler to remove
      *
@@ -168,7 +172,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     }
 
     /**
-     * Get a copy of the sub-handlers array.  Since the returned value is a copy, it may be freely modified.
+     * Get a copy of the sub-handlers array. Since the returned value is a copy, it may be freely modified.
      *
      * @return a copy of the sub-handlers array
      */
@@ -265,7 +269,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      * Indicates whether or not children handlers should be closed when this handler is {@linkplain #close() closed}.
      *
      * @return {@code true} if the children handlers should be closed when this handler is closed, {@code false} if
-     * children handlers should not be closed when this handler is closed
+     *         children handlers should not be closed when this handler is closed
      */
     public boolean isCloseChildren() {
         return closeChildren;
@@ -286,7 +290,8 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     /**
      * Check access.
      *
-     * @throws SecurityException if a security manager is installed and the caller does not have the {@code "control" LoggingPermission}
+     * @throws SecurityException if a security manager is installed and the caller does not have the
+     *                           {@code "control" LoggingPermission}
      */
     protected static void checkAccess() throws SecurityException {
         final SecurityManager sm = System.getSecurityManager();
@@ -313,11 +318,13 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      */
     @Override
     public void flush() {
-        for (Handler handler : handlers) try {
-            handler.flush();
-        } catch (Exception ex) {
-            reportError("Failed to flush child handler", ex, ErrorManager.FLUSH_FAILURE);
-        } catch (Throwable ignored) {}
+        for (Handler handler : handlers)
+            try {
+                handler.flush();
+            } catch (Exception ex) {
+                reportError("Failed to flush child handler", ex, ErrorManager.FLUSH_FAILURE);
+            } catch (Throwable ignored) {
+            }
     }
 
     /**
@@ -371,22 +378,25 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     }
 
     /**
-     * Set the handler's character set by name.  This is roughly equivalent to calling {@link #setCharset(Charset)} with
+     * Set the handler's character set by name. This is roughly equivalent to calling {@link #setCharset(Charset)} with
      * the results of {@link Charset#forName(String)}.
      *
      * @param encoding the name of the encoding
-     * @throws SecurityException if a security manager is installed and the caller does not have the {@code "control" LoggingPermission}
+     * @throws SecurityException            if a security manager is installed and the caller does not have the
+     *                                      {@code "control" LoggingPermission}
      * @throws UnsupportedEncodingException if no character set could be found for the encoding name
      */
     @Override
     public void setEncoding(final String encoding) throws SecurityException, UnsupportedEncodingException {
-        if (encoding != null) try {
-            setCharset(Charset.forName(encoding));
-        } catch (IllegalArgumentException e) {
-            final UnsupportedEncodingException e2 = new UnsupportedEncodingException("Unable to set encoding to \"" + encoding + "\"");
-            e2.initCause(e);
-            throw e2;
-        }
+        if (encoding != null)
+            try {
+                setCharset(Charset.forName(encoding));
+            } catch (IllegalArgumentException e) {
+                final UnsupportedEncodingException e2 = new UnsupportedEncodingException(
+                        "Unable to set encoding to \"" + encoding + "\"");
+                e2.initCause(e);
+                throw e2;
+            }
     }
 
     /**
@@ -400,11 +410,12 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     }
 
     /**
-     * Set the handler's character set.  If not set, the handler's character set is initialized to the platform default
+     * Set the handler's character set. If not set, the handler's character set is initialized to the platform default
      * character set.
      *
      * @param charset the character set (must not be {@code null})
-     * @throws SecurityException if a security manager is installed and the caller does not have the {@code "control" LoggingPermission}
+     * @throws SecurityException if a security manager is installed and the caller does not have the
+     *                           {@code "control" LoggingPermission}
      */
     public void setCharset(final Charset charset) throws SecurityException {
         checkAccess();
@@ -412,7 +423,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     }
 
     /**
-     * Set the handler's character set from within this handler.  If not set, the handler's character set is initialized
+     * Set the handler's character set from within this handler. If not set, the handler's character set is initialized
      * to the platform default character set.
      *
      * @param charset the character set (must not be {@code null})
@@ -493,18 +504,19 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
         Formatter formatter = getFormatter();
         if (formatterRequiresCallerCalculation(formatter)) {
             return true;
-        } else for (Handler handler : getHandlers()) {
-            if (handler instanceof ExtHandler) {
-                if (((ExtHandler) handler).isCallerCalculationRequired()) {
-                    return true;
-                }
-            } else {
-                formatter = handler.getFormatter();
-                if (formatterRequiresCallerCalculation(formatter)) {
-                    return true;
+        } else
+            for (Handler handler : getHandlers()) {
+                if (handler instanceof ExtHandler) {
+                    if (((ExtHandler) handler).isCallerCalculationRequired()) {
+                        return true;
+                    }
+                } else {
+                    formatter = handler.getFormatter();
+                    if (formatterRequiresCallerCalculation(formatter)) {
+                        return true;
+                    }
                 }
             }
-        }
         return false;
     }
 
@@ -517,24 +529,26 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      * Report an error using a handler's specific error manager, if any.
      *
      * @param handler the handler
-     * @param msg the error message
-     * @param ex the exception
-     * @param code the error code
+     * @param msg     the error message
+     * @param ex      the exception
+     * @param code    the error code
      */
     public static void reportError(Handler handler, String msg, Exception ex, int code) {
         if (handler != null) {
             ErrorManager errorManager = handler.getErrorManager();
-            if (errorManager != null) try {
-                errorManager.error(msg, ex, code);
-            } catch (Exception ex2) {
-                // use the same message as the JDK
-                System.err.println("Handler.reportError caught:");
-                ex2.printStackTrace();
-            }
+            if (errorManager != null)
+                try {
+                    errorManager.error(msg, ex, code);
+                } catch (Exception ex2) {
+                    // use the same message as the JDK
+                    System.err.println("Handler.reportError caught:");
+                    ex2.printStackTrace();
+                }
         }
     }
 
     private static boolean formatterRequiresCallerCalculation(final Formatter formatter) {
-        return formatter != null && (!(formatter instanceof ExtFormatter) || ((ExtFormatter) formatter).isCallerCalculationRequired());
+        return formatter != null
+                && (!(formatter instanceof ExtFormatter) || ((ExtFormatter) formatter).isCallerCalculationRequired());
     }
 }

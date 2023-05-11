@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+
 import jakarta.json.Json;
 import jakarta.json.JsonValue;
 import jakarta.json.stream.JsonGenerator;
@@ -36,7 +37,9 @@ import org.jboss.logmanager.PropertyValues;
  * <p>
  * Note that including details can be expensive in terms of calculating the caller.
  * </p>
- * <p>The details include;</p>
+ * <p>
+ * The details include;
+ * </p>
  * <ul>
  * <li>{@link org.jboss.logmanager.ExtLogRecord#getSourceClassName() source class name}</li>
  * <li>{@link org.jboss.logmanager.ExtLogRecord#getSourceFileName() source file name}</li>
@@ -48,7 +51,7 @@ import org.jboss.logmanager.PropertyValues;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
+@SuppressWarnings({ "unused", "WeakerAccess" })
 public class JsonFormatter extends StructuredFormatter {
 
     private final Map<String, Object> config;
@@ -94,7 +97,9 @@ public class JsonFormatter extends StructuredFormatter {
      */
     public boolean isPrettyPrint() {
         synchronized (config) {
-            return (config.containsKey(jakarta.json.stream.JsonGenerator.PRETTY_PRINTING) ? (Boolean) config.get(jakarta.json.stream.JsonGenerator.PRETTY_PRINTING) : false);
+            return (config.containsKey(jakarta.json.stream.JsonGenerator.PRETTY_PRINTING)
+                    ? (Boolean) config.get(jakarta.json.stream.JsonGenerator.PRETTY_PRINTING)
+                    : false);
         }
     }
 

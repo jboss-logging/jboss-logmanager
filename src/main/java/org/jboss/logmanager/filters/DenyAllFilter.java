@@ -26,7 +26,8 @@ import java.util.logging.LogRecord;
  * A deny-all filter.
  */
 public final class DenyAllFilter implements Filter {
-    private DenyAllFilter() {}
+    private DenyAllFilter() {
+    }
 
     private static final DenyAllFilter INSTANCE = new DenyAllFilter();
 

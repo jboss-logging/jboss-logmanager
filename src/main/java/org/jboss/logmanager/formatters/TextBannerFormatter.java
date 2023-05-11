@@ -26,7 +26,7 @@ public final class TextBannerFormatter extends ExtFormatter.Delegating {
      * Construct a new instance.
      *
      * @param bannerSupplier the supplier for the banner (must not be {@code null})
-     * @param delegate the delegate formatter (must not be {@code null})
+     * @param delegate       the delegate formatter (must not be {@code null})
      */
     public TextBannerFormatter(final Supplier<String> bannerSupplier, final ExtFormatter delegate) {
         super(delegate);
@@ -64,7 +64,7 @@ public final class TextBannerFormatter extends ExtFormatter.Delegating {
      * Create a supplier which loads the banner from the given file path,
      * falling back to the given fallback supplier on error.
      *
-     * @param path the path to load from (must not be {@code null})
+     * @param path     the path to load from (must not be {@code null})
      * @param fallback the fallback supplier (must not be {@code null})
      * @return the supplier (not {@code null})
      */
@@ -84,7 +84,7 @@ public final class TextBannerFormatter extends ExtFormatter.Delegating {
      * Create a supplier which loads the banner from the given URL,
      * falling back to the given fallback supplier on error.
      *
-     * @param url the URL to load from (must not be {@code null})
+     * @param url      the URL to load from (must not be {@code null})
      * @param fallback the fallback supplier (must not be {@code null})
      * @return the supplier (not {@code null})
      */
@@ -105,9 +105,9 @@ public final class TextBannerFormatter extends ExtFormatter.Delegating {
      * Create a supplier which loads the banner from a resource in the given class loader,
      * falling back to the given fallback supplier on error.
      *
-     * @param resource the resource name (must not be {@code null})
+     * @param resource    the resource name (must not be {@code null})
      * @param classLoader the class loader to load from (must not be {@code null})
-     * @param fallback the fallback supplier (must not be {@code null})
+     * @param fallback    the fallback supplier (must not be {@code null})
      * @return the supplier (not {@code null})
      */
     public static Supplier<String> createResourceSupplier(String resource, ClassLoader classLoader, Supplier<String> fallback) {
@@ -139,7 +139,8 @@ public final class TextBannerFormatter extends ExtFormatter.Delegating {
     // private stuff
 
     private static final Supplier<String> EMPTY = createStringSupplier("");
-    private static final StackWalker STACK_WALKER = AccessController.doPrivileged((PrivilegedAction<StackWalker>) () -> StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE));
+    private static final StackWalker STACK_WALKER = AccessController.doPrivileged(
+            (PrivilegedAction<StackWalker>) () -> StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE));
 
     private static ClassLoader getClassLoader(Class<?> clazz) {
         return AccessController.doPrivileged((PrivilegedAction<? extends ClassLoader>) clazz::getClassLoader);

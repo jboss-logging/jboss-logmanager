@@ -19,8 +19,6 @@
 
 package org.jboss.logmanager;
 
-import io.smallrye.common.constraint.Assert;
-
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -32,8 +30,10 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
+import io.smallrye.common.constraint.Assert;
+
 /**
- * An actual logger instance.  This is the end-user interface into the logging system.
+ * An actual logger instance. This is the end-user interface into the logging system.
  */
 @SuppressWarnings({ "SerializableClassWithUnconstructableAncestor" })
 public final class Logger extends java.util.logging.Logger implements Serializable {
@@ -53,7 +53,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /**
      * Atomic updater for {@link #resourceBundle}.
      */
-    private static final AtomicReferenceFieldUpdater<Logger, ResourceBundle> resourceBundleUpdater = AtomicReferenceFieldUpdater.newUpdater(Logger.class, ResourceBundle.class, "resourceBundle");
+    private static final AtomicReferenceFieldUpdater<Logger, ResourceBundle> resourceBundleUpdater = AtomicReferenceFieldUpdater
+            .newUpdater(Logger.class, ResourceBundle.class, "resourceBundle");
 
     private static final String LOGGER_CLASS_NAME = Logger.class.getName();
 
@@ -70,7 +71,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /**
      * Static logger factory method which returns a JBoss LogManager logger.
      *
-     * @param name the logger name
+     * @param name       the logger name
      * @param bundleName the bundle name
      * @return the logger
      */
@@ -84,7 +85,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * Construct a new instance of an actual logger.
      *
      * @param loggerNode the node in the named logger tree
-     * @param name the fully-qualified name of this node
+     * @param name       the fully-qualified name of this node
      */
     Logger(final LoggerNode loggerNode, final String name) {
         // Don't set up the bundle in the parent...
@@ -116,7 +117,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     // Level mgmt
 
     /**
-     * {@inheritDoc}  This implementation grabs a lock, so that only one thread may update the log level of any
+     * {@inheritDoc} This implementation grabs a lock, so that only one thread may update the log level of any
      * logger at a time, in order to allow readers to never block (though there is a window where retrieving the
      * log level reflects an older effective level than the actual level).
      */
@@ -128,7 +129,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
-     * Set the log level by name.  Uses the parent logging context's name registry; otherwise behaves
+     * Set the log level by name. Uses the parent logging context's name registry; otherwise behaves
      * identically to {@link #setLevel(Level)}.
      *
      * @param newLevelName the name of the level to set
@@ -175,11 +176,12 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * Attach an object to this logger under a given key.
      * A strong reference is maintained to the key and value for as long as this logger exists.
      *
-     * @param key the attachment key
+     * @param key   the attachment key
      * @param value the attachment value
-     * @param <V> the attachment value type
+     * @param <V>   the attachment value type
      * @return the old attachment, if there was one
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     * @throws SecurityException        if a security manager exists and if the caller does not have
+     *                                  {@code LoggingPermission(control)}
      * @throws IllegalArgumentException if the attachment cannot be added because the maximum has been reached
      */
     public <V> V attach(AttachmentKey<V> key, V value) throws SecurityException {
@@ -191,11 +193,12 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * Attach an object to this logger under a given key, if such an attachment does not already exist.
      * A strong reference is maintained to the key and value for as long as this logger exists.
      *
-     * @param key the attachment key
+     * @param key   the attachment key
      * @param value the attachment value
-     * @param <V> the attachment value type
+     * @param <V>   the attachment value type
      * @return the current attachment, if there is one, or {@code null} if the value was successfully attached
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     * @throws SecurityException        if a security manager exists and if the caller does not have
+     *                                  {@code LoggingPermission(control)}
      * @throws IllegalArgumentException if the attachment cannot be added because the maximum has been reached
      */
     @SuppressWarnings({ "unchecked" })
@@ -282,9 +285,10 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /**
      * Atomically compare and set the handler list for this logger.
      *
-     * @param expected the expected list of handlers
+     * @param expected    the expected list of handlers
      * @param newHandlers the replacement list of handlers
-     * @return {@code true} if the handler list was updated or {@code false} if the current handlers did not match the expected handlers list
+     * @return {@code true} if the handler list was updated or {@code false} if the current handlers did not match the expected
+     *         handlers list
      * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
      */
     public boolean compareAndSetHandlers(final Handler[] expected, final Handler[] newHandlers) throws SecurityException {
@@ -299,10 +303,10 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         Handler[] oldHandlers;
         do {
             oldHandlers = loggerNode.getHandlers();
-            if (! Arrays.equals(oldHandlers, safeExpectedHandlers)) {
+            if (!Arrays.equals(oldHandlers, safeExpectedHandlers)) {
                 return false;
             }
-        } while (! loggerNode.compareAndSetHandlers(oldHandlers, safeNewHandlers));
+        } while (!loggerNode.compareAndSetHandlers(oldHandlers, safeNewHandlers));
         return true;
     }
 
@@ -358,7 +362,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
-     * <b>Not allowed.</b>  This method may never be called.
+     * <b>Not allowed.</b> This method may never be called.
+     *
      * @throws SecurityException always
      */
     public void setParent(java.util.logging.Logger parent) {
@@ -390,7 +395,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     public void log(LogRecord record) {
         Filter filter = null;
         final int effectiveLevel = loggerNode.getEffectiveLevel();
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(record.getLevel().intValue())) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(record.getLevel().intValue())) {
             return;
         }
         if (LogManager.PER_THREAD_LOG_FILTER && filter != null && !filter.isLoggable(record)) {
@@ -402,7 +408,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(FINER_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY", LOGGER_CLASS_NAME);
@@ -417,13 +424,14 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod, final Object param1) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(FINER_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY {0}", LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
-        rec.setParameters(new Object[] {param1});
+        rec.setParameters(new Object[] { param1 });
         if (LogManager.PER_THREAD_LOG_FILTER && filter != null && !filter.isLoggable(rec)) {
             return;
         }
@@ -433,17 +441,20 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void entering(final String sourceClass, final String sourceMethod, final Object[] params) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(FINER_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
         final StringBuilder builder = new StringBuilder("ENTRY");
-        if (params != null) for (int i = 0; i < params.length; i++) {
-            builder.append(" {").append(i).append('}');
-        }
+        if (params != null)
+            for (int i = 0; i < params.length; i++) {
+                builder.append(" {").append(i).append('}');
+            }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, builder.toString(), LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
-        if (params != null) rec.setParameters(params);
+        if (params != null)
+            rec.setParameters(params);
         if (LogManager.PER_THREAD_LOG_FILTER && filter != null && !filter.isLoggable(rec)) {
             return;
         }
@@ -453,7 +464,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void exiting(final String sourceClass, final String sourceMethod) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(FINER_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN", LOGGER_CLASS_NAME);
@@ -468,13 +480,14 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void exiting(final String sourceClass, final String sourceMethod, final Object result) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(FINER_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN {0}", LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
-        rec.setParameters(new Object[] {result});
+        rec.setParameters(new Object[] { result });
         if (LogManager.PER_THREAD_LOG_FILTER && filter != null && !filter.isLoggable(rec)) {
             return;
         }
@@ -484,7 +497,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void throwing(final String sourceClass, final String sourceMethod, final Throwable thrown) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(FINER_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "THROW", LOGGER_CLASS_NAME);
@@ -500,7 +514,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void severe(final String msg) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(SEVERE_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(SEVERE_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.SEVERE, msg, LOGGER_CLASS_NAME);
@@ -513,7 +528,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void warning(final String msg) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(WARNING_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(WARNING_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.WARNING, msg, LOGGER_CLASS_NAME);
@@ -526,7 +542,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void info(final String msg) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(INFO_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(INFO_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.INFO, msg, LOGGER_CLASS_NAME);
@@ -539,7 +556,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void config(final String msg) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(CONFIG_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(CONFIG_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.CONFIG, msg, LOGGER_CLASS_NAME);
@@ -552,7 +570,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void fine(final String msg) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(FINE_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(FINE_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINE, msg, LOGGER_CLASS_NAME);
@@ -565,7 +584,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void finer(final String msg) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(FINER_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINER, msg, LOGGER_CLASS_NAME);
@@ -578,7 +598,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void finest(final String msg) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(FINEST_INT)) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(FINEST_INT)) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(Level.FINEST, msg, LOGGER_CLASS_NAME);
@@ -591,7 +612,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void log(final Level level, final String msg) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -604,7 +626,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Object param1) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -618,11 +641,13 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Object[] params) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        if (params != null) rec.setParameters(params);
+        if (params != null)
+            rec.setParameters(params);
         if (LogManager.PER_THREAD_LOG_FILTER && filter != null && !filter.isLoggable(rec)) {
             return;
         }
@@ -632,7 +657,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void log(final Level level, final String msg, final Throwable thrown) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -646,7 +672,8 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /** {@inheritDoc} */
     public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -659,15 +686,17 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
-    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object param1) {
+    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg,
+            final Object param1) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
-        rec.setParameters(new Object[] {param1});
+        rec.setParameters(new Object[] { param1 });
         if (LogManager.PER_THREAD_LOG_FILTER && filter != null && !filter.isLoggable(rec)) {
             return;
         }
@@ -675,15 +704,18 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
-    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Object[] params) {
+    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg,
+            final Object[] params) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
-        if (params != null) rec.setParameters(params);
+        if (params != null)
+            rec.setParameters(params);
         if (LogManager.PER_THREAD_LOG_FILTER && filter != null && !filter.isLoggable(rec)) {
             return;
         }
@@ -691,9 +723,11 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
-    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg, final Throwable thrown) {
+    public void logp(final Level level, final String sourceClass, final String sourceMethod, final String msg,
+            final Throwable thrown) {
         Filter filter = null;
-        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
@@ -707,8 +741,10 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
-    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg) {
-        if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName,
+            final String msg) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         // No local check is needed here as this will delegate to log(LogRecord)
@@ -716,8 +752,10 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
-    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object param1) {
-        if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName,
+            final String msg, final Object param1) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         // No local check is needed here as this will delegate to log(LogRecord)
@@ -725,8 +763,10 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
-    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Object[] params) {
-        if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName,
+            final String msg, final Object[] params) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         // No local check is needed here as this will delegate to log(LogRecord)
@@ -734,8 +774,10 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
-    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName, final String msg, final Throwable thrown) {
-        if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null) && !loggerNode.isLoggableLevel(level.intValue())) {
+    public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName,
+            final String msg, final Throwable thrown) {
+        if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null)
+                && !loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
         // No local check is needed here as this will delegate to log(LogRecord)
@@ -747,17 +789,20 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /**
      * SPI interface method to log a message at a given level, with a specific resource bundle.
      *
-     * @param fqcn the fully qualified class name of the first logger class
-     * @param level the level to log at
-     * @param message the message
+     * @param fqcn       the fully qualified class name of the first logger class
+     * @param level      the level to log at
+     * @param message    the message
      * @param bundleName the resource bundle name
-     * @param style the message format style
-     * @param params the log parameters
-     * @param t the throwable, if any
+     * @param style      the message format style
+     * @param params     the log parameters
+     * @param t          the throwable, if any
      */
-    public void log(final String fqcn, final Level level, final String message, final String bundleName, final ExtLogRecord.FormatStyle style, final Object[] params, final Throwable t) {
+    public void log(final String fqcn, final Level level, final String message, final String bundleName,
+            final ExtLogRecord.FormatStyle style, final Object[] params, final Throwable t) {
         Filter filter = null;
-        if (level == null || fqcn == null || message == null || (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) || !loggerNode.isLoggableLevel(level.intValue()))) {
+        if (level == null || fqcn == null || message == null
+                || (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                        || !loggerNode.isLoggableLevel(level.intValue()))) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, message, style, fqcn);
@@ -773,16 +818,19 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /**
      * SPI interface method to log a message at a given level.
      *
-     * @param fqcn the fully qualified class name of the first logger class
-     * @param level the level to log at
+     * @param fqcn    the fully qualified class name of the first logger class
+     * @param level   the level to log at
      * @param message the message
-     * @param style the message format style
-     * @param params the log parameters
-     * @param t the throwable, if any
+     * @param style   the message format style
+     * @param params  the log parameters
+     * @param t       the throwable, if any
      */
-    public void log(final String fqcn, final Level level, final String message, final ExtLogRecord.FormatStyle style, final Object[] params, final Throwable t) {
+    public void log(final String fqcn, final Level level, final String message, final ExtLogRecord.FormatStyle style,
+            final Object[] params, final Throwable t) {
         Filter filter = null;
-        if (level == null || fqcn == null || message == null || (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null) && !loggerNode.isLoggableLevel(level.intValue()))) {
+        if (level == null || fqcn == null || message == null
+                || (!(LogManager.PER_THREAD_LOG_FILTER && (filter = LogManager.getThreadLocalLogFilter()) != null)
+                        && !loggerNode.isLoggableLevel(level.intValue()))) {
             return;
         }
         final ExtLogRecord rec = new ExtLogRecord(level, message, style, fqcn);
@@ -797,10 +845,10 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     /**
      * SPI interface method to log a message at a given level.
      *
-     * @param fqcn the fully qualified class name of the first logger class
-     * @param level the level to log at
+     * @param fqcn    the fully qualified class name of the first logger class
+     * @param level   the level to log at
      * @param message the message
-     * @param t the throwable, if any
+     * @param t       the throwable, if any
      */
     public void log(final String fqcn, final Level level, final String message, final Throwable t) {
         log(fqcn, level, message, ExtLogRecord.FormatStyle.MESSAGE_FORMAT, null, t);
@@ -832,7 +880,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
-     * Set the resource bundle for this logger.  Unlike {@link java.util.logging.Logger#setResourceBundle(ResourceBundle)},
+     * Set the resource bundle for this logger. Unlike {@link java.util.logging.Logger#setResourceBundle(ResourceBundle)},
      * there is no parent search performed for resource bundles by this implementation.
      *
      * @param resourceBundle the resource bundle (must not be {@code null})
@@ -844,14 +892,14 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         ResourceBundle old;
         do {
             old = this.resourceBundle;
-            if (old != null && ! old.getBaseBundleName().equals(resourceBundle.getBaseBundleName())) {
+            if (old != null && !old.getBaseBundleName().equals(resourceBundle.getBaseBundleName())) {
                 throw new IllegalArgumentException("Bundle base name does not match existing bundle");
             }
-        } while (! resourceBundleUpdater.compareAndSet(this, old, resourceBundle));
+        } while (!resourceBundleUpdater.compareAndSet(this, old, resourceBundle));
     }
 
     /**
-     * Get the resource bundle for this logger.  Unlike {@link java.util.logging.Logger#getResourceBundle()},
+     * Get the resource bundle for this logger. Unlike {@link java.util.logging.Logger#getResourceBundle()},
      * there is no parent search performed for resource bundles by this implementation.
      *
      * @return the resource bundle, or {@code null} if none is configured for this logger
@@ -862,7 +910,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
-     * Get the resource bundle name for this logger.  Unlike {@link java.util.logging.Logger#getResourceBundleName()},
+     * Get the resource bundle name for this logger. Unlike {@link java.util.logging.Logger#getResourceBundleName()},
      * there is no parent search performed for resource bundles by this implementation.
      *
      * @return the resource bundle, or {@code null} if none is configured for this logger
@@ -874,7 +922,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
-     * Do the logging with no level checks (they've already been done).  Creates an extended log record if the
+     * Do the logging with no level checks (they've already been done). Creates an extended log record if the
      * provided record is not one.
      *
      * @param record the log record

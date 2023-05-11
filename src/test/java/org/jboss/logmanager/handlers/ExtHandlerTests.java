@@ -37,7 +37,7 @@ public class ExtHandlerTests {
         final CloseHandler parent = new CloseHandler();
         final CloseHandler child1 = new CloseHandler();
         final CloseHandler child2 = new CloseHandler();
-        parent.setHandlers(new CloseHandler[] {child1, child2, new CloseHandler()});
+        parent.setHandlers(new CloseHandler[] { child1, child2, new CloseHandler() });
 
         // Ensure all handlers are not closed
         Assert.assertFalse(parent.closed);

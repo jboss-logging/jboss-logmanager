@@ -166,7 +166,9 @@ public class StackTraceFormatterTests {
 
     private void checkMessage(final String msg, final String text, final boolean shouldExist, final int depth) {
         final boolean test = (shouldExist || depth < 0);
-        Assert.assertEquals(String.format("Depth %d should %s contained \"%s\": %s", depth, (test ? "have" : "not have"), text, msg), msg.contains(text), test);
+        Assert.assertEquals(
+                String.format("Depth %d should %s contained \"%s\": %s", depth, (test ? "have" : "not have"), text, msg),
+                msg.contains(text), test);
     }
 
     private Throwable createMultiNestedCause() {
@@ -176,13 +178,11 @@ public class StackTraceFormatterTests {
         suppressed1.addSuppressed(nested1);
         suppressed1.addSuppressed(new IllegalStateException("Nested 1-2"));
 
-
         final RuntimeException suppressed2 = new RuntimeException("Suppressed 2");
         final IllegalStateException nested2 = new IllegalStateException("Nested 2");
         nested2.addSuppressed(new RuntimeException("Nested 2a"));
         suppressed2.addSuppressed(nested2);
         suppressed2.addSuppressed(new IllegalStateException("Nested 2-2"));
-
 
         final RuntimeException suppressed3 = new RuntimeException("Suppressed 3");
         final IllegalStateException nested3 = new IllegalStateException("Nested 3");

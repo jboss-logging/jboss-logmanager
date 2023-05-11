@@ -75,7 +75,8 @@ public class FilterExpressions {
         return parseFilterExpression(logContext, iterator, true);
     }
 
-    private static Filter parseFilterExpression(final LogContext logContext, final Iterator<String> iterator, final boolean outermost) {
+    private static Filter parseFilterExpression(final LogContext logContext, final Iterator<String> iterator,
+            final boolean outermost) {
         if (!iterator.hasNext()) {
             if (outermost) {
                 return null;
@@ -175,7 +176,8 @@ public class FilterExpressions {
         final String next = hasNext ? iterator.next() : null;
         final boolean result;
         if (!hasNext || !((result = trueToken.equals(next)) || falseToken.equals(next))) {
-            throw new IllegalArgumentException("Expected '" + trueToken + "' or '" + falseToken + "' next in filter expression");
+            throw new IllegalArgumentException(
+                    "Expected '" + trueToken + "' or '" + falseToken + "' next in filter expression");
         }
         return result;
     }
@@ -189,7 +191,6 @@ public class FilterExpressions {
     private static IllegalArgumentException endOfExpression() {
         return new IllegalArgumentException("Unexpected end of filter expression");
     }
-
 
     @SuppressWarnings("UnusedAssignment")
     private static List<String> tokens(final String source) {

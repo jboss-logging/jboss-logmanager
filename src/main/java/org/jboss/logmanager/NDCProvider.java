@@ -23,7 +23,7 @@ public interface NDCProvider {
     void clear();
 
     /**
-     * Trim the thread NDC stack down to no larger than the given size.  Used to restore the stack to the depth returned
+     * Trim the thread NDC stack down to no larger than the given size. Used to restore the stack to the depth returned
      * by a {@code push()}.
      *
      * @param size the new size
@@ -45,7 +45,7 @@ public interface NDCProvider {
     String get();
 
     /**
-     * Provided for compatibility with log4j.  Get the NDC value that is {@code n} entries from the bottom.
+     * Provided for compatibility with log4j. Get the NDC value that is {@code n} entries from the bottom.
      *
      * @param n the index
      * @return the value or {@code null} if there is none

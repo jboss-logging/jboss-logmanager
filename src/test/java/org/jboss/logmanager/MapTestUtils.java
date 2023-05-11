@@ -48,7 +48,8 @@ public class MapTestUtils {
         for (Map.Entry<K, V> entry1 : m1.entrySet()) {
             final V value2 = m2.get(entry1.getKey());
             Assert.assertEquals(
-                    String.format("Value %s from the first map does not match value %s from the second map with key %s.", entry1.getValue(), value2, entry1.getKey()),
+                    String.format("Value %s from the first map does not match value %s from the second map with key %s.",
+                            entry1.getValue(), value2, entry1.getKey()),
                     entry1.getValue(), value2);
         }
     }

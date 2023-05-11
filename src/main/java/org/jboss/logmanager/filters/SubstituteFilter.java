@@ -20,11 +20,10 @@
 package org.jboss.logmanager.filters;
 
 import java.text.MessageFormat;
+import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import java.util.logging.Filter;
 
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.ExtLogRecord.FormatStyle;
@@ -41,9 +40,9 @@ public final class SubstituteFilter implements Filter {
     /**
      * Construct a new instance.
      *
-     * @param pattern the pattern to match
+     * @param pattern     the pattern to match
      * @param replacement the string replacement
-     * @param replaceAll {@code true} if all occurrences should be replaced; {@code false} if only the first occurrence
+     * @param replaceAll  {@code true} if all occurrences should be replaced; {@code false} if only the first occurrence
      */
     public SubstituteFilter(final Pattern pattern, final String replacement, final boolean replaceAll) {
         this.pattern = pattern;
@@ -55,8 +54,8 @@ public final class SubstituteFilter implements Filter {
      * Construct a new instance.
      *
      * @param patternString the pattern to match
-     * @param replacement the string replacement
-     * @param replaceAll {@code true} if all occurrences should be replaced; {@code false} if only the first occurrence
+     * @param replacement   the string replacement
+     * @param replaceAll    {@code true} if all occurrences should be replaced; {@code false} if only the first occurrence
      */
     public SubstituteFilter(final String patternString, final String replacement, final boolean replaceAll) {
         this(Pattern.compile(patternString), replacement, replaceAll);

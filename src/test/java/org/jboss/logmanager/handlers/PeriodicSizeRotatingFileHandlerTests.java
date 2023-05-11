@@ -51,8 +51,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
     private final File logFile = new File(BASE_LOG_DIR, FILENAME);
 
     private static final List<Integer> supportedPeriods = new ArrayList<Integer>();
-    private static final Map<Integer, SimpleDateFormat> periodFormatMap =
-        new HashMap<Integer, SimpleDateFormat>();
+    private static final Map<Integer, SimpleDateFormat> periodFormatMap = new HashMap<Integer, SimpleDateFormat>();
 
     static {
         supportedPeriods.add(Calendar.YEAR);
@@ -168,15 +167,17 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
     @Test
     @Ignore("LOGMGR-82")
     public void testPeriodicAndSizeRotate() throws Exception {
-        for (int i=0; i < supportedPeriods.size(); i++) {
+        for (int i = 0; i < supportedPeriods.size(); i++) {
             //To cut down on unnecessary testing, let's only test
             //the periods +/- two from this period
-            int j = i-2;
-            if (j < 0) j = 0;
+            int j = i - 2;
+            if (j < 0)
+                j = 0;
 
             int handlerPeriod = supportedPeriods.get(i);
-            for (; j <= i+2; j++) {
-                if (j >= supportedPeriods.size()) break;
+            for (; j <= i + 2; j++) {
+                if (j >= supportedPeriods.size())
+                    break;
                 int logMessagePeriod = supportedPeriods.get(j);
                 testPeriodicAndSizeRotate0(handlerPeriod, logMessagePeriod, true);
                 testPeriodicAndSizeRotate0(handlerPeriod, logMessagePeriod, false);
@@ -204,17 +205,12 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
 
     @Test
     public void testArchiveRotateSizeOnlyZip() throws Exception {
-        testArchiveRotate(null,".zip", false);
-        testArchiveRotate(null,".zip", true);
+        testArchiveRotate(null, ".zip", false);
+        testArchiveRotate(null, ".zip", true);
     }
 
     @Test
-    @BMRule(name = "Test failed rotated",
-            targetClass = "java.nio.file.Files",
-            targetMethod = "move",
-            targetLocation = "AT ENTRY",
-            condition = "$2.getFileName().toString().equals(\"rotating-file-handler.log.2\")",
-            action = "throw new IOException(\"Fail on purpose\")")
+    @BMRule(name = "Test failed rotated", targetClass = "java.nio.file.Files", targetMethod = "move", targetLocation = "AT ENTRY", condition = "$2.getFileName().toString().equals(\"rotating-file-handler.log.2\")", action = "throw new IOException(\"Fail on purpose\")")
     public void testFailedRotate() throws Exception {
         final PeriodicSizeRotatingFileHandler handler = new PeriodicSizeRotatingFileHandler();
         configureHandlerDefaults(handler);
@@ -241,7 +237,8 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         Assert.assertTrue("Expected the last line to end with 99: " + lastLine, lastLine.endsWith("99"));
     }
 
-    private void testArchiveRotate(final String dateSuffix, final String archiveSuffix, final boolean rotateOnBoot) throws Exception {
+    private void testArchiveRotate(final String dateSuffix, final String archiveSuffix, final boolean rotateOnBoot)
+            throws Exception {
         final String currentDate = dateSuffix == null ? "" : LocalDate.now().format(DateTimeFormatter.ofPattern(dateSuffix));
         PeriodicSizeRotatingFileHandler handler = new PeriodicSizeRotatingFileHandler();
         configureHandlerDefaults(handler);
@@ -371,7 +368,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
 
     private boolean shouldRotate(int logMessagePeriod, int handlerPeriod, boolean testSize) {
         if (testSize) {
-          return true;
+            return true;
         }
 
         // If the time period added to the log message is greater than the time period specified
@@ -381,7 +378,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         if (logMessagePeriod > handlerPeriod) {
             Calendar cal = Calendar.getInstance();
             if (isPeriodOneLess(logMessagePeriod, handlerPeriod) &&
-                cal.get(logMessagePeriod) == cal.getActualMaximum(logMessagePeriod)) {
+                    cal.get(logMessagePeriod) == cal.getActualMaximum(logMessagePeriod)) {
                 return true;
             } else {
                 return false;
@@ -414,27 +411,27 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         }
 
         public String create(boolean expectRotation, File log) throws Exception {
-              StringBuilder builder = new StringBuilder();
-              if (expectRotation) {
-                  builder.append("Expected log rotation, but it didn't happen\n");
-              } else {
-                  builder.append("Expected NO log rotation, but it happened anyways\n");
-              }
+            StringBuilder builder = new StringBuilder();
+            if (expectRotation) {
+                builder.append("Expected log rotation, but it didn't happen\n");
+            } else {
+                builder.append("Expected NO log rotation, but it happened anyways\n");
+            }
 
-              builder.append("Handler: " + periodFormatMap.get(handlerPeriod).toPattern());
-              builder.append(" ; ");
-              builder.append("Message: " + periodFormatMap.get(logMessagePeriod).toPattern());
-              builder.append(" ; ");
-              builder.append("testSize=" + testSize);
+            builder.append("Handler: " + periodFormatMap.get(handlerPeriod).toPattern());
+            builder.append(" ; ");
+            builder.append("Message: " + periodFormatMap.get(logMessagePeriod).toPattern());
+            builder.append(" ; ");
+            builder.append("testSize=" + testSize);
 
-              builder.append("\nChecking for log file here: ");
-              builder.append(log.getPath() + "\n");
-              builder.append("List of log files:\n");
-              for (String f : BASE_LOG_DIR.list()) {
-                  builder.append("\t" + f + "\n");
-              }
-              builder.append("-- End of listing --");
-              return builder.toString();
+            builder.append("\nChecking for log file here: ");
+            builder.append(log.getPath() + "\n");
+            builder.append("List of log files:\n");
+            for (String f : BASE_LOG_DIR.list()) {
+                builder.append("\t" + f + "\n");
+            }
+            builder.append("-- End of listing --");
+            return builder.toString();
         }
     }
 }
