@@ -140,8 +140,8 @@ public final class LogContext implements AutoCloseable {
     final ReentrantLock treeLock = new ReentrantLock();
 
     LogContext(final boolean strong, LogContextInitializer initializer) {
-        this.strong = strong;
         this.initializer = initializer;
+        this.strong = strong || initializer.useStrongReferences();
         levelMapReference = new AtomicReference<Map<String, Reference<Level, Void>>>(LazyHolder.INITIAL_LEVEL_MAP);
         rootLogger = new LoggerNode(this);
         closeHandlers = new LinkedHashSet<>();

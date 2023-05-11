@@ -82,4 +82,13 @@ public interface LogContextInitializer {
     default Handler[] getInitialHandlers(String loggerName) {
         return NO_HANDLERS;
     }
+
+    /**
+     * Establish whether strong references should be used for logger nodes.
+     *
+     * @return {@code true} to use strong references, or {@code false} to use weak references
+     */
+    default boolean useStrongReferences() {
+        return false;
+    }
 }
