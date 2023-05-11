@@ -67,7 +67,7 @@ final class GeneralFlags extends FlagSet<GeneralFlag> {
         GeneralFlags set = ALL_SETS.get(bits);
         if (set == null) {
             set = new GeneralFlags(bits);
-            if (! ALL_SETS.compareAndSet(bits, null, set)) {
+            if (!ALL_SETS.compareAndSet(bits, null, set)) {
                 GeneralFlags appearing = ALL_SETS.get(bits);
                 if (appearing != null) {
                     set = appearing;

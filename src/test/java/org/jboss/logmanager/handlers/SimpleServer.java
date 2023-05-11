@@ -35,6 +35,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+
 import javax.net.ServerSocketFactory;
 import javax.net.ssl.SSLServerSocketFactory;
 
@@ -67,13 +68,11 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         return server;
     }
 
-
     static SimpleServer createTlsServer(final int port) throws IOException, GeneralSecurityException {
         final SimpleServer server = new TcpServer(SSLServerSocketFactory.getDefault(), new LinkedBlockingDeque<>(), port);
         server.start();
         return server;
     }
-
 
     static SimpleServer createTlsServer() throws IOException, GeneralSecurityException {
         final SimpleServer server = new TcpServer(SSLServerSocketFactory.getDefault(), new LinkedBlockingDeque<>());
@@ -117,7 +116,8 @@ abstract class SimpleServer implements Runnable, AutoCloseable {
         private final ServerSocket serverSocket;
         private volatile Socket socket;
 
-        private TcpServer(final ServerSocketFactory serverSocketFactory, final BlockingQueue<String> data, final int port) throws IOException {
+        private TcpServer(final ServerSocketFactory serverSocketFactory, final BlockingQueue<String> data, final int port)
+                throws IOException {
             super(data);
             this.serverSocket = serverSocketFactory.createServerSocket(port);
             this.data = data;

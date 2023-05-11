@@ -300,7 +300,6 @@ public class PatternFormatterTests {
         Assert.assertEquals("jboss", formatter.format(record));
     }
 
-
     private void systemProperties(final String propertyPrefix) throws Exception {
         final ExtLogRecord record = createLogRecord("test");
         PatternFormatter formatter = new PatternFormatter("%" + propertyPrefix + "{org.jboss.logmanager.testProp}");
@@ -331,7 +330,8 @@ public class PatternFormatterTests {
     }
 
     protected static ExtLogRecord createLogRecord(final String msg) {
-        final ExtLogRecord result = new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg, PatternFormatterTests.class.getName());
+        final ExtLogRecord result = new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg,
+                PatternFormatterTests.class.getName());
         result.setSourceClassName(PatternFormatterTests.class.getName());
         result.setLoggerName(CATEGORY);
         return result;

@@ -19,13 +19,13 @@
 
 package org.jboss.logmanager;
 
-import org.jboss.logmanager.formatters.PatternFormatter;
-import org.jboss.logmanager.handlers.FileHandler;
-import org.junit.Test;
-
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.logging.Formatter;
+
+import org.jboss.logmanager.formatters.PatternFormatter;
+import org.jboss.logmanager.handlers.FileHandler;
+import org.junit.Test;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>

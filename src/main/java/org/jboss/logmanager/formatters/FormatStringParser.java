@@ -19,10 +19,10 @@
 
 package org.jboss.logmanager.formatters;
 
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 import java.util.ArrayList;
 import java.util.TimeZone;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A parser which can translate a log4j-style format string into a series of {@code FormatStep} instances.
@@ -30,13 +30,13 @@ import java.util.TimeZone;
 public final class FormatStringParser {
 
     /**
-     * The regular expression for format strings.  Ain't regex grand?
+     * The regular expression for format strings. Ain't regex grand?
      */
     private static final Pattern pattern = Pattern.compile(
-                // greedily match all non-format characters
-                "([^%]++)" +
-                // match a format string...
-                "|(?:%" +
+            // greedily match all non-format characters
+            "([^%]++)" +
+            // match a format string...
+                    "|(?:%" +
                     // optional minimum width plus justify flag
                     "(?:(-)?(\\d+))?" +
                     // optional maximum width
@@ -45,9 +45,8 @@ public final class FormatStringParser {
                     "(.)" +
                     // an optional argument string
                     "(?:\\{([^}]*)\\})?" +
-                // end format string
-                ")"
-    );
+                    // end format string
+                    ")");
 
     private FormatStringParser() {
     }
@@ -83,27 +82,33 @@ public final class FormatStringParser {
                 final char formatChar = formatCharString.charAt(0);
                 switch (formatChar) {
                     case 'c': {
-                        stepList.add(Formatters.loggerNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument));
+                        stepList.add(Formatters.loggerNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth,
+                                argument));
                         break;
                     }
                     case 'C': {
-                        stepList.add(Formatters.classNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument));
+                        stepList.add(Formatters.classNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth,
+                                argument));
                         break;
                     }
                     case 'd': {
-                        stepList.add(Formatters.dateFormatStep(timeZone, argument, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(Formatters.dateFormatStep(timeZone, argument, leftJustify, minimumWidth, truncateBeginning,
+                                maximumWidth));
                         break;
                     }
                     case 'D': {
-                        stepList.add(Formatters.moduleNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument));
+                        stepList.add(Formatters.moduleNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth,
+                                argument));
                         break;
                     }
                     case 'e': {
-                        stepList.add(Formatters.exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument, false));
+                        stepList.add(Formatters.exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth,
+                                argument, false));
                         break;
                     }
                     case 'E': {
-                        stepList.add(Formatters.exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument, true));
+                        stepList.add(Formatters.exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth,
+                                argument, true));
                         break;
                     }
                     case 'F': {
@@ -111,19 +116,23 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'h': {
-                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, false));
+                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth,
+                                false));
                         break;
                     }
                     case 'H': {
-                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument));
+                        stepList.add(Formatters.hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth,
+                                argument));
                         break;
                     }
                     case 'i': {
-                        stepList.add(Formatters.processIdFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(
+                                Formatters.processIdFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
                     case 'k': {
-                        stepList.add(Formatters.resourceKeyFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(
+                                Formatters.resourceKeyFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
                     case 'K': {
@@ -134,11 +143,13 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'l': {
-                        stepList.add(Formatters.locationInformationFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(Formatters.locationInformationFormatStep(leftJustify, minimumWidth, truncateBeginning,
+                                maximumWidth));
                         break;
                     }
                     case 'L': {
-                        stepList.add(Formatters.lineNumberFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(
+                                Formatters.lineNumberFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
                     case 'm': {
@@ -146,15 +157,18 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'M': {
-                        stepList.add(Formatters.methodNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(
+                                Formatters.methodNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
                     case 'n': {
-                        stepList.add(Formatters.lineSeparatorFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(
+                                Formatters.lineSeparatorFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
                     case 'N': {
-                        stepList.add(Formatters.processNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(
+                                Formatters.processNameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
                     case 'p': {
@@ -162,19 +176,23 @@ public final class FormatStringParser {
                         break;
                     }
                     case 'P': {
-                        stepList.add(Formatters.localizedLevelFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(Formatters.localizedLevelFormatStep(leftJustify, minimumWidth, truncateBeginning,
+                                maximumWidth));
                         break;
                     }
                     case 'r': {
-                        stepList.add(Formatters.relativeTimeFormatStep(time, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(Formatters.relativeTimeFormatStep(time, leftJustify, minimumWidth, truncateBeginning,
+                                maximumWidth));
                         break;
                     }
                     case 's': {
-                        stepList.add(Formatters.simpleMessageFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(
+                                Formatters.simpleMessageFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
                     case 't': {
-                        stepList.add(Formatters.threadFormatStep(argument, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(Formatters.threadFormatStep(argument, leftJustify, minimumWidth, truncateBeginning,
+                                maximumWidth));
                         break;
                     }
                     case 'v': {
@@ -183,11 +201,13 @@ public final class FormatStringParser {
                     }
                     case 'x': {
                         final int count = argument == null ? 0 : Integer.parseInt(argument);
-                        stepList.add(Formatters.ndcFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, count));
+                        stepList.add(
+                                Formatters.ndcFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, count));
                         break;
                     }
                     case 'X': {
-                        stepList.add(Formatters.mdcFormatStep(argument, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(
+                                Formatters.mdcFormatStep(argument, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
                         break;
                     }
                     case 'z': {
@@ -196,7 +216,8 @@ public final class FormatStringParser {
                     }
                     case '#':
                     case '$': {
-                        stepList.add(Formatters.systemPropertyFormatStep(argument, leftJustify, minimumWidth, truncateBeginning, maximumWidth));
+                        stepList.add(Formatters.systemPropertyFormatStep(argument, leftJustify, minimumWidth, truncateBeginning,
+                                maximumWidth));
                         break;
                     }
                     case '%': {

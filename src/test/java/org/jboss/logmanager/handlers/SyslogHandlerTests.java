@@ -26,8 +26,8 @@ import java.util.Calendar;
 import java.util.logging.Level;
 
 import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
 import org.jboss.logmanager.formatters.PatternFormatter;
+import org.jboss.logmanager.handlers.SyslogHandler.SyslogType;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -72,14 +72,16 @@ public class SyslogHandlerTests {
         // Create the record
         handler.setHostname("test");
         ExtLogRecord record = createRecord(cal, MSG);
-        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + MSG + '\n';
+        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid()
+                + " - - " + BOM + MSG + '\n';
         handler.publish(record);
         Assert.assertEquals(expectedMessage, createString(out));
 
         // Create the record
         out.reset();
         record = createRecord(cal, MSG);
-        expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + MSG + '\n';
+        expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - "
+                + BOM + MSG + '\n';
         handler.publish(record);
         Assert.assertEquals(expectedMessage, createString(out));
 
@@ -88,7 +90,8 @@ public class SyslogHandlerTests {
         record = createRecord(cal, MSG);
         handler.setHostname("test");
         handler.setAppName("java");
-        expectedMessage = "<14>1 2012-01-31T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + MSG + '\n';
+        expectedMessage = "<14>1 2012-01-31T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - "
+                + BOM + MSG + '\n';
         handler.publish(record);
         Assert.assertEquals(expectedMessage, createString(out));
     }
@@ -130,8 +133,9 @@ public class SyslogHandlerTests {
         // Create the record
         handler.setHostname("test");
         ExtLogRecord record = createRecord(cal, MSG);
-        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + MSG;
-        expectedMessage = byteLen(expectedMessage)+ " " + expectedMessage;
+        String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid()
+                + " - - " + BOM + MSG;
+        expectedMessage = byteLen(expectedMessage) + " " + expectedMessage;
         handler.publish(record);
         Assert.assertEquals(expectedMessage, createString(out));
     }
@@ -151,7 +155,8 @@ public class SyslogHandlerTests {
         final String part2 = "Truncated portion of the message that will not be shown in.";
         final String message = part1 + " " + part2;
 
-        final String header = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM;
+        final String header = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid()
+                + " - - " + BOM;
 
         handler.setMaxLength(byteLen(header, part1));
         handler.setTruncate(true);
@@ -194,7 +199,8 @@ public class SyslogHandlerTests {
         // Create the record
         handler.setHostname("test");
         ExtLogRecord record = createRecord(cal, null);
-        final String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM + "null";
+        final String expectedMessage = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java "
+                + handler.getPid() + " - - " + BOM + "null";
         handler.publish(record);
         Assert.assertEquals(expectedMessage, createString(out));
     }
@@ -211,7 +217,8 @@ public class SyslogHandlerTests {
         handler.setHostname("test");
         String message = part1 + " " + part2;
 
-        final String header = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid() + " - - " + BOM;
+        final String header = "<14>1 2012-01-09T04:39:22.000" + calculateTimeZone(cal) + " test java " + handler.getPid()
+                + " - - " + BOM;
 
         handler.setMaxLength(byteLen(header, part1));
         handler.setTruncate(true);
@@ -219,7 +226,8 @@ public class SyslogHandlerTests {
         ExtLogRecord record = createRecord(cal, message);
         String expectedMessage = header + part1;
         handler.publish(record);
-        Assert.assertTrue(String.format("Expected: %s:%n Received: %s", expectedMessage, createString(out)), Arrays.equals(expectedMessage.getBytes(ENCODING), out.toByteArray()));
+        Assert.assertTrue(String.format("Expected: %s:%n Received: %s", expectedMessage, createString(out)),
+                Arrays.equals(expectedMessage.getBytes(ENCODING), out.toByteArray()));
 
         out.reset();
         // Wrap a message
@@ -227,7 +235,8 @@ public class SyslogHandlerTests {
         handler.publish(record);
         // Extra space from message
         expectedMessage = header + part1 + header + " " + part2;
-        Assert.assertTrue(String.format("Expected: %s:%n Received: %s", expectedMessage, createString(out)), Arrays.equals(expectedMessage.getBytes(ENCODING), out.toByteArray()));
+        Assert.assertTrue(String.format("Expected: %s:%n Received: %s", expectedMessage, createString(out)),
+                Arrays.equals(expectedMessage.getBytes(ENCODING), out.toByteArray()));
 
         // Reset out, write the message with a maximum length of the current length minus 1 to ensure the multi-byte character was not written at the end
         out.reset();
@@ -235,7 +244,8 @@ public class SyslogHandlerTests {
         handler.setMaxLength(byteLen(header, part1) - 1);
         expectedMessage = header + part1.substring(0, part1.length() - charsToTruncate);
         handler.publish(record);
-        Assert.assertTrue(String.format("Expected: %s:%n Received: %s", expectedMessage, createString(out)), Arrays.equals(expectedMessage.getBytes(ENCODING), out.toByteArray()));
+        Assert.assertTrue(String.format("Expected: %s:%n Received: %s", expectedMessage, createString(out)),
+                Arrays.equals(expectedMessage.getBytes(ENCODING), out.toByteArray()));
     }
 
     private static ExtLogRecord createRecord(final Calendar cal, final String message) {

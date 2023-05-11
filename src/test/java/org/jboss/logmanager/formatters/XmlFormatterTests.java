@@ -25,6 +25,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+
 import javax.xml.XMLConstants;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
@@ -49,8 +50,7 @@ import org.xml.sax.SAXParseException;
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class XmlFormatterTests extends AbstractTest {
-    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter
-            .ISO_OFFSET_DATE_TIME
+    private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME
             .withZone(ZoneId.systemDefault());
 
     @Test
@@ -171,7 +171,8 @@ public class XmlFormatterTests extends AbstractTest {
             while (reader.hasNext() && (state = reader.next()) != XMLStreamConstants.END_ELEMENT) {
                 if (state == XMLStreamConstants.CHARACTERS) {
                     String text = sanitize(reader.getText());
-                    if (text == null || text.isEmpty()) continue;
+                    if (text == null || text.isEmpty())
+                        continue;
                     Assert.fail(String.format("Invalid text found: %s", text));
                 }
                 final String key = reader.getLocalName();

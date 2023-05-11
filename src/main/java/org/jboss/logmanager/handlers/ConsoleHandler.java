@@ -25,7 +25,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
-
 import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Objects;
@@ -98,16 +97,23 @@ public class ConsoleHandler extends OutputStreamHandler {
     /**
      * Construct a new instance.
      *
-     * @param target the target to write to, or {@code null} to start with an uninitialized target
+     * @param target    the target to write to, or {@code null} to start with an uninitialized target
      * @param formatter the formatter to use
      */
     public ConsoleHandler(final Target target, final Formatter formatter) {
         super(formatter);
         switch (target) {
-            case SYSTEM_OUT: setOutputStream(wrap(out)); break;
-            case SYSTEM_ERR: setOutputStream(wrap(err)); break;
-            case CONSOLE: setWriter(wrap(console)); break;
-            default: throw new IllegalArgumentException();
+            case SYSTEM_OUT:
+                setOutputStream(wrap(out));
+                break;
+            case SYSTEM_ERR:
+                setOutputStream(wrap(err));
+                break;
+            case CONSOLE:
+                setWriter(wrap(console));
+                break;
+            default:
+                throw new IllegalArgumentException();
         }
     }
 
@@ -119,10 +125,17 @@ public class ConsoleHandler extends OutputStreamHandler {
     public void setTarget(Target target) {
         final Target t = (target == null ? console == null ? Target.SYSTEM_OUT : Target.CONSOLE : target);
         switch (t) {
-            case SYSTEM_OUT: setOutputStream(wrap(out)); break;
-            case SYSTEM_ERR: setOutputStream(wrap(err)); break;
-            case CONSOLE: setWriter(wrap(console)); break;
-            default: throw new IllegalArgumentException();
+            case SYSTEM_OUT:
+                setOutputStream(wrap(out));
+                break;
+            case SYSTEM_ERR:
+                setOutputStream(wrap(err));
+                break;
+            case CONSOLE:
+                setWriter(wrap(console));
+                break;
+            default:
+                throw new IllegalArgumentException();
         }
     }
 
@@ -142,8 +155,8 @@ public class ConsoleHandler extends OutputStreamHandler {
      * The image data stream must be closed by the caller.
      *
      * @param imageData the PNG image data stream to write (must not be {@code null})
-     * @param columns the number of text columns to occupy (0 for automatic)
-     * @param rows the number of text rows to occupy (0 for automatic)
+     * @param columns   the number of text columns to occupy (0 for automatic)
+     * @param rows      the number of text rows to occupy (0 for automatic)
      * @return {@code true} if the image was written, or {@code false} if image support isn't found
      * @throws IOException if the stream failed while writing the image
      */
@@ -151,7 +164,7 @@ public class ConsoleHandler extends OutputStreamHandler {
         Objects.requireNonNull(imageData, "imageData");
         columns = Math.max(0, columns);
         rows = Math.max(0, rows);
-        if (! isGraphicsSupportPassivelyDetected()) {
+        if (!isGraphicsSupportPassivelyDetected()) {
             // no graphics
             return false;
         }
@@ -159,14 +172,16 @@ public class ConsoleHandler extends OutputStreamHandler {
         try {
             // clear out any pending stuff
             final Writer writer = getWriter();
-            if (writer == null) return false;
+            if (writer == null)
+                return false;
             // start with the header
             try (OutputStream os = Base64.getEncoder().wrap(new OutputStream() {
                 final byte[] buffer = new byte[2048];
                 int pos = 0;
 
                 public void write(final int b) throws IOException {
-                    if (pos == buffer.length) more();
+                    if (pos == buffer.length)
+                        more();
                     buffer[pos++] = (byte) b;
                 }
 
@@ -213,7 +228,7 @@ public class ConsoleHandler extends OutputStreamHandler {
     }
 
     /**
-     * Get the local error manager.  This is an error manager that will publish errors to this console handler.
+     * Get the local error manager. This is an error manager that will publish errors to this console handler.
      * The console handler itself should not use this error manager.
      *
      * @return the local error manager
@@ -223,19 +238,12 @@ public class ConsoleHandler extends OutputStreamHandler {
     }
 
     private static OutputStream wrap(final OutputStream outputStream) {
-        return outputStream == null ?
-                null :
-                outputStream instanceof UncloseableOutputStream ?
-                        outputStream :
-                        new UncloseableOutputStream(outputStream);
+        return outputStream == null ? null
+                : outputStream instanceof UncloseableOutputStream ? outputStream : new UncloseableOutputStream(outputStream);
     }
 
     private static Writer wrap(final Writer writer) {
-        return writer == null ?
-                null :
-                writer instanceof UncloseableWriter ?
-                        writer :
-                        new UncloseableWriter(writer);
+        return writer == null ? null : writer instanceof UncloseableWriter ? writer : new UncloseableWriter(writer);
     }
 
     /** {@inheritDoc} */
@@ -262,7 +270,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @return {@code true} if the console exists and supports truecolor output; {@code false} otherwise
      */
     public static boolean isTrueColor() {
-        if (! hasConsole()) {
+        if (!hasConsole()) {
             return false;
         }
         final String colorterm = System.getenv("COLORTERM");
@@ -275,10 +283,10 @@ public class ConsoleHandler extends OutputStreamHandler {
      * this information.
      *
      * @return {@code true} if the console exists and supports graphical output; {@code false} otherwise or if
-     *  graphical support cannot be passively detected
+     *         graphical support cannot be passively detected
      */
     public static boolean isGraphicsSupportPassivelyDetected() {
-        if (! hasConsole()) {
+        if (!hasConsole()) {
             return false;
         }
         final String term = System.getenv("TERM");
@@ -286,7 +294,6 @@ public class ConsoleHandler extends OutputStreamHandler {
         return term != null && (term.equalsIgnoreCase("kitty")
                 || term.equalsIgnoreCase("xterm-kitty")
                 || term.equalsIgnoreCase("wezterm")
-                || term.equalsIgnoreCase("konsole")
-        ) || termProgram != null && termProgram.equalsIgnoreCase("wezterm");
+                || term.equalsIgnoreCase("konsole")) || termProgram != null && termProgram.equalsIgnoreCase("wezterm");
     }
 }

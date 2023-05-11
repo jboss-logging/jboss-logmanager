@@ -41,12 +41,12 @@ public abstract class ExtFormatter extends Formatter {
      * Wrap an existing formatter with an {@link ExtFormatter}, optionally replacing message formatting with
      * the default extended message formatting capability.
      *
-     * @param formatter the formatter to wrap (must not be {@code null})
+     * @param formatter      the formatter to wrap (must not be {@code null})
      * @param formatMessages {@code true} to replace message formatting, {@code false} to let the original formatter do it
      * @return the extended formatter (not {@code null})
      */
     public static ExtFormatter wrap(Formatter formatter, boolean formatMessages) {
-        if (formatter instanceof ExtFormatter && ! formatMessages) {
+        if (formatter instanceof ExtFormatter && !formatMessages) {
             return (ExtFormatter) formatter;
         } else {
             return new WrappedFormatter(formatter, formatMessages);
@@ -112,7 +112,7 @@ public abstract class ExtFormatter extends Formatter {
     }
 
     /**
-     * Format the message text as if there are no parameters.  The default implementation delegates to
+     * Format the message text as if there are no parameters. The default implementation delegates to
      * {@link LogRecord#getMessage() record.getMessage()}.
      *
      * @param record the record to format
@@ -123,7 +123,7 @@ public abstract class ExtFormatter extends Formatter {
     }
 
     /**
-     * Format the message text as if there are no parameters.  The default implementation delegates to
+     * Format the message text as if there are no parameters. The default implementation delegates to
      * {@link MessageFormat#format(String, Object[]) MessageFormat.format(record.getMessage(),record.getParameters())}.
      *
      * @param record the record to format
@@ -134,7 +134,7 @@ public abstract class ExtFormatter extends Formatter {
     }
 
     /**
-     * Format the message text as if there are no parameters.  The default implementation delegates to
+     * Format the message text as if there are no parameters. The default implementation delegates to
      * {@link String#format(String, Object[]) String.format(record.getMessage(),record.getParameters())}.
      *
      * @param record the record to format

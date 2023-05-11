@@ -36,7 +36,7 @@ import java.util.logging.ErrorManager;
 import org.jboss.logmanager.ExtLogRecord;
 
 /**
- * A file handler which rotates the log at a preset time interval.  The interval is determined by the content of the
+ * A file handler which rotates the log at a preset time interval. The interval is determined by the content of the
  * suffix string which is passed in to {@link #setSuffix(String)}.
  */
 public class PeriodicRotatingFileHandler extends FileHandler {
@@ -70,7 +70,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
      * Construct a new instance with the given output file and append setting.
      *
      * @param fileName the file name
-     * @param append {@code true} to append, {@code false} to overwrite
+     * @param append   {@code true} to append, {@code false} to overwrite
      *
      * @throws FileNotFoundException if the file could not be found on open
      */
@@ -81,7 +81,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     /**
      * Construct a new instance with the given output file.
      *
-     * @param file the file
+     * @param file   the file
      * @param suffix the format suffix to use
      *
      * @throws FileNotFoundException if the file could not be found on open
@@ -94,12 +94,13 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     /**
      * Construct a new instance with the given output file and append setting.
      *
-     * @param file the file
+     * @param file   the file
      * @param suffix the format suffix to use
      * @param append {@code true} to append, {@code false} to overwrite
      * @throws FileNotFoundException if the file could not be found on open
      */
-    public PeriodicRotatingFileHandler(final File file, final String suffix, final boolean append) throws FileNotFoundException {
+    public PeriodicRotatingFileHandler(final File file, final String suffix, final boolean append)
+            throws FileNotFoundException {
         super(file, append);
         setSuffix(suffix);
     }
@@ -117,17 +118,17 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         }
     }
 
-    /** {@inheritDoc}  This implementation checks to see if the scheduled rollover time has yet occurred. */
+    /** {@inheritDoc} This implementation checks to see if the scheduled rollover time has yet occurred. */
     protected void preWrite(final ExtLogRecord record) {
         Instant recordInstant = record.getInstant();
-        if (! recordInstant.isBefore(nextRollover)) {
+        if (!recordInstant.isBefore(nextRollover)) {
             rollOver();
             calcNextRollover(recordInstant);
         }
     }
 
     /**
-     * Set the suffix string.  The string is in a format which can be understood by {@link DateTimeFormatter}.
+     * Set the suffix string. The string is in a format which can be understood by {@link DateTimeFormatter}.
      * The period of the rotation is automatically calculated based on the suffix.
      * <p>
      * If the suffix ends with {@code .gz} or {@code .zip} the file will be compressed on rotation.
@@ -142,25 +143,43 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         final DateTimeFormatter format = DateTimeFormatter.ofPattern(dateSuffix).withZone(timeZone.toZoneId());
         final int len = dateSuffix.length();
         Period period = Period.NEVER;
-        for (int i = 0; i < len; i ++) {
+        for (int i = 0; i < len; i++) {
             switch (dateSuffix.charAt(i)) {
-                case 'y': period = min(period, Period.YEAR); break;
-                case 'M': period = min(period, Period.MONTH); break;
+                case 'y':
+                    period = min(period, Period.YEAR);
+                    break;
+                case 'M':
+                    period = min(period, Period.MONTH);
+                    break;
                 case 'w':
-                case 'W': period = min(period, Period.WEEK); break;
+                case 'W':
+                    period = min(period, Period.WEEK);
+                    break;
                 case 'D':
                 case 'd':
                 case 'F':
-                case 'E': period = min(period, Period.DAY); break;
-                case 'a': period = min(period, Period.HALF_DAY); break;
+                case 'E':
+                    period = min(period, Period.DAY);
+                    break;
+                case 'a':
+                    period = min(period, Period.HALF_DAY);
+                    break;
                 case 'H':
                 case 'k':
                 case 'K':
-                case 'h': period = min(period, Period.HOUR); break;
-                case 'm': period = min(period, Period.MINUTE); break;
-                case '\'': while (dateSuffix.charAt(++i) != '\''); break;
+                case 'h':
+                    period = min(period, Period.HOUR);
+                    break;
+                case 'm':
+                    period = min(period, Period.MINUTE);
+                    break;
+                case '\'':
+                    while (dateSuffix.charAt(++i) != '\'')
+                        ;
+                    break;
                 case 's':
-                case 'S': throw new IllegalArgumentException("Rotating by second or millisecond is not supported");
+                case 'S':
+                    throw new IllegalArgumentException("Rotating by second or millisecond is not supported");
             }
         }
         lock.lock();
@@ -295,7 +314,7 @@ public class PeriodicRotatingFileHandler extends FileHandler {
     }
 
     /**
-     * Possible period values.  Keep in strictly ascending order of magnitude.
+     * Possible period values. Keep in strictly ascending order of magnitude.
      */
     public enum Period {
         MINUTE,

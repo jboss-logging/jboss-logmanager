@@ -2,8 +2,9 @@ package org.jboss.logmanager.errormanager;
 
 import java.util.logging.Handler;
 
-import io.smallrye.common.constraint.Assert;
 import org.jboss.logmanager.ExtErrorManager;
+
+import io.smallrye.common.constraint.Assert;
 
 /**
  * An error manager which publishes errors to a handler.

@@ -211,12 +211,7 @@ public class SizeRotatingFileHandlerTests extends AbstractHandlerTest {
      * size, shouldn't matter as each uses the same rotation logic in the SuffixRotator.
      */
     @Test
-    @BMRule(name = "Test failed rotated",
-            targetClass = "java.nio.file.Files",
-            targetMethod = "move",
-            targetLocation = "AT ENTRY",
-            condition = "$2.getFileName().toString().equals(\"rotating-file-handler.log.2\")",
-            action = "throw new IOException(\"Fail on purpose\")")
+    @BMRule(name = "Test failed rotated", targetClass = "java.nio.file.Files", targetMethod = "move", targetLocation = "AT ENTRY", condition = "$2.getFileName().toString().equals(\"rotating-file-handler.log.2\")", action = "throw new IOException(\"Fail on purpose\")")
     public void testFailedRotate() throws Exception {
         final SizeRotatingFileHandler handler = new SizeRotatingFileHandler();
         configureHandlerDefaults(handler);

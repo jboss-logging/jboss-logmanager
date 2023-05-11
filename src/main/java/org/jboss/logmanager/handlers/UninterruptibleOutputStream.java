@@ -19,12 +19,12 @@
 
 package org.jboss.logmanager.handlers;
 
+import static java.lang.Thread.currentThread;
+import static java.lang.Thread.interrupted;
+
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.OutputStream;
-
-import static java.lang.Thread.currentThread;
-import static java.lang.Thread.interrupted;
 
 /**
  * An output stream which is not interruptible.
@@ -52,16 +52,17 @@ public final class UninterruptibleOutputStream extends OutputStream {
     public void write(final int b) throws IOException {
         boolean intr = false;
         try {
-            for (;;) try {
-                out.write(b);
-                return;
-            } catch (InterruptedIOException e) {
-                final int transferred = e.bytesTransferred;
-                if (transferred == 1) {
+            for (;;)
+                try {
+                    out.write(b);
                     return;
+                } catch (InterruptedIOException e) {
+                    final int transferred = e.bytesTransferred;
+                    if (transferred == 1) {
+                        return;
+                    }
+                    intr |= interrupted();
                 }
-                intr |= interrupted();
-            }
         } finally {
             if (intr) {
                 currentThread().interrupt();
@@ -72,7 +73,7 @@ public final class UninterruptibleOutputStream extends OutputStream {
     /**
      * Write the given bytes uninterruptibly.
      *
-     * @param b the bytes to write
+     * @param b   the bytes to write
      * @param off the offset into the array
      * @param len the length of the array to write
      * @throws IOException if an error occurs
@@ -80,17 +81,18 @@ public final class UninterruptibleOutputStream extends OutputStream {
     public void write(final byte[] b, int off, int len) throws IOException {
         boolean intr = false;
         try {
-            while (len > 0) try {
-                out.write(b, off, len);
-                return;
-            } catch (InterruptedIOException e) {
-                final int transferred = e.bytesTransferred;
-                if (transferred > 0) {
-                    off += transferred;
-                    len -= transferred;
+            while (len > 0)
+                try {
+                    out.write(b, off, len);
+                    return;
+                } catch (InterruptedIOException e) {
+                    final int transferred = e.bytesTransferred;
+                    if (transferred > 0) {
+                        off += transferred;
+                        len -= transferred;
+                    }
+                    intr |= interrupted();
                 }
-                intr |= interrupted();
-            }
         } finally {
             if (intr) {
                 currentThread().interrupt();
@@ -106,12 +108,13 @@ public final class UninterruptibleOutputStream extends OutputStream {
     public void flush() throws IOException {
         boolean intr = false;
         try {
-            for (;;) try {
-                out.flush();
-                return;
-            } catch (InterruptedIOException e) {
-                intr |= interrupted();
-            }
+            for (;;)
+                try {
+                    out.flush();
+                    return;
+                } catch (InterruptedIOException e) {
+                    intr |= interrupted();
+                }
         } finally {
             if (intr) {
                 currentThread().interrupt();
@@ -127,12 +130,13 @@ public final class UninterruptibleOutputStream extends OutputStream {
     public void close() throws IOException {
         boolean intr = false;
         try {
-            for (;;) try {
-                out.close();
-                return;
-            } catch (InterruptedIOException e) {
-                intr |= interrupted();
-            }
+            for (;;)
+                try {
+                    out.close();
+                    return;
+                } catch (InterruptedIOException e) {
+                    intr |= interrupted();
+                }
         } finally {
             if (intr) {
                 currentThread().interrupt();

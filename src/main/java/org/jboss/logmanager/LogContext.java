@@ -19,9 +19,7 @@
 
 package org.jboss.logmanager;
 
-import io.smallrye.common.constraint.Assert;
-import io.smallrye.common.ref.Reference;
-import io.smallrye.common.ref.References;
+import static org.jboss.logmanager.LoggerNode.attachmentsFull;
 
 import java.security.AccessController;
 import java.security.Permission;
@@ -40,19 +38,22 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.LoggingPermission;
 
-import static org.jboss.logmanager.LoggerNode.attachmentsFull;
+import io.smallrye.common.constraint.Assert;
+import io.smallrye.common.ref.Reference;
+import io.smallrye.common.ref.References;
 
 /**
  * A logging context, for producing isolated logging environments.
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
+@SuppressWarnings({ "unused", "WeakerAccess" })
 public final class LogContext implements AutoCloseable {
     private static final LogContext SYSTEM_CONTEXT = new LogContext(false, discoverDefaultInitializer());
 
     private static LogContextInitializer discoverDefaultInitializer() {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            return AccessController.doPrivileged((PrivilegedAction<LogContextInitializer>) LogContext::discoverDefaultInitializer0);
+            return AccessController
+                    .doPrivileged((PrivilegedAction<LogContextInitializer>) LogContext::discoverDefaultInitializer0);
         } else {
             return discoverDefaultInitializer0();
         }
@@ -60,7 +61,8 @@ public final class LogContext implements AutoCloseable {
 
     private static LogContextInitializer discoverDefaultInitializer0() {
         // allow exceptions to bubble up, otherwise logging won't work with no indication as to why
-        final ServiceLoader<LogContextInitializer> loader = ServiceLoader.load(LogContextInitializer.class, LogContext.class.getClassLoader());
+        final ServiceLoader<LogContextInitializer> loader = ServiceLoader.load(LogContextInitializer.class,
+                LogContext.class.getClassLoader());
         final Iterator<LogContextInitializer> iterator = loader.iterator();
         return iterator.hasNext() ? iterator.next() : LogContextInitializer.DEFAULT;
     }
@@ -148,11 +150,11 @@ public final class LogContext implements AutoCloseable {
     }
 
     /**
-     * Create a new log context.  If a security manager is installed, the caller must have the {@code "createLogContext"}
+     * Create a new log context. If a security manager is installed, the caller must have the {@code "createLogContext"}
      * {@link RuntimePermission RuntimePermission} to invoke this method.
      *
      * @param strong {@code true} if the context should use strong references, {@code false} to use (default) weak
-     *      references for automatic logger GC
+     *               references for automatic logger GC
      * @return a new log context
      */
     public static LogContext create(boolean strong) {
@@ -160,11 +162,11 @@ public final class LogContext implements AutoCloseable {
     }
 
     /**
-     * Create a new log context.  If a security manager is installed, the caller must have the {@code "createLogContext"}
+     * Create a new log context. If a security manager is installed, the caller must have the {@code "createLogContext"}
      * {@link RuntimePermission RuntimePermission} to invoke this method.
      *
-     * @param strong {@code true} if the context should use strong references, {@code false} to use (default) weak
-     *      references for automatic logger GC
+     * @param strong      {@code true} if the context should use strong references, {@code false} to use (default) weak
+     *                    references for automatic logger GC
      * @param initializer the log context initializer to use (must not be {@code null})
      * @return a new log context
      */
@@ -178,7 +180,7 @@ public final class LogContext implements AutoCloseable {
     }
 
     /**
-     * Create a new log context.  If a security manager is installed, the caller must have the {@code "createLogContext"}
+     * Create a new log context. If a security manager is installed, the caller must have the {@code "createLogContext"}
      * {@link RuntimePermission RuntimePermission} to invoke this method.
      *
      * @return a new log context
@@ -188,7 +190,7 @@ public final class LogContext implements AutoCloseable {
     }
 
     /**
-     * Create a new log context.  If a security manager is installed, the caller must have the {@code "createLogContext"}
+     * Create a new log context. If a security manager is installed, the caller must have the {@code "createLogContext"}
      * {@link RuntimePermission RuntimePermission} to invoke this method.
      *
      * @param initializer the log context initializer to use (must not be {@code null})
@@ -212,8 +214,10 @@ public final class LogContext implements AutoCloseable {
     public <V> V getAttachment(Logger.AttachmentKey<V> key) {
         Assert.checkNotNullParam("key", key);
         synchronized (this) {
-            if (key == attachmentKey1) return (V) attachmentValue1;
-            if (key == attachmentKey2) return (V) attachmentValue2;
+            if (key == attachmentKey1)
+                return (V) attachmentValue1;
+            if (key == attachmentKey2)
+                return (V) attachmentValue2;
         }
         return null;
     }
@@ -223,11 +227,12 @@ public final class LogContext implements AutoCloseable {
      * A strong reference is maintained to the key and value for as long as this log context exists.
      * Log context attachments are placed on the root logger and can also be accessed there.
      *
-     * @param key the attachment key
+     * @param key   the attachment key
      * @param value the attachment value
-     * @param <V> the attachment value type
+     * @param <V>   the attachment value type
      * @return the old attachment, if there was one
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     * @throws SecurityException        if a security manager exists and if the caller does not have
+     *                                  {@code LoggingPermission(control)}
      * @throws IllegalArgumentException if the attachment cannot be added because the maximum has been reached
      */
     @SuppressWarnings("unchecked")
@@ -263,11 +268,12 @@ public final class LogContext implements AutoCloseable {
      * A strong reference is maintained to the key and value for as long as this log context exists.
      * Log context attachments are placed on the root logger and can also be accessed there.
      *
-     * @param key the attachment key
+     * @param key   the attachment key
      * @param value the attachment value
-     * @param <V> the attachment value type
+     * @param <V>   the attachment value type
      * @return the current attachment, if there is one, or {@code null} if the value was successfully attached
-     * @throws SecurityException if a security manager exists and if the caller does not have {@code LoggingPermission(control)}
+     * @throws SecurityException        if a security manager exists and if the caller does not have
+     *                                  {@code LoggingPermission(control)}
      * @throws IllegalArgumentException if the attachment cannot be added because the maximum has been reached
      */
     @SuppressWarnings("unchecked")
@@ -350,13 +356,14 @@ public final class LogContext implements AutoCloseable {
      * Get a logger attachment for a logger name, if it exists.
      *
      * @param loggerName the logger name
-     * @param key the attachment key
-     * @param <V> the attachment value type
+     * @param key        the attachment key
+     * @param <V>        the attachment value type
      * @return the attachment or {@code null} if the logger or the attachment does not exist
      */
     public <V> V getAttachment(String loggerName, Logger.AttachmentKey<V> key) {
         final LoggerNode node = rootLogger.getIfExists(loggerName);
-        if (node == null) return null;
+        if (node == null)
+            return null;
         return node.getAttachment(key);
     }
 
@@ -382,8 +389,8 @@ public final class LogContext implements AutoCloseable {
     }
 
     /**
-     * Register a level instance with this log context.  The level can then be looked up by name.  Only a weak
-     * reference to the level instance will be kept.  Any previous level registration for the given level's name
+     * Register a level instance with this log context. The level can then be looked up by name. Only a weak
+     * reference to the level instance will be kept. Any previous level registration for the given level's name
      * will be overwritten.
      *
      * @param level the level to register
@@ -393,10 +400,10 @@ public final class LogContext implements AutoCloseable {
     }
 
     /**
-     * Register a level instance with this log context.  The level can then be looked up by name.  Any previous level
+     * Register a level instance with this log context. The level can then be looked up by name. Any previous level
      * registration for the given level's name will be overwritten.
      *
-     * @param level the level to register
+     * @param level  the level to register
      * @param strong {@code true} to strongly reference the level, or {@code false} to weakly reference it
      */
     public void registerLevel(Level level, boolean strong) {
@@ -414,7 +421,8 @@ public final class LogContext implements AutoCloseable {
                     newLevelMap.put(name, levelRef);
                 }
             }
-            newLevelMap.put(level.getName(), References.create(strong ? Reference.Type.STRONG : Reference.Type.WEAK, level, null));
+            newLevelMap.put(level.getName(),
+                    References.create(strong ? Reference.Type.STRONG : Reference.Type.WEAK, level, null));
             if (levelMapReference.compareAndSet(oldLevelMap, newLevelMap)) {
                 return;
             }
@@ -422,7 +430,7 @@ public final class LogContext implements AutoCloseable {
     }
 
     /**
-     * Unregister a previously registered level.  Log levels that are not registered may still be used, they just will
+     * Unregister a previously registered level. Log levels that are not registered may still be used, they just will
      * not be findable by name.
      *
      * @param level the level to unregister
@@ -485,7 +493,8 @@ public final class LogContext implements AutoCloseable {
     }
 
     /**
-     * Set a new log context selector.  If a security manager is installed, the caller must have the {@code "setLogContextSelector"}
+     * Set a new log context selector. If a security manager is installed, the caller must have the
+     * {@code "setLogContextSelector"}
      * {@link RuntimePermission RuntimePermission} to invoke this method.
      *
      * @param newSelector the new selector.

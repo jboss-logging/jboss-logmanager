@@ -33,7 +33,7 @@ public class PropertyValuesTests extends MapTestUtils {
 
     @Test
     public void testStringToMap() {
-        Map<String, String> map = MapBuilder.<String, String>create()
+        Map<String, String> map = MapBuilder.<String, String> create()
                 .add("key1", "value1")
                 .add("key2", "value2")
                 .add("key3", "value3")
@@ -41,7 +41,7 @@ public class PropertyValuesTests extends MapTestUtils {
         Map<String, String> parsedMap = PropertyValues.stringToMap("key1=value1,key2=value2,key3=value3");
         compareMaps(map, parsedMap);
 
-        map = MapBuilder.<String, String>create()
+        map = MapBuilder.<String, String> create()
                 .add("key=1", "value1")
                 .add("key=2", "value,2")
                 .add("key3", "value,3")
@@ -49,7 +49,7 @@ public class PropertyValuesTests extends MapTestUtils {
         parsedMap = PropertyValues.stringToMap("key\\=1=value1,key\\=2=value\\,2,key3=value\\,3");
         compareMaps(map, parsedMap);
 
-        map = MapBuilder.<String, String>create()
+        map = MapBuilder.<String, String> create()
                 .add("key=", "value,")
                 .add("key2", "value2")
                 .add("key\\", "value\\")
@@ -58,7 +58,7 @@ public class PropertyValuesTests extends MapTestUtils {
         parsedMap = PropertyValues.stringToMap("key\\==value\\,,key2=value2,key\\\\=value\\\\,this=some=thing\\\\thing=some");
         compareMaps(map, parsedMap);
 
-        map = MapBuilder.<String, String>create()
+        map = MapBuilder.<String, String> create()
                 .add("key1", "value1")
                 .add("key2", null)
                 .add("key3", "value3")
@@ -67,7 +67,7 @@ public class PropertyValuesTests extends MapTestUtils {
         parsedMap = PropertyValues.stringToMap("key1=value1,key2=,key3=value3,key4");
         compareMaps(map, parsedMap);
 
-        map = MapBuilder.<String, String>create()
+        map = MapBuilder.<String, String> create()
                 .add("company", "Red Hat, Inc.")
                 .add("product", "JBoss")
                 .add("name", "First \"nick\" Last")
@@ -81,22 +81,24 @@ public class PropertyValuesTests extends MapTestUtils {
 
     @Test
     public void testStringToMapValueExpressions() {
-        Map<String, String> map = MapBuilder.<String, String>create()
+        Map<String, String> map = MapBuilder.<String, String> create()
                 .add("key1", "${org.jboss.logmanager.test.sysprop1}")
                 .add("key2=", "${org.jboss.logmanager.test.sysprop2}")
                 .build();
-        Map<String, String> parsedMap = PropertyValues.stringToMap("key1=${org.jboss.logmanager.test.sysprop1},key2\\==${org.jboss.logmanager.test.sysprop2}");
+        Map<String, String> parsedMap = PropertyValues
+                .stringToMap("key1=${org.jboss.logmanager.test.sysprop1},key2\\==${org.jboss.logmanager.test.sysprop2}");
         compareMaps(map, parsedMap);
     }
 
     @Test
     public void testStringToEnumMap() throws Exception {
-        Map<Key, String> map = MapBuilder.<Key, String>create()
+        Map<Key, String> map = MapBuilder.<Key, String> create()
                 .add(Key.EXCEPTION_CAUSED_BY, "cause")
                 .add(Key.MESSAGE, "msg")
                 .add(Key.HOST_NAME, "hostname")
                 .build();
-        EnumMap<Key, String> parsedMap = PropertyValues.stringToEnumMap(Key.class, "EXCEPTION_CAUSED_BY=cause,MESSAGE=msg,HOST_NAME=hostname");
+        EnumMap<Key, String> parsedMap = PropertyValues.stringToEnumMap(Key.class,
+                "EXCEPTION_CAUSED_BY=cause,MESSAGE=msg,HOST_NAME=hostname");
         compareMaps(map, parsedMap);
 
         parsedMap = PropertyValues.stringToEnumMap(Key.class, "exception-caused-by=cause,message=msg,host-name=hostname");
@@ -105,29 +107,30 @@ public class PropertyValuesTests extends MapTestUtils {
 
     @Test
     public void testMapToString() throws Exception {
-        Map<String, String> map = MapBuilder.<String, String>create()
+        Map<String, String> map = MapBuilder.<String, String> create()
                 .add("key1", "value1")
                 .add("key2", "value2")
                 .add("key3", "value3")
                 .build();
         Assert.assertEquals("key1=value1,key2=value2,key3=value3", PropertyValues.mapToString(map));
 
-        map = MapBuilder.<String, String>create()
+        map = MapBuilder.<String, String> create()
                 .add("key=1", "value1")
                 .add("key=2", "value,2")
                 .add("key3", "value,3")
                 .build();
         Assert.assertEquals("key\\=1=value1,key\\=2=value\\,2,key3=value\\,3", PropertyValues.mapToString(map));
 
-        map = MapBuilder.<String, String>create()
+        map = MapBuilder.<String, String> create()
                 .add("key=", "value,")
                 .add("key2", "value2")
                 .add("key\\", "value\\")
                 .add("this", "some=thing\\thing=some")
                 .build();
-        Assert.assertEquals("key\\==value\\,,key2=value2,key\\\\=value\\\\,this=some=thing\\\\thing=some", PropertyValues.mapToString(map));
+        Assert.assertEquals("key\\==value\\,,key2=value2,key\\\\=value\\\\,this=some=thing\\\\thing=some",
+                PropertyValues.mapToString(map));
 
-        map = MapBuilder.<String, String>create()
+        map = MapBuilder.<String, String> create()
                 .add("key1", "value1")
                 .add("key2", null)
                 .add("key3", "value3")
@@ -135,7 +138,7 @@ public class PropertyValuesTests extends MapTestUtils {
                 .build();
         Assert.assertEquals("key1=value1,key2=,key3=value3,key4=", PropertyValues.mapToString(map));
 
-        map = MapBuilder.<String, String>create()
+        map = MapBuilder.<String, String> create()
                 .add("company", "Red Hat, Inc.")
                 .add("product", "JBoss")
                 .add("name", "First \"nick\" Last")

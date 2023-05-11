@@ -66,7 +66,7 @@ final class JDKSpecific {
     }
 
     static LogContext logContextFinder(Set<ClassLoader> rejectClassLoaders,
-                                       final Function<ClassLoader, LogContext> finder) {
+            final Function<ClassLoader, LogContext> finder) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             return doPrivileged(new FindCallingClassesAction(rejectClassLoaders, finder));
@@ -171,7 +171,7 @@ final class JDKSpecific {
         private final Function<ClassLoader, LogContext> finder;
 
         FindCallingClassesAction(final Set<ClassLoader> rejectClassLoaders,
-                                 final Function<ClassLoader, LogContext> finder) {
+                final Function<ClassLoader, LogContext> finder) {
             this.rejectClassLoaders = rejectClassLoaders;
             this.finder = finder;
         }

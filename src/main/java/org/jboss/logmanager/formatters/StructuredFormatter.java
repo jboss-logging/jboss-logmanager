@@ -30,8 +30,6 @@ import java.util.Map;
 import org.jboss.logmanager.ExtFormatter;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.PropertyValues;
-import org.jboss.logmanager.formatters.StackTraceFormatter;
-import org.jboss.logmanager.formatters.StringBuilderWriter;
 
 /**
  * An abstract class that uses a generator to help generate structured data from a {@link
@@ -45,7 +43,7 @@ import org.jboss.logmanager.formatters.StringBuilderWriter;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
+@SuppressWarnings({ "unused", "WeakerAccess" })
 public abstract class StructuredFormatter extends ExtFormatter {
 
     /**
@@ -202,7 +200,6 @@ public abstract class StructuredFormatter extends ExtFormatter {
         }
         return defaultKey.getKey();
     }
-
 
     @Override
     public final synchronized String format(final ExtLogRecord record) {
@@ -474,7 +471,8 @@ public abstract class StructuredFormatter extends ExtFormatter {
                 exceptionOutputType == ExceptionOutputType.DETAILED_AND_FORMATTED;
     }
 
-    private void addException(final Generator generator, final Throwable throwable, final Map<Throwable, Integer> seen) throws Exception {
+    private void addException(final Generator generator, final Throwable throwable, final Map<Throwable, Integer> seen)
+            throws Exception {
         if (throwable == null) {
             return;
         }

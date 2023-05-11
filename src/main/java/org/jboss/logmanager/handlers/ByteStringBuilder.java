@@ -27,7 +27,7 @@ import java.util.Arrays;
  * @author <a href="mailto:david.lloyd@redhat.com">David M. Lloyd</a>
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
+@SuppressWarnings({ "unused", "WeakerAccess" })
 final class ByteStringBuilder implements Appendable {
 
     private static final int INVALID_US_ASCII_CODE_POINT = 0x3f;
@@ -235,7 +235,8 @@ final class ByteStringBuilder implements Appendable {
     }
 
     public byte byteAt(final int index) {
-        if (index < 0 || index > length) throw new IndexOutOfBoundsException();
+        if (index < 0 || index > length)
+            throw new IndexOutOfBoundsException();
         return content[index];
     }
 
@@ -260,7 +261,8 @@ final class ByteStringBuilder implements Appendable {
     }
 
     public boolean contentEquals(final byte[] other, final int offs, final int length) {
-        if (length != this.length) return false;
+        if (length != this.length)
+            return false;
         for (int i = 0; i < length; i++) {
             if (content[i] != other[offs + i]) {
                 return false;
@@ -273,7 +275,8 @@ final class ByteStringBuilder implements Appendable {
         return appendASCII(0, asciiLen, s, offs, len, maxLen);
     }
 
-    private ByteStringBuilder appendASCII(final int minChar, final int maxChar, final String s, final int offs, final int len, final int maxLen) {
+    private ByteStringBuilder appendASCII(final int minChar, final int maxChar, final String s, final int offs, final int len,
+            final int maxLen) {
         reserve(len, false);
         char c;
         for (int i = 0; i < len; i++) {
@@ -295,15 +298,18 @@ final class ByteStringBuilder implements Appendable {
         final byte[] content = this.content;
         int cl = content.length;
         if (cl - length >= count) {
-            if (clear) Arrays.fill(content, length, length + count, (byte) 0);
+            if (clear)
+                Arrays.fill(content, length, length + count, (byte) 0);
             return;
         }
         // clear remainder
-        if (clear) Arrays.fill(content, length, cl, (byte) 0);
+        if (clear)
+            Arrays.fill(content, length, cl, (byte) 0);
         do {
             // not enough space... grow by 1.5x
             cl = cl + (cl + 1 >> 1);
-            if (cl < 0) throw new IllegalStateException("Too large");
+            if (cl < 0)
+                throw new IllegalStateException("Too large");
         } while (cl - length < count);
         this.content = Arrays.copyOf(content, cl);
     }

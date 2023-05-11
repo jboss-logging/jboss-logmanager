@@ -19,9 +19,6 @@
 
 package org.jboss.logmanager;
 
-import io.smallrye.common.constraint.Assert;
-
-import java.beans.PropertyChangeListener;
 import java.io.IOException;
 import java.io.InputStream;
 import java.security.AccessController;
@@ -37,8 +34,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Filter;
 
+import io.smallrye.common.constraint.Assert;
+
 /**
- * Simplified log manager.  Designed to work around the (many) design flaws of the JDK platform log manager.
+ * Simplified log manager. Designed to work around the (many) design flaws of the JDK platform log manager.
  */
 public final class LogManager extends java.util.logging.LogManager {
 
@@ -80,7 +79,7 @@ public final class LogManager extends java.util.logging.LogManager {
     }
 
     /**
-     * Construct a new logmanager instance.  Attempts to plug a known memory leak in {@link java.util.logging.Level} as
+     * Construct a new logmanager instance. Attempts to plug a known memory leak in {@link java.util.logging.Level} as
      * well.
      */
     public LogManager() {
@@ -119,23 +118,27 @@ public final class LogManager extends java.util.logging.LogManager {
                     final ServiceLoader<ConfiguratorFactory> serviceLoader = ServiceLoader.load(ConfiguratorFactory.class);
                     final Iterator<ConfiguratorFactory> iterator = serviceLoader.iterator();
                     List<Throwable> problems = null;
-                    for (;;) try {
-                        if (! iterator.hasNext()) break;
-                        final ConfiguratorFactory f = iterator.next();
-                        if (f.priority() < best || factory == null) {
-                            best = f.priority();
-                            factory = f;
+                    for (;;)
+                        try {
+                            if (!iterator.hasNext())
+                                break;
+                            final ConfiguratorFactory f = iterator.next();
+                            if (f.priority() < best || factory == null) {
+                                best = f.priority();
+                                factory = f;
+                            }
+                        } catch (Throwable t) {
+                            if (problems == null)
+                                problems = new ArrayList<>(4);
+                            problems.add(t);
                         }
-                    } catch (Throwable t) {
-                        if (problems == null) problems = new ArrayList<>(4);
-                        problems.add(t);
-                    }
                     configurator = factory == null ? null : factory.create();
                     if (configurator == null) {
                         if (problems == null) {
                             configuratorRef.set(configurator = LogContextConfigurator.EMPTY);
                         } else {
-                            final ServiceConfigurationError e = new ServiceConfigurationError("Failed to configure log configurator service");
+                            final ServiceConfigurationError e = new ServiceConfigurationError(
+                                    "Failed to configure log configurator service");
                             for (Throwable problem : problems) {
                                 e.addSuppressed(problem);
                             }
@@ -163,7 +166,8 @@ public final class LogManager extends java.util.logging.LogManager {
      * @param ins    not used
      * @param mapper not used
      */
-    public void updateConfiguration(final InputStream ins, final Function<String, BiFunction<String, String, String>> mapper) throws IOException {
+    public void updateConfiguration(final InputStream ins, final Function<String, BiFunction<String, String, String>> mapper)
+            throws IOException {
         // no operation the configuration API should be used
     }
 
@@ -189,7 +193,7 @@ public final class LogManager extends java.util.logging.LogManager {
     }
 
     /**
-     * Does nothing.  Properties are not supported.
+     * Does nothing. Properties are not supported.
      *
      * @param name ignored
      * @return {@code null}
@@ -200,7 +204,7 @@ public final class LogManager extends java.util.logging.LogManager {
     }
 
     /**
-     * Does nothing.  This method only causes trouble.
+     * Does nothing. This method only causes trouble.
      */
     public void reset() {
         // no operation!
@@ -212,7 +216,7 @@ public final class LogManager extends java.util.logging.LogManager {
     }
 
     /**
-     * Do nothing.  Loggers are only added/acquired via {@link #getLogger(String)}.
+     * Do nothing. Loggers are only added/acquired via {@link #getLogger(String)}.
      *
      * @param logger ignored
      * @return {@code false}

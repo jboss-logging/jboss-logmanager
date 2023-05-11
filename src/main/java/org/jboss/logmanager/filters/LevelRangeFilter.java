@@ -35,9 +35,9 @@ public final class LevelRangeFilter implements Filter {
     /**
      * Create a new instance.
      *
-     * @param min the minimum (least severe) level, inclusive
+     * @param min          the minimum (least severe) level, inclusive
      * @param minInclusive {@code true} if the {@code min} value is inclusive, {@code false} if it is exclusive
-     * @param max the maximum (most severe) level, inclusive
+     * @param max          the maximum (most severe) level, inclusive
      * @param maxInclusive {@code true} if the {@code max} value is inclusive, {@code false} if it is exclusive
      */
     public LevelRangeFilter(final Level min, final boolean minInclusive, final Level max, final boolean maxInclusive) {

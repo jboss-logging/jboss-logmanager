@@ -20,8 +20,8 @@
 package org.jboss.logmanager;
 
 import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.security.Permission;
+import java.security.PrivilegedAction;
 import java.util.Collections;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
@@ -37,7 +37,7 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
     private static final Permission LOG_API_PERMISSION = new RuntimePermission("logApiPermission", null);
 
     /**
-     * Construct a new instance.  If no matching log context is found, the provided default selector is consulted.
+     * Construct a new instance. If no matching log context is found, the provided default selector is consulted.
      *
      * @param defaultSelector the selector to consult if no matching log context is found
      */
@@ -46,7 +46,7 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
     }
 
     /**
-     * Construct a new instance.  If no matching log context is found, the provided default selector is consulted.
+     * Construct a new instance. If no matching log context is found, the provided default selector is consulted.
      * <p/>
      * If the {@code checkParentClassLoaders} is set to {@code true} this selector recursively searches the class loader
      * parents until a match is found or a {@code null} parent is found.
@@ -62,14 +62,14 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
     }
 
     /**
-     * Construct a new instance.  If no matching log context is found, the system context is used.
+     * Construct a new instance. If no matching log context is found, the system context is used.
      */
     public ClassLoaderLogContextSelector() {
         this(false);
     }
 
     /**
-     * Construct a new instance.  If no matching log context is found, the system context is used.
+     * Construct a new instance. If no matching log context is found, the system context is used.
      * <p/>
      * If the {@code checkParentClassLoaders} is set to {@code true} this selector recursively searches the class loader
      * parents until a match is found or a {@code null} parent is found.
@@ -115,12 +115,11 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
     };
 
     /**
-     * {@inheritDoc}  This instance will consult the call stack to see if any calling classloader is associated
+     * {@inheritDoc} This instance will consult the call stack to see if any calling classloader is associated
      * with any log context.
      */
     public LogContext getLogContext() {
-        return System.getSecurityManager() == null? logContextAction.run() :
-                AccessController.doPrivileged(logContextAction);
+        return System.getSecurityManager() == null ? logContextAction.run() : AccessController.doPrivileged(logContextAction);
     }
 
     /**
@@ -153,10 +152,11 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
     }
 
     /**
-     * Register a class loader with a log context.  This method requires the {@code registerLogContext} {@link RuntimePermission}.
+     * Register a class loader with a log context. This method requires the {@code registerLogContext}
+     * {@link RuntimePermission}.
      *
      * @param classLoader the classloader
-     * @param logContext the log context
+     * @param logContext  the log context
      * @throws IllegalArgumentException if the classloader is already associated with a log context
      */
     public void registerLogContext(ClassLoader classLoader, LogContext logContext) throws IllegalArgumentException {
@@ -165,15 +165,17 @@ public final class ClassLoaderLogContextSelector implements LogContextSelector {
             sm.checkPermission(REGISTER_LOG_CONTEXT_PERMISSION);
         }
         if (contextMap.putIfAbsent(classLoader, logContext) != null) {
-            throw new IllegalArgumentException("ClassLoader instance is already registered to a log context (" + classLoader + ")");
+            throw new IllegalArgumentException(
+                    "ClassLoader instance is already registered to a log context (" + classLoader + ")");
         }
     }
 
     /**
-     * Unregister a class loader/log context association.  This method requires the {@code unregisterLogContext} {@link RuntimePermission}.
+     * Unregister a class loader/log context association. This method requires the {@code unregisterLogContext}
+     * {@link RuntimePermission}.
      *
      * @param classLoader the classloader
-     * @param logContext the log context
+     * @param logContext  the log context
      * @return {@code true} if the association exists and was removed, {@code false} otherwise
      */
     public boolean unregisterLogContext(ClassLoader classLoader, LogContext logContext) {

@@ -92,5 +92,4 @@ public class OutputStreamHandlerTest {
         assertThat(out.toString(), is("Hello World"));
     }
 
-
 }

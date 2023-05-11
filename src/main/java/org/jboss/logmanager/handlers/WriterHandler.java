@@ -20,15 +20,14 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.BufferedWriter;
-import java.io.Writer;
 import java.io.Closeable;
 import java.io.Flushable;
-
+import java.io.Writer;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
-import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.ExtHandler;
+import org.jboss.logmanager.ExtLogRecord;
 
 /**
  * A handler which writes to any {@code Writer}.
@@ -83,8 +82,8 @@ public class WriterHandler extends ExtHandler {
     }
 
     /**
-     * Execute any pre-write policy, such as file rotation.  The write lock is held during this method, so make
-     * it quick.  The default implementation does nothing.
+     * Execute any pre-write policy, such as file rotation. The write lock is held during this method, so make
+     * it quick. The default implementation does nothing.
      *
      * @param record the record about to be logged
      */
@@ -93,7 +92,7 @@ public class WriterHandler extends ExtHandler {
     }
 
     /**
-     * Set the writer.  The writer will then belong to this handler; when the handler is closed or a new writer is set,
+     * Set the writer. The writer will then belong to this handler; when the handler is closed or a new writer is set,
      * this writer will be closed.
      *
      * @param writer the new writer, or {@code null} to disable logging
@@ -121,7 +120,8 @@ public class WriterHandler extends ExtHandler {
             }
         } finally {
             safeClose(oldWriter);
-            if (! ok) safeClose(writer);
+            if (!ok)
+                safeClose(writer);
         }
     }
 
@@ -177,7 +177,8 @@ public class WriterHandler extends ExtHandler {
                 final String head = formatter.getHead(this);
                 if (checkHeadEncoding) {
                     if (!getCharset().newEncoder().canEncode(head)) {
-                        reportError("Section header cannot be encoded into charset \"" + getCharset().name() + "\"", null, ErrorManager.GENERIC_FAILURE);
+                        reportError("Section header cannot be encoded into charset \"" + getCharset().name() + "\"", null,
+                                ErrorManager.GENERIC_FAILURE);
                         return;
                     }
                 }
@@ -195,7 +196,8 @@ public class WriterHandler extends ExtHandler {
                 final String tail = formatter.getTail(this);
                 if (checkTailEncoding) {
                     if (!getCharset().newEncoder().canEncode(tail)) {
-                        reportError("Section tail cannot be encoded into charset \"" + getCharset().name() + "\"", null, ErrorManager.GENERIC_FAILURE);
+                        reportError("Section tail cannot be encoded into charset \"" + getCharset().name() + "\"", null,
+                                ErrorManager.GENERIC_FAILURE);
                         return;
                     }
                 }
@@ -238,17 +240,21 @@ public class WriterHandler extends ExtHandler {
      */
     protected void safeClose(Closeable c) {
         try {
-            if (c != null) c.close();
+            if (c != null)
+                c.close();
         } catch (Exception e) {
             reportError("Error closing resource", e, ErrorManager.CLOSE_FAILURE);
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
     }
 
     void safeFlush(Flushable f) {
         try {
-            if (f != null) f.flush();
+            if (f != null)
+                f.flush();
         } catch (Exception e) {
             reportError("Error on flush", e, ErrorManager.FLUSH_FAILURE);
-        } catch (Throwable ignored) {}
+        } catch (Throwable ignored) {
+        }
     }
 }

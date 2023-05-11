@@ -26,34 +26,37 @@ import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 
 /**
- * Nested diagnostic context.  This is basically a thread-local stack that holds a string which can be included
+ * Nested diagnostic context. This is basically a thread-local stack that holds a string which can be included
  * in a log message.
  */
 public final class NDC {
     private static final NDCProvider ndcProvider = getDefaultNDCProvider();
 
-    private NDC() {}
+    private NDC() {
+    }
 
     static NDCProvider getNDCProvider() {
         return ndcProvider;
     }
 
     static NDCProvider getDefaultNDCProvider() {
-        return System.getSecurityManager() == null ? doGetDefaultNDCProvider() : AccessController.doPrivileged((PrivilegedAction<NDCProvider>) NDC::doGetDefaultNDCProvider);
+        return System.getSecurityManager() == null ? doGetDefaultNDCProvider()
+                : AccessController.doPrivileged((PrivilegedAction<NDCProvider>) NDC::doGetDefaultNDCProvider);
     }
 
     static NDCProvider doGetDefaultNDCProvider() {
         final ServiceLoader<NDCProvider> configLoader = ServiceLoader.load(NDCProvider.class, NDC.class.getClassLoader());
         final Iterator<NDCProvider> iterator = configLoader.iterator();
-        for (;;) try {
-            if (! iterator.hasNext()) {
-                return new ThreadLocalNDC();
+        for (;;)
+            try {
+                if (!iterator.hasNext()) {
+                    return new ThreadLocalNDC();
+                }
+                return iterator.next();
+            } catch (ServiceConfigurationError | RuntimeException e) {
+                System.err.print("Warning: failed to load NDC Provider: ");
+                e.printStackTrace(System.err);
             }
-            return iterator.next();
-        } catch (ServiceConfigurationError | RuntimeException e) {
-            System.err.print("Warning: failed to load NDC Provider: ");
-            e.printStackTrace(System.err);
-        }
     }
 
     /**
@@ -83,7 +86,7 @@ public final class NDC {
     }
 
     /**
-     * Trim the thread NDC stack down to no larger than the given size.  Used to restore the stack to the depth returned
+     * Trim the thread NDC stack down to no larger than the given size. Used to restore the stack to the depth returned
      * by a {@code push()}.
      *
      * @param size the new size
@@ -111,7 +114,7 @@ public final class NDC {
     }
 
     /**
-     * Provided for compatibility with log4j.  Get the NDC value that is {@code n} entries from the bottom.
+     * Provided for compatibility with log4j. Get the NDC value that is {@code n} entries from the bottom.
      *
      * @param n the index
      * @return the value or {@code null} if there is none

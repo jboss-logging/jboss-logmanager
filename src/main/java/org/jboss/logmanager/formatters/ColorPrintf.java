@@ -44,22 +44,25 @@ class ColorPrintf extends Printf {
         return destination;
     }
 
-    protected void formatTimeTextField(final StringBuilder target, final TemporalAccessor ta, final TemporalField field, final String[] symbols, final GeneralFlags genFlags, final int width) {
+    protected void formatTimeTextField(final StringBuilder target, final TemporalAccessor ta, final TemporalField field,
+            final String[] symbols, final GeneralFlags genFlags, final int width) {
         super.formatTimeTextField(target, ta, field, symbols, genFlags, width);
     }
 
-    protected void formatTimeZoneId(final StringBuilder target, final TemporalAccessor ta, final GeneralFlags genFlags, final int width) {
+    protected void formatTimeZoneId(final StringBuilder target, final TemporalAccessor ta, final GeneralFlags genFlags,
+            final int width) {
         super.formatTimeZoneId(target, ta, genFlags, width);
     }
 
-    protected void formatTimeZoneOffset(final StringBuilder target, final TemporalAccessor ta, final GeneralFlags genFlags, final int width) {
+    protected void formatTimeZoneOffset(final StringBuilder target, final TemporalAccessor ta, final GeneralFlags genFlags,
+            final int width) {
         super.formatTimeZoneOffset(target, ta, genFlags, width);
     }
 
-    protected void formatTimeField(final StringBuilder target, final TemporalAccessor ta, final TemporalField field, final GeneralFlags genFlags, final int width, final int zeroPad) {
+    protected void formatTimeField(final StringBuilder target, final TemporalAccessor ta, final TemporalField field,
+            final GeneralFlags genFlags, final int width, final int zeroPad) {
         super.formatTimeField(target, ta, field, genFlags, width, zeroPad);
     }
-
 
     protected void formatPercent(final StringBuilder target) {
         super.formatPercent(target);
@@ -69,11 +72,13 @@ class ColorPrintf extends Printf {
         super.formatLineSeparator(target);
     }
 
-    protected void formatFormattableString(final StringBuilder target, final Formattable formattable, final GeneralFlags genFlags, final int width, final int precision) {
+    protected void formatFormattableString(final StringBuilder target, final Formattable formattable,
+            final GeneralFlags genFlags, final int width, final int precision) {
         super.formatFormattableString(target, formattable, genFlags, width, precision);
     }
 
-    protected void formatPlainString(final StringBuilder target, final Object item, final GeneralFlags genFlags, final int width, final int precision) {
+    protected void formatPlainString(final StringBuilder target, final Object item, final GeneralFlags genFlags,
+            final int width, final int precision) {
         if (item instanceof Class || item instanceof Executable || item instanceof Field) {
             ColorUtil.startFgColor(target, trueColor, 0xff >>> darken, 0xff >>> darken, 0xdd >>> darken);
         } else if (item instanceof UUID) {
@@ -85,39 +90,48 @@ class ColorPrintf extends Printf {
         ColorUtil.endFgColor(target);
     }
 
-    protected void formatBoolean(final StringBuilder target, final Object item, final GeneralFlags genFlags, final int width, final int precision) {
+    protected void formatBoolean(final StringBuilder target, final Object item, final GeneralFlags genFlags, final int width,
+            final int precision) {
         super.formatBoolean(target, item, genFlags, width, precision);
     }
 
-    protected void formatHashCode(final StringBuilder target, final Object item, final GeneralFlags genFlags, final int width, final int precision) {
+    protected void formatHashCode(final StringBuilder target, final Object item, final GeneralFlags genFlags, final int width,
+            final int precision) {
         super.formatHashCode(target, item, genFlags, width, precision);
     }
 
-    protected void formatCharacter(final StringBuilder target, final int codePoint, final GeneralFlags genFlags, final int width, final int precision) {
+    protected void formatCharacter(final StringBuilder target, final int codePoint, final GeneralFlags genFlags,
+            final int width, final int precision) {
         super.formatCharacter(target, codePoint, genFlags, width, precision);
     }
 
-    protected void formatDecimalInteger(final StringBuilder target, final Number item, final GeneralFlags genFlags, final NumericFlags numFlags, final int width) {
+    protected void formatDecimalInteger(final StringBuilder target, final Number item, final GeneralFlags genFlags,
+            final NumericFlags numFlags, final int width) {
         super.formatDecimalInteger(target, item, genFlags, numFlags, width);
     }
 
-    protected void formatOctalInteger(final StringBuilder target, final Number item, final GeneralFlags genFlags, final NumericFlags numFlags, final int width) {
+    protected void formatOctalInteger(final StringBuilder target, final Number item, final GeneralFlags genFlags,
+            final NumericFlags numFlags, final int width) {
         super.formatOctalInteger(target, item, genFlags, numFlags, width);
     }
 
-    protected void formatHexInteger(final StringBuilder target, final Number item, final GeneralFlags genFlags, final NumericFlags numFlags, final int width) {
+    protected void formatHexInteger(final StringBuilder target, final Number item, final GeneralFlags genFlags,
+            final NumericFlags numFlags, final int width) {
         super.formatHexInteger(target, item, genFlags, numFlags, width);
     }
 
-    protected void formatFloatingPointSci(final StringBuilder target, final Number item, final GeneralFlags genFlags, final NumericFlags numFlags, final int width, final int precision) {
+    protected void formatFloatingPointSci(final StringBuilder target, final Number item, final GeneralFlags genFlags,
+            final NumericFlags numFlags, final int width, final int precision) {
         super.formatFloatingPointSci(target, item, genFlags, numFlags, width, precision);
     }
 
-    protected void formatFloatingPointDecimal(final StringBuilder target, final Number item, final GeneralFlags genFlags, final NumericFlags numFlags, final int width, final int precision) {
+    protected void formatFloatingPointDecimal(final StringBuilder target, final Number item, final GeneralFlags genFlags,
+            final NumericFlags numFlags, final int width, final int precision) {
         super.formatFloatingPointDecimal(target, item, genFlags, numFlags, width, precision);
     }
 
-    protected void formatFloatingPointGeneral(final StringBuilder target, final Number item, final GeneralFlags genFlags, final NumericFlags numFlags, final int width, final int precision) {
+    protected void formatFloatingPointGeneral(final StringBuilder target, final Number item, final GeneralFlags genFlags,
+            final NumericFlags numFlags, final int width, final int precision) {
         super.formatFloatingPointGeneral(target, item, genFlags, numFlags, width, precision);
     }
 }

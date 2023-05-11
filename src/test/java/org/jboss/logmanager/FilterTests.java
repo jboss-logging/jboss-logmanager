@@ -19,28 +19,28 @@
 
 package org.jboss.logmanager;
 
-import org.jboss.logmanager.ExtLogRecord.FormatStyle;
-import org.junit.Ignore;
-import org.junit.Test;
 import static org.junit.Assert.*;
+
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Filter;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.regex.Pattern;
+
+import org.jboss.logmanager.ExtLogRecord.FormatStyle;
 import org.jboss.logmanager.filters.AcceptAllFilter;
-import org.jboss.logmanager.filters.DenyAllFilter;
 import org.jboss.logmanager.filters.AllFilter;
 import org.jboss.logmanager.filters.AnyFilter;
+import org.jboss.logmanager.filters.DenyAllFilter;
 import org.jboss.logmanager.filters.InvertFilter;
 import org.jboss.logmanager.filters.LevelChangingFilter;
 import org.jboss.logmanager.filters.LevelFilter;
 import org.jboss.logmanager.filters.LevelRangeFilter;
 import org.jboss.logmanager.filters.RegexFilter;
 import org.jboss.logmanager.filters.SubstituteFilter;
-
-import java.util.logging.Filter;
-import java.util.logging.Handler;
-import java.util.logging.LogRecord;
-
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.regex.Pattern;
+import org.junit.Ignore;
+import org.junit.Test;
 
 public final class FilterTests {
 
@@ -408,7 +408,7 @@ public final class FilterTests {
         final Handler handler = new CheckingHandler(ran);
         final Logger logger = Logger.getLogger("filterTest");
         final ExtLogRecord record = new ExtLogRecord(Level.INFO, "This is a test %s", FormatStyle.PRINTF, "filterTest");
-        record.setParameters(new String[] {"pest"});
+        record.setParameters(new String[] { "pest" });
         logger.setUseParentHandlers(false);
         logger.addHandler(handler);
         logger.setLevel(Level.INFO);
@@ -425,7 +425,7 @@ public final class FilterTests {
         final Handler handler = new CheckingHandler(ran);
         final Logger logger = Logger.getLogger("filterTest");
         final ExtLogRecord record = new ExtLogRecord(Level.INFO, "This is a test %s", FormatStyle.PRINTF, "filterTest");
-        record.setParameters(new String[] {"test"});
+        record.setParameters(new String[] { "test" });
         logger.setUseParentHandlers(false);
         logger.addHandler(handler);
         logger.setLevel(Level.INFO);
@@ -436,7 +436,7 @@ public final class FilterTests {
     }
 
     @Test
-    public void regexFilterExceptionNullMessageTest(){
+    public void regexFilterExceptionNullMessageTest() {
         final ExtLogRecord logRecord = new ExtLogRecord(Level.ALL, null, null);
         final Filter filter = new RegexFilter("test");
         boolean isLoggable = filter.isLoggable(logRecord);
@@ -492,14 +492,15 @@ public final class FilterTests {
     @Test
     public void testSubstituteFilter3() {
         final Filter filter = new SubstituteFilter(Pattern.compile("t(es)t"), "lunch$1", true);
-        final ExtLogRecord record = new ExtLogRecord(Level.INFO, "This is a test %s", FormatStyle.PRINTF, FilterTests.class.getName());
-        record.setParameters(new String[] {"test"});
+        final ExtLogRecord record = new ExtLogRecord(Level.INFO, "This is a test %s", FormatStyle.PRINTF,
+                FilterTests.class.getName());
+        record.setParameters(new String[] { "test" });
         filter.isLoggable(record);
         assertEquals("Substitution was not correctly applied", "This is a lunches lunches", record.getFormattedMessage());
     }
 
     @Test
-    public void substituteFilterExceptionNullMessageTest(){
+    public void substituteFilterExceptionNullMessageTest() {
         final ExtLogRecord logRecord = new ExtLogRecord(Level.ALL, null, null);
         final Filter filter = new SubstituteFilter(Pattern.compile("test"), "lunch", true);
         filter.isLoggable(logRecord);
@@ -507,11 +508,11 @@ public final class FilterTests {
     }
 
     @Test
-    public void substitutionFilterWithLogRecord(){
+    public void substitutionFilterWithLogRecord() {
         final AtomicReference<String> result = new AtomicReference<String>();
         final Handler handler = new MessageCheckingHandler(result);
         final Logger logger = Logger.getLogger("filterTest");
-        final Filter filter = new SubstituteFilter(Pattern.compile("test"),"lunch",true);
+        final Filter filter = new SubstituteFilter(Pattern.compile("test"), "lunch", true);
 
         logger.setUseParentHandlers(false);
         logger.addHandler(handler);
@@ -519,15 +520,13 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
 
-        final LogRecord record = new LogRecord(Level.INFO,"{0}");
+        final LogRecord record = new LogRecord(Level.INFO, "{0}");
         record.setLoggerName("filterTest");
-        record.setParameters(new Object[]{"test"});
+        record.setParameters(new Object[] { "test" });
 
         logger.log(record);
-        assertEquals("The substitution was not correctly applied","lunch",result.get());
+        assertEquals("The substitution was not correctly applied", "lunch", result.get());
     }
-
-
 
     private static final class MessageCheckingHandler extends Handler {
         private final AtomicReference<String> msg;

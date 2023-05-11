@@ -1,0 +1,141 @@
+= JBoss Log Manager
+
+The JBoss Log Manager is an extension of Java Util Logging (JUL). To use the log manager you must set the
+`java.util.logging.manager` system property to `org.jboss.logmanager.LogManager`.
+
+== Usage
+
+To use the project you must set the `java.util.logging.manager` system property to `org.jboss.logmanager.LogManager`
+and include the library on your class path.
+
+=== Maven
+[source,xml]
+----
+<dependency>
+    <groupId>org.jboss.logmanager</groupId>
+    <artifactId>jboss-logmanager</artifactId>
+    <version>${version.org.jboss.logmanager}</version>
+</dependency>
+----
+
+=== Logging Configuration
+
+==== `logging.properties` Configuration File
+
+* *Logger options*
+** loggers=<category>[,<category>,...] - Specify a comma-separated list of logger categories which will be configured. Any categories not listed here will not be configured from the following properties.
+** logger.<category>.level=<level> - Specify the level for a category. The level can be one of the valid <<log-levels,levels>>. If unspecified, the nearest parent's level will be inherited.
+** logger.<category>.handlers=<handler>[,<handler>,...] - Specify a comma-separated list of the handler names to attach to this logger. The handlers must be configured in the same properties file.
+** logger.<category>.filter=<filter> - Specify a filter for a category. See the <<filter-expressions, filter expressions>> for details on defining a filter.
+** logger.<category>.useParentHandlers=(true|false) - Specify whether log messages should cascade up to parent handlers. The default value is true.
+
+* *Handler options*
+** handler.<name>=<className> - [red]#(Required)# Specify the class name of the handler to instantiate.
+** handler.<name>.module=<moduleName> - Specify the module name where the handler to instantiate is located.
+** handler.<name>.level=<level> - Restrict the level of this handler. If unspecified, the default value of ALL is retained.
+** handler.<name>.encoding=<encoding> - Specify the character encoding, if it is supported by this handler type. If not specified, a handler-specific default is used.
+** handler.<name>.errorManager=<name> - Specify the name of the error manager to use. The error manager must be configured in the same properties file. If unspecified, no error manager is configured.
+** handler.<name>.filter=<name> - Specify a filter for a category. See the <<filter-expressions, filter expressions>> for details on defining a filter.
+** handler.<name>.formatter=<name> - Specify the name of the formatter to use, if it is supported by this handler type. The formatter must be configured in the same properties file. If not specified, messages will not be logged for most handler types.
+** handler.<name>.properties=<property>[,<property>,...] - Specify a list of JavaBean-style properties to additionally configure. A rudimentary type introspection is done to ascertain the appropriate conversion for the given property.
+** handler.<name>.constructorProperties=<property>[,<property>,...] - Specify a list of properties that should be used as construction parameters. A rudimentary type introspection is done to ascertain the appropriate conversion for the given property.
+** handler.<name>.<property>=<value> - Set the value of the named property. A POJO name can also be used as a value to use the instance of the <<pojo, POJO>> for the value of the property.
+
+* *Error manager options*
+** errorManager.<name>=<className> - [red]#(Required)# Specify the class name of the error manager to instantiate.
+** errorManager.<name>.module=<moduleName> - Specify the module name where the error manager to instantiate is located.
+** errorManager.<name>.properties=<property>[,<property>,...] - Specify a list of JavaBean-style properties to additionally configure. A rudimentary type introspection is done to ascertain the appropriate conversion for the given property.
+** errorManager.<name>.constructorProperties=<property>[,<property>,...] - Specify a list of properties that should be used as construction parameters. A rudimentary type introspection is done to ascertain the appropriate conversion for the given property.
+** errorManager.<name>.<property>=<value> - Set the value of the named property. A POJO name can also be used as a value to use the instance of the <<pojo, POJO>> for the value of the property.
+
+* *Formatter options*
+** formatter.<name>=<className> - [red]#(Required)# Specify the class name of the formatter to instantiate.
+** formatter.<name>.module=<moduleName> - Specify the module name where the formatter to instantiate is located.
+** formatter.<name>.properties=<property>[,<property>,...] - Specify a list of JavaBean-style properties to additionally configure. A rudimentary type introspection is done to ascertain the appropriate conversion for the given property.
+** formatter.<name>.constructorProperties=<property>[,<property>,...] - Specify a list of properties that should be used as construction parameters. A rudimentary type introspection is done to ascertain the appropriate conversion for the given property.
+** formatter.<name>.<property>=<value> - Set the value of the named property. A POJO name can also be used as a value to use the instance of the <<pojo, POJO>> for the value of the property.
+
+* [[pojo]]*POJO options*
+** pojo.<name>=<className> - [red]#(Required)# Specify the class name of the POJO to instantiate.
+** pojo.<name>.module=<moduleName> - Specify the module name where the POJO to instantiate is located.
+** pojo.<name>.properties=<property>[,<property>,...] - Specify a list of JavaBean-style properties to additionally configure. A rudimentary type introspection is done to ascertain the appropriate conversion for the given property.
+** pojo.<name>.constructorProperties=<property>[,<property>,...] - Specify a list of properties that should be used as construction parameters. A rudimentary type introspection is done to ascertain the appropriate conversion for the given property.
+** pojo.<name>.<property>=<value> - Set the value of the named property. A POJO name can also be used as a value to use the instance of the <<pojo, POJO>> for the value of the property.
+
+==== [[log-levels]] Log Levels
+
+* `ALL`
+* `FATAL`
+* `SEVERE`
+* `ERROR`
+* `WARNING`
+* `WARN`
+* `INFO`
+* `CONFIG`
+* `FINE`
+* `DEBUG`
+* `FINER`
+* `TRACE`
+* `FINEST`
+* `OFF`
+
+==== [[filter-expressions]] Filter Expressions
+
+[options="header"]
+|====
+| Filter Type | Expression | Description | Parameter(s)
+| accept | `accept` | Accepts all log messages. | None
+| deny | `deny` | enies all log messages. | None
+| not | `not(filterExpression)` | Accepts a filter as an argument and inverts the returned value. | The expression takes a single filter for it's argument.
+| all | `all(filterExpressions)` | A filter consisting of several filters in a chain. If any filter find the log message to be unloggable, the message will not be logged and subsequent filters will not be checked. | The expression takes a comma delimited list of filters for it's argument.
+| any | `any(filterExpressions)` | A filter consisting of several filters in a chain. If any filter fins the log message to be loggable, the message will be logged and the subsequent filters will not be checked. | The expression takes a comma delimited list of filters for it's argument.
+| levelChange | `levelChange(level)` | A filter which modifies the log record with a new level. | The expression takes a single string based level for it's argument.
+| levels | `levels(levels)` | A filter which includes log messages with a level that is listed in the list of levels. | The expression takes a comma delimited list of string based levels for it's argument.
+| levelRange | `levelRange([minLevel,maxLevel])` | A filter which logs records that are within the level range. | The filter expression uses a "[" to indicate a minimum inclusive level and a "]" to indicate a maximum inclusive level. Otherwise use "(" or ")" respectively indicate exclusive. The first argument for the expression is the minimum level allowed, the second argument is the maximum level allowed.
+| match | `match("pattern")` | A regular-expression based filter. The raw unformatted message is used against the pattern. | The expression takes a regular expression for it's argument.`
+| substitute | `substitute("pattern", "replacement value")` | A filter which replaces the first match to the pattern with the replacement value. | The first argument for the expression is the pattern the second argument is the replacement text.
+| substituteAll | `substituteAll("pattern", "replacement value")` | A filter which replaces all matches of the pattern with the replacement value. | The first argument for the expression is the pattern the second argument is the replacement text.
+|====
+
+==== Example configuration
+
+This is an example logging.properties that you can use to get started.
+
+----
+# Additional logger names to configure (root logger is always configured)
+loggers=org.foo.bar,org.foo.baz
+
+# Root logger level
+logger.level=DEBUG
+
+# Declare handlers for the root logger
+logger.handlers=CONSOLE,FILE
+
+# Declare handlers for additional loggers
+logger.org.foo.bar.handlers=FILE
+logger.org.foo.bar.useParentHandlers=false
+
+# Console handler configuration
+handler.CONSOLE=org.jboss.logmanager.handlers.ConsoleHandler
+handler.CONSOLE.properties=autoFlush
+handler.CONSOLE.level=INFO
+handler.CONSOLE.autoFlush=true
+handler.CONSOLE.formatter=PATTERN
+
+# File handler configuration
+handler.FILE=org.jboss.logmanager.handlers.FileHandler
+handler.FILE.level=DEBUG
+handler.FILE.properties=autoFlush,fileName
+handler.FILE.autoFlush=true
+handler.FILE.fileName=${jboss.server.log.dir}/project.log
+handler.FILE.formatter=PATTERN
+
+# The log format pattern for both logs
+formatter.PATTERN=org.jboss.logmanager.formatters.PatternFormatter
+formatter.PATTERN.properties=pattern
+formatter.PATTERN.pattern=%d{HH:mm:ss,SSS} %-5p [%c{1}] %m%n
+----
+
+== Contributing
+
+See the link:CONTRIBUTING.adoc[contributing guide].

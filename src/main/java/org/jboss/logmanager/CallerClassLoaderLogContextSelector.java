@@ -31,7 +31,7 @@ import java.util.concurrent.ConcurrentMap;
  * a {@linkplain #addLogApiClassLoader(ClassLoader) log API} or does not have a {@code null} classloader will be the
  * class loader used.
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
+@SuppressWarnings({ "WeakerAccess", "unused" })
 public final class CallerClassLoaderLogContextSelector implements LogContextSelector {
 
     private static final Permission REGISTER_LOG_CONTEXT_PERMISSION = new RuntimePermission("registerLogContext", null);
@@ -39,7 +39,7 @@ public final class CallerClassLoaderLogContextSelector implements LogContextSele
     private static final Permission LOG_API_PERMISSION = new RuntimePermission("logApiPermission", null);
 
     /**
-     * Construct a new instance.  If no matching log context is found, the provided default selector is consulted.
+     * Construct a new instance. If no matching log context is found, the provided default selector is consulted.
      *
      * @param defaultSelector the selector to consult if no matching log context is found
      */
@@ -48,7 +48,7 @@ public final class CallerClassLoaderLogContextSelector implements LogContextSele
     }
 
     /**
-     * Construct a new instance.  If no matching log context is found, the provided default selector is consulted.
+     * Construct a new instance. If no matching log context is found, the provided default selector is consulted.
      * <p>
      * If the {@code checkParentClassLoaders} is set to {@code true} this selector recursively searches the class loader
      * parents until a match is found or a {@code null} parent is found.
@@ -59,20 +59,21 @@ public final class CallerClassLoaderLogContextSelector implements LogContextSele
      *                                found for the class loader and the {@link ClassLoader#getParent() parent class
      *                                loader} should be checked
      */
-    public CallerClassLoaderLogContextSelector(final LogContextSelector defaultSelector, final boolean checkParentClassLoaders) {
+    public CallerClassLoaderLogContextSelector(final LogContextSelector defaultSelector,
+            final boolean checkParentClassLoaders) {
         this.defaultSelector = defaultSelector == null ? LogContext.DEFAULT_LOG_CONTEXT_SELECTOR : defaultSelector;
         this.checkParentClassLoaders = checkParentClassLoaders;
     }
 
     /**
-     * Construct a new instance.  If no matching log context is found, the system context is used.
+     * Construct a new instance. If no matching log context is found, the system context is used.
      */
     public CallerClassLoaderLogContextSelector() {
         this(false);
     }
 
     /**
-     * Construct a new instance.  If no matching log context is found, the system context is used.
+     * Construct a new instance. If no matching log context is found, the system context is used.
      * <p>
      * If the {@code checkParentClassLoaders} is set to {@code true} this selector recursively searches the class loader
      * parents until a match is found or a {@code null} parent is found.
@@ -104,7 +105,7 @@ public final class CallerClassLoaderLogContextSelector implements LogContextSele
                 return context;
             }
             final ClassLoader parent = classLoader.getParent();
-            if (parent != null && checkParentClassLoaders && ! logApiClassLoaders.contains(parent)) {
+            if (parent != null && checkParentClassLoaders && !logApiClassLoaders.contains(parent)) {
                 return check(parent);
             }
             return defaultSelector.getLogContext();
@@ -118,8 +119,7 @@ public final class CallerClassLoaderLogContextSelector implements LogContextSele
      */
     @Override
     public LogContext getLogContext() {
-        return System.getSecurityManager() == null? logContextAction.run() :
-                AccessController.doPrivileged(logContextAction);
+        return System.getSecurityManager() == null ? logContextAction.run() : AccessController.doPrivileged(logContextAction);
     }
 
     /**
@@ -154,7 +154,8 @@ public final class CallerClassLoaderLogContextSelector implements LogContextSele
     }
 
     /**
-     * Register a class loader with a log context.  This method requires the {@code registerLogContext} {@link RuntimePermission}.
+     * Register a class loader with a log context. This method requires the {@code registerLogContext}
+     * {@link RuntimePermission}.
      *
      * @param classLoader the classloader
      * @param logContext  the log context
@@ -167,12 +168,14 @@ public final class CallerClassLoaderLogContextSelector implements LogContextSele
             sm.checkPermission(REGISTER_LOG_CONTEXT_PERMISSION);
         }
         if (contextMap.putIfAbsent(classLoader, logContext) != null) {
-            throw new IllegalArgumentException("ClassLoader instance is already registered to a log context (" + classLoader + ")");
+            throw new IllegalArgumentException(
+                    "ClassLoader instance is already registered to a log context (" + classLoader + ")");
         }
     }
 
     /**
-     * Unregister a class loader/log context association.  This method requires the {@code unregisterLogContext} {@link RuntimePermission}.
+     * Unregister a class loader/log context association. This method requires the {@code unregisterLogContext}
+     * {@link RuntimePermission}.
      *
      * @param classLoader the classloader
      * @param logContext  the log context

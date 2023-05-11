@@ -19,9 +19,10 @@
 
 package org.jboss.logmanager.formatters;
 
-import org.jboss.logmanager.ExtLogRecord;
-import org.jboss.logmanager.ExtFormatter;
 import static java.lang.Math.max;
+
+import org.jboss.logmanager.ExtFormatter;
+import org.jboss.logmanager.ExtLogRecord;
 
 /**
  * A formatter which formats a record in a series of steps.

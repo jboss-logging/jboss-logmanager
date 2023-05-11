@@ -68,7 +68,7 @@ class SuffixRotator {
     private final CompressionType compressionType;
 
     private SuffixRotator(final AccessControlContext acc, final String originalSuffix, final String datePattern,
-                          final String compressionSuffix, final CompressionType compressionType) {
+            final String compressionSuffix, final CompressionType compressionType) {
         this.acc = acc;
         this.originalSuffix = originalSuffix;
         this.datePattern = datePattern;
@@ -255,13 +255,13 @@ class SuffixRotator {
                 Files.move(src, target, StandardCopyOption.REPLACE_EXISTING);
             } catch (Exception e) {
                 // Report the error, but allow the rotation to continue
-                errorManager.error(String.format("Failed to move file %s to %s.", src, target), e, ErrorManager.GENERIC_FAILURE);
+                errorManager.error(String.format("Failed to move file %s to %s.", src, target), e,
+                        ErrorManager.GENERIC_FAILURE);
             }
         } else {
             AccessController.doPrivileged(new MoveFileAction(errorManager, src, target), acc);
         }
     }
-
 
     private void archiveGzip(final Path source, final Path target) throws IOException {
         final byte[] buff = new byte[512];
@@ -354,7 +354,8 @@ class SuffixRotator {
                 return Files.move(source, target, StandardCopyOption.REPLACE_EXISTING);
             } catch (Exception e) {
                 // Report the error, but allow the rotation to continue
-                errorManager.error(String.format("Failed to move file %s to %s.", source, target), e, ErrorManager.GENERIC_FAILURE);
+                errorManager.error(String.format("Failed to move file %s to %s.", source, target), e,
+                        ErrorManager.GENERIC_FAILURE);
             }
             return null;
         }

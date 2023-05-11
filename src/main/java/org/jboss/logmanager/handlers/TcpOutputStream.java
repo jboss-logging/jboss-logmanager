@@ -49,7 +49,7 @@ import javax.net.SocketFactory;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"unused", "WeakerAccess"})
+@SuppressWarnings({ "unused", "WeakerAccess" })
 public class TcpOutputStream extends OutputStream implements AutoCloseable, Flushable {
     private static final long retryTimeout = 5L;
     private static final long maxRetryTimeout = 40L;
@@ -150,7 +150,8 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
      * @throws IOException no longer throws an exception. If an exception occurs while attempting to connect the socket
      *                     a reconnect will be attempted on the next write.
      */
-    protected TcpOutputStream(final SocketFactory socketFactory, final InetAddress address, final int port, final boolean blockOnReconnect) throws IOException {
+    protected TcpOutputStream(final SocketFactory socketFactory, final InetAddress address, final int port,
+            final boolean blockOnReconnect) throws IOException {
         this(ClientSocketFactory.of(socketFactory, address, port), blockOnReconnect);
     }
 
@@ -174,7 +175,7 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
 
     @Override
     public void write(final int b) throws IOException {
-        write(new byte[] {(byte) b}, 0, 1);
+        write(new byte[] { (byte) b }, 0, 1);
     }
 
     @Override
@@ -356,10 +357,11 @@ public class TcpOutputStream extends OutputStream implements AutoCloseable, Flus
     }
 
     private static void safeClose(final Closeable closeable) {
-        if (closeable != null) try {
-            closeable.close();
-        } catch (Exception ignore) {
-        }
+        if (closeable != null)
+            try {
+                closeable.close();
+            } catch (Exception ignore) {
+            }
     }
 
     private class RetryConnector implements Runnable {

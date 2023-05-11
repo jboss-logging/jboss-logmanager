@@ -47,7 +47,7 @@ import org.jboss.logmanager.ExtLogRecord;
 /**
  * Formatter utility methods.
  */
-@SuppressWarnings({"WeakerAccess", "unused"})
+@SuppressWarnings({ "WeakerAccess", "unused" })
 public final class Formatters {
 
     public static final String THREAD_ID = "id";
@@ -55,7 +55,6 @@ public final class Formatters {
     private static final boolean DEFAULT_TRUNCATE_BEGINNING = false;
     private static final String NEW_LINE = String.format("%n");
     private static final Pattern PRECISION_INT_PATTERN = Pattern.compile("\\d+");
-
 
     private Formatters() {
     }
@@ -100,7 +99,7 @@ public final class Formatters {
     /**
      * Apply up to {@code count} trailing segments of the given string to the given {@code builder}.
      *
-     * @param count the maximum number of segments to include
+     * @param count   the maximum number of segments to include
      * @param subject the subject string
      * @return the substring
      */
@@ -109,7 +108,7 @@ public final class Formatters {
             return subject;
         }
         int idx = subject.length() + 1;
-        for (int i = 0; i < count; i ++) {
+        for (int i = 0; i < count; i++) {
             idx = subject.lastIndexOf('.', idx - 1);
             if (idx == -1) {
                 return subject;
@@ -180,9 +179,11 @@ public final class Formatters {
         private final int minimumWidth;
         private final int maximumWidth;
 
-        protected JustifyingFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+        protected JustifyingFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning,
+                final int maximumWidth) {
             if (maximumWidth != 0 && minimumWidth > maximumWidth) {
-                throw new IllegalArgumentException("Specified minimum width may not be greater than the specified maximum width");
+                throw new IllegalArgumentException(
+                        "Specified minimum width may not be greater than the specified maximum width");
             }
             if (maximumWidth < 0 || minimumWidth < 0) {
                 throw new IllegalArgumentException("Minimum and maximum widths must not be less than zero");
@@ -216,7 +217,7 @@ public final class Formatters {
                     builder.setLength(newLen - overflow);
                 } else {
                     final int spaces = minimumWidth - writtenLen;
-                    for (int i = 0; i < spaces; i ++) {
+                    for (int i = 0; i < spaces; i++) {
                         builder.append(' ');
                     }
                 }
@@ -234,7 +235,7 @@ public final class Formatters {
                 } else if (len < minimumWidth) {
                     // right justify
                     int spaces = minimumWidth - len;
-                    for (int i = 0; i < spaces; i ++) {
+                    for (int i = 0; i < spaces; i++) {
                         builder.append(' ');
                     }
                 }
@@ -259,13 +260,15 @@ public final class Formatters {
         private final int count;
         private final String precision;
 
-        protected SegmentedFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final int count) {
+        protected SegmentedFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning,
+                final int maximumWidth, final int count) {
             super(leftJustify, minimumWidth, truncateBeginning, maximumWidth);
             this.count = count;
             precision = null;
         }
 
-        protected SegmentedFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String precision) {
+        protected SegmentedFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning,
+                final int maximumWidth, final String precision) {
             super(leftJustify, minimumWidth, truncateBeginning, maximumWidth);
             this.count = 0;
             this.precision = precision;
@@ -285,13 +288,14 @@ public final class Formatters {
     /**
      * Create a format step which emits the logger name with the given justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @param precision    the argument used for the logger name, may be {@code null} or contain dots to format the logger name
      * @return the format
      */
-    public static FormatStep loggerNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final String precision) {
+    public static FormatStep loggerNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth,
+            final String precision) {
         return loggerNameFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, precision);
     }
 
@@ -307,7 +311,8 @@ public final class Formatters {
      *
      * @return the format
      */
-    public static FormatStep loggerNameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String precision) {
+    public static FormatStep loggerNameFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth, final String precision) {
         return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, precision) {
             public ItemType getItemType() {
                 return ItemType.CATEGORY;
@@ -323,13 +328,14 @@ public final class Formatters {
      * Create a format step which emits the source class name with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @param precision    the argument used for the class name, may be {@code null} or contain dots to format the class name
      * @return the format step
      */
-    public static FormatStep classNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final String precision) {
+    public static FormatStep classNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth,
+            final String precision) {
         return classNameFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, precision);
     }
 
@@ -346,7 +352,8 @@ public final class Formatters {
      *
      * @return the format step
      */
-    public static FormatStep classNameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String precision) {
+    public static FormatStep classNameFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth, final String precision) {
         return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, precision) {
             public String getSegmentedSubject(final ExtLogRecord record) {
                 return record.getSourceClassName();
@@ -367,13 +374,14 @@ public final class Formatters {
      * Create a format step which emits the source module name with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @param precision    the argument used for the class name, may be {@code null} or contain dots to format the class name
      * @return the format step
      */
-    public static FormatStep moduleNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final String precision) {
+    public static FormatStep moduleNameFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth,
+            final String precision) {
         return moduleNameFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, precision);
     }
 
@@ -390,7 +398,8 @@ public final class Formatters {
      *
      * @return the format step
      */
-    public static FormatStep moduleNameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String precision) {
+    public static FormatStep moduleNameFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth, final String precision) {
         return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, precision) {
             public String getSegmentedSubject(final ExtLogRecord record) {
                 return record.getSourceModuleName();
@@ -411,15 +420,16 @@ public final class Formatters {
      * Create a format step which emits the source module version with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth      the minimum field width, or 0 for none
-     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
-     * @param precision         the argument used for the class name, may be {@code null} or contain dots to format the
-     *                          class name
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth the minimum field width, or 0 for none
+     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param precision    the argument used for the class name, may be {@code null} or contain dots to format the
+     *                     class name
      *
      * @return the format step
      */
-    public static FormatStep moduleVersionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final String precision) {
+    public static FormatStep moduleVersionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth,
+            final String precision) {
         return new SegmentedFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, precision) {
             public String getSegmentedSubject(final ExtLogRecord record) {
                 return record.getSourceModuleVersion();
@@ -439,14 +449,15 @@ public final class Formatters {
     /**
      * Create a format step which emits the date of the log record with the given justification rules.
      *
-     * @param timeZone the time zone to format to
+     * @param timeZone     the time zone to format to
      * @param formatString the date format string
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep dateFormatStep(final TimeZone timeZone, final String formatString, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep dateFormatStep(final TimeZone timeZone, final String formatString, final boolean leftJustify,
+            final int minimumWidth, final int maximumWidth) {
         return dateFormatStep(timeZone, formatString, leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth);
     }
 
@@ -462,10 +473,12 @@ public final class Formatters {
      *
      * @return the format step
      */
-    public static FormatStep dateFormatStep(final TimeZone timeZone, final String formatString, final boolean leftJustify, final int minimumWidth,
-                                            final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep dateFormatStep(final TimeZone timeZone, final String formatString, final boolean leftJustify,
+            final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
-            final DateTimeFormatter dtf = DateTimeFormatter.ofPattern(formatString == null ? "yyyy-MM-DD HH:mm:ss,SSS" : formatString);
+            final DateTimeFormatter dtf = DateTimeFormatter
+                    .ofPattern(formatString == null ? "yyyy-MM-DD HH:mm:ss,SSS" : formatString);
 
             public ItemType getItemType() {
                 return ItemType.DATE;
@@ -481,12 +494,13 @@ public final class Formatters {
      * Create a format step which emits the date of the log record with the given justification rules.
      *
      * @param formatString the date format string
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep dateFormatStep(final String formatString, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep dateFormatStep(final String formatString, final boolean leftJustify, final int minimumWidth,
+            final int maximumWidth) {
         return dateFormatStep(TimeZone.getDefault(), formatString, leftJustify, minimumWidth, maximumWidth);
     }
 
@@ -494,7 +508,7 @@ public final class Formatters {
      * Create a format step which emits the source file name with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
@@ -507,13 +521,14 @@ public final class Formatters {
      * Create a format step which emits the source file name with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep fileNameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep fileNameFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceFileName());
@@ -533,13 +548,14 @@ public final class Formatters {
     /**
      * Create a format step which emits the source process name with the given justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep processNameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep processNameFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.PROCESS_NAME;
@@ -555,13 +571,14 @@ public final class Formatters {
      * Create a format step which emits the source file line number with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep processIdFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep processIdFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.PROCESS_ID;
@@ -576,38 +593,42 @@ public final class Formatters {
     /**
      * Create a format step which emits the hostname.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
-     * @param qualified {@code true} to use the fully qualified host name, {@code false} to only use the
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param qualified         {@code true} to use the fully qualified host name, {@code false} to only use the
      * @return the format step
      */
-    public static FormatStep hostnameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final boolean qualified) {
-        return qualified ? hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, null) : new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, null) {
-            public ItemType getItemType() {
-                return ItemType.HOST_NAME;
-            }
+    public static FormatStep hostnameFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth, final boolean qualified) {
+        return qualified ? hostnameFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, null)
+                : new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, null) {
+                    public ItemType getItemType() {
+                        return ItemType.HOST_NAME;
+                    }
 
-            public String getSegmentedSubject(final ExtLogRecord record) {
-                final String hostName = record.getHostName();
-                final int idx = hostName.indexOf('.');
-                return idx == -1 ? hostName :hostName.substring(0, idx);
-            }
-        };
+                    public String getSegmentedSubject(final ExtLogRecord record) {
+                        final String hostName = record.getHostName();
+                        final int idx = hostName.indexOf('.');
+                        return idx == -1 ? hostName : hostName.substring(0, idx);
+                    }
+                };
     }
 
     /**
      * Create a format step which emits the hostname.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
-     * @param precision    the argument used for the class name, may be {@code null} or contain dots to format the class name
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param precision         the argument used for the class name, may be {@code null} or contain dots to format the class
+     *                          name
      * @return the format step
      */
-    public static FormatStep hostnameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String precision) {
+    public static FormatStep hostnameFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth, final String precision) {
         return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, null) {
             public ItemType getItemType() {
                 return ItemType.HOST_NAME;
@@ -644,12 +665,13 @@ public final class Formatters {
      * Create a format step which emits the complete source location information with the given justification rules
      * (NOTE: call stack introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep locationInformationFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep locationInformationFormatStep(final boolean leftJustify, final int minimumWidth,
+            final int maximumWidth) {
         return locationInformationFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth);
     }
 
@@ -657,13 +679,14 @@ public final class Formatters {
      * Create a format step which emits the complete source location information with the given justification rules
      * (NOTE: call stack introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep locationInformationFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep locationInformationFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
                 final String fileName = record.getSourceFileName();
@@ -689,7 +712,7 @@ public final class Formatters {
      * Create a format step which emits the source file line number with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
@@ -702,13 +725,14 @@ public final class Formatters {
      * Create a format step which emits the source file line number with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep lineNumberFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep lineNumberFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceLineNumber());
@@ -728,7 +752,7 @@ public final class Formatters {
     /**
      * Create a format step which emits the formatted log message text with the given justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
@@ -740,17 +764,19 @@ public final class Formatters {
     /**
      * Create a format step which emits the formatted log message text with the given justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep messageFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep messageFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
                 String formatted;
-                if (formatter == null || record.getFormatStyle() == ExtLogRecord.FormatStyle.PRINTF && ! (formatter instanceof ExtFormatter)) {
+                if (formatter == null
+                        || record.getFormatStyle() == ExtLogRecord.FormatStyle.PRINTF && !(formatter instanceof ExtFormatter)) {
                     formatted = record.getFormattedMessage();
                 } else {
                     formatted = formatter.formatMessage(record);
@@ -771,31 +797,36 @@ public final class Formatters {
     }
 
     /**
-     * Create a format step which emits the formatted log message text (simple version, no exception traces) with the given justification rules.
+     * Create a format step which emits the formatted log message text (simple version, no exception traces) with the given
+     * justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep simpleMessageFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep simpleMessageFormatStep(final boolean leftJustify, final int minimumWidth,
+            final int maximumWidth) {
         return simpleMessageFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth);
     }
 
     /**
-     * Create a format step which emits the formatted log message text (simple version, no exception traces) with the given justification rules.
+     * Create a format step which emits the formatted log message text (simple version, no exception traces) with the given
+     * justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep simpleMessageFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep simpleMessageFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
                 String formatted;
-                if (formatter == null || record.getFormatStyle() == ExtLogRecord.FormatStyle.PRINTF && ! (formatter instanceof ExtFormatter)) {
+                if (formatter == null
+                        || record.getFormatStyle() == ExtLogRecord.FormatStyle.PRINTF && !(formatter instanceof ExtFormatter)) {
                     formatted = record.getFormattedMessage();
                 } else {
                     formatted = formatter.formatMessage(record);
@@ -806,27 +837,31 @@ public final class Formatters {
     }
 
     /**
-     * Create a format step which emits the formatted log message text (simple version, no exception traces) with the given justification rules.
+     * Create a format step which emits the formatted log message text (simple version, no exception traces) with the given
+     * justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep simpleMessageFormatStep(final ExtFormatter formatter, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep simpleMessageFormatStep(final ExtFormatter formatter, final boolean leftJustify,
+            final int minimumWidth, final int maximumWidth) {
         return simpleMessageFormatStep(formatter, leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth);
     }
 
     /**
-     * Create a format step which emits the formatted log message text (simple version, no exception traces) with the given justification rules.
+     * Create a format step which emits the formatted log message text (simple version, no exception traces) with the given
+     * justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep simpleMessageFormatStep(final ExtFormatter formatter, final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep simpleMessageFormatStep(final ExtFormatter formatter, final boolean leftJustify,
+            final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(formatter.formatMessage(record));
@@ -841,27 +876,29 @@ public final class Formatters {
     /**
      * Create a format step which emits the stack trace of an exception with the given justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
-     * @param extended {@code true} if the stack trace should attempt to include extended JAR version information
+     * @param extended     {@code true} if the stack trace should attempt to include extended JAR version information
      * @return the format step
      */
-    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth, final boolean extended) {
+    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth,
+            final boolean extended) {
         return exceptionFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, null, extended);
     }
 
     /**
      * Create a format step which emits the stack trace of an exception with the given justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
-     * @param extended {@code true} if the stack trace should attempt to include extended JAR version information
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param extended          {@code true} if the stack trace should attempt to include extended JAR version information
      * @return the format step
      */
-    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final String argument, final boolean extended) {
+    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth, final String argument, final boolean extended) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             // not really correct but doesn't matter for now
             public ItemType getItemType() {
@@ -882,7 +919,8 @@ public final class Formatters {
         };
     }
 
-    private static void doExceptionFormatStep(final StringBuilder builder, final ExtLogRecord record, final String argument, final boolean extended) {
+    private static void doExceptionFormatStep(final StringBuilder builder, final ExtLogRecord record, final String argument,
+            final boolean extended) {
         final Throwable t = record.getThrown();
         if (t != null) {
             int depth = -1;
@@ -899,7 +937,7 @@ public final class Formatters {
     /**
      * Create a format step which emits the log message resource key (if any) with the given justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
@@ -911,13 +949,14 @@ public final class Formatters {
     /**
      * Create a format step which emits the log message resource key (if any) with the given justification rules.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep resourceKeyFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep resourceKeyFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.RESOURCE_KEY;
@@ -925,7 +964,8 @@ public final class Formatters {
 
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
                 final String key = record.getResourceKey();
-                if (key != null) builder.append(key);
+                if (key != null)
+                    builder.append(key);
             }
         };
     }
@@ -934,7 +974,7 @@ public final class Formatters {
      * Create a format step which emits the source method name with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
@@ -947,13 +987,14 @@ public final class Formatters {
      * Create a format step which emits the source method name with the given justification rules (NOTE: call stack
      * introspection introduces a significant performance penalty).
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep methodNameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep methodNameFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
                 builder.append(record.getSourceMethodName());
@@ -983,25 +1024,27 @@ public final class Formatters {
     /**
      * Create a format step which emits the platform line separator.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep lineSeparatorFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep lineSeparatorFormatStep(final boolean leftJustify, final int minimumWidth,
+            final int maximumWidth) {
         return lineSeparatorFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth);
     }
 
     /**
      * Create a format step which emits the platform line separator.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep lineSeparatorFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep lineSeparatorFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.SOURCE_LINE_NUMBER;
@@ -1016,7 +1059,7 @@ public final class Formatters {
     /**
      * Create a format step which emits the log level name.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
@@ -1028,13 +1071,14 @@ public final class Formatters {
     /**
      * Create a format step which emits the log level name.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep levelFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep levelFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning,
+            final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.LEVEL;
@@ -1050,25 +1094,27 @@ public final class Formatters {
     /**
      * Create a format step which emits the localized log level name.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep localizedLevelFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep localizedLevelFormatStep(final boolean leftJustify, final int minimumWidth,
+            final int maximumWidth) {
         return localizedLevelFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth);
     }
 
     /**
      * Create a format step which emits the localized log level name.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep localizedLevelFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep localizedLevelFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.LEVEL;
@@ -1084,27 +1130,29 @@ public final class Formatters {
     /**
      * Create a format step which emits the number of milliseconds since the given base time.
      *
-     * @param baseTime the base time as milliseconds as per {@link System#currentTimeMillis()}
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param baseTime     the base time as milliseconds as per {@link System#currentTimeMillis()}
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep relativeTimeFormatStep(final long baseTime, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep relativeTimeFormatStep(final long baseTime, final boolean leftJustify, final int minimumWidth,
+            final int maximumWidth) {
         return relativeTimeFormatStep(baseTime, leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth);
     }
 
     /**
      * Create a format step which emits the number of milliseconds since the given base time.
      *
-     * @param baseTime the base time as milliseconds as per {@link System#currentTimeMillis()}
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param baseTime          the base time as milliseconds as per {@link System#currentTimeMillis()}
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep relativeTimeFormatStep(final long baseTime, final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep relativeTimeFormatStep(final long baseTime, final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.RELATIVE_TIME;
@@ -1129,7 +1177,8 @@ public final class Formatters {
      *
      * @return the format step
      */
-    public static FormatStep threadFormatStep(final String argument, final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep threadFormatStep(final String argument, final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         if (argument != null && THREAD_ID.equals(argument.toLowerCase(Locale.ROOT))) {
             return threadIdFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth);
         }
@@ -1139,13 +1188,14 @@ public final class Formatters {
     /**
      * Create a format step which emits the id of the thread which originated the log record.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep threadIdFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep threadIdFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.THREAD_ID;
@@ -1160,7 +1210,7 @@ public final class Formatters {
     /**
      * Create a format step which emits the name of the thread which originated the log record.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
@@ -1172,13 +1222,14 @@ public final class Formatters {
     /**
      * Create a format step which emits the name of the thread which originated the log record.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep threadNameFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep threadNameFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.THREAD_NAME;
@@ -1193,7 +1244,7 @@ public final class Formatters {
     /**
      * Create a format step which emits the NDC value of the log record.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
@@ -1205,14 +1256,15 @@ public final class Formatters {
     /**
      * Create a format step which emits the NDC value of the log record.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
-     * @param count the limit to the number of segments to format
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param count             the limit to the number of segments to format
      * @return the format step
      */
-    public static FormatStep ndcFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth, final int count) {
+    public static FormatStep ndcFormatStep(final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning,
+            final int maximumWidth, final int count) {
         return new SegmentedFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, count) {
             public ItemType getItemType() {
                 return ItemType.NDC;
@@ -1227,25 +1279,27 @@ public final class Formatters {
     /**
      * Create a format step which emits the MDC value associated with the given key of the log record.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
+     * @param leftJustify  {@code true} to left justify, {@code false} to right justify
      * @param minimumWidth the minimum field width, or 0 for none
      * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep mdcFormatStep(final String key, final boolean leftJustify, final int minimumWidth, final int maximumWidth) {
+    public static FormatStep mdcFormatStep(final String key, final boolean leftJustify, final int minimumWidth,
+            final int maximumWidth) {
         return mdcFormatStep(key, leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth);
     }
 
     /**
      * Create a format step which emits the MDC value associated with the given key of the log record.
      *
-     * @param leftJustify {@code true} to left justify, {@code false} to right justify
-     * @param minimumWidth the minimum field width, or 0 for none
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
      * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
-     * @param maximumWidth the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
      * @return the format step
      */
-    public static FormatStep mdcFormatStep(final String key, final boolean leftJustify, final int minimumWidth, final boolean truncateBeginning, final int maximumWidth) {
+    public static FormatStep mdcFormatStep(final String key, final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             public ItemType getItemType() {
                 return ItemType.MDC;
@@ -1265,7 +1319,7 @@ public final class Formatters {
     }
 
     public static FormatStep formatColor(final ColorMap colors, final String color) {
-            return new FormatStep() {
+        return new FormatStep() {
             public void render(final StringBuilder builder, final ExtLogRecord record) {
                 String code = colors.getCode(color, record.getLevel());
                 if (code != null) {
@@ -1297,7 +1351,7 @@ public final class Formatters {
      *                                  allow access to the specified system property
      */
     public static FormatStep systemPropertyFormatStep(final String argument, final boolean leftJustify, final int minimumWidth,
-                                                      final boolean truncateBeginning, final int maximumWidth) {
+            final boolean truncateBeginning, final int maximumWidth) {
         if (argument == null) {
             throw new IllegalArgumentException("System property requires a key for the lookup");
         }

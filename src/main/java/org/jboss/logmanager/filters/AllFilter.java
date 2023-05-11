@@ -20,13 +20,12 @@
 package org.jboss.logmanager.filters;
 
 import java.util.Iterator;
-
 import java.util.logging.Filter;
 import java.util.logging.LogRecord;
 
 /**
- * A filter consisting of several filters in a chain.  If any filter finds the log message to be unloggable,
- * the message will not be logged and subsequent filters will not be checked.  If there are no nested filters,
+ * A filter consisting of several filters in a chain. If any filter finds the log message to be unloggable,
+ * the message will not be logged and subsequent filters will not be checked. If there are no nested filters,
  * this instance always returns {@code true}.
  */
 public final class AllFilter implements Filter {
@@ -81,7 +80,7 @@ public final class AllFilter implements Filter {
      */
     public boolean isLoggable(final LogRecord record) {
         for (Filter filter : filters) {
-            if (! filter.isLoggable(record)) {
+            if (!filter.isLoggable(record)) {
                 return false;
             }
         }

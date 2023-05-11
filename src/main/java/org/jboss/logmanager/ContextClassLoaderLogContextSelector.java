@@ -19,13 +19,13 @@
 
 package org.jboss.logmanager;
 
-import java.security.Permission;
-import java.security.PrivilegedAction;
-import java.util.concurrent.ConcurrentMap;
-
 import static java.lang.System.getSecurityManager;
 import static java.lang.Thread.currentThread;
 import static java.security.AccessController.doPrivileged;
+
+import java.security.Permission;
+import java.security.PrivilegedAction;
+import java.util.concurrent.ConcurrentMap;
 
 /**
  * A log context selector which chooses a log context based on the thread context classloader.
@@ -36,7 +36,7 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
     private static final Permission UNREGISTER_LOG_CONTEXT_PERMISSION = new RuntimePermission("unregisterLogContext", null);
 
     /**
-     * Construct a new instance.  If no matching log context is found, the provided default selector is consulted.
+     * Construct a new instance. If no matching log context is found, the provided default selector is consulted.
      *
      * @param defaultSelector the selector to consult if no matching log context is found
      */
@@ -45,7 +45,7 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
     }
 
     /**
-     * Construct a new instance.  If no matching log context is found, the system context is used.
+     * Construct a new instance. If no matching log context is found, the system context is used.
      */
     public ContextClassLoaderLogContextSelector() {
         this(LogContext.DEFAULT_LOG_CONTEXT_SELECTOR);
@@ -69,15 +69,15 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
     };
 
     public LogContext getLogContext() {
-        return System.getSecurityManager() == null? logContextAction.run() :
-                doPrivileged(logContextAction);
+        return System.getSecurityManager() == null ? logContextAction.run() : doPrivileged(logContextAction);
     }
 
     /**
-     * Register a class loader with a log context.  This method requires the {@code registerLogContext} {@link RuntimePermission}.
+     * Register a class loader with a log context. This method requires the {@code registerLogContext}
+     * {@link RuntimePermission}.
      *
      * @param classLoader the classloader
-     * @param logContext the log context
+     * @param logContext  the log context
      * @throws IllegalArgumentException if the classloader is already associated with a log context
      */
     public void registerLogContext(ClassLoader classLoader, LogContext logContext) throws IllegalArgumentException {
@@ -86,15 +86,17 @@ public final class ContextClassLoaderLogContextSelector implements LogContextSel
             sm.checkPermission(REGISTER_LOG_CONTEXT_PERMISSION);
         }
         if (contextMap.putIfAbsent(classLoader, logContext) != null) {
-            throw new IllegalArgumentException("ClassLoader instance is already registered to a log context (" + classLoader + ")");
+            throw new IllegalArgumentException(
+                    "ClassLoader instance is already registered to a log context (" + classLoader + ")");
         }
     }
 
     /**
-     * Unregister a class loader/log context association.  This method requires the {@code unregisterLogContext} {@link RuntimePermission}.
+     * Unregister a class loader/log context association. This method requires the {@code unregisterLogContext}
+     * {@link RuntimePermission}.
      *
      * @param classLoader the classloader
-     * @param logContext the log context
+     * @param logContext  the log context
      * @return {@code true} if the association exists and was removed, {@code false} otherwise
      */
     public boolean unregisterLogContext(ClassLoader classLoader, LogContext logContext) {

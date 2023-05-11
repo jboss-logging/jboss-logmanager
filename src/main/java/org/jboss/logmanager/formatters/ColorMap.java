@@ -18,6 +18,7 @@
  */
 
 package org.jboss.logmanager.formatters;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Locale;
@@ -51,7 +52,6 @@ public class ColorMap {
 
     private static final String CLEAR = "\033[0m";
 
-
     static final boolean SUPPORTS_COLOR;
 
     private static final Map<String, String> codes;
@@ -65,7 +65,7 @@ public class ColorMap {
 
     private final NavigableMap<Integer, String> levelMap;
 
-    private ColorMap(NavigableMap<Integer,String> levelMap) {
+    private ColorMap(NavigableMap<Integer, String> levelMap) {
         this.levelMap = levelMap;
     }
 
@@ -214,7 +214,6 @@ public class ColorMap {
                 continue;
             }
 
-
             try {
                 int i = Integer.parseInt(parts[0]);
                 levelMap.put(i, color);
@@ -241,7 +240,7 @@ public class ColorMap {
 
         String lower = name.toLowerCase(Locale.ROOT);
         if (lower.equals(LEVEL_NAME)) {
-            Map.Entry<Integer,String> entry = levelMap.floorEntry(level.intValue());
+            Map.Entry<Integer, String> entry = levelMap.floorEntry(level.intValue());
             return entry != null ? entry.getValue() : null;
         }
 

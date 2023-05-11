@@ -100,12 +100,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     }
 
     @Test
-    @BMRule(name = "Test failed rotated",
-            targetClass = "java.nio.file.Files",
-            targetMethod = "move",
-            targetLocation = "AT ENTRY",
-            condition = "$2.getFileName().toString().matches(\"periodic-rotating-file-handler\\\\.log\\\\.\\\\d+\")",
-            action = "throw new IOException(\"Fail on purpose\")")
+    @BMRule(name = "Test failed rotated", targetClass = "java.nio.file.Files", targetMethod = "move", targetLocation = "AT ENTRY", condition = "$2.getFileName().toString().matches(\"periodic-rotating-file-handler\\\\.log\\\\.\\\\d+\")", action = "throw new IOException(\"Fail on purpose\")")
     public void testFailedRotate() throws Exception {
         final Calendar cal = Calendar.getInstance();
         final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
@@ -143,9 +138,9 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         Assert.assertTrue("Expected the line to contain the date: " + nextDate, lines.get(0).contains(nextDate));
 
         // The file should not have been rotated
-        Assert.assertTrue("The rotated file '" + rotatedFile.toString() + "' exists and should not", Files.notExists(rotatedFile));
+        Assert.assertTrue("The rotated file '" + rotatedFile.toString() + "' exists and should not",
+                Files.notExists(rotatedFile));
     }
-
 
     private void testRotate(final Calendar cal, final Path rotatedFile) throws Exception {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");

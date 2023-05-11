@@ -55,14 +55,14 @@ public interface MDCProvider {
     Object removeObject(String key);
 
     /**
-     * Get a copy of the MDC map.  This is a relatively expensive operation.
+     * Get a copy of the MDC map. This is a relatively expensive operation.
      *
      * @return a copy of the map
      */
     Map<String, String> copy();
 
     /**
-     * Get a copy of the MDC map.  This is a relatively expensive operation.
+     * Get a copy of the MDC map. This is a relatively expensive operation.
      *
      * @return a copy of the map
      */

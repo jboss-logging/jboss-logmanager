@@ -46,7 +46,7 @@ import org.jboss.logmanager.Logger;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"UnusedReturnValue", "unused"})
+@SuppressWarnings({ "UnusedReturnValue", "unused" })
 public class ContextConfiguration {
     public static final Logger.AttachmentKey<ContextConfiguration> CONTEXT_CONFIGURATION_KEY = new Logger.AttachmentKey<>();
     private final Map<String, Supplier<ErrorManager>> errorManagers;

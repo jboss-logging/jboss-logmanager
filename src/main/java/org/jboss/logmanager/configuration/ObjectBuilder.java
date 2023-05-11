@@ -42,7 +42,7 @@ import org.jboss.modules.ModuleLoader;
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@SuppressWarnings({"UnusedReturnValue"})
+@SuppressWarnings({ "UnusedReturnValue" })
 class ObjectBuilder<T> {
 
     private final LogContext logContext;
@@ -56,7 +56,7 @@ class ObjectBuilder<T> {
     private String moduleName;
 
     private ObjectBuilder(final LogContext logContext, final ContextConfiguration contextConfiguration,
-                          final Class<? extends T> baseClass, final String className) {
+            final Class<? extends T> baseClass, final String className) {
         this.logContext = logContext;
         this.contextConfiguration = contextConfiguration;
         this.baseClass = baseClass;
@@ -78,7 +78,7 @@ class ObjectBuilder<T> {
      * @return a new {@link ObjectBuilder}
      */
     static <T> ObjectBuilder<T> of(final LogContext logContext, final ContextConfiguration contextConfiguration,
-                                   final Class<? extends T> baseClass, final String className) {
+            final Class<? extends T> baseClass, final String className) {
         return new ObjectBuilder<>(logContext, contextConfiguration, baseClass, className);
     }
 
@@ -190,7 +190,8 @@ class ObjectBuilder<T> {
                 final String property = entry.getKey();
                 final Class<?> type = getConstructorPropertyType(actualClass, property);
                 if (type == null) {
-                    throw new IllegalArgumentException(String.format("No property named \"%s\" in \"%s\"", property, className));
+                    throw new IllegalArgumentException(
+                            String.format("No property named \"%s\" in \"%s\"", property, className));
                 }
                 paramTypes[i] = type;
                 params[i] = getValue(actualClass, property, type, entry.getValue());
@@ -208,12 +209,14 @@ class ObjectBuilder<T> {
             for (Map.Entry<String, String> entry : properties.entrySet()) {
                 final Method method = getPropertySetter(actualClass, entry.getKey());
                 if (method == null) {
-                    throw new IllegalArgumentException(String.format("Failed to locate setter for property \"%s\" on type \"%s\"", entry.getKey(), className));
+                    throw new IllegalArgumentException(String
+                            .format("Failed to locate setter for property \"%s\" on type \"%s\"", entry.getKey(), className));
                 }
                 // Get the value type for the setter
                 Class<?> type = getPropertyType(method);
                 if (type == null) {
-                    throw new IllegalArgumentException(String.format("Failed to determine type for setter \"%s\" on type \"%s\"", method.getName(), className));
+                    throw new IllegalArgumentException(String
+                            .format("Failed to determine type for setter \"%s\" on type \"%s\"", method.getName(), className));
                 }
                 setters.put(method, getValue(actualClass, entry.getKey(), type, entry.getValue()));
             }
@@ -225,7 +228,8 @@ class ObjectBuilder<T> {
                     final Method method = actualClass.getMethod(methodName, value.type);
                     setters.put(method, value.value.get());
                 } catch (NoSuchMethodException e) {
-                    throw new IllegalArgumentException(String.format("Failed to find setter method for property \"%s\" on type \"%s\"", value.name, className), e);
+                    throw new IllegalArgumentException(String.format(
+                            "Failed to find setter method for property \"%s\" on type \"%s\"", value.name, className), e);
                 }
             }
 
@@ -235,7 +239,9 @@ class ObjectBuilder<T> {
                 try {
                     postConstruct.add(actualClass.getMethod(methodName));
                 } catch (NoSuchMethodException e) {
-                    throw new IllegalArgumentException(String.format("Failed to find post construct method \"%s\" on type \"%s\"", methodName, className), e);
+                    throw new IllegalArgumentException(
+                            String.format("Failed to find post construct method \"%s\" on type \"%s\"", methodName, className),
+                            e);
                 }
             }
             try {
@@ -261,7 +267,8 @@ class ObjectBuilder<T> {
     private Object getValue(final Class<?> objClass, final String propertyName, final Class<?> paramType, final String value) {
         if (value == null) {
             if (paramType.isPrimitive()) {
-                throw new IllegalArgumentException(String.format("Cannot assign null value to primitive property \"%s\" of %s", propertyName, objClass));
+                throw new IllegalArgumentException(
+                        String.format("Cannot assign null value to primitive property \"%s\" of %s", propertyName, objClass));
             }
             return null;
         }
@@ -338,7 +345,8 @@ class ObjectBuilder<T> {
     private static Method getPropertySetter(Class<?> clazz, String propertyName) {
         final String set = getPropertySetterName(propertyName);
         for (Method method : clazz.getMethods()) {
-            if ((method.getName().equals(set) && Modifier.isPublic(method.getModifiers())) && method.getParameterTypes().length == 1) {
+            if ((method.getName().equals(set) && Modifier.isPublic(method.getModifiers()))
+                    && method.getParameterTypes().length == 1) {
                 return method;
             }
         }
@@ -349,7 +357,8 @@ class ObjectBuilder<T> {
         final String upperPropertyName = Character.toUpperCase(propertyName.charAt(0)) + propertyName.substring(1);
         final Pattern pattern = Pattern.compile("(get|has|is)(" + Pattern.quote(upperPropertyName) + ")");
         for (Method method : clazz.getMethods()) {
-            if ((pattern.matcher(method.getName()).matches() && Modifier.isPublic(method.getModifiers())) && method.getParameterTypes().length == 0) {
+            if ((pattern.matcher(method.getName()).matches() && Modifier.isPublic(method.getModifiers()))
+                    && method.getParameterTypes().length == 0) {
                 return method;
             }
         }

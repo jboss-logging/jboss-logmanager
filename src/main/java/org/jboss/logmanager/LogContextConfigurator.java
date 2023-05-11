@@ -21,22 +21,22 @@ package org.jboss.logmanager;
 import java.io.InputStream;
 
 /**
- * A configurator for a log context.  A log context configurator should set up all the log categories,
+ * A configurator for a log context. A log context configurator should set up all the log categories,
  * handlers, formatters, filters, attachments, and other constructs as specified by the configuration.
  */
 public interface LogContextConfigurator {
     /**
-     * Configure the given log context according to this configurator's policy.  If a configuration stream was
-     * provided, that is passed in to this method to be used or ignored.  The stream should remain open after
+     * Configure the given log context according to this configurator's policy. If a configuration stream was
+     * provided, that is passed in to this method to be used or ignored. The stream should remain open after
      * this method is called.
      *
-     * @param logContext the log context to configure (not {@code null})
+     * @param logContext  the log context to configure (not {@code null})
      * @param inputStream the input stream that was requested to be used, or {@code null} if none was provided
      */
     void configure(LogContext logContext, InputStream inputStream);
 
     /**
-     * A constant representing an empty configuration.  The configurator does nothing.
+     * A constant representing an empty configuration. The configurator does nothing.
      */
     LogContextConfigurator EMPTY = new LogContextConfigurator() {
         @Override

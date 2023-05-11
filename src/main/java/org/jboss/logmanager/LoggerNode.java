@@ -19,11 +19,6 @@
 
 package org.jboss.logmanager;
 
-import io.smallrye.common.constraint.Assert;
-import io.smallrye.common.ref.PhantomReference;
-import io.smallrye.common.ref.Reaper;
-import io.smallrye.common.ref.Reference;
-
 import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
@@ -41,8 +36,13 @@ import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 
+import io.smallrye.common.constraint.Assert;
+import io.smallrye.common.ref.PhantomReference;
+import io.smallrye.common.ref.Reaper;
+import io.smallrye.common.ref.Reference;
+
 /**
- * A node in the tree of logger names.  Maintains weak references to children and a strong reference to its parent.
+ * A node in the tree of logger names. Maintains weak references to children and a strong reference to its parent.
  */
 final class LoggerNode implements AutoCloseable {
 
@@ -68,12 +68,12 @@ final class LoggerNode implements AutoCloseable {
     private final String fullName;
 
     /**
-     * The map of names to child nodes.  The child node references are weak.
+     * The map of names to child nodes. The child node references are weak.
      */
     private final ConcurrentMap<String, LoggerNode> children;
 
     /**
-     * The handlers for this logger.  May only be updated using the {@link #handlersUpdater} atomic updater.  The array
+     * The handlers for this logger. May only be updated using the {@link #handlersUpdater} atomic updater. The array
      * instance should not be modified (treat as immutable).
      */
     @SuppressWarnings({ "UnusedDeclaration" })
@@ -122,15 +122,16 @@ final class LoggerNode implements AutoCloseable {
     /**
      * The atomic updater for the {@link #handlers} field.
      */
-    private static final AtomicArray<LoggerNode, Handler> handlersUpdater = AtomicArray.create(AtomicReferenceFieldUpdater.newUpdater(LoggerNode.class, Handler[].class, "handlers"), Handler.class);
+    private static final AtomicArray<LoggerNode, Handler> handlersUpdater = AtomicArray
+            .create(AtomicReferenceFieldUpdater.newUpdater(LoggerNode.class, Handler[].class, "handlers"), Handler.class);
 
     /**
-     * The actual level.  May only be modified when the context's level change lock is held; in addition, changing
+     * The actual level. May only be modified when the context's level change lock is held; in addition, changing
      * this field must be followed immediately by recursively updating the effective loglevel of the child tree.
      */
     private volatile java.util.logging.Level level;
     /**
-     * The effective level.  May only be modified when the context's level change lock is held; in addition, changing
+     * The effective level. May only be modified when the context's level change lock is held; in addition, changing
      * this field must be followed immediately by recursively updating the effective loglevel of the child tree.
      */
     private volatile int effectiveLevel;
@@ -166,8 +167,8 @@ final class LoggerNode implements AutoCloseable {
     /**
      * Construct a child instance.
      *
-     * @param context the logmanager
-     * @param parent the parent node
+     * @param context  the logmanager
+     * @param parent   the parent node
      * @param nodeName the name of this subnode
      */
     private LoggerNode(LogContext context, LoggerNode parent, String nodeName) {
@@ -210,16 +211,18 @@ final class LoggerNode implements AutoCloseable {
             if (clone[i] == null) {
                 // our clone contains nulls; we have to clone again to be safe
                 int cnt;
-                for (cnt = 1, i ++; i < length; i ++) {
-                    if (clone[i] == null) cnt ++;
+                for (cnt = 1, i++; i < length; i++) {
+                    if (clone[i] == null)
+                        cnt++;
                 }
                 final int newLen = length - cnt;
                 if (newLen == 0) {
                     return LogContextInitializer.NO_HANDLERS;
                 }
                 final Handler[] newClone = new Handler[newLen];
-                for (int j = 0, k = 0; j < length; j ++) {
-                    if (clone[j] != null) newClone[k++] = clone[j];
+                for (int j = 0, k = 0; j < length; j++) {
+                    if (clone[j] != null)
+                        newClone[k++] = clone[j];
                 }
                 return newClone;
             }
@@ -256,7 +259,7 @@ final class LoggerNode implements AutoCloseable {
     }
 
     /**
-     * Get or create a relative logger node.  The name is relatively qualified to this node.
+     * Get or create a relative logger node. The name is relatively qualified to this node.
      *
      * @param name the name
      * @return the corresponding logger node
@@ -332,7 +335,7 @@ final class LoggerNode implements AutoCloseable {
     }
 
     /**
-     * Update the effective level if it is inherited from a parent.  Must only be called while the logmanager's level
+     * Update the effective level if it is inherited from a parent. Must only be called while the logmanager's level
      * change lock is held.
      *
      * @param newLevel the new effective level
@@ -409,35 +412,37 @@ final class LoggerNode implements AutoCloseable {
     }
 
     void publish(final ExtLogRecord record) {
-        for (Handler handler : handlers) try {
-            handler.publish(record);
-        } catch (VirtualMachineError e) {
-            throw e;
-        } catch (Throwable t) {
-            ErrorManager errorManager = AccessController.doPrivileged(new PrivilegedAction<ErrorManager>() {
-                @Override
-                public ErrorManager run() {
-                    return handler.getErrorManager();
-                }
-            });
-            if (errorManager != null) {
-                Exception e;
-                if (t instanceof Exception) {
-                    e = (Exception) t;
-                } else {
-                    e = new UndeclaredThrowableException(t);
-                    e.setStackTrace(EMPTY_STACK);
-                }
-                try {
-                    errorManager.error("Handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
-                } catch (Throwable t2) {
-                    StandardOutputStreams.printError(t2, "Handler.reportError caught an exception");
+        for (Handler handler : handlers)
+            try {
+                handler.publish(record);
+            } catch (VirtualMachineError e) {
+                throw e;
+            } catch (Throwable t) {
+                ErrorManager errorManager = AccessController.doPrivileged(new PrivilegedAction<ErrorManager>() {
+                    @Override
+                    public ErrorManager run() {
+                        return handler.getErrorManager();
+                    }
+                });
+                if (errorManager != null) {
+                    Exception e;
+                    if (t instanceof Exception) {
+                        e = (Exception) t;
+                    } else {
+                        e = new UndeclaredThrowableException(t);
+                        e.setStackTrace(EMPTY_STACK);
+                    }
+                    try {
+                        errorManager.error("Handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
+                    } catch (Throwable t2) {
+                        StandardOutputStreams.printError(t2, "Handler.reportError caught an exception");
+                    }
                 }
             }
-        }
         if (useParentHandlers) {
             final LoggerNode parent = this.parent;
-            if (parent != null) parent.publish(record);
+            if (parent != null)
+                parent.publish(record);
         }
     }
 
@@ -482,8 +487,10 @@ final class LoggerNode implements AutoCloseable {
     <V> V getAttachment(final Logger.AttachmentKey<V> key) {
         Assert.checkNotNullParam("key", key);
         synchronized (this) {
-            if (key == attachmentKey1) return (V) attachmentValue1;
-            if (key == attachmentKey2) return (V) attachmentValue2;
+            if (key == attachmentKey1)
+                return (V) attachmentValue1;
+            if (key == attachmentKey2)
+                return (V) attachmentValue2;
         }
         return null;
     }
@@ -593,7 +600,8 @@ final class LoggerNode implements AutoCloseable {
             return true;
         }
         final Filter filter = loggerNode.filter;
-        return !(filter != null && !filter.isLoggable(record)) && (!loggerNode.useParentFilter || isLoggable(loggerNode.getParent(), record));
+        return !(filter != null && !filter.isLoggable(record))
+                && (!loggerNode.useParentFilter || isLoggable(loggerNode.getParent(), record));
     }
 
     Enumeration<String> getLoggerNames() {

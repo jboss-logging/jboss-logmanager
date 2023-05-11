@@ -30,7 +30,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import io.smallrye.common.cpu.ProcessorInfo;
 import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
@@ -38,6 +37,8 @@ import org.jboss.logmanager.LogContext;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Test;
+
+import io.smallrye.common.cpu.ProcessorInfo;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -85,7 +86,6 @@ public class DelayedHandlerTests {
         Assert.assertEquals("Test message 6", TestHandler.MESSAGES.get(4).getFormattedMessage());
     }
 
-
     @Test
     public void testAllLoggedAfterActivation() throws Exception {
         final ExecutorService service = createExecutor();
@@ -120,7 +120,8 @@ public class DelayedHandlerTests {
                     .collect(Collectors.toList());
             missing.removeAll(ints);
             Collections.sort(missing);
-            Assert.assertEquals(String.format("Missing the following entries: %s", missing), ITERATIONS, TestHandler.MESSAGES.size());
+            Assert.assertEquals(String.format("Missing the following entries: %s", missing), ITERATIONS,
+                    TestHandler.MESSAGES.size());
 
         } finally {
             Assert.assertTrue(service.shutdownNow().isEmpty());
@@ -165,7 +166,8 @@ public class DelayedHandlerTests {
                     .collect(Collectors.toList());
             missing.removeAll(ints);
             Collections.sort(missing);
-            Assert.assertEquals(String.format("Missing the following entries: %s", missing), ITERATIONS, TestHandler.MESSAGES.size());
+            Assert.assertEquals(String.format("Missing the following entries: %s", missing), ITERATIONS,
+                    TestHandler.MESSAGES.size());
 
         } finally {
             Assert.assertTrue(service.shutdownNow().isEmpty());

@@ -1,8 +1,8 @@
 package org.jboss.logmanager.formatters;
 
-import org.jboss.logmanager.ExtLogRecord;
-
 import java.util.logging.Formatter;
+
+import org.jboss.logmanager.ExtLogRecord;
 
 /**
  * A single format step which handles some part of rendering a log record.
@@ -13,7 +13,7 @@ public interface FormatStep {
      * Render a part of the log record.
      *
      * @param builder the string builder to append to
-     * @param record the record being rendered
+     * @param record  the record being rendered
      */
     void render(StringBuilder builder, ExtLogRecord record);
 
@@ -21,15 +21,15 @@ public interface FormatStep {
      * Render a part of the log record to the given formatter.
      *
      * @param formatter the formatter to render to
-     * @param builder the string builder to append to
-     * @param record the record being rendered
+     * @param builder   the string builder to append to
+     * @param record    the record being rendered
      */
     default void render(Formatter formatter, StringBuilder builder, ExtLogRecord record) {
         render(builder, record);
     }
 
     /**
-     * Emit an estimate of the length of data which this step will produce.  The more accurate the estimate, the
+     * Emit an estimate of the length of data which this step will produce. The more accurate the estimate, the
      * more likely the format operation will be performant.
      *
      * @return an estimate
@@ -55,7 +55,7 @@ public interface FormatStep {
     }
 
     /**
-     * An enumeration of the types of items that can be rendered.  Note that this enumeration may be expanded
+     * An enumeration of the types of items that can be rendered. Note that this enumeration may be expanded
      * in the future, so unknown values should be handled gracefully as if {@link #GENERIC} were used.
      */
     enum ItemType {

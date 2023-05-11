@@ -23,7 +23,8 @@ package org.jboss.logmanager.formatters;
  * This is a throwaway temp class.
  */
 final class ColorUtil {
-    private ColorUtil() {}
+    private ColorUtil() {
+    }
 
     static StringBuilder startFgColor(StringBuilder target, boolean trueColor, int r, int g, int b) {
         return startColor(target, 38, trueColor, r, g, b);
@@ -35,13 +36,15 @@ final class ColorUtil {
 
     static StringBuilder startColor(StringBuilder target, int mode, boolean trueColor, int r, int g, int b) {
         if (trueColor) {
-            return target.appendCodePoint(27).append('[').append(mode).append(';').append(2).append(';').append(clip(r)).append(';').append(clip(g)).append(';').append(clip(b)).append('m');
+            return target.appendCodePoint(27).append('[').append(mode).append(';').append(2).append(';').append(clip(r))
+                    .append(';').append(clip(g)).append(';').append(clip(b)).append('m');
         } else {
             int ar = (5 * clip(r)) / 255;
             int ag = (5 * clip(g)) / 255;
             int ab = (5 * clip(b)) / 255;
             int col = 16 + 36 * ar + 6 * ag + ab;
-            return target.appendCodePoint(27).append('[').append(mode).append(';').append('5').append(';').append(col).append('m');
+            return target.appendCodePoint(27).append('[').append(mode).append(';').append('5').append(';').append(col)
+                    .append('m');
         }
     }
 

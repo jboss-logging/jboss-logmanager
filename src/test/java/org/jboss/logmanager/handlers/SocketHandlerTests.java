@@ -25,6 +25,7 @@ import java.net.UnknownHostException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.logging.ErrorManager;
+
 import javax.net.ssl.SSLContext;
 
 import org.jboss.logmanager.ExtLogRecord;
@@ -46,8 +47,9 @@ public class SocketHandlerTests extends AbstractHandlerTest {
     // https://bugs.openjdk.java.net/browse/JDK-8219991
     private final String JAVA_VERSION = System.getProperty("java.version");
     private final String JDK_8219991_ERROR_MESSAGE = "https://bugs.openjdk.java.net/browse/JDK-8219991";
-    private final Boolean JDK_8219991 = JAVA_VERSION.startsWith("1.8") || (JAVA_VERSION.startsWith("11.0.8") && System.getProperty("java.vendor")
-            .contains("Oracle"));
+    private final Boolean JDK_8219991 = JAVA_VERSION.startsWith("1.8")
+            || (JAVA_VERSION.startsWith("11.0.8") && System.getProperty("java.vendor")
+                    .contains("Oracle"));
 
     public SocketHandlerTests() throws UnknownHostException {
         address = InetAddress.getByName(System.getProperty("org.jboss.test.address", "127.0.0.1"));
@@ -57,8 +59,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
     public void testTcpConnection() throws Exception {
         try (
                 SimpleServer server = SimpleServer.createTcpServer();
-                SocketHandler handler = createHandler(Protocol.TCP, server.getPort())
-        ) {
+                SocketHandler handler = createHandler(Protocol.TCP, server.getPort())) {
             final ExtLogRecord record = createLogRecord("Test TCP handler");
             handler.publish(record);
             final String msg = server.timeoutPoll();
@@ -71,8 +72,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
     public void testTlsConnection() throws Exception {
         try (
                 SimpleServer server = SimpleServer.createTlsServer();
-                SocketHandler handler = createHandler(Protocol.SSL_TCP, server.getPort())
-        ) {
+                SocketHandler handler = createHandler(Protocol.SSL_TCP, server.getPort())) {
             final ExtLogRecord record = createLogRecord("Test TLS handler");
             handler.publish(record);
             final String msg = server.timeoutPoll();
@@ -85,8 +85,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
     public void testUdpConnection() throws Exception {
         try (
                 SimpleServer server = SimpleServer.createUdpServer();
-                SocketHandler handler = createHandler(Protocol.UDP, server.getPort())
-        ) {
+                SocketHandler handler = createHandler(Protocol.UDP, server.getPort())) {
             final ExtLogRecord record = createLogRecord("Test UDP handler");
             handler.publish(record);
             final String msg = server.timeoutPoll();
@@ -100,8 +99,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
         try (
                 SimpleServer server1 = SimpleServer.createTcpServer();
                 SimpleServer server2 = SimpleServer.createTcpServer();
-                SocketHandler handler = createHandler(Protocol.TCP, server1.getPort())
-        ) {
+                SocketHandler handler = createHandler(Protocol.TCP, server1.getPort())) {
             final int port = server1.getPort();
             final int altPort = server2.getPort();
             ExtLogRecord record = createLogRecord("Test TCP handler " + port);
@@ -164,8 +162,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
 
             // Publish a record to a running server
             try (
-                    SimpleServer server = SimpleServer.createTcpServer()
-            ) {
+                    SimpleServer server = SimpleServer.createTcpServer()) {
                 handler = createHandler(Protocol.TCP, server.getPort());
                 handler.setErrorManager(AssertingErrorManager.of(ErrorManager.FLUSH_FAILURE));
                 final ExtLogRecord record = createLogRecord("Test TCP handler");
@@ -182,8 +179,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
             final ExtLogRecord record = createLogRecord("Test TCP handler");
             handler.publish(record);
             try (
-                    SimpleServer server = SimpleServer.createTcpServer(handler.getPort())
-            ) {
+                    SimpleServer server = SimpleServer.createTcpServer(handler.getPort())) {
                 final SocketHandler socketHandler = handler;
                 // Keep writing a record until a successful record is published or a timeout occurs
                 final String msg = timeout(() -> {

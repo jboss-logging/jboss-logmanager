@@ -22,7 +22,7 @@ package org.jboss.logmanager;
 import java.io.Serializable;
 
 /**
- * A marker class for loggers.  After read, the {@link #readResolve()} method will return a logger with the given name.
+ * A marker class for loggers. After read, the {@link #readResolve()} method will return a logger with the given name.
  */
 public final class SerializedLogger implements Serializable {
 

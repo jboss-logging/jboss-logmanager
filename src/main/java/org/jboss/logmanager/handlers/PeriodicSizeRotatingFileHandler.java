@@ -100,7 +100,8 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      *
      * @throws FileNotFoundException if the file could not be found on open
      */
-    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final boolean append) throws FileNotFoundException {
+    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final boolean append)
+            throws FileNotFoundException {
         super(file, suffix, append);
     }
 
@@ -114,7 +115,8 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      *
      * @throws FileNotFoundException if the file could not be found on open
      */
-    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final long rotateSize, final int maxBackupIndex) throws FileNotFoundException {
+    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final long rotateSize,
+            final int maxBackupIndex) throws FileNotFoundException {
         super(file, suffix);
         this.rotateSize = rotateSize;
         this.maxBackupIndex = maxBackupIndex;
@@ -131,12 +133,12 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
      *
      * @throws FileNotFoundException if the file could not be found on open
      */
-    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final long rotateSize, final int maxBackupIndex, final boolean append) throws FileNotFoundException {
+    public PeriodicSizeRotatingFileHandler(final File file, final String suffix, final long rotateSize,
+            final int maxBackupIndex, final boolean append) throws FileNotFoundException {
         super(file, suffix, append);
         this.rotateSize = rotateSize;
         this.maxBackupIndex = maxBackupIndex;
     }
-
 
     @Override
     public void setOutputStream(final OutputStream outputStream) {
@@ -249,7 +251,8 @@ public class PeriodicSizeRotatingFileHandler extends PeriodicRotatingFileHandler
                 }
                 // close the old file.
                 setFileInternal(null, true);
-                getSuffixRotator().rotate(SecurityActions.getErrorManager(acc, this), file.toPath(), getNextSuffix(), maxBackupIndex);
+                getSuffixRotator().rotate(SecurityActions.getErrorManager(acc, this), file.toPath(), getNextSuffix(),
+                        maxBackupIndex);
                 // start with new file.
                 setFileInternal(file, true);
             } catch (IOException e) {

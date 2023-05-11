@@ -44,6 +44,6 @@ public final class InvertFilter implements Filter {
      * @return {@code true} if the target filter returns {@code false}, {@code false} otherwise
      */
     public boolean isLoggable(final LogRecord record) {
-        return ! target.isLoggable(record);
+        return !target.isLoggable(record);
     }
 }

@@ -32,13 +32,14 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import io.smallrye.common.constraint.Assert;
-import io.smallrye.common.expression.Expression;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.StandardOutputStreams;
 import org.jboss.logmanager.configuration.filters.FilterExpressions;
 import org.jboss.logmanager.filters.AcceptAllFilter;
 import org.jboss.logmanager.filters.DenyAllFilter;
+
+import io.smallrye.common.constraint.Assert;
+import io.smallrye.common.expression.Expression;
 
 /**
  * A utility to parse a {@code logging.properties} file and configure a {@link LogContext}.
@@ -71,8 +72,7 @@ public class PropertyConfigurator {
     public static void configure(final LogContext logContext, final Properties properties) {
         final PropertyConfigurator config = new PropertyConfigurator(
                 Assert.checkNotNullParam("logContext", logContext),
-                Assert.checkNotNullParam("properties", properties)
-        );
+                Assert.checkNotNullParam("properties", properties));
         config.doConfigure();
     }
 
@@ -105,12 +105,14 @@ public class PropertyConfigurator {
         }
     }
 
-    @SuppressWarnings({"ConstantConditions", "CastCanBeRemovedNarrowingVariableType"})
+    @SuppressWarnings({ "ConstantConditions", "CastCanBeRemovedNarrowingVariableType" })
     private void configureLogger(final String loggerName) {
-        /*if (logContext.getLoggerIfExists(loggerName) != null) {
-            // duplicate
-            return;
-        } */
+        /*
+         * if (logContext.getLoggerIfExists(loggerName) != null) {
+         * // duplicate
+         * return;
+         * }
+         */
         final Logger logger = logContext.getLogger(loggerName);
 
         // Get logger level
@@ -159,7 +161,8 @@ public class PropertyConfigurator {
             return false;
         }
 
-        final ObjectBuilder<Handler> handlerBuilder = ObjectBuilder.of(logContext, contextConfiguration, Handler.class, className)
+        final ObjectBuilder<Handler> handlerBuilder = ObjectBuilder
+                .of(logContext, contextConfiguration, Handler.class, className)
                 .setModuleName(getStringProperty(getKey("handler", handlerName, "module")))
                 .addPostConstructMethods(getStringCsvArray(getKey("handler", handlerName, "postConfiguration")));
 
@@ -233,7 +236,8 @@ public class PropertyConfigurator {
             StandardOutputStreams.printError("Formatter %s is not defined%n", formatterName);
             return false;
         }
-        final ObjectBuilder<Formatter> formatterBuilder = ObjectBuilder.of(logContext, contextConfiguration, Formatter.class, className)
+        final ObjectBuilder<Formatter> formatterBuilder = ObjectBuilder
+                .of(logContext, contextConfiguration, Formatter.class, className)
                 .setModuleName(getStringProperty(getKey("formatter", formatterName, "module")))
                 .addPostConstructMethods(getStringCsvArray(getKey("formatter", formatterName, "postConfiguration")));
         configureProperties(formatterBuilder, "formatter", formatterName);
@@ -251,7 +255,8 @@ public class PropertyConfigurator {
             StandardOutputStreams.printError("Error manager %s is not defined%n", errorManagerName);
             return false;
         }
-        final ObjectBuilder<ErrorManager> errorManagerBuilder = ObjectBuilder.of(logContext, contextConfiguration, ErrorManager.class, className)
+        final ObjectBuilder<ErrorManager> errorManagerBuilder = ObjectBuilder
+                .of(logContext, contextConfiguration, ErrorManager.class, className)
                 .setModuleName(getStringProperty(getKey("errorManager", errorManagerName, "module")))
                 .addPostConstructMethods(getStringCsvArray(getKey("errorManager", errorManagerName, "postConfiguration")));
         configureProperties(errorManagerBuilder, "errorManager", errorManagerName);
@@ -277,7 +282,8 @@ public class PropertyConfigurator {
                 contextConfiguration.addFilter(filterName, DenyAllFilter::getInstance);
             } else {
                 // We assume we're a defined filter
-                final ObjectBuilder<Filter> filterBuilder = ObjectBuilder.of(logContext, contextConfiguration, Filter.class, filterValue)
+                final ObjectBuilder<Filter> filterBuilder = ObjectBuilder
+                        .of(logContext, contextConfiguration, Filter.class, filterValue)
                         .setModuleName(getStringProperty(getKey("filter", filterName, "module")))
                         .addPostConstructMethods(getStringCsvArray(getKey("filter", filterName, "postConfiguration")));
                 configureProperties(filterBuilder, "errorManager", filterName);
@@ -335,14 +341,16 @@ public class PropertyConfigurator {
         final String[] constructorPropertyNames = getStringCsvArray(getKey(prefix, name, "constructorProperties"));
         for (String propertyName : constructorPropertyNames) {
             final String valueString = getStringProperty(getKey(prefix, name, propertyName), false, true);
-            if (valueString != null) builder.addConstructorProperty(propertyName, valueString);
+            if (valueString != null)
+                builder.addConstructorProperty(propertyName, valueString);
         }
 
         // Next configure setter properties
         final String[] propertyNames = getStringCsvArray(getKey(prefix, name, "properties"));
         for (String propertyName : propertyNames) {
             final String valueString = getStringProperty(getKey(prefix, name, propertyName), false, true);
-            if (valueString != null) builder.addProperty(propertyName, valueString);
+            if (valueString != null)
+                builder.addProperty(propertyName, valueString);
         }
     }
 
