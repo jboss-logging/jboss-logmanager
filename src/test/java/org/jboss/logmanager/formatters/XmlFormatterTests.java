@@ -27,6 +27,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.stream.XMLInputFactory;
 import javax.xml.stream.XMLStreamConstants;
 import javax.xml.stream.XMLStreamException;
@@ -42,7 +44,9 @@ import org.jboss.logmanager.Level;
 import org.jboss.logmanager.formatters.StructuredFormatter.Key;
 import org.junit.Assert;
 import org.junit.Test;
+import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
+import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
 
@@ -134,6 +138,36 @@ public class XmlFormatterTests extends AbstractTest {
         record.setNdc("testNdc");
         formatter.setExceptionOutputType(JsonFormatter.ExceptionOutputType.DETAILED_AND_FORMATTED);
         compare(record, formatter);
+    }
+
+    @Test
+    public void metaData() throws Exception {
+        // Configure the formatter
+        final var formatter = new XmlFormatter();
+        formatter.setMetaData("key1=value1,key2=value2,noValue=");
+
+        final var record = createLogRecord("Test Message");
+        final var xml = formatter.format(record);
+
+        final DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        final DocumentBuilder builder = factory.newDocumentBuilder();
+        final Document doc = builder.parse(new InputSource(new StringReader(xml)));
+        final var metaData = doc.getElementsByTagName("metaData");
+        Assert.assertEquals(3, metaData.getLength());
+        var item = metaData.item(0);
+        Assert.assertEquals("Expected key attribute of key1", "key1",
+                item.getAttributes().getNamedItem("key").getNodeValue());
+        Assert.assertEquals("Expected a value of value1", "value1", item.getTextContent());
+
+        item = metaData.item(1);
+        Assert.assertEquals("Expected key attribute of key2", "key2",
+                item.getAttributes().getNamedItem("key").getNodeValue());
+        Assert.assertEquals("Expected a value of value2", "value2", item.getTextContent());
+
+        item = metaData.item(2);
+        Assert.assertEquals("Expected key attribute of noValue", "noValue",
+                item.getAttributes().getNamedItem("key").getNodeValue());
+        Assert.assertEquals("Expected no value", "", item.getTextContent());
     }
 
     private static int getInt(final XMLStreamReader reader) throws XMLStreamException {

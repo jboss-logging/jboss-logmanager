@@ -217,7 +217,7 @@ public class XmlFormatter extends StructuredFormatter {
                 writeStart("metaData");
                 xmlWriter.writeAttribute("key", entry.getKey());
                 if (entry.getValue() != null) {
-                    xmlWriter.writeCharacters(metaData.get(entry.getValue()));
+                    xmlWriter.writeCharacters(entry.getValue());
                 }
                 writeEnd();
             }
