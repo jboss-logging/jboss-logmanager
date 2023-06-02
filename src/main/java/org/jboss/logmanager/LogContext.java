@@ -529,6 +529,20 @@ public final class LogContext implements AutoCloseable {
             for (AutoCloseable handler : closeHandlers) {
                 handler.close();
             }
+            synchronized (this) {
+                attachmentKey1 = null;
+                attachmentKey2 = null;
+                final var value1 = attachmentValue1;
+                attachmentValue1 = null;
+                if (value1 instanceof AutoCloseable) {
+                    ((AutoCloseable) value1).close();
+                }
+                final var value2 = attachmentValue2;
+                attachmentValue2 = null;
+                if (value2 instanceof AutoCloseable) {
+                    ((AutoCloseable) value2).close();
+                }
+            }
         } finally {
             treeLock.unlock();
         }
