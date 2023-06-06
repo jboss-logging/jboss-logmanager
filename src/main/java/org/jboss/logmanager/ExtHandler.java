@@ -52,7 +52,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     private volatile Filter filter;
     private volatile Formatter formatter;
     private volatile Level level = Level.ALL;
-    private volatile ErrorManager errorManager = new ErrorManager();
+    private volatile ErrorManager errorManager;
     // (skip `encoding` because we replace it with `charset` below)
 
     private volatile boolean autoFlush = true;
@@ -79,7 +79,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     protected ExtHandler() {
         handlersUpdater.clear(this);
         closeChildren = true;
-        super.setErrorManager(DEFAULT_ERROR_MANAGER);
+        errorManager = DEFAULT_ERROR_MANAGER;
     }
 
     /** {@inheritDoc} */
@@ -526,7 +526,8 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
 
     @Override
     protected void reportError(String msg, Exception ex, int code) {
-        super.reportError(msg, ex, code);
+        final ErrorManager errorManager = this.errorManager;
+        errorManager.error(msg, ex, code);
     }
 
     /**
