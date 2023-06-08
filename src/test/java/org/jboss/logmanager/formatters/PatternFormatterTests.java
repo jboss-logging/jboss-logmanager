@@ -22,8 +22,8 @@ package org.jboss.logmanager.formatters;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.MDC;
 import org.jboss.logmanager.NDC;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -40,61 +40,61 @@ public class PatternFormatterTests {
     public void categories() throws Exception {
         final ExtLogRecord record = createLogRecord("test");
         PatternFormatter formatter = new PatternFormatter("%c");
-        Assert.assertEquals(CATEGORY, formatter.format(record));
+        Assertions.assertEquals(CATEGORY, formatter.format(record));
 
         formatter = new PatternFormatter("%c{1}");
-        Assert.assertEquals("PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%c{2}");
-        Assert.assertEquals("formatters.PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("formatters.PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%c{1.}");
-        Assert.assertEquals("o.j.l.f.PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("o.j.l.f.PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%c{1.~}");
-        Assert.assertEquals("o.~.~.~.PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("o.~.~.~.PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%c{.}");
-        Assert.assertEquals("....PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("....PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%c{1~.}");
-        Assert.assertEquals("o~.j~.l~.f~.PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("o~.j~.l~.f~.PatternFormatterTests", formatter.format(record));
 
         // Test a simple logger name
         record.setLoggerName("test");
         formatter = new PatternFormatter("%c{1}");
-        Assert.assertEquals("test", formatter.format(record));
+        Assertions.assertEquals("test", formatter.format(record));
 
         formatter = new PatternFormatter("%c{.}");
-        Assert.assertEquals("test", formatter.format(record));
+        Assertions.assertEquals("test", formatter.format(record));
 
         formatter = new PatternFormatter("%c{1~.}");
-        Assert.assertEquals("test", formatter.format(record));
+        Assertions.assertEquals("test", formatter.format(record));
     }
 
     @Test
     public void classNames() throws Exception {
         final ExtLogRecord record = createLogRecord("test");
         PatternFormatter formatter = new PatternFormatter("%C");
-        Assert.assertEquals(PatternFormatterTests.class.getName(), formatter.format(record));
+        Assertions.assertEquals(PatternFormatterTests.class.getName(), formatter.format(record));
 
         formatter = new PatternFormatter("%C{1}");
-        Assert.assertEquals("PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%C{2}");
-        Assert.assertEquals("formatters.PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("formatters.PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%C{1.}");
-        Assert.assertEquals("o.j.l.f.PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("o.j.l.f.PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%C{1.~}");
-        Assert.assertEquals("o.~.~.~.PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("o.~.~.~.PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%C{.}");
-        Assert.assertEquals("....PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("....PatternFormatterTests", formatter.format(record));
 
         formatter = new PatternFormatter("%C{1~.}");
-        Assert.assertEquals("o~.j~.l~.f~.PatternFormatterTests", formatter.format(record));
+        Assertions.assertEquals("o~.j~.l~.f~.PatternFormatterTests", formatter.format(record));
     }
 
     @Test
@@ -105,13 +105,13 @@ public class PatternFormatterTests {
         final ExtLogRecord record = createLogRecord("test");
 
         PatternFormatter formatter = new PatternFormatter("%x");
-        Assert.assertEquals("value1.value2.value3", formatter.format(record));
+        Assertions.assertEquals("value1.value2.value3", formatter.format(record));
 
         formatter = new PatternFormatter("%x{1}");
-        Assert.assertEquals("value3", formatter.format(record));
+        Assertions.assertEquals("value3", formatter.format(record));
 
         formatter = new PatternFormatter("%x{2}");
-        Assert.assertEquals("value2.value3", formatter.format(record));
+        Assertions.assertEquals("value2.value3", formatter.format(record));
     }
 
     @Test
@@ -123,14 +123,14 @@ public class PatternFormatterTests {
             final ExtLogRecord record = createLogRecord("test");
 
             PatternFormatter formatter = new PatternFormatter("%X{key1}");
-            Assert.assertEquals("value1", formatter.format(record));
+            Assertions.assertEquals("value1", formatter.format(record));
 
             formatter = new PatternFormatter("%X{not.found}");
-            Assert.assertEquals("", formatter.format(record));
+            Assertions.assertEquals("", formatter.format(record));
 
             formatter = new PatternFormatter("%X");
             String formatted = formatter.format(record);
-            Assert.assertEquals("{key1=value1, key2=value2, primaryKey=primaryValue}", formatted);
+            Assertions.assertEquals("{key1=value1, key2=value2, primaryKey=primaryValue}", formatted);
         } finally {
             MDC.clear();
         }
@@ -142,13 +142,13 @@ public class PatternFormatterTests {
         record.setThreadName("testThreadName");
         record.setThreadID(33);
         PatternFormatter formatter = new PatternFormatter("%t");
-        Assert.assertEquals("testThreadName", formatter.format(record));
+        Assertions.assertEquals("testThreadName", formatter.format(record));
 
         formatter = new PatternFormatter("%t{id}");
-        Assert.assertEquals("33", formatter.format(record));
+        Assertions.assertEquals("33", formatter.format(record));
 
         formatter = new PatternFormatter("%t{ID}");
-        Assert.assertEquals("33", formatter.format(record));
+        Assertions.assertEquals("33", formatter.format(record));
     }
 
     @Test
@@ -161,33 +161,33 @@ public class PatternFormatterTests {
     public void truncation() throws Exception {
         final ExtLogRecord record = createLogRecord("test");
         PatternFormatter formatter = new PatternFormatter("'%-10.-21c' %m");
-        Assert.assertEquals("'PatternFormatterTests' test", formatter.format(record));
+        Assertions.assertEquals("'PatternFormatterTests' test", formatter.format(record));
 
         formatter = new PatternFormatter("'%10.-21c' %m");
-        Assert.assertEquals("'PatternFormatterTests' test", formatter.format(record));
+        Assertions.assertEquals("'PatternFormatterTests' test", formatter.format(record));
 
         formatter = new PatternFormatter("%.-21C %m");
-        Assert.assertEquals("PatternFormatterTests test", formatter.format(record));
+        Assertions.assertEquals("PatternFormatterTests test", formatter.format(record));
 
         formatter = new PatternFormatter("%.2m");
-        Assert.assertEquals("te", formatter.format(record));
+        Assertions.assertEquals("te", formatter.format(record));
 
         formatter = new PatternFormatter("%.-2m");
-        Assert.assertEquals("st", formatter.format(record));
+        Assertions.assertEquals("st", formatter.format(record));
 
         formatter = new PatternFormatter("%5m");
-        Assert.assertEquals(" test", formatter.format(record));
+        Assertions.assertEquals(" test", formatter.format(record));
 
         formatter = new PatternFormatter("%-5.-10m");
-        Assert.assertEquals("test ", formatter.format(record));
+        Assertions.assertEquals("test ", formatter.format(record));
 
         formatter = new PatternFormatter("%-5.10m");
-        Assert.assertEquals("test ", formatter.format(record));
+        Assertions.assertEquals("test ", formatter.format(record));
 
         // Exact length truncation
         final String msg = "test message";
         formatter = new PatternFormatter("%c %-5.-7m");
-        Assert.assertEquals(CATEGORY + " message", formatter.format(createLogRecord(msg)));
+        Assertions.assertEquals(CATEGORY + " message", formatter.format(createLogRecord(msg)));
     }
 
     @Test
@@ -212,40 +212,40 @@ public class PatternFormatterTests {
         String formatted = formatter.format(record);
 
         // Should contain, level1, cause, level1a, suppressedLevel1 and suppressedLevel2
-        Assert.assertTrue(formatted.contains("cause"));
-        Assert.assertTrue(formatted.contains("level1"));
-        Assert.assertTrue(formatted.contains("suppressedLevel1"));
-        Assert.assertTrue(formatted.contains("suppressedLevel1a"));
-        Assert.assertTrue(formatted.contains("suppressedLevel2"));
+        Assertions.assertTrue(formatted.contains("cause"));
+        Assertions.assertTrue(formatted.contains("level1"));
+        Assertions.assertTrue(formatted.contains("suppressedLevel1"));
+        Assertions.assertTrue(formatted.contains("suppressedLevel1a"));
+        Assertions.assertTrue(formatted.contains("suppressedLevel2"));
 
         // No suppressed exceptions
         formatter = new PatternFormatter("%e{0}");
         formatted = formatter.format(record);
 
         // Should only contain cause and level1
-        Assert.assertTrue(formatted.contains("cause"));
-        Assert.assertTrue(formatted.contains("level1"));
-        Assert.assertFalse(formatted.contains("suppressedLevel1"));
-        Assert.assertFalse(formatted.contains("suppressedLevel1a"));
-        Assert.assertFalse(formatted.contains("suppressedLevel2"));
+        Assertions.assertTrue(formatted.contains("cause"));
+        Assertions.assertTrue(formatted.contains("level1"));
+        Assertions.assertFalse(formatted.contains("suppressedLevel1"));
+        Assertions.assertFalse(formatted.contains("suppressedLevel1a"));
+        Assertions.assertFalse(formatted.contains("suppressedLevel2"));
 
         // One level suppressed exceptions
         formatter = new PatternFormatter("%E{1}");
         formatted = formatter.format(record);
 
         // Should only contain cause and level1
-        Assert.assertTrue(formatted.contains("cause"));
-        Assert.assertTrue(formatted.contains("level1"));
-        Assert.assertTrue(formatted.contains("suppressedLevel1"));
-        Assert.assertFalse(formatted.contains("suppressedLevel1a"));
-        Assert.assertFalse(formatted.contains("suppressedLevel2"));
+        Assertions.assertTrue(formatted.contains("cause"));
+        Assertions.assertTrue(formatted.contains("level1"));
+        Assertions.assertTrue(formatted.contains("suppressedLevel1"));
+        Assertions.assertFalse(formatted.contains("suppressedLevel1a"));
+        Assertions.assertFalse(formatted.contains("suppressedLevel2"));
 
         // Add a circular reference to the cause. This should test both that the caused suppressed exceptions are being
         // printed and that circular exceptions aren't being processed again.
         formatter = new PatternFormatter("%e");
         cause.addSuppressed(suppressedLevel1);
         formatted = formatter.format(record);
-        Assert.assertTrue(formatted.contains("CIRCULAR REFERENCE: java.lang.IllegalStateException: suppressedLevel1"));
+        Assertions.assertTrue(formatted.contains("CIRCULAR REFERENCE: java.lang.IllegalStateException: suppressedLevel1"));
     }
 
     @Test
@@ -254,19 +254,19 @@ public class PatternFormatterTests {
         final ExtLogRecord record = createLogRecord("test");
         record.setHostName(hostName);
         PatternFormatter formatter = new PatternFormatter("%h");
-        Assert.assertEquals("logmanager", formatter.format(record));
+        Assertions.assertEquals("logmanager", formatter.format(record));
 
         // This should still return just the first portion
         formatter = new PatternFormatter("%h{2}");
-        Assert.assertEquals("logmanager", formatter.format(record));
+        Assertions.assertEquals("logmanager", formatter.format(record));
 
         // Should truncate from the beginning
         formatter = new PatternFormatter("%.3h");
-        Assert.assertEquals("log", formatter.format(record));
+        Assertions.assertEquals("log", formatter.format(record));
 
         // Should truncate from the end
         formatter = new PatternFormatter("%.-7h");
-        Assert.assertEquals("manager", formatter.format(record));
+        Assertions.assertEquals("manager", formatter.format(record));
     }
 
     @Test
@@ -275,47 +275,47 @@ public class PatternFormatterTests {
         final ExtLogRecord record = createLogRecord("test");
         record.setHostName(hostName);
         PatternFormatter formatter = new PatternFormatter("%H");
-        Assert.assertEquals(hostName, formatter.format(record));
+        Assertions.assertEquals(hostName, formatter.format(record));
 
         formatter = new PatternFormatter("%H{1}");
-        Assert.assertEquals("logmanager", formatter.format(record));
+        Assertions.assertEquals("logmanager", formatter.format(record));
 
         formatter = new PatternFormatter("%H{2}");
-        Assert.assertEquals("logmanager.jboss", formatter.format(record));
+        Assertions.assertEquals("logmanager.jboss", formatter.format(record));
 
         formatter = new PatternFormatter("%H{3}");
-        Assert.assertEquals(hostName, formatter.format(record));
+        Assertions.assertEquals(hostName, formatter.format(record));
 
         formatter = new PatternFormatter("%H{4}");
-        Assert.assertEquals(hostName, formatter.format(record));
+        Assertions.assertEquals(hostName, formatter.format(record));
 
         // Truncate from the beginning
         formatter = new PatternFormatter("%.10H");
-        Assert.assertEquals("logmanager", formatter.format(record));
+        Assertions.assertEquals("logmanager", formatter.format(record));
 
         // Truncate from the end
         formatter = new PatternFormatter("%.-3H");
-        Assert.assertEquals("org", formatter.format(record));
+        Assertions.assertEquals("org", formatter.format(record));
         formatter = new PatternFormatter("%.-5H{2}");
-        Assert.assertEquals("jboss", formatter.format(record));
+        Assertions.assertEquals("jboss", formatter.format(record));
     }
 
     private void systemProperties(final String propertyPrefix) throws Exception {
         final ExtLogRecord record = createLogRecord("test");
         PatternFormatter formatter = new PatternFormatter("%" + propertyPrefix + "{org.jboss.logmanager.testProp}");
-        Assert.assertEquals("testValue", formatter.format(record));
+        Assertions.assertEquals("testValue", formatter.format(record));
 
         formatter = new PatternFormatter("%" + propertyPrefix + "{invalid:defaultValue}");
-        Assert.assertEquals("defaultValue", formatter.format(record));
+        Assertions.assertEquals("defaultValue", formatter.format(record));
 
         formatter = new PatternFormatter("%" + propertyPrefix + "{invalid}");
-        Assert.assertEquals("null", formatter.format(record));
+        Assertions.assertEquals("null", formatter.format(record));
 
         // Test null arguments
         try {
             formatter = new PatternFormatter("%" + propertyPrefix);
             formatter.format(record);
-            Assert.fail("Should not allow null arguments");
+            Assertions.fail("Should not allow null arguments");
         } catch (IllegalArgumentException ignore) {
 
         }
@@ -323,7 +323,7 @@ public class PatternFormatterTests {
         try {
             formatter = new PatternFormatter("%" + propertyPrefix + "{}");
             formatter.format(record);
-            Assert.fail("Should not allow null arguments");
+            Assertions.fail("Should not allow null arguments");
         } catch (IllegalArgumentException ignore) {
 
         }

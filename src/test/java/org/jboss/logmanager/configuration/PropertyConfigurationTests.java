@@ -43,10 +43,10 @@ import org.jboss.logmanager.Level;
 import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.ConsoleHandler;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -56,7 +56,7 @@ public class PropertyConfigurationTests {
 
     private LogContext logContext;
 
-    @Before
+    @BeforeEach
     public void setup() {
         logContext = LogContext.create();
         TestHandler.INITIALIZED = false;
@@ -65,7 +65,7 @@ public class PropertyConfigurationTests {
         TestFilter.INITIALIZED = false;
     }
 
-    @After
+    @AfterEach
     public void tearDown() throws Exception {
         logContext.close();
     }
@@ -73,7 +73,7 @@ public class PropertyConfigurationTests {
     @Test
     public void readConfigs() throws Exception {
         final Path configDir = Paths.get(System.getProperty("config.dir"));
-        Assert.assertTrue("Missing config dir: " + configDir, Files.exists(configDir));
+        Assertions.assertTrue(Files.exists(configDir), "Missing config dir: " + configDir);
         Files.walk(configDir)
                 .filter(Files::isRegularFile)
                 .forEach((configFile) -> {
@@ -89,7 +89,7 @@ public class PropertyConfigurationTests {
                                 .append(configFile.getFileName().toString())
                                 .append(System.lineSeparator());
                         e.printStackTrace(new PrintWriter(writer));
-                        Assert.fail(writer.toString());
+                        Assertions.fail(writer.toString());
                     }
                 });
     }
@@ -115,10 +115,10 @@ public class PropertyConfigurationTests {
         testDefault(3, 1);
 
         final Logger logger = logContext.getLoggerIfExists(loggerName);
-        Assert.assertNotNull(logger);
+        Assertions.assertNotNull(logger);
         final TestHandler testHandler = findType(TestHandler.class, logger.getHandlers());
-        Assert.assertNotNull("Failed to find TestHandler", testHandler);
-        Assert.assertTrue(TestHandler.INITIALIZED);
+        Assertions.assertNotNull(testHandler, "Failed to find TestHandler");
+        Assertions.assertTrue(TestHandler.INITIALIZED);
     }
 
     @Test
@@ -142,12 +142,12 @@ public class PropertyConfigurationTests {
 
         final Logger rootLogger = logContext.getLogger("");
         final TestHandler handler = findType(TestHandler.class, rootLogger.getHandlers());
-        Assert.assertNotNull(handler);
-        Assert.assertTrue(TestHandler.INITIALIZED);
+        Assertions.assertNotNull(handler);
+        Assertions.assertTrue(TestHandler.INITIALIZED);
 
         final ErrorManager errorManager = handler.getErrorManager();
-        Assert.assertTrue(errorManager instanceof TestErrorManager);
-        Assert.assertTrue(TestErrorManager.INITIALIZED);
+        Assertions.assertTrue(errorManager instanceof TestErrorManager);
+        Assertions.assertTrue(TestErrorManager.INITIALIZED);
     }
 
     @Test
@@ -162,10 +162,10 @@ public class PropertyConfigurationTests {
 
         // Find the POJO handler
         final PojoHandler handler = findType(PojoHandler.class, handlers);
-        Assert.assertNotNull("POJO handler was not found: " + Arrays.toString(handlers), handler);
-        Assert.assertNotNull(handler.pojoObject);
-        Assert.assertTrue(handler.pojoObject.initialized);
-        Assert.assertEquals("testValue", handler.pojoObject.value);
+        Assertions.assertNotNull(handler, () -> "POJO handler was not found: " + Arrays.toString(handlers));
+        Assertions.assertNotNull(handler.pojoObject);
+        Assertions.assertTrue(handler.pojoObject.initialized);
+        Assertions.assertEquals("testValue", handler.pojoObject.value);
 
     }
 
@@ -178,7 +178,7 @@ public class PropertyConfigurationTests {
         testDefault(2, 1);
 
         // The test handler should not have been activated
-        Assert.assertFalse("The handler should not have been initialized", TestHandler.INITIALIZED);
+        Assertions.assertFalse(TestHandler.INITIALIZED, "The handler should not have been initialized");
     }
 
     @Test
@@ -190,7 +190,7 @@ public class PropertyConfigurationTests {
         testDefault(2, 1);
 
         // The test handler should not have been activated
-        Assert.assertFalse("The formatter should not have been initialized", TestFormatter.INITIALIZED);
+        Assertions.assertFalse(TestFormatter.INITIALIZED, "The formatter should not have been initialized");
     }
 
     @Test
@@ -202,7 +202,7 @@ public class PropertyConfigurationTests {
         testDefault(2, 1);
 
         // The test handler should not have been activated
-        Assert.assertFalse("The error manager should not have been initialized", TestErrorManager.INITIALIZED);
+        Assertions.assertFalse(TestErrorManager.INITIALIZED, "The error manager should not have been initialized");
     }
 
     @Test
@@ -214,28 +214,30 @@ public class PropertyConfigurationTests {
         testDefault(2, 1);
 
         // The test handler should not have been activated
-        Assert.assertFalse("The filter should not have been initialized", TestFilter.INITIALIZED);
+        Assertions.assertFalse(TestFilter.INITIALIZED, "The filter should not have been initialized");
     }
 
     private void testDefault(final int expectedLoggers, final int expectedRootHandlers) {
         final Collection<String> loggerNames = Collections.list(logContext.getLoggerNames());
         // We should have two defined loggers
-        Assert.assertEquals("Expected two loggers to be defined found: " + loggerNames, expectedLoggers, loggerNames.size());
+        Assertions.assertEquals(expectedLoggers, loggerNames.size(),
+                () -> "Expected two loggers to be defined found: " + loggerNames);
 
         // Test the configured root logger
         final Logger rootLogger = logContext.getLoggerIfExists("");
-        Assert.assertNotNull("Root logger was not configured", rootLogger);
-        Assert.assertEquals(Level.DEBUG.intValue(), rootLogger.getLevel().intValue());
+        Assertions.assertNotNull(rootLogger, "Root logger was not configured");
+        Assertions.assertEquals(Level.DEBUG.intValue(), rootLogger.getLevel().intValue());
 
         // There should only be a console handler, check that it's configured
         final Handler[] handlers = rootLogger.getHandlers();
-        Assert.assertNotNull("Expected handles to be defined", handlers);
-        Assert.assertEquals(String.format("Expected %d handlers found %d: %s", expectedRootHandlers, handlers.length,
-                Arrays.toString(handlers)), expectedRootHandlers, handlers.length);
+        Assertions.assertNotNull(handlers, "Expected handles to be defined");
+        Assertions.assertEquals(expectedRootHandlers, handlers.length,
+                () -> String.format("Expected %d handlers found %d: %s", expectedRootHandlers, handlers.length,
+                        Arrays.toString(handlers)));
         final Handler handler = findType(ConsoleHandler.class, handlers);
-        Assert.assertNotNull("Failed to find the console handler", handler);
-        Assert.assertEquals(ConsoleHandler.class, handler.getClass());
-        Assert.assertEquals(Level.TRACE.intValue(), handler.getLevel().intValue());
+        Assertions.assertNotNull(handler, "Failed to find the console handler");
+        Assertions.assertEquals(ConsoleHandler.class, handler.getClass());
+        Assertions.assertEquals(Level.TRACE.intValue(), handler.getLevel().intValue());
     }
 
     private static Properties defaultProperties(final String... additionalLoggers) {

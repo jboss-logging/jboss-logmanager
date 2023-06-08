@@ -18,9 +18,6 @@
  */
 package org.jboss.logmanager.handlers;
 
-import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.assertThat;
-
 import java.io.IOException;
 import java.io.StringWriter;
 import java.util.logging.Formatter;
@@ -30,9 +27,10 @@ import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.handlers.ConsoleHandler.Target;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:ehugonne@redhat.com">Emmanuel Hugonnet</a> (c) 2013 Red Hat, inc.
@@ -51,12 +49,12 @@ public class OutputStreamHandlerTest {
     public OutputStreamHandlerTest() {
     }
 
-    @Before
+    @BeforeEach
     public void prepareBuffer() {
         out = new StringWriter();
     }
 
-    @After
+    @AfterEach
     public void cleanAll() throws IOException {
         handler.flush();
         handler.close();
@@ -68,7 +66,7 @@ public class OutputStreamHandlerTest {
         handler = new OutputStreamHandler();
         handler.setErrorManager(AssertingErrorManager.of());
         handler.setEncoding("UTF-8");
-        assertThat(handler.getEncoding(), is("UTF-8"));
+        Assertions.assertEquals("UTF-8", handler.getEncoding());
     }
 
     @Test
@@ -77,9 +75,9 @@ public class OutputStreamHandlerTest {
         handler.setErrorManager(AssertingErrorManager.of());
         handler.setWriter(out);
         handler.setEncoding("UTF-8");
-        assertThat(handler.getEncoding(), is("UTF-8"));
+        Assertions.assertEquals("UTF-8", handler.getEncoding());
         handler.publish(new ExtLogRecord(Level.INFO, "Hello World", getClass().getName()));
-        assertThat(out.toString(), is("Hello World"));
+        Assertions.assertEquals("Hello World", out.toString());
     }
 
     @Test
@@ -89,7 +87,7 @@ public class OutputStreamHandlerTest {
         handler.setWriter(out);
         handler.setEncoding(null);
         handler.publish(new ExtLogRecord(Level.INFO, "Hello World", getClass().getName()));
-        assertThat(out.toString(), is("Hello World"));
+        Assertions.assertEquals("Hello World", out.toString());
     }
 
 }

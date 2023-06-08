@@ -19,7 +19,7 @@
 
 package org.jboss.logmanager;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -34,7 +34,7 @@ import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.FileHandler;
 import org.jboss.logmanager.handlers.OutputStreamHandler;
 import org.jboss.logmanager.handlers.WriterHandler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public final class HandlerTests {
 

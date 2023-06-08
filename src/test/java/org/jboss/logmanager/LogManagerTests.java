@@ -24,8 +24,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -59,9 +59,9 @@ public class LogManagerTests extends AbstractTest {
         // Validate each level
         for (java.util.logging.Level l : levels) {
             java.util.logging.Level level = java.util.logging.Level.parse(l.getName());
-            Assert.assertEquals(l, level);
+            Assertions.assertEquals(l, level);
             level = java.util.logging.Level.parse(Integer.toString(l.intValue()));
-            Assert.assertEquals(l, level);
+            Assertions.assertEquals(l, level);
         }
     }
 
@@ -70,7 +70,7 @@ public class LogManagerTests extends AbstractTest {
         // Get the log manager
         final java.util.logging.LogManager logManager = java.util.logging.LogManager.getLogManager();
         // Should be a org.jboss.logmanager.LogManager
-        Assert.assertEquals(LogManager.class, logManager.getClass());
+        Assertions.assertEquals(LogManager.class, logManager.getClass());
 
         final List<String> expectedNames = Arrays.asList("", "test1", "org.jboss", "org.jboss.logmanager", "other", "stdout");
 
@@ -82,7 +82,7 @@ public class LogManagerTests extends AbstractTest {
     }
 
     private <T> void compare(final Collection<T> expected, final Collection<T> actual) {
-        Assert.assertTrue("Expected: " + expected.toString() + " Actual: " + actual.toString(), expected.containsAll(actual));
-        Assert.assertTrue("Expected: " + expected.toString() + " Actual: " + actual.toString(), actual.containsAll(expected));
+        Assertions.assertTrue(expected.containsAll(actual), () -> "Expected: " + expected + " Actual: " + actual);
+        Assertions.assertTrue(actual.containsAll(expected), () -> "Expected: " + expected + " Actual: " + actual);
     }
 }

@@ -34,9 +34,9 @@ import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.LogContext;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 import io.smallrye.common.cpu.ProcessorInfo;
 
@@ -47,7 +47,7 @@ public class DelayedHandlerTests {
 
     private static final int ITERATIONS = Integer.parseInt(System.getProperty("org.jboss.bootstrap.test.iterations", "190"));
 
-    @After
+    @AfterEach
     public void cleanup() {
         TestHandler.MESSAGES.clear();
     }
@@ -76,14 +76,14 @@ public class DelayedHandlerTests {
         randomLogger.finest("Test message 7");
 
         // The default root logger message is INFO so FINE and FINEST should not be logged
-        Assert.assertEquals(5, TestHandler.MESSAGES.size());
+        Assertions.assertEquals(5, TestHandler.MESSAGES.size());
 
         // Test the messages actually logged
-        Assert.assertEquals("Test message 1", TestHandler.MESSAGES.get(0).getFormattedMessage());
-        Assert.assertEquals("Test message 3", TestHandler.MESSAGES.get(1).getFormattedMessage());
-        Assert.assertEquals("Test message 4", TestHandler.MESSAGES.get(2).getFormattedMessage());
-        Assert.assertEquals("Test message 5", TestHandler.MESSAGES.get(3).getFormattedMessage());
-        Assert.assertEquals("Test message 6", TestHandler.MESSAGES.get(4).getFormattedMessage());
+        Assertions.assertEquals("Test message 1", TestHandler.MESSAGES.get(0).getFormattedMessage());
+        Assertions.assertEquals("Test message 3", TestHandler.MESSAGES.get(1).getFormattedMessage());
+        Assertions.assertEquals("Test message 4", TestHandler.MESSAGES.get(2).getFormattedMessage());
+        Assertions.assertEquals("Test message 5", TestHandler.MESSAGES.get(3).getFormattedMessage());
+        Assertions.assertEquals("Test message 6", TestHandler.MESSAGES.get(4).getFormattedMessage());
     }
 
     @Test
@@ -107,7 +107,7 @@ public class DelayedHandlerTests {
             handler.addHandler(new TestHandler());
 
             // Test that all messages have been flushed to the handler
-            Assert.assertEquals(ITERATIONS, TestHandler.MESSAGES.size());
+            Assertions.assertEquals(ITERATIONS, TestHandler.MESSAGES.size());
 
             // Test that all messages have been flushed to the handler
             final List<Integer> missing = new ArrayList<>(ITERATIONS);
@@ -120,11 +120,11 @@ public class DelayedHandlerTests {
                     .collect(Collectors.toList());
             missing.removeAll(ints);
             Collections.sort(missing);
-            Assert.assertEquals(String.format("Missing the following entries: %s", missing), ITERATIONS,
-                    TestHandler.MESSAGES.size());
+            Assertions.assertEquals(ITERATIONS, TestHandler.MESSAGES.size(),
+                    () -> String.format("Missing the following entries: %s", missing));
 
         } finally {
-            Assert.assertTrue(service.shutdownNow().isEmpty());
+            Assertions.assertTrue(service.shutdownNow().isEmpty());
         }
     }
 
@@ -166,11 +166,11 @@ public class DelayedHandlerTests {
                     .collect(Collectors.toList());
             missing.removeAll(ints);
             Collections.sort(missing);
-            Assert.assertEquals(String.format("Missing the following entries: %s", missing), ITERATIONS,
-                    TestHandler.MESSAGES.size());
+            Assertions.assertEquals(ITERATIONS, TestHandler.MESSAGES.size(),
+                    () -> String.format("Missing the following entries: %s", missing));
 
         } finally {
-            Assert.assertTrue(service.shutdownNow().isEmpty());
+            Assertions.assertTrue(service.shutdownNow().isEmpty());
         }
     }
 
@@ -213,20 +213,20 @@ public class DelayedHandlerTests {
                     .collect(Collectors.toList());
             final List<String> missing = new ArrayList<>(expected);
             missing.removeAll(found);
-            Assert.assertTrue("Missing the following entries: " + missing, missing.isEmpty());
+            Assertions.assertTrue(missing.isEmpty(), () -> "Missing the following entries: " + missing);
 
             // This shouldn't happen as the above should find it, but it's better to fail here than below.
-            Assert.assertEquals(expected.size(), TestHandler.MESSAGES.size());
+            Assertions.assertEquals(expected.size(), TestHandler.MESSAGES.size());
 
             // Now we need to test the order of what we have vs what is expected. These should be in the same order
             for (int i = 0; i < expected.size(); i++) {
                 final String expectedMessage = expected.get(i);
                 final ExtLogRecord record = TestHandler.MESSAGES.get(i);
-                Assert.assertEquals(expectedMessage, record.getFormattedMessage());
+                Assertions.assertEquals(expectedMessage, record.getFormattedMessage());
             }
 
         } finally {
-            Assert.assertTrue(service.shutdownNow().isEmpty());
+            Assertions.assertTrue(service.shutdownNow().isEmpty());
         }
     }
 

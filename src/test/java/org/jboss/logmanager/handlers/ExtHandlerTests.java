@@ -24,8 +24,8 @@ import java.util.logging.SimpleFormatter;
 import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -40,15 +40,15 @@ public class ExtHandlerTests {
         parent.setHandlers(new CloseHandler[] { child1, child2, new CloseHandler() });
 
         // Ensure all handlers are not closed
-        Assert.assertFalse(parent.closed);
-        Assert.assertFalse(child1.closed);
-        Assert.assertFalse(child2.closed);
+        Assertions.assertFalse(parent.closed);
+        Assertions.assertFalse(child1.closed);
+        Assertions.assertFalse(child2.closed);
 
         // Close the parent handler, the children should be closed
         parent.close();
-        Assert.assertTrue(parent.closed);
-        Assert.assertTrue(child1.closed);
-        Assert.assertTrue(child2.closed);
+        Assertions.assertTrue(parent.closed);
+        Assertions.assertTrue(child1.closed);
+        Assertions.assertTrue(child2.closed);
 
         // Reset and wrap
         parent.reset();
@@ -58,16 +58,16 @@ public class ExtHandlerTests {
         parent.setCloseChildren(false);
 
         // Ensure all handlers are not closed
-        Assert.assertFalse(parent.closed);
-        Assert.assertFalse(child1.closed);
-        Assert.assertFalse(child2.closed);
+        Assertions.assertFalse(parent.closed);
+        Assertions.assertFalse(child1.closed);
+        Assertions.assertFalse(child2.closed);
 
         parent.close();
 
         // The parent should be closed, the others should be open
-        Assert.assertTrue(parent.closed);
-        Assert.assertFalse(child1.closed);
-        Assert.assertFalse(child2.closed);
+        Assertions.assertTrue(parent.closed);
+        Assertions.assertFalse(child1.closed);
+        Assertions.assertFalse(child2.closed);
 
     }
 
@@ -79,11 +79,11 @@ public class ExtHandlerTests {
         final PatternFormatter formatter = new PatternFormatter("%d %M %s%e%n");
         parent.setFormatter(formatter);
 
-        Assert.assertTrue(parent.isCallerCalculationRequired());
+        Assertions.assertTrue(parent.isCallerCalculationRequired());
 
         // Change the formatter to not require calculation, this should trigger false to be returned
         formatter.setPattern("%d %s%e%n");
-        Assert.assertFalse(parent.isCallerCalculationRequired());
+        Assertions.assertFalse(parent.isCallerCalculationRequired());
     }
 
     @Test
@@ -94,11 +94,11 @@ public class ExtHandlerTests {
         final PatternFormatter formatter = new PatternFormatter("%d %M %s%e%n");
         parent.setFormatter(formatter);
 
-        Assert.assertTrue(parent.isCallerCalculationRequired());
+        Assertions.assertTrue(parent.isCallerCalculationRequired());
 
         // Add a new formatter which should result in the caller calculation not to be required
         parent.setFormatter(new PatternFormatter("%d %s%e%n"));
-        Assert.assertFalse(parent.isCallerCalculationRequired());
+        Assertions.assertFalse(parent.isCallerCalculationRequired());
     }
 
     @Test
@@ -110,18 +110,18 @@ public class ExtHandlerTests {
         // Create a formatter for the parent that will require caller calculation
         final PatternFormatter formatter = new PatternFormatter("%d %M %s%e%n");
         child.setFormatter(formatter);
-        Assert.assertTrue(parent.isCallerCalculationRequired());
+        Assertions.assertTrue(parent.isCallerCalculationRequired());
 
         // Remove the child handler which should result in the caller calculation not being required since the formatter
         // is null
         parent.removeHandler(child);
-        Assert.assertFalse(parent.isCallerCalculationRequired());
+        Assertions.assertFalse(parent.isCallerCalculationRequired());
 
         // Add a formatter to the parent and add he child back, the parent handler will not require calculation, but
         // the child should
         parent.setFormatter(new PatternFormatter("%d %s%e%n"));
         parent.addHandler(child);
-        Assert.assertTrue(parent.isCallerCalculationRequired());
+        Assertions.assertTrue(parent.isCallerCalculationRequired());
     }
 
     @Test
@@ -132,10 +132,10 @@ public class ExtHandlerTests {
 
         // Create a non ExtFormatter for the parent that will require caller calculation
         child.setFormatter(new SimpleFormatter());
-        Assert.assertTrue(child.isCallerCalculationRequired());
-        Assert.assertTrue(parent.isCallerCalculationRequired());
+        Assertions.assertTrue(child.isCallerCalculationRequired());
+        Assertions.assertTrue(parent.isCallerCalculationRequired());
         parent.setFormatter(new SimpleFormatter());
-        Assert.assertTrue(parent.isCallerCalculationRequired());
+        Assertions.assertTrue(parent.isCallerCalculationRequired());
     }
 
     static class CloseHandler extends ExtHandler {

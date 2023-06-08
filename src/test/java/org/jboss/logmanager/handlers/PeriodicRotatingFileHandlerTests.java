@@ -32,19 +32,18 @@ import java.util.List;
 import java.util.logging.ErrorManager;
 
 import org.jboss.byteman.contrib.bmunit.BMRule;
-import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@RunWith(BMUnitRunner.class)
+@WithByteman
 public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     private final static String FILENAME = "periodic-rotating-file-handler.log";
 
@@ -53,7 +52,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     private final SimpleDateFormat rotateFormatter = new SimpleDateFormat(".dd");
     private PeriodicRotatingFileHandler handler;
 
-    @Before
+    @BeforeEach
     public void createHandler() throws FileNotFoundException {
         // Create the handler
         handler = new PeriodicRotatingFileHandler(logFile.toFile(), rotateFormatter.toPattern(), false);
@@ -63,7 +62,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setErrorManager(AssertingErrorManager.of());
     }
 
-    @After
+    @AfterEach
     public void closeHandler() {
         handler.close();
         handler = null;
@@ -117,12 +116,12 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
         handler.publish(record);
 
-        Assert.assertTrue("File '" + logFile + "' does not exist", Files.exists(logFile));
+        Assertions.assertTrue(Files.exists(logFile), () -> "File '" + logFile + "' does not exist");
 
         // Read the contents of the log file and ensure there's only one line
         List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
-        Assert.assertEquals("More than 1 line found", 1, lines.size());
-        Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
+        Assertions.assertEquals(1, lines.size(), "More than 1 line found");
+        Assertions.assertTrue(lines.get(0).contains(currentDate), "Expected the line to contain the date: " + currentDate);
 
         // Create a new record, increment the day by one. The file should fail rotating, but the contents of the
         // log file should contain the new data
@@ -134,12 +133,12 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
 
         // Read the contents of the log file and ensure there's only one line
         lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
-        Assert.assertEquals("More than 1 line found", 1, lines.size());
-        Assert.assertTrue("Expected the line to contain the date: " + nextDate, lines.get(0).contains(nextDate));
+        Assertions.assertEquals(1, lines.size(), "More than 1 line found");
+        Assertions.assertTrue(lines.get(0).contains(nextDate), "Expected the line to contain the date: " + nextDate);
 
         // The file should not have been rotated
-        Assert.assertTrue("The rotated file '" + rotatedFile.toString() + "' exists and should not",
-                Files.notExists(rotatedFile));
+        Assertions.assertTrue(Files.notExists(rotatedFile),
+                () -> "The rotated file '" + rotatedFile + "' exists and should not");
     }
 
     private void testRotate(final Calendar cal, final Path rotatedFile) throws Exception {
@@ -153,12 +152,12 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         ExtLogRecord record = createLogRecord(Level.INFO, "Date: %s", currentDate);
         handler.publish(record);
 
-        Assert.assertTrue("File '" + logFile + "' does not exist", Files.exists(logFile));
+        Assertions.assertTrue(Files.exists(logFile), () -> "File '" + logFile + "' does not exist");
 
         // Read the contents of the log file and ensure there's only one line
         List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
-        Assert.assertEquals("More than 1 line found", 1, lines.size());
-        Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
+        Assertions.assertEquals(1, lines.size(), "More than 1 line found");
+        Assertions.assertTrue(lines.get(0).contains(currentDate), "Expected the line to contain the date: " + currentDate);
 
         // Create a new record, increment the day by one and validate
         cal.add(Calendar.DAY_OF_MONTH, nextDay);
@@ -169,14 +168,14 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
 
         // Read the contents of the log file and ensure there's only one line
         lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
-        Assert.assertEquals("More than 1 line found", 1, lines.size());
-        Assert.assertTrue("Expected the line to contain the date: " + nextDate, lines.get(0).contains(nextDate));
+        Assertions.assertEquals(1, lines.size(), "More than 1 line found");
+        Assertions.assertTrue(lines.get(0).contains(nextDate), "Expected the line to contain the date: " + nextDate);
 
         // The file should have been rotated as well
-        Assert.assertTrue("The rotated file '" + rotatedFile.toString() + "' does not exist", Files.exists(rotatedFile));
+        Assertions.assertTrue(Files.exists(rotatedFile), () -> "The rotated file '" + rotatedFile + "' does not exist");
         lines = Files.readAllLines(rotatedFile, StandardCharsets.UTF_8);
-        Assert.assertEquals("More than 1 line found", 1, lines.size());
-        Assert.assertTrue("Expected the line to contain the date: " + currentDate, lines.get(0).contains(currentDate));
+        Assertions.assertEquals(1, lines.size(), "More than 1 line found");
+        Assertions.assertTrue(lines.get(0).contains(currentDate), "Expected the line to contain the date: " + currentDate);
     }
 
     private void testArchiveRotate(final String archiveSuffix) throws Exception {
@@ -213,9 +212,9 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         final Path logDir = BASE_LOG_DIR.toPath();
         final Path rotated1 = logDir.resolve(FILENAME + firstDateSuffix + archiveSuffix);
         final Path rotated2 = logDir.resolve(FILENAME + secondDateSuffix + archiveSuffix);
-        Assert.assertTrue("Missing file " + logFile, Files.exists(logFile));
-        Assert.assertTrue("Missing rotated file " + rotated1, Files.exists(rotated1));
-        Assert.assertTrue("Missing rotated file " + rotated2, Files.exists(rotated2));
+        Assertions.assertTrue(Files.exists(logFile), () -> "Missing file " + logFile);
+        Assertions.assertTrue(Files.exists(rotated1), () -> "Missing rotated file " + rotated1);
+        Assertions.assertTrue(Files.exists(rotated2), () -> "Missing rotated file " + rotated2);
 
         // Validate the files are not empty and the compressed file contains at least one log record
         if (archiveSuffix.endsWith(".gz")) {
@@ -225,7 +224,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
             validateZipContents(rotated1, logFile.getFileName().toString(), "Date: " + currentDate);
             validateZipContents(rotated2, logFile.getFileName().toString(), "Date: " + nextDate);
         } else {
-            Assert.fail("Unknown archive suffix: " + archiveSuffix);
+            Assertions.fail("Unknown archive suffix: " + archiveSuffix);
         }
         compareArchiveContents(rotated1, rotated2, logFile.getFileName().toString());
     }

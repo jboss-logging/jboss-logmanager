@@ -24,7 +24,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.logging.ErrorManager;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -81,11 +81,11 @@ public class AssertingErrorManager extends ErrorManager {
                     PrintWriter pw = new PrintWriter(sw)) {
                 pw.printf("LogManager error of type %s: %s%n", codeStr, msg);
                 ex.printStackTrace(pw);
-                Assert.fail(sw.toString());
+                Assertions.fail(sw.toString());
             } catch (IOException e) {
                 // This shouldn't happen, but just fail if it does
                 e.printStackTrace();
-                Assert.fail(String.format("Failed to print error message: %s", e.getMessage()));
+                Assertions.fail(String.format("Failed to print error message: %s", e.getMessage()));
             }
         }
     }

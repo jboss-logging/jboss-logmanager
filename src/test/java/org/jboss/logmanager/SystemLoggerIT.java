@@ -38,10 +38,10 @@ import jakarta.json.JsonArrayBuilder;
 import jakarta.json.JsonObject;
 import jakarta.json.JsonReader;
 
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -52,13 +52,13 @@ public class SystemLoggerIT {
     private Path stdout;
     private Path logFile;
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         stdout = Files.createTempFile("stdout", ".txt");
         logFile = Files.createTempFile("system-logger", ".log");
     }
 
-    @After
+    @AfterEach
     public void killProcess() throws IOException {
         Files.deleteIfExists(stdout);
         Files.deleteIfExists(logFile);
@@ -72,33 +72,33 @@ public class SystemLoggerIT {
             final StringBuilder msg = new StringBuilder("Expected exit value 0 got ")
                     .append(exitCode);
             appendStdout(msg);
-            Assert.assertEquals(msg.toString(), 0, exitCode);
+            Assertions.assertEquals(0, exitCode, msg.toString());
         } else {
             final Process destroyed = process.destroyForcibly();
             final StringBuilder msg = new StringBuilder("Failed to exit process within 3 seconds. Exit Code: ")
                     .append(destroyed.exitValue());
             appendStdout(msg);
-            Assert.fail(msg.toString());
+            Assertions.fail(msg.toString());
         }
 
         final JsonObject json = readLogFile(logFile);
         final JsonArray lines = json.getJsonArray("lines");
-        Assert.assertEquals(2, lines.size());
+        Assertions.assertEquals(2, lines.size());
         // The first line should be from a SystemLogger
         JsonObject line = lines.getJsonObject(0);
-        Assert.assertEquals("org.jboss.logmanager.JBossLoggerFinder$JBossSystemLogger", line.getString("loggerClassName"));
+        Assertions.assertEquals("org.jboss.logmanager.JBossLoggerFinder$JBossSystemLogger", line.getString("loggerClassName"));
         JsonObject mdc = line.getJsonObject("mdc");
-        Assert.assertEquals("org.jboss.logmanager.JBossLoggerFinder$JBossSystemLogger", mdc.getString("logger.type"));
-        Assert.assertEquals(LogManager.class.getName(), mdc.getString("java.util.logging.LogManager"));
-        Assert.assertEquals(LogManager.class.getName(), mdc.getString("java.util.logging.manager"));
+        Assertions.assertEquals("org.jboss.logmanager.JBossLoggerFinder$JBossSystemLogger", mdc.getString("logger.type"));
+        Assertions.assertEquals(LogManager.class.getName(), mdc.getString("java.util.logging.LogManager"));
+        Assertions.assertEquals(LogManager.class.getName(), mdc.getString("java.util.logging.manager"));
 
         // The second line should be from a JUL logger
         line = lines.getJsonObject(1);
-        Assert.assertEquals(Logger.class.getName(), line.getString("loggerClassName"));
+        Assertions.assertEquals(Logger.class.getName(), line.getString("loggerClassName"));
         mdc = line.getJsonObject("mdc");
-        Assert.assertEquals(Logger.class.getName(), mdc.getString("logger.type"));
-        Assert.assertEquals(LogManager.class.getName(), mdc.getString("java.util.logging.LogManager"));
-        Assert.assertEquals(LogManager.class.getName(), mdc.getString("java.util.logging.manager"));
+        Assertions.assertEquals(Logger.class.getName(), mdc.getString("logger.type"));
+        Assertions.assertEquals(LogManager.class.getName(), mdc.getString("java.util.logging.LogManager"));
+        Assertions.assertEquals(LogManager.class.getName(), mdc.getString("java.util.logging.manager"));
     }
 
     @Test
@@ -110,40 +110,40 @@ public class SystemLoggerIT {
             final StringBuilder msg = new StringBuilder("Expected exit value 0 got ")
                     .append(exitCode);
             appendStdout(msg);
-            Assert.assertEquals(msg.toString(), 0, exitCode);
+            Assertions.assertEquals(0, exitCode, msg.toString());
         } else {
             final Process destroyed = process.destroyForcibly();
             final StringBuilder msg = new StringBuilder("Failed to exit process within 3 seconds. Exit Code: ")
                     .append(destroyed.exitValue());
             appendStdout(msg);
-            Assert.fail(msg.toString());
+            Assertions.fail(msg.toString());
         }
 
         final JsonObject json = readLogFile(logFile);
         final JsonArray lines = json.getJsonArray("lines");
-        Assert.assertEquals(3, lines.size());
+        Assertions.assertEquals(3, lines.size());
 
         // The first line should be an error indicating the java.util.logging.manager wasn't set before the LogManager
         // was accessed
         JsonObject line = lines.getJsonObject(0);
-        Assert.assertEquals("ERROR", line.getString("level"));
+        Assertions.assertEquals("ERROR", line.getString("level"));
         final String message = line.getString("message");
-        Assert.assertNotNull(message);
-        Assert.assertTrue(message.contains("java.util.logging.manager"));
+        Assertions.assertNotNull(message);
+        Assertions.assertTrue(message.contains("java.util.logging.manager"));
 
         // The second line should be from a SystemLogger
         line = lines.getJsonObject(1);
-        Assert.assertEquals("org.jboss.logmanager.JBossLoggerFinder$JBossSystemLogger", line.getString("loggerClassName"));
+        Assertions.assertEquals("org.jboss.logmanager.JBossLoggerFinder$JBossSystemLogger", line.getString("loggerClassName"));
         JsonObject mdc = line.getJsonObject("mdc");
-        Assert.assertEquals("org.jboss.logmanager.JBossLoggerFinder$JBossSystemLogger", mdc.getString("logger.type"));
-        Assert.assertEquals("java.util.logging.LogManager", mdc.getString("java.util.logging.LogManager"));
+        Assertions.assertEquals("org.jboss.logmanager.JBossLoggerFinder$JBossSystemLogger", mdc.getString("logger.type"));
+        Assertions.assertEquals("java.util.logging.LogManager", mdc.getString("java.util.logging.LogManager"));
 
         // The third line should be from a JUL logger
         line = lines.getJsonObject(2);
-        Assert.assertEquals("java.util.logging.Logger", line.getString("loggerClassName"));
+        Assertions.assertEquals("java.util.logging.Logger", line.getString("loggerClassName"));
         mdc = line.getJsonObject("mdc");
-        Assert.assertEquals("java.util.logging.Logger", mdc.getString("logger.type"));
-        Assert.assertEquals("java.util.logging.LogManager", mdc.getString("java.util.logging.LogManager"));
+        Assertions.assertEquals("java.util.logging.Logger", mdc.getString("logger.type"));
+        Assertions.assertEquals("java.util.logging.LogManager", mdc.getString("java.util.logging.LogManager"));
     }
 
     private Process createProcess(final String... javaOpts) throws IOException {

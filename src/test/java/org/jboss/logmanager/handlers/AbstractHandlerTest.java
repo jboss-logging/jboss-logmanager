@@ -38,9 +38,9 @@ import java.util.zip.GZIPInputStream;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -54,12 +54,12 @@ public class AbstractHandlerTest {
 
     final static PatternFormatter FORMATTER = new PatternFormatter("%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n");
 
-    @Before
+    @BeforeEach
     public void setup() throws Exception {
         BASE_LOG_DIR.mkdir();
     }
 
-    @After
+    @AfterEach
     public void cleanUp() throws Exception {
         deleteChildrenRecursively(BASE_LOG_DIR);
     }
@@ -142,7 +142,7 @@ public class AbstractHandlerTest {
                 }
             }
         }
-        Assert.fail(String.format("GZIP file %s missing contents: %s", path, expectedContains));
+        Assertions.fail(String.format("GZIP file %s missing contents: %s", path, expectedContains));
     }
 
     /**
@@ -160,12 +160,12 @@ public class AbstractHandlerTest {
         try (final FileSystem zipFs = FileSystems.newFileSystem(URI.create("jar:" + path.toUri().toASCIIString()),
                 Collections.singletonMap("create", "true"))) {
             final Path file = zipFs.getPath(zipFs.getSeparator(), expectedFileName);
-            Assert.assertTrue(String.format("Expected file %s not found.", expectedFileName), Files.exists(file));
+            Assertions.assertTrue(Files.exists(file), () -> String.format("Expected file %s not found.", expectedFileName));
             final List<String> lines = Files.readAllLines(file, StandardCharsets.UTF_8);
-            Assert.assertFalse(String.format("File %s appears to be empty in zip file %s.", expectedFileName, path),
-                    lines.isEmpty());
-            Assert.assertTrue(String.format("ZIP file %s missing contents: %s", path, expectedContains),
-                    lines.get(0).contains(expectedContains));
+            Assertions.assertFalse(lines.isEmpty(),
+                    () -> String.format("File %s appears to be empty in zip file %s.", expectedFileName, path));
+            Assertions.assertTrue(lines.get(0).contains(expectedContains),
+                    () -> String.format("ZIP file %s missing contents: %s", path, expectedContains));
         }
     }
 
@@ -181,18 +181,18 @@ public class AbstractHandlerTest {
             lines1 = readAllLinesFromGzip(archive1);
             lines2 = readAllLinesFromGzip(archive2);
         } else {
-            Assert.fail(String.format("Files %s and %s are not archives.", archive1, archive2));
+            Assertions.fail(String.format("Files %s and %s are not archives.", archive1, archive2));
         }
 
         // Assert the contents aren't empty
-        Assert.assertFalse(String.format("Archive %s contained no data", archive1), lines1.isEmpty());
-        Assert.assertFalse(String.format("Archive %s contained no data", archive2), lines2.isEmpty());
+        Assertions.assertFalse(lines1.isEmpty(), () -> String.format("Archive %s contained no data", archive1));
+        Assertions.assertFalse(lines2.isEmpty(), () -> String.format("Archive %s contained no data", archive2));
 
         final Collection<String> copy1 = new ArrayList<>(lines1);
         final Collection<String> copy2 = new ArrayList<>(lines2);
         boolean altered = copy1.removeAll(copy2);
         if (copy1.size() == 0) {
-            Assert.fail(String.format("The contents of %s and %s are identical and should not be", archive1, archive2));
+            Assertions.fail(String.format("The contents of %s and %s are identical and should not be", archive1, archive2));
         } else if (altered) {
             final StringBuilder msg = new StringBuilder(1024)
                     .append("The following contents are in both ")
@@ -205,7 +205,7 @@ public class AbstractHandlerTest {
                     msg.append(System.lineSeparator()).append(line);
                 }
             }
-            Assert.fail(msg.toString());
+            Assertions.fail(msg.toString());
         }
     }
 
@@ -213,7 +213,7 @@ public class AbstractHandlerTest {
         try (final FileSystem zipFs = FileSystems.newFileSystem(URI.create("jar:" + path.toUri().toASCIIString()),
                 Collections.singletonMap("create", "true"))) {
             final Path file = zipFs.getPath(zipFs.getSeparator(), expectedFileName);
-            Assert.assertTrue(String.format("Expected file %s not found.", expectedFileName), Files.exists(file));
+            Assertions.assertTrue(Files.exists(file), () -> String.format("Expected file %s not found.", expectedFileName));
             return Files.readAllLines(file, StandardCharsets.UTF_8);
         }
     }

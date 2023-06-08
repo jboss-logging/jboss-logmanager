@@ -33,9 +33,9 @@ import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.SocketHandler.Protocol;
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -63,8 +63,8 @@ public class SocketHandlerTests extends AbstractHandlerTest {
             final ExtLogRecord record = createLogRecord("Test TCP handler");
             handler.publish(record);
             final String msg = server.timeoutPoll();
-            Assert.assertNotNull(msg);
-            Assert.assertEquals("Test TCP handler", msg);
+            Assertions.assertNotNull(msg);
+            Assertions.assertEquals("Test TCP handler", msg);
         }
     }
 
@@ -76,8 +76,8 @@ public class SocketHandlerTests extends AbstractHandlerTest {
             final ExtLogRecord record = createLogRecord("Test TLS handler");
             handler.publish(record);
             final String msg = server.timeoutPoll();
-            Assert.assertNotNull(msg);
-            Assert.assertEquals("Test TLS handler", msg);
+            Assertions.assertNotNull(msg);
+            Assertions.assertEquals("Test TLS handler", msg);
         }
     }
 
@@ -89,8 +89,8 @@ public class SocketHandlerTests extends AbstractHandlerTest {
             final ExtLogRecord record = createLogRecord("Test UDP handler");
             handler.publish(record);
             final String msg = server.timeoutPoll();
-            Assert.assertNotNull(msg);
-            Assert.assertEquals("Test UDP handler", msg);
+            Assertions.assertNotNull(msg);
+            Assertions.assertEquals("Test UDP handler", msg);
         }
     }
 
@@ -105,26 +105,26 @@ public class SocketHandlerTests extends AbstractHandlerTest {
             ExtLogRecord record = createLogRecord("Test TCP handler " + port);
             handler.publish(record);
             String msg = server1.timeoutPoll();
-            Assert.assertNotNull(msg);
-            Assert.assertEquals("Test TCP handler " + port, msg);
+            Assertions.assertNotNull(msg);
+            Assertions.assertEquals("Test TCP handler " + port, msg);
 
             // Change the port on the handler which should close the first connection and open a new one
             handler.setPort(altPort);
             record = createLogRecord("Test TCP handler " + altPort);
             handler.publish(record);
             msg = server2.timeoutPoll();
-            Assert.assertNotNull(msg);
-            Assert.assertEquals("Test TCP handler " + altPort, msg);
+            Assertions.assertNotNull(msg);
+            Assertions.assertEquals("Test TCP handler " + altPort, msg);
 
             // There should be nothing on server1, we won't know if the real connection is closed but we shouldn't
             // have any data remaining on the first server
-            Assert.assertNull("Expected no data on server1", server1.peek());
+            Assertions.assertNull(server1.peek(), "Expected no data on server1");
         }
     }
 
     @Test
     public void testProtocolChange() throws Exception {
-        Assume.assumeFalse(JDK_8219991_ERROR_MESSAGE, JDK_8219991);
+        Assumptions.assumeFalse(JDK_8219991, JDK_8219991_ERROR_MESSAGE);
         SocketHandler handler = null;
         try {
             try (SimpleServer server = SimpleServer.createTcpServer()) {
@@ -132,8 +132,8 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                 final ExtLogRecord record = createLogRecord("Test TCP handler");
                 handler.publish(record);
                 final String msg = server.timeoutPoll();
-                Assert.assertNotNull(msg);
-                Assert.assertEquals("Test TCP handler", msg);
+                Assertions.assertNotNull(msg);
+                Assertions.assertEquals("Test TCP handler", msg);
             }
             // wait until the OS really release used port. https://issues.redhat.com/browse/LOGMGR-314
             Thread.sleep(50);
@@ -145,8 +145,8 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                 final ExtLogRecord record = createLogRecord("Test TLS handler");
                 handler.publish(record);
                 final String msg = server.timeoutPoll();
-                Assert.assertNotNull(msg);
-                Assert.assertEquals("Test TLS handler", msg);
+                Assertions.assertNotNull(msg);
+                Assertions.assertEquals("Test TLS handler", msg);
             }
         } finally {
             if (handler != null) {
@@ -168,8 +168,8 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                 final ExtLogRecord record = createLogRecord("Test TCP handler");
                 handler.publish(record);
                 final String msg = server.timeoutPoll();
-                Assert.assertNotNull(msg);
-                Assert.assertEquals("Test TCP handler", msg);
+                Assertions.assertNotNull(msg);
+                Assertions.assertEquals("Test TCP handler", msg);
             }
             // wait until the OS really release used port. https://issues.redhat.com/browse/LOGMGR-314
             Thread.sleep(50);
@@ -191,8 +191,8 @@ public class SocketHandlerTests extends AbstractHandlerTest {
                         throw new RuntimeException(e);
                     }
                 }, 10);
-                Assert.assertNotNull(msg);
-                Assert.assertEquals("Test TCP handler", msg);
+                Assertions.assertNotNull(msg);
+                Assertions.assertEquals("Test TCP handler", msg);
             }
         } finally {
             if (handler != null) {
@@ -203,7 +203,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
 
     @Test
     public void testTlsConfig() throws Exception {
-        Assume.assumeFalse(JDK_8219991_ERROR_MESSAGE, JDK_8219991);
+        Assumptions.assumeFalse(JDK_8219991, JDK_8219991_ERROR_MESSAGE);
         try (SimpleServer server = SimpleServer.createTlsServer()) {
             final int port = server.getPort();
             final LogContext logContext = LogContext.create();
@@ -222,8 +222,8 @@ public class SocketHandlerTests extends AbstractHandlerTest {
             rootLogger.addHandler(socketHandler);
             rootLogger.info("Test TCP handler " + port + " 1");
             String msg = server.timeoutPoll();
-            Assert.assertNotNull(msg);
-            Assert.assertEquals("Test TCP handler " + port + " 1", msg);
+            Assertions.assertNotNull(msg);
+            Assertions.assertEquals("Test TCP handler " + port + " 1", msg);
         }
     }
 
@@ -251,7 +251,7 @@ public class SocketHandlerTests extends AbstractHandlerTest {
             TimeUnit.MILLISECONDS.sleep(sleep);
             t -= sleep;
         }
-        Assert.assertFalse(String.format("Failed to get value in %d seconds.", timeout), (t <= 0));
+        Assertions.assertFalse((t <= 0), () -> String.format("Failed to get value in %d seconds.", timeout));
         return value;
     }
 }

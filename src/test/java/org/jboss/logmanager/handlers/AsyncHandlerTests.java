@@ -30,10 +30,10 @@ import org.jboss.logmanager.MDC;
 import org.jboss.logmanager.NDC;
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.AsyncHandler.OverflowAction;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -43,7 +43,7 @@ public class AsyncHandlerTests {
     private BlockingQueueHandler handler;
     private AsyncHandler asyncHandler;
 
-    @Before
+    @BeforeEach
     public void setup() {
         handler = new BlockingQueueHandler();
 
@@ -52,7 +52,7 @@ public class AsyncHandlerTests {
         asyncHandler.addHandler(handler);
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         asyncHandler.close();
         handler.close();
@@ -66,18 +66,18 @@ public class AsyncHandlerTests {
         String ndcValue = "Test NDC value";
         NDC.push(ndcValue);
         asyncHandler.doPublish(createRecord());
-        Assert.assertEquals(ndcValue, NDC.pop());
-        Assert.assertEquals(ndcValue, handler.getFirst());
+        Assertions.assertEquals(ndcValue, NDC.pop());
+        Assertions.assertEquals(ndcValue, handler.getFirst());
 
         // Next value should be blank
         asyncHandler.doPublish(createRecord());
-        Assert.assertEquals("", handler.getFirst());
+        Assertions.assertEquals("", handler.getFirst());
 
         ndcValue = "New test NDC value";
         NDC.push(ndcValue);
         asyncHandler.doPublish(createRecord());
         NDC.push("invalid");
-        Assert.assertEquals(ndcValue, handler.getFirst());
+        Assertions.assertEquals(ndcValue, handler.getFirst());
     }
 
     @Test
@@ -87,16 +87,16 @@ public class AsyncHandlerTests {
         MDC.put("key", mdcValue);
         asyncHandler.doPublish(createRecord());
         MDC.remove("key");
-        Assert.assertEquals(mdcValue, handler.getFirst());
+        Assertions.assertEquals(mdcValue, handler.getFirst());
 
         asyncHandler.doPublish(createRecord());
-        Assert.assertEquals("", handler.getFirst());
+        Assertions.assertEquals("", handler.getFirst());
 
         mdcValue = "New test MDC value";
         MDC.put("key", mdcValue);
         asyncHandler.doPublish(createRecord());
         MDC.put("key", "invalid");
-        Assert.assertEquals(mdcValue, handler.getFirst());
+        Assertions.assertEquals(mdcValue, handler.getFirst());
     }
 
     static ExtLogRecord createRecord() {

@@ -25,8 +25,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * Tests of the banner formatting capability.
@@ -40,30 +40,30 @@ public class BannerFormatterTests {
     public void testBanner() throws Exception {
         final PatternFormatter emptyFormatter = new PatternFormatter("");
         final Supplier<String> fallbackSupplier = TextBannerFormatter.createStringSupplier(FALLBACK_OK);
-        Assert.assertEquals("", emptyFormatter.getHead(null));
-        Assert.assertEquals(FALLBACK_OK, fallbackSupplier.get());
+        Assertions.assertEquals("", emptyFormatter.getHead(null));
+        Assertions.assertEquals(FALLBACK_OK, fallbackSupplier.get());
         TextBannerFormatter tbf = new TextBannerFormatter(fallbackSupplier, emptyFormatter);
-        Assert.assertEquals(FALLBACK_OK, tbf.getHead(null));
+        Assertions.assertEquals(FALLBACK_OK, tbf.getHead(null));
         tbf = new TextBannerFormatter(TextBannerFormatter.createResourceSupplier("non-existent-banner.txt", fallbackSupplier),
                 emptyFormatter);
-        Assert.assertEquals(FALLBACK_OK, tbf.getHead(null));
+        Assertions.assertEquals(FALLBACK_OK, tbf.getHead(null));
         tbf = new TextBannerFormatter(TextBannerFormatter.createResourceSupplier("test-banner.txt", fallbackSupplier),
                 emptyFormatter);
         final InputStream is = BannerFormatterTests.class.getResourceAsStream("/test-banner.txt");
-        Assert.assertNotNull(is);
+        Assertions.assertNotNull(is);
         try (is) {
             final String s = new String(is.readAllBytes(), StandardCharsets.UTF_8);
-            Assert.assertEquals(s, tbf.getHead(null));
+            Assertions.assertEquals(s, tbf.getHead(null));
         }
         final Path tempFile = Files.createTempFile(Path.of("./target"), "banner-format", null);
         try {
             Files.writeString(tempFile, TEST_BANNER_FILE);
             tbf = new TextBannerFormatter(TextBannerFormatter.createFileSupplier(tempFile, fallbackSupplier), emptyFormatter);
-            Assert.assertEquals(TEST_BANNER_FILE, tbf.getHead(null));
+            Assertions.assertEquals(TEST_BANNER_FILE, tbf.getHead(null));
             // and, the URL version...
             tbf = new TextBannerFormatter(TextBannerFormatter.createUrlSupplier(tempFile.toUri().toURL(), fallbackSupplier),
                     emptyFormatter);
-            Assert.assertEquals(TEST_BANNER_FILE, tbf.getHead(null));
+            Assertions.assertEquals(TEST_BANNER_FILE, tbf.getHead(null));
         } finally {
             try {
                 Files.delete(tempFile);
@@ -73,6 +73,6 @@ public class BannerFormatterTests {
         // non-existent file
         tbf = new TextBannerFormatter(TextBannerFormatter.createFileSupplier(Path.of("does not exist"), fallbackSupplier),
                 emptyFormatter);
-        Assert.assertEquals(FALLBACK_OK, tbf.getHead(null));
+        Assertions.assertEquals(FALLBACK_OK, tbf.getHead(null));
     }
 }
