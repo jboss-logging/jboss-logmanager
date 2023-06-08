@@ -69,6 +69,13 @@ public interface MDCProvider {
     Map<String, Object> copyObject();
 
     /**
+     * Returns {@code true} if the backing MDC map is empty, otherwise {@code false}.
+     *
+     * @return {@code true} if the MDC map is empty
+     */
+    boolean isEmpty();
+
+    /**
      * Clear the current MDC map.
      */
     void clear();
