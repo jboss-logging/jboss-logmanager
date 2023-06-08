@@ -23,8 +23,8 @@ import java.util.EnumMap;
 import java.util.Map;
 
 import org.jboss.logmanager.formatters.StructuredFormatter.Key;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -75,8 +75,8 @@ public class PropertyValuesTests extends MapTestUtils {
         parsedMap = PropertyValues.stringToMap("company=Red Hat\\, Inc.,product=JBoss,name=First \"nick\" Last");
         compareMaps(map, parsedMap);
 
-        Assert.assertTrue("Map is not empty", PropertyValues.stringToMap(null).isEmpty());
-        Assert.assertTrue("Map is not empty", PropertyValues.stringToMap("").isEmpty());
+        Assertions.assertTrue(PropertyValues.stringToMap(null).isEmpty(), "Map is not empty");
+        Assertions.assertTrue(PropertyValues.stringToMap("").isEmpty(), "Map is not empty");
     }
 
     @Test
@@ -112,14 +112,14 @@ public class PropertyValuesTests extends MapTestUtils {
                 .add("key2", "value2")
                 .add("key3", "value3")
                 .build();
-        Assert.assertEquals("key1=value1,key2=value2,key3=value3", PropertyValues.mapToString(map));
+        Assertions.assertEquals("key1=value1,key2=value2,key3=value3", PropertyValues.mapToString(map));
 
         map = MapBuilder.<String, String> create()
                 .add("key=1", "value1")
                 .add("key=2", "value,2")
                 .add("key3", "value,3")
                 .build();
-        Assert.assertEquals("key\\=1=value1,key\\=2=value\\,2,key3=value\\,3", PropertyValues.mapToString(map));
+        Assertions.assertEquals("key\\=1=value1,key\\=2=value\\,2,key3=value\\,3", PropertyValues.mapToString(map));
 
         map = MapBuilder.<String, String> create()
                 .add("key=", "value,")
@@ -127,7 +127,7 @@ public class PropertyValuesTests extends MapTestUtils {
                 .add("key\\", "value\\")
                 .add("this", "some=thing\\thing=some")
                 .build();
-        Assert.assertEquals("key\\==value\\,,key2=value2,key\\\\=value\\\\,this=some=thing\\\\thing=some",
+        Assertions.assertEquals("key\\==value\\,,key2=value2,key\\\\=value\\\\,this=some=thing\\\\thing=some",
                 PropertyValues.mapToString(map));
 
         map = MapBuilder.<String, String> create()
@@ -136,16 +136,17 @@ public class PropertyValuesTests extends MapTestUtils {
                 .add("key3", "value3")
                 .add("key4", null)
                 .build();
-        Assert.assertEquals("key1=value1,key2=,key3=value3,key4=", PropertyValues.mapToString(map));
+        Assertions.assertEquals("key1=value1,key2=,key3=value3,key4=", PropertyValues.mapToString(map));
 
         map = MapBuilder.<String, String> create()
                 .add("company", "Red Hat, Inc.")
                 .add("product", "JBoss")
                 .add("name", "First \"nick\" Last")
                 .build();
-        Assert.assertEquals("company=Red Hat\\, Inc.,product=JBoss,name=First \"nick\" Last", PropertyValues.mapToString(map));
+        Assertions.assertEquals("company=Red Hat\\, Inc.,product=JBoss,name=First \"nick\" Last",
+                PropertyValues.mapToString(map));
 
-        Assert.assertTrue("Expected an empty map", PropertyValues.stringToMap(null).isEmpty());
-        Assert.assertTrue("Expected an empty map", PropertyValues.stringToMap("").isEmpty());
+        Assertions.assertTrue(PropertyValues.stringToMap(null).isEmpty(), "Expected an empty map");
+        Assertions.assertTrue(PropertyValues.stringToMap("").isEmpty(), "Expected an empty map");
     }
 }

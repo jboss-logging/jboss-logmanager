@@ -19,7 +19,7 @@
 
 package org.jboss.logmanager;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
@@ -39,8 +39,8 @@ import org.jboss.logmanager.filters.LevelFilter;
 import org.jboss.logmanager.filters.LevelRangeFilter;
 import org.jboss.logmanager.filters.RegexFilter;
 import org.jboss.logmanager.filters.SubstituteFilter;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 public final class FilterTests {
 
@@ -58,7 +58,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -73,7 +73,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -88,7 +88,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -107,7 +107,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -126,7 +126,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -145,7 +145,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -160,7 +160,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -179,7 +179,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -198,7 +198,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -217,7 +217,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -232,7 +232,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -247,7 +247,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -262,7 +262,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.finest("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -277,7 +277,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -292,7 +292,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -307,7 +307,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -322,7 +322,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.severe("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -337,7 +337,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.DEBUG);
         logger.log(Level.DEBUG, "This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -352,7 +352,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.DEBUG);
         logger.log(Level.DEBUG, "This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -367,7 +367,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.warning("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -382,7 +382,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -397,11 +397,11 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
-    @Ignore("This test is testing essentially invalid/coincidental behavior")
+    @Disabled("This test is testing essentially invalid/coincidental behavior")
     public void testRegexFilter2() {
         final Filter filter = new RegexFilter("pest");
         final AtomicBoolean ran = new AtomicBoolean();
@@ -415,7 +415,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.log(record);
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -432,7 +432,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.log(record);
-        assertFalse("Handler was run", ran.get());
+        assertFalse(ran.get(), "Handler was run");
     }
 
     @Test
@@ -456,7 +456,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test test.");
-        assertEquals("Substitution was not correctly applied", "This is a lunch lunch.", result.get());
+        assertEquals("This is a lunch lunch.", result.get(), "Substitution was not correctly applied");
     }
 
     @Test
@@ -471,7 +471,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test test.");
-        assertEquals("Substitution was not correctly applied", "This is a lunch test.", result.get());
+        assertEquals("This is a lunch test.", result.get(), "Substitution was not correctly applied");
     }
 
     @Test
@@ -486,7 +486,7 @@ public final class FilterTests {
         logger.setFilter(filter);
         handler.setLevel(Level.INFO);
         logger.info("This is a test test.");
-        assertEquals("Substitution was not correctly applied", "This is a lunches lunches.", result.get());
+        assertEquals("This is a lunches lunches.", result.get(), "Substitution was not correctly applied");
     }
 
     @Test
@@ -496,7 +496,7 @@ public final class FilterTests {
                 FilterTests.class.getName());
         record.setParameters(new String[] { "test" });
         filter.isLoggable(record);
-        assertEquals("Substitution was not correctly applied", "This is a lunches lunches", record.getFormattedMessage());
+        assertEquals("This is a lunches lunches", record.getFormattedMessage(), "Substitution was not correctly applied");
     }
 
     @Test
@@ -525,7 +525,7 @@ public final class FilterTests {
         record.setParameters(new Object[] { "test" });
 
         logger.log(record);
-        assertEquals("The substitution was not correctly applied", "lunch", result.get());
+        assertEquals("lunch", result.get(), "The substitution was not correctly applied");
     }
 
     private static final class MessageCheckingHandler extends Handler {

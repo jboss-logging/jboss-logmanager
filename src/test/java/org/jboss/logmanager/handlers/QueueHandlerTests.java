@@ -27,8 +27,8 @@ import java.util.List;
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -46,14 +46,14 @@ public class QueueHandlerTests extends AbstractHandlerTest {
         }
         final ExtLogRecord[] records = handler.getQueue();
 
-        Assert.assertEquals("QueueHandler held onto more records than allowed", 5, records.length);
+        Assertions.assertEquals(5, records.length, "QueueHandler held onto more records than allowed");
 
         // Check each message, the last should be the sixth
-        Assert.assertEquals("Test message 1", records[0].getMessage());
-        Assert.assertEquals("Test message 2", records[1].getMessage());
-        Assert.assertEquals("Test message 3", records[2].getMessage());
-        Assert.assertEquals("Test message 4", records[3].getMessage());
-        Assert.assertEquals("Test message 5", records[4].getMessage());
+        Assertions.assertEquals("Test message 1", records[0].getMessage());
+        Assertions.assertEquals("Test message 2", records[1].getMessage());
+        Assertions.assertEquals("Test message 3", records[2].getMessage());
+        Assertions.assertEquals("Test message 4", records[3].getMessage());
+        Assertions.assertEquals("Test message 5", records[4].getMessage());
     }
 
     @Test
@@ -69,18 +69,18 @@ public class QueueHandlerTests extends AbstractHandlerTest {
 
         // Log an info messages
         handler.publish(createLogRecord(Level.INFO, "Test message"));
-        Assert.assertEquals(1, nestedHandler.getRecords().size());
-        Assert.assertEquals(0, handler.getQueue().length);
+        Assertions.assertEquals(1, nestedHandler.getRecords().size());
+        Assertions.assertEquals(0, handler.getQueue().length);
 
         // Log a warn messages
         handler.publish(createLogRecord(Level.WARN, "Test message"));
-        Assert.assertEquals(2, nestedHandler.getRecords().size());
-        Assert.assertEquals(0, handler.getQueue().length);
+        Assertions.assertEquals(2, nestedHandler.getRecords().size());
+        Assertions.assertEquals(0, handler.getQueue().length);
 
         // Log an error messages
         handler.publish(createLogRecord(Level.ERROR, "Test message"));
-        Assert.assertEquals(3, nestedHandler.getRecords().size());
-        Assert.assertEquals(1, handler.getQueue().length);
+        Assertions.assertEquals(3, nestedHandler.getRecords().size());
+        Assertions.assertEquals(1, handler.getQueue().length);
     }
 
     static class NestedHandler extends ExtHandler {

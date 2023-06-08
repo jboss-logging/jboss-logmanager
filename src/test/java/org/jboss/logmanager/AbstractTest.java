@@ -19,15 +19,15 @@
 
 package org.jboss.logmanager;
 
-import org.junit.After;
-import org.junit.Before;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public abstract class AbstractTest {
 
-    @Before
+    @BeforeEach
     public void addLogContext() {
         final LogContext context = LogContext.create();
         LogContext.setLogContextSelector(new LogContextSelector() {
@@ -38,7 +38,7 @@ public abstract class AbstractTest {
         });
     }
 
-    @After
+    @AfterEach
     public void removeLogContext() {
         LogContext.setLogContextSelector(LogContext.DEFAULT_LOG_CONTEXT_SELECTOR);
     }

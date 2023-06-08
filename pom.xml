@@ -56,12 +56,12 @@
         <!-- Dependency versions -->
         <version.io.smallrye.common.smallrye-common>2.1.0</version.io.smallrye.common.smallrye-common>
         <version.jakarta.json.jakarta-json-api>2.1.2</version.jakarta.json.jakarta-json-api>
-        <version.org.byteman>4.0.18</version.org.byteman>
+        <version.org.byteman>4.0.21</version.org.byteman>
         <version.org.eclipse.parsson.jakarta.json>1.1.2</version.org.eclipse.parsson.jakarta.json>
         <version.org.jboss.logging.jboss-logging>3.5.1.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.modules.jboss-modules>2.1.0.Final</version.org.jboss.modules.jboss-modules>
+        <version.org.junit>5.9.3</version.org.junit>
         <version.org.kohsuke.metainf-services>1.8</version.org.kohsuke.metainf-services>
-        <version.junit.junit>4.13.2</version.junit.junit>
 
         <!-- Test properties -->
         <org.jboss.test.address>127.0.0.1</org.jboss.test.address>
@@ -80,6 +80,13 @@
                 <groupId>io.smallrye.common</groupId>
                 <artifactId>smallrye-common-bom</artifactId>
                 <version>${version.io.smallrye.common.smallrye-common}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.junit</groupId>
+                <artifactId>junit-bom</artifactId>
+                <version>${version.org.junit}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -145,38 +152,15 @@
         </dependency>
 
         <!-- test dependencies -->
-
         <dependency>
             <groupId>org.jboss.byteman</groupId>
-            <artifactId>byteman</artifactId>
-            <version>${version.org.byteman}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.byteman</groupId>
-            <artifactId>byteman-submit</artifactId>
-            <version>${version.org.byteman}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.byteman</groupId>
-            <artifactId>byteman-install</artifactId>
-            <version>${version.org.byteman}</version>
-            <scope>test</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>org.jboss.byteman</groupId>
-            <artifactId>byteman-bmunit</artifactId>
+            <artifactId>byteman-bmunit5</artifactId>
             <version>${version.org.byteman}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>${version.junit.junit}</version>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -227,6 +211,7 @@
                         <include>**/*Tests.java</include>
                     </includes>
                     <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.attach.allowAttachSelf=true ${client.jvm.jpms.args}</argLine>
+                    <reuseForks>false</reuseForks>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
 

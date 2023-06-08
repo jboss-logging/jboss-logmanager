@@ -37,9 +37,9 @@ import org.jboss.logmanager.ExtFormatter;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.formatters.StructuredFormatter.Key;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -49,7 +49,7 @@ public class JsonFormatterTests extends AbstractTest {
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME
             .withZone(ZoneId.systemDefault());
 
-    @Before
+    @BeforeEach
     public void before() {
         KEY_OVERRIDES.clear();
     }
@@ -169,27 +169,27 @@ public class JsonFormatterTests extends AbstractTest {
     }
 
     private static void compare(final ExtLogRecord record, final JsonObject json, final Map<String, String> metaData) {
-        Assert.assertEquals(record.getLevel(), Level.parse(getString(json, Key.LEVEL)));
-        Assert.assertEquals(record.getLoggerClassName(), getString(json, Key.LOGGER_CLASS_NAME));
-        Assert.assertEquals(record.getLoggerName(), getString(json, Key.LOGGER_NAME));
+        Assertions.assertEquals(record.getLevel(), Level.parse(getString(json, Key.LEVEL)));
+        Assertions.assertEquals(record.getLoggerClassName(), getString(json, Key.LOGGER_CLASS_NAME));
+        Assertions.assertEquals(record.getLoggerName(), getString(json, Key.LOGGER_NAME));
         compareMaps(record.getMdcCopy(), getMap(json, Key.MDC));
-        Assert.assertEquals(record.getFormattedMessage(), getString(json, Key.MESSAGE));
-        Assert.assertEquals(DATE_TIME_FORMATTER.format(record.getInstant()),
+        Assertions.assertEquals(record.getFormattedMessage(), getString(json, Key.MESSAGE));
+        Assertions.assertEquals(DATE_TIME_FORMATTER.format(record.getInstant()),
                 getString(json, Key.TIMESTAMP));
-        Assert.assertEquals(record.getNdc(), getString(json, Key.NDC));
-        // Assert.assertEquals(record.getResourceBundle());
-        // Assert.assertEquals(record.getResourceBundleName());
-        // Assert.assertEquals(record.getResourceKey());
-        Assert.assertEquals(record.getSequenceNumber(), getLong(json, Key.SEQUENCE));
-        Assert.assertEquals(record.getSourceClassName(), getString(json, Key.SOURCE_CLASS_NAME));
-        Assert.assertEquals(record.getSourceFileName(), getString(json, Key.SOURCE_FILE_NAME));
-        Assert.assertEquals(record.getSourceLineNumber(), getInt(json, Key.SOURCE_LINE_NUMBER));
-        Assert.assertEquals(record.getSourceMethodName(), getString(json, Key.SOURCE_METHOD_NAME));
-        Assert.assertEquals(record.getThreadID(), getInt(json, Key.THREAD_ID));
-        Assert.assertEquals(record.getThreadName(), getString(json, Key.THREAD_NAME));
+        Assertions.assertEquals(record.getNdc(), getString(json, Key.NDC));
+        // Assertions.assertEquals(record.getResourceBundle());
+        // Assertions.assertEquals(record.getResourceBundleName());
+        // Assertions.assertEquals(record.getResourceKey());
+        Assertions.assertEquals(record.getSequenceNumber(), getLong(json, Key.SEQUENCE));
+        Assertions.assertEquals(record.getSourceClassName(), getString(json, Key.SOURCE_CLASS_NAME));
+        Assertions.assertEquals(record.getSourceFileName(), getString(json, Key.SOURCE_FILE_NAME));
+        Assertions.assertEquals(record.getSourceLineNumber(), getInt(json, Key.SOURCE_LINE_NUMBER));
+        Assertions.assertEquals(record.getSourceMethodName(), getString(json, Key.SOURCE_METHOD_NAME));
+        Assertions.assertEquals(record.getThreadID(), getInt(json, Key.THREAD_ID));
+        Assertions.assertEquals(record.getThreadName(), getString(json, Key.THREAD_NAME));
         if (metaData != null) {
             for (String key : metaData.keySet()) {
-                Assert.assertEquals(metaData.get(key), json.getString(key));
+                Assertions.assertEquals(metaData.get(key), json.getString(key));
             }
         }
         final boolean hasFormatted = json.get(getKey(Key.STACK_TRACE)) != null;
@@ -200,7 +200,7 @@ public class JsonFormatterTests extends AbstractTest {
     private static void validateStackTrace(final JsonObject json, final boolean validateFormatted,
             final boolean validateStructured) {
         if (validateFormatted) {
-            Assert.assertNotNull(json.get(getKey(Key.STACK_TRACE)));
+            Assertions.assertNotNull(json.get(getKey(Key.STACK_TRACE)));
         }
         if (validateStructured) {
             validateStackTrace(json.getJsonObject(getKey(Key.EXCEPTION)));
@@ -218,6 +218,6 @@ public class JsonFormatterTests extends AbstractTest {
     }
 
     private static void checkNonNull(final JsonObject json, final Key key) {
-        Assert.assertNotNull(String.format("Missing %s in %s", key, json), json.get(getKey(key)));
+        Assertions.assertNotNull(json.get(getKey(key)), () -> String.format("Missing %s in %s", key, json));
     }
 }

@@ -19,7 +19,13 @@
 
 package org.jboss.logmanager;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.assertArrayEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,13 +36,13 @@ import java.util.logging.LogRecord;
 
 import org.jboss.logmanager.filters.RegexFilter;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public final class LoggerTests {
 
     @Test
     public void testInstall() {
-        assertTrue("Wrong logger class", (java.util.logging.Logger.getLogger("test") instanceof Logger));
+        assertTrue((java.util.logging.Logger.getLogger("test") instanceof Logger), "Wrong logger class");
     }
 
     @Test
@@ -59,12 +65,12 @@ public final class LoggerTests {
 
     @Test
     public void testCategories() {
-        assertNotNull("Logger not created with category: " + LoggerTests.class.getName(),
-                Logger.getLogger(LoggerTests.class.getName()));
-        assertNotNull("Logger not created with category: Spaced Logger Name", Logger.getLogger("Spaced Logger Name"));
-        assertNotNull("Logger not created with category: /../Weird/Path", Logger.getLogger("/../Weird/Path"));
-        assertNotNull("Logger not created with category: random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?",
-                Logger.getLogger("random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?"));
+        assertNotNull(Logger.getLogger(LoggerTests.class.getName()),
+                "Logger not created with category: " + LoggerTests.class.getName());
+        assertNotNull(Logger.getLogger("Spaced Logger Name"), "Logger not created with category: Spaced Logger Name");
+        assertNotNull(Logger.getLogger("/../Weird/Path"), "Logger not created with category: /../Weird/Path");
+        assertNotNull(Logger.getLogger("random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?"),
+                "Logger not created with category: random.chars.`~!@#$%^&*()-=_+[]{}\\|;':\",.<>/?");
     }
 
     @Test
@@ -87,9 +93,9 @@ public final class LoggerTests {
             if (handler == h3)
                 f3 = true;
         }
-        assertTrue("Handler 1 missing", f1);
-        assertTrue("Handler 2 missing", f2);
-        assertTrue("Handler 3 missing", f3);
+        assertTrue(f1, "Handler 1 missing");
+        assertTrue(f2, "Handler 2 missing");
+        assertTrue(f3, "Handler 3 missing");
     }
 
     @Test
@@ -105,8 +111,8 @@ public final class LoggerTests {
             if (handler == h1)
                 f1 = true;
         }
-        assertTrue("Handler 1 missing", f1);
-        assertEquals("Extra handlers missing", 3, handlers.length);
+        assertTrue(f1, "Handler 1 missing");
+        assertEquals(3, handlers.length, "Extra handlers missing");
     }
 
     @Test
@@ -130,9 +136,9 @@ public final class LoggerTests {
             if (handler == h3)
                 f3 = true;
         }
-        assertFalse("Handler 1 wasn't removed", f1);
-        assertTrue("Handler 2 missing", f2);
-        assertTrue("Handler 3 missing", f3);
+        assertFalse(f1, "Handler 1 wasn't removed");
+        assertTrue(f2, "Handler 2 missing");
+        assertTrue(f3, "Handler 3 missing");
     }
 
     @Test
@@ -165,9 +171,9 @@ public final class LoggerTests {
             if (handler == h3)
                 f3 = true;
         }
-        assertFalse("Handler 1 wasn't removed", f1);
-        assertFalse("Handler 2 wasn't removed", f2);
-        assertFalse("Handler 3 wasn't removed", f3);
+        assertFalse(f1, "Handler 1 wasn't removed");
+        assertFalse(f2, "Handler 2 wasn't removed");
+        assertFalse(f3, "Handler 3 wasn't removed");
     }
 
     @Test
@@ -180,7 +186,7 @@ public final class LoggerTests {
         logger.setLevel(Level.INFO);
         handler.setLevel(Level.INFO);
         logger.info("This is a test.");
-        assertTrue("Handler wasn't run", ran.get());
+        assertTrue(ran.get(), "Handler wasn't run");
     }
 
     @Test
@@ -192,7 +198,7 @@ public final class LoggerTests {
         logger.addHandler(handler);
         logger.log(Level.INFO, null, new IllegalArgumentException());
         logger.log(Level.INFO, "test", new IllegalArgumentException());
-        assertEquals(null, handler.messages.get(0));
+        assertNull(handler.messages.get(0));
         assertEquals("Test message", handler.messages.get(1));
     }
 
@@ -213,7 +219,7 @@ public final class LoggerTests {
         child.info("This is another test message");
         child.info("One more message");
 
-        assertEquals("Handler should have only contained two messages", 2, handler.messages.size());
+        assertEquals(2, handler.messages.size(), "Handler should have only contained two messages");
 
         // Clear the handler, reset the inherit filters
         handler.messages.clear();
@@ -223,13 +229,13 @@ public final class LoggerTests {
         child.info("This is another test message");
         child.info("One more message");
 
-        assertEquals("Handler should have only contained three messages", 3, handler.messages.size());
+        assertEquals(3, handler.messages.size(), "Handler should have only contained three messages");
 
         parent.info("This is a test message");
         parent.info("This is another test message");
         parent.info("One more message");
 
-        assertEquals("Handler should have only contained five messages", 5, handler.messages.size());
+        assertEquals(5, handler.messages.size(), "Handler should have only contained five messages");
     }
 
     private static final class ListHandler extends ExtHandler {

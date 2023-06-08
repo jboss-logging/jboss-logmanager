@@ -30,16 +30,16 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class LogContextCloseTests {
 
-    @Before
+    @BeforeEach
     public void resetTestObjects() {
         TestErrorManager.POJO_OBJECT = null;
         TestFilter.POJO_OBJECT = null;
@@ -75,9 +75,9 @@ public class LogContextCloseTests {
         logContext.close();
 
         // Loggers should have no handlers and have been reset
-        Assert.assertEquals(Level.INFO, rootLogger.getLevel());
+        Assertions.assertEquals(Level.INFO, rootLogger.getLevel());
         final Handler[] handlers = randomLogger.getHandlers();
-        Assert.assertTrue(handlers == null || handlers.length == 0);
+        Assertions.assertTrue(handlers == null || handlers.length == 0);
 
         assertEmptyContext(logContext, rootLogger, testLogger, randomLogger);
     }
@@ -88,30 +88,30 @@ public class LogContextCloseTests {
         final Logger.AttachmentKey<String> key = new Logger.AttachmentKey<>();
         final String value = "test value";
         Logger rootLogger = logContext.getLogger("");
-        Assert.assertNull(rootLogger.attach(key, value));
+        Assertions.assertNull(rootLogger.attach(key, value));
 
         // Close and ensure the context is clean
         logContext.close();
-        Assert.assertNull(rootLogger.getAttachment(key));
+        Assertions.assertNull(rootLogger.getAttachment(key));
         assertEmptyContext(logContext, rootLogger);
 
         // Test attachIfAbsent()
         logContext = LogContext.create();
         rootLogger = logContext.getLogger("");
-        Assert.assertNull(rootLogger.attachIfAbsent(key, value));
+        Assertions.assertNull(rootLogger.attachIfAbsent(key, value));
 
         // Close and ensure the context is clean
         logContext.close();
-        Assert.assertNull(rootLogger.getAttachment(key));
+        Assertions.assertNull(rootLogger.getAttachment(key));
         assertEmptyContext(logContext, rootLogger);
 
         // Test detach()
         logContext = LogContext.create();
         rootLogger = logContext.getLogger("");
-        Assert.assertNull(rootLogger.attach(key, value));
-        Assert.assertEquals(value, rootLogger.detach(key));
+        Assertions.assertNull(rootLogger.attach(key, value));
+        Assertions.assertEquals(value, rootLogger.detach(key));
         logContext.close();
-        Assert.assertNull(rootLogger.getAttachment(key));
+        Assertions.assertNull(rootLogger.getAttachment(key));
         assertEmptyContext(logContext, rootLogger);
     }
 
@@ -119,11 +119,13 @@ public class LogContextCloseTests {
         // Inspect the log context and ensure it's "empty"
         final LoggerNode rootLogger = logContext.getRootLoggerNode();
         final Handler[] handlers = rootLogger.getHandlers();
-        Assert.assertTrue("Expected the handlers to be removed.", handlers == null || handlers.length == 0);
-        Assert.assertNull("Expected the filter to be null", rootLogger.getFilter());
-        Assert.assertEquals("Expected the level to be INFO for logger the root logger", Level.INFO, rootLogger.getLevel());
-        Assert.assertFalse("Expected the useParentFilters to be false for the root logger", rootLogger.getUseParentFilters());
-        Assert.assertTrue("Expected the useParentHandlers to be true for the root logger", rootLogger.getUseParentHandlers());
+        Assertions.assertTrue(handlers == null || handlers.length == 0, "Expected the handlers to be removed.");
+        Assertions.assertNull(rootLogger.getFilter(), "Expected the filter to be null");
+        Assertions.assertEquals(Level.INFO, rootLogger.getLevel(), "Expected the level to be INFO for logger the root logger");
+        Assertions.assertFalse(rootLogger.getUseParentFilters(),
+                "Expected the useParentFilters to be false for the root logger");
+        Assertions.assertTrue(rootLogger.getUseParentHandlers(),
+                "Expected the useParentHandlers to be true for the root logger");
         final Collection<LoggerNode> children = rootLogger.getChildren();
         if (!children.isEmpty()) {
             final StringBuilder msg = new StringBuilder(
@@ -135,7 +137,7 @@ public class LogContextCloseTests {
                     msg.append(", ");
                 }
             }
-            Assert.fail(msg.toString());
+            Assertions.fail(msg.toString());
         }
 
         for (Logger logger : loggers) {
@@ -153,17 +155,14 @@ public class LogContextCloseTests {
             expectedLevel = null;
         }
         final Handler[] handlers = logger.getHandlers();
-        Assert.assertNull("Expected the filter to be null for logger " + loggerName, logger.getFilter());
-        Assert.assertTrue("Empty handlers expected for logger " + loggerName, handlers == null || handlers.length == 0);
-        Assert.assertEquals("Expected the level to be " + expectedLevel + " for logger " + loggerName, expectedLevel,
-                logger.getLevel());
-        Assert.assertFalse("Expected the useParentFilters to be false for logger " + loggerName, logger.getUseParentFilters());
-        Assert.assertTrue("Expected the useParentHandlers to be true for logger " + loggerName, logger.getUseParentHandlers());
-    }
-
-    private void assertEmptyNames(final String description, final Collection<String> names) {
-        Assert.assertTrue(String.format("The configuration should not have any %s names, but found: %s", description, names),
-                names.isEmpty());
+        Assertions.assertNull(logger.getFilter(), "Expected the filter to be null for logger " + loggerName);
+        Assertions.assertTrue(handlers == null || handlers.length == 0, "Empty handlers expected for logger " + loggerName);
+        Assertions.assertEquals(expectedLevel, logger.getLevel(),
+                "Expected the level to be " + expectedLevel + " for logger " + loggerName);
+        Assertions.assertFalse(logger.getUseParentFilters(),
+                "Expected the useParentFilters to be false for logger " + loggerName);
+        Assertions.assertTrue(logger.getUseParentHandlers(),
+                "Expected the useParentHandlers to be true for logger " + loggerName);
     }
 
     @SuppressWarnings("unused")

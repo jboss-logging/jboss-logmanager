@@ -22,9 +22,9 @@ package org.jboss.logmanager.formatters;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-import org.junit.Assert;
-import org.junit.Assume;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Assumptions;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -42,7 +42,7 @@ public class StackTraceFormatterTests {
         final StringBuilder sb = new StringBuilder();
         StackTraceFormatter.renderStackTrace(sb, e, false, -1);
 
-        Assert.assertEquals(writer.toString(), sanitize(sb.toString()));
+        Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
 
     @Test
@@ -55,12 +55,12 @@ public class StackTraceFormatterTests {
         final StringBuilder sb = new StringBuilder();
         StackTraceFormatter.renderStackTrace(sb, e, false, -1);
 
-        Assert.assertEquals(writer.toString(), sanitize(sb.toString()));
+        Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
 
     @Test
     public void compareSuppressedAndCauseStackTrace() {
-        Assume.assumeFalse("The IBM JDK does not show print circular references.", IS_IBM_JDK);
+        Assumptions.assumeFalse(IS_IBM_JDK, "The IBM JDK does not show print circular references.");
         final RuntimeException r1 = new RuntimeException("Exception 1");
         final RuntimeException r2 = new RuntimeException("Exception 2", r1);
         final RuntimeException r3 = new RuntimeException("Exception 3", r2);
@@ -75,12 +75,12 @@ public class StackTraceFormatterTests {
         final StringBuilder sb = new StringBuilder();
         StackTraceFormatter.renderStackTrace(sb, cause, false, -1);
 
-        Assert.assertEquals(writer.toString(), sanitize(sb.toString()));
+        Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
 
     @Test
     public void compareNestedSuppressedStackTrace() {
-        Assume.assumeFalse("The IBM JDK does not show print circular references.", IS_IBM_JDK);
+        Assumptions.assumeFalse(IS_IBM_JDK, "The IBM JDK does not show print circular references.");
         final RuntimeException r1 = new RuntimeException("Exception 1");
         final RuntimeException r2 = new RuntimeException("Exception 2", r1);
         final RuntimeException r3 = new RuntimeException("Exception 3", r2);
@@ -99,12 +99,12 @@ public class StackTraceFormatterTests {
         final StringBuilder sb = new StringBuilder();
         StackTraceFormatter.renderStackTrace(sb, cause, false, -1);
 
-        Assert.assertEquals(writer.toString(), sanitize(sb.toString()));
+        Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
 
     @Test
     public void compareMultiNestedSuppressedStackTrace() {
-        Assume.assumeFalse("The IBM JDK does not show print circular references.", IS_IBM_JDK);
+        Assumptions.assumeFalse(IS_IBM_JDK, "The IBM JDK does not show print circular references.");
         final Throwable cause = createMultiNestedCause();
 
         final StringWriter writer = new StringWriter();
@@ -113,12 +113,12 @@ public class StackTraceFormatterTests {
         final StringBuilder sb = new StringBuilder();
         StackTraceFormatter.renderStackTrace(sb, cause, false, -1);
 
-        Assert.assertEquals(writer.toString(), sanitize(sb.toString()));
+        Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
 
     @Test
     public void compareMultiNestedSuppressedAndNestedCauseStackTrace() {
-        Assume.assumeFalse("The IBM JDK does not show print circular references.", IS_IBM_JDK);
+        Assumptions.assumeFalse(IS_IBM_JDK, "The IBM JDK does not show print circular references.");
         final Throwable rootCause = createMultiNestedCause();
         final RuntimeException cause = new RuntimeException("This is the parent", rootCause);
 
@@ -128,7 +128,7 @@ public class StackTraceFormatterTests {
         final StringBuilder sb = new StringBuilder();
         StackTraceFormatter.renderStackTrace(sb, cause, false, -1);
 
-        Assert.assertEquals(writer.toString(), sanitize(sb.toString()));
+        Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
 
     @Test
@@ -166,9 +166,8 @@ public class StackTraceFormatterTests {
 
     private void checkMessage(final String msg, final String text, final boolean shouldExist, final int depth) {
         final boolean test = (shouldExist || depth < 0);
-        Assert.assertEquals(
-                String.format("Depth %d should %s contained \"%s\": %s", depth, (test ? "have" : "not have"), text, msg),
-                msg.contains(text), test);
+        Assertions.assertEquals(msg.contains(text), test,
+                () -> String.format("Depth %d should %s contained \"%s\": %s", depth, (test ? "have" : "not have"), text, msg));
     }
 
     private Throwable createMultiNestedCause() {

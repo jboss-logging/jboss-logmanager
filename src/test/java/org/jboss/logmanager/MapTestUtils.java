@@ -22,8 +22,9 @@ package org.jboss.logmanager;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -40,17 +41,16 @@ public class MapTestUtils {
      */
     @SuppressWarnings("WeakerAccess")
     public static <K, V> void compareMaps(final Map<K, V> m1, final Map<K, V> m2) {
-        String failureMessage = String.format("Keys did not match%n%s%n%s%n", m1.keySet(), m2.keySet());
-        Assert.assertTrue(failureMessage, m1.keySet().containsAll(m2.keySet()));
-        Assert.assertTrue(failureMessage, m2.keySet().containsAll(m1.keySet()));
+        Supplier<String> failureMessage = () -> String.format("Keys did not match%n%s%n%s%n", m1.keySet(), m2.keySet());
+        Assertions.assertTrue(m1.keySet().containsAll(m2.keySet()), failureMessage);
+        Assertions.assertTrue(m2.keySet().containsAll(m1.keySet()), failureMessage);
 
         // At this point we know that all the keys match
         for (Map.Entry<K, V> entry1 : m1.entrySet()) {
             final V value2 = m2.get(entry1.getKey());
-            Assert.assertEquals(
-                    String.format("Value %s from the first map does not match value %s from the second map with key %s.",
-                            entry1.getValue(), value2, entry1.getKey()),
-                    entry1.getValue(), value2);
+            Assertions.assertEquals(entry1.getValue(), value2,
+                    () -> String.format("Value %s from the first map does not match value %s from the second map with key %s.",
+                            entry1.getValue(), value2, entry1.getKey()));
         }
     }
 

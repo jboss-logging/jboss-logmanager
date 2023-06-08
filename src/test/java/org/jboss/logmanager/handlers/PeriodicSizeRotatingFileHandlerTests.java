@@ -34,17 +34,16 @@ import java.util.Map;
 import java.util.logging.ErrorManager;
 
 import org.jboss.byteman.contrib.bmunit.BMRule;
-import org.jboss.byteman.contrib.bmunit.BMUnitRunner;
+import org.jboss.byteman.contrib.bmunit.WithByteman;
 import org.jboss.logmanager.ExtLogRecord;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@RunWith(BMUnitRunner.class)
+@WithByteman
 public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
     private final static String FILENAME = "rotating-file-handler.log";
 
@@ -95,9 +94,9 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         // We should end up with 3 files, 2 rotated and the default log
         final File file1 = new File(BASE_LOG_DIR, FILENAME + extension + ".1");
         final File file2 = new File(BASE_LOG_DIR, FILENAME + extension + ".2");
-        Assert.assertTrue(logFile.exists());
-        Assert.assertTrue(file1.exists());
-        Assert.assertTrue(file2.exists());
+        Assertions.assertTrue(logFile.exists());
+        Assertions.assertTrue(file1.exists());
+        Assertions.assertTrue(file2.exists());
 
         // Clean up files
         file1.delete();
@@ -121,7 +120,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         final File rotatedFile = new File(BASE_LOG_DIR, FILENAME + extension + ".1");
 
         // The rotated file should not exist
-        Assert.assertFalse("Rotated file should not exist", rotatedFile.exists());
+        Assertions.assertFalse(rotatedFile.exists(), "Rotated file should not exist");
 
         // Log a few records
         for (int i = 0; i < 5; i++) {
@@ -140,10 +139,10 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setFile(logFile);
 
         // The rotated file should exist
-        Assert.assertTrue("Rotated file should exist", rotatedFile.exists());
+        Assertions.assertTrue(rotatedFile.exists(), "Rotated file should exist");
 
         // Rotated file size should match the size of the previous file
-        Assert.assertEquals(size, rotatedFile.length());
+        Assertions.assertEquals(size, rotatedFile.length());
 
         // Log a few records
         for (int i = 0; i < 10; i++) {
@@ -153,19 +152,19 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.close();
 
         // File should have been rotated
-        Assert.assertTrue(logFile.exists());
-        Assert.assertTrue(rotatedFile.exists());
+        Assertions.assertTrue(logFile.exists());
+        Assertions.assertTrue(rotatedFile.exists());
 
         // Neither file should be empty
-        Assert.assertTrue(logFile.length() > 0L);
-        Assert.assertTrue(rotatedFile.length() > 0L);
+        Assertions.assertTrue(logFile.length() > 0L);
+        Assertions.assertTrue(rotatedFile.length() > 0L);
 
         // Clean up files
         rotatedFile.delete();
     }
 
     @Test
-    @Ignore("LOGMGR-82")
+    @Disabled("LOGMGR-82")
     public void testPeriodicAndSizeRotate() throws Exception {
         for (int i = 0; i < supportedPeriods.size(); i++) {
             //To cut down on unnecessary testing, let's only test
@@ -227,14 +226,14 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.close();
 
         // The log file should exist, as should one rotated file since we fail the rotation on the second rotate
-        Assert.assertTrue(String.format("Expected log file %s to exist", logFile), logFile.exists());
+        Assertions.assertTrue(logFile.exists(), () -> String.format("Expected log file %s to exist", logFile));
         final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + ".1");
-        Assert.assertTrue(String.format("Expected rotated file %s to exist", rotatedFile), Files.exists(rotatedFile));
+        Assertions.assertTrue(Files.exists(rotatedFile), () -> String.format("Expected rotated file %s to exist", rotatedFile));
 
         // The last line of the log file should end with "99" as it should be the last record
         final List<String> lines = Files.readAllLines(logFile.toPath(), StandardCharsets.UTF_8);
         final String lastLine = lines.get(lines.size() - 1);
-        Assert.assertTrue("Expected the last line to end with 99: " + lastLine, lastLine.endsWith("99"));
+        Assertions.assertTrue(lastLine.endsWith("99"), "Expected the last line to end with 99: " + lastLine);
     }
 
     private void testArchiveRotate(final String dateSuffix, final String archiveSuffix, final boolean rotateOnBoot)
@@ -261,9 +260,9 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         final Path logDir = BASE_LOG_DIR.toPath();
         final Path path1 = logDir.resolve(FILENAME + currentDate + ".1" + archiveSuffix);
         final Path path2 = logDir.resolve(FILENAME + currentDate + ".2" + archiveSuffix);
-        Assert.assertTrue(logFile.exists());
-        Assert.assertTrue(Files.exists(path1));
-        Assert.assertTrue(Files.exists(path2));
+        Assertions.assertTrue(logFile.exists());
+        Assertions.assertTrue(Files.exists(path1));
+        Assertions.assertTrue(Files.exists(path2));
 
         // Validate the files are not empty and the compressed file contains at least one log record
         if (archiveSuffix.endsWith(".gz")) {
@@ -273,7 +272,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
             validateZipContents(path1, logFile.getName(), "Test message:");
             validateZipContents(path2, logFile.getName(), "Test message:");
         } else {
-            Assert.fail("Unknown archive suffix: " + archiveSuffix);
+            Assertions.fail("Unknown archive suffix: " + archiveSuffix);
         }
 
         compareArchiveContents(path1, path2, logFile.getName());
@@ -313,9 +312,9 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
 
             // File should have been rotated
             String message = "Log should have rotated, but it did not\n";
-            Assert.assertTrue(logFile.exists());
-            Assert.assertTrue(message + rotatedFile1.getPath(), rotatedFile1.exists());
-            Assert.assertTrue(message + rotatedFile2.getPath(), rotatedFile2.exists());
+            Assertions.assertTrue(logFile.exists());
+            Assertions.assertTrue(rotatedFile1.exists(), message + rotatedFile1.getPath());
+            Assertions.assertTrue(rotatedFile2.exists(), message + rotatedFile2.getPath());
         }
 
         // Increase the calender to force a rotation
@@ -343,21 +342,21 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
             rotatedFile2 = new File(BASE_LOG_DIR, FILENAME + extension);
         }
 
-        Assert.assertTrue(logFile.exists());
-        Assert.assertTrue(logFile.length() > 0L);
+        Assertions.assertTrue(logFile.exists());
+        Assertions.assertTrue(logFile.length() > 0L);
 
         try {
             ErrorCreator errorCreator = new ErrorCreator(handlerPeriod, logMessagePeriod, testSize);
             if (shouldRotate(logMessagePeriod, handlerPeriod, testSize)) {
-                Assert.assertTrue(errorCreator.create(true, rotatedFile1), rotatedFile1.exists());
-                Assert.assertTrue(errorCreator.create(true, rotatedFile2), rotatedFile2.exists());
-                Assert.assertTrue(rotatedFile1.length() > 0L);
-                Assert.assertTrue(rotatedFile2.length() > 0L);
+                Assertions.assertTrue(rotatedFile1.exists(), errorCreator.create(true, rotatedFile1));
+                Assertions.assertTrue(rotatedFile2.exists(), errorCreator.create(true, rotatedFile2));
+                Assertions.assertTrue(rotatedFile1.length() > 0L);
+                Assertions.assertTrue(rotatedFile2.length() > 0L);
             } else {
-                Assert.assertFalse(errorCreator.create(false, rotatedFile1), rotatedFile1.exists());
-                Assert.assertFalse(errorCreator.create(false, rotatedFile2), rotatedFile2.exists());
-                Assert.assertFalse(rotatedFile1.length() > 0L);
-                Assert.assertFalse(rotatedFile2.length() > 0L);
+                Assertions.assertFalse(rotatedFile1.exists(), errorCreator.create(false, rotatedFile1));
+                Assertions.assertFalse(rotatedFile2.exists(), errorCreator.create(false, rotatedFile2));
+                Assertions.assertFalse(rotatedFile1.length() > 0L);
+                Assertions.assertFalse(rotatedFile2.length() > 0L);
             }
         } finally {
             for (String logFile : BASE_LOG_DIR.list()) {

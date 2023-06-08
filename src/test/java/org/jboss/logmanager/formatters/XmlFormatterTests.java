@@ -42,8 +42,8 @@ import org.jboss.logmanager.ExtFormatter;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.Level;
 import org.jboss.logmanager.formatters.StructuredFormatter.Key;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.Test;
 import org.w3c.dom.Document;
 import org.xml.sax.ErrorHandler;
 import org.xml.sax.InputSource;
@@ -99,7 +99,7 @@ public class XmlFormatterTests extends AbstractTest {
                         .append(exception.getColumnNumber())
                         .append(System.lineSeparator())
                         .append(message);
-                Assert.fail(failureMessage.toString());
+                Assertions.fail(failureMessage.toString());
             }
         };
 
@@ -153,21 +153,21 @@ public class XmlFormatterTests extends AbstractTest {
         final DocumentBuilder builder = factory.newDocumentBuilder();
         final Document doc = builder.parse(new InputSource(new StringReader(xml)));
         final var metaData = doc.getElementsByTagName("metaData");
-        Assert.assertEquals(3, metaData.getLength());
+        Assertions.assertEquals(3, metaData.getLength());
         var item = metaData.item(0);
-        Assert.assertEquals("Expected key attribute of key1", "key1",
-                item.getAttributes().getNamedItem("key").getNodeValue());
-        Assert.assertEquals("Expected a value of value1", "value1", item.getTextContent());
+        Assertions.assertEquals("key1",
+                item.getAttributes().getNamedItem("key").getNodeValue(), "Expected key attribute of key1");
+        Assertions.assertEquals("value1", item.getTextContent(), "Expected a value of value1");
 
         item = metaData.item(1);
-        Assert.assertEquals("Expected key attribute of key2", "key2",
-                item.getAttributes().getNamedItem("key").getNodeValue());
-        Assert.assertEquals("Expected a value of value2", "value2", item.getTextContent());
+        Assertions.assertEquals("key2",
+                item.getAttributes().getNamedItem("key").getNodeValue(), "Expected key attribute of key2");
+        Assertions.assertEquals("value2", item.getTextContent(), "Expected a value of value2");
 
         item = metaData.item(2);
-        Assert.assertEquals("Expected key attribute of noValue", "noValue",
-                item.getAttributes().getNamedItem("key").getNodeValue());
-        Assert.assertEquals("Expected no value", "", item.getTextContent());
+        Assertions.assertEquals("noValue",
+                item.getAttributes().getNamedItem("key").getNodeValue(), "Expected key attribute of noValue");
+        Assertions.assertEquals("", item.getTextContent(), "Expected no value");
     }
 
     private static int getInt(final XMLStreamReader reader) throws XMLStreamException {
@@ -207,12 +207,12 @@ public class XmlFormatterTests extends AbstractTest {
                     String text = sanitize(reader.getText());
                     if (text == null || text.isEmpty())
                         continue;
-                    Assert.fail(String.format("Invalid text found: %s", text));
+                    Assertions.fail(String.format("Invalid text found: %s", text));
                 }
                 final String key = reader.getLocalName();
-                Assert.assertTrue(reader.hasNext());
+                Assertions.assertTrue(reader.hasNext());
                 final String value = getString(reader);
-                Assert.assertNotNull(value);
+                Assertions.assertNotNull(value);
                 result.put(key, value);
             }
             return result;
@@ -244,45 +244,45 @@ public class XmlFormatterTests extends AbstractTest {
                 if (localName.equals(Key.EXCEPTION.getKey())) {
                     inException = true;// TODO (jrp) stack trace may need to be validated
                 } else if (localName.equals(Key.LEVEL.getKey())) {
-                    Assert.assertEquals(record.getLevel(), Level.parse(getString(reader)));
+                    Assertions.assertEquals(record.getLevel(), Level.parse(getString(reader)));
                 } else if (localName.equals(Key.LOGGER_CLASS_NAME.getKey())) {
-                    Assert.assertEquals(record.getLoggerClassName(), getString(reader));
+                    Assertions.assertEquals(record.getLoggerClassName(), getString(reader));
                 } else if (localName.equals(Key.LOGGER_NAME.getKey())) {
-                    Assert.assertEquals(record.getLoggerName(), getString(reader));
+                    Assertions.assertEquals(record.getLoggerName(), getString(reader));
                 } else if (localName.equals(Key.MDC.getKey())) {
                     compareMap(record.getMdcCopy(), getMap(reader));
                 } else if (!inException && localName.equals(Key.MESSAGE.getKey())) {
-                    Assert.assertEquals(record.getFormattedMessage(), getString(reader));
+                    Assertions.assertEquals(record.getFormattedMessage(), getString(reader));
                 } else if (localName.equals(Key.NDC.getKey())) {
                     final String value = getString(reader);
-                    Assert.assertEquals(record.getNdc(), (value == null ? "" : value));
+                    Assertions.assertEquals(record.getNdc(), (value == null ? "" : value));
                 } else if (localName.equals(Key.SEQUENCE.getKey())) {
-                    Assert.assertEquals(record.getSequenceNumber(), getLong(reader));
+                    Assertions.assertEquals(record.getSequenceNumber(), getLong(reader));
                 } else if (localName.equals(Key.SOURCE_CLASS_NAME.getKey())) {
-                    Assert.assertEquals(record.getSourceClassName(), getString(reader));
+                    Assertions.assertEquals(record.getSourceClassName(), getString(reader));
                 } else if (localName.equals(Key.SOURCE_FILE_NAME.getKey())) {
-                    Assert.assertEquals(record.getSourceFileName(), getString(reader));
+                    Assertions.assertEquals(record.getSourceFileName(), getString(reader));
                 } else if (localName.equals(Key.SOURCE_LINE_NUMBER.getKey())) {
-                    Assert.assertEquals(record.getSourceLineNumber(), getInt(reader));
+                    Assertions.assertEquals(record.getSourceLineNumber(), getInt(reader));
                 } else if (localName.equals(Key.SOURCE_METHOD_NAME.getKey())) {
-                    Assert.assertEquals(record.getSourceMethodName(), getString(reader));
+                    Assertions.assertEquals(record.getSourceMethodName(), getString(reader));
                 } else if (localName.equals(Key.THREAD_ID.getKey())) {
-                    Assert.assertEquals(record.getThreadID(), getInt(reader));
+                    Assertions.assertEquals(record.getThreadID(), getInt(reader));
                 } else if (localName.equals(Key.THREAD_NAME.getKey())) {
-                    Assert.assertEquals(record.getThreadName(), getString(reader));
+                    Assertions.assertEquals(record.getThreadName(), getString(reader));
                 } else if (localName.equals(Key.TIMESTAMP.getKey())) {
                     final String dateTime = DATE_TIME_FORMATTER.format(record.getInstant());
-                    Assert.assertEquals(dateTime, getString(reader));
+                    Assertions.assertEquals(dateTime, getString(reader));
                 }
             }
         }
     }
 
     private static void compareMap(final Map<String, String> m1, final Map<String, String> m2) {
-        Assert.assertEquals("Map sizes do not match", m1.size(), m2.size());
+        Assertions.assertEquals(m1.size(), m2.size(), "Map sizes do not match");
         for (String key : m1.keySet()) {
-            Assert.assertTrue("Second map does not contain key " + key, m2.containsKey(key));
-            Assert.assertEquals(m1.get(key), m2.get(key));
+            Assertions.assertTrue(m2.containsKey(key), () -> "Second map does not contain key " + key);
+            Assertions.assertEquals(m1.get(key), m2.get(key));
         }
     }
 

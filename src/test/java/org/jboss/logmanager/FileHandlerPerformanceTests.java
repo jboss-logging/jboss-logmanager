@@ -25,7 +25,7 @@ import java.util.logging.Formatter;
 
 import org.jboss.logmanager.formatters.PatternFormatter;
 import org.jboss.logmanager.handlers.FileHandler;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 /**
  * @author <a href="mailto:cdewolf@redhat.com">Carlo de Wolf</a>
