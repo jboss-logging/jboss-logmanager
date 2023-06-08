@@ -1,7 +1,7 @@
 /*
  * JBoss, Home of Professional Open Source.
  *
- * Copyright 2022 Red Hat, Inc., and individual contributors
+ * Copyright 2023 Red Hat, Inc., and individual contributors
  * as indicated by the @author tags.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -19,25 +19,28 @@
 
 package org.jboss.logmanager.configuration;
 
-import org.jboss.logmanager.ConfiguratorFactory;
-import org.jboss.logmanager.LogContextConfigurator;
-import org.kohsuke.MetaInfServices;
+import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * The default configuration factory which has a priority of 100.
- *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@MetaInfServices
-public class DefaultConfiguratorFactory implements ConfiguratorFactory {
+class ConstantConfigurationResource<T> implements ConfigurationResource<T> {
+    private AtomicReference<T> instance;
 
-    @Override
-    public LogContextConfigurator create() {
-        return new PropertyLogContextConfigurator();
+    ConstantConfigurationResource(final T instance) {
+        this.instance = new AtomicReference<>(instance);
     }
 
     @Override
-    public int priority() {
-        return 100;
+    public T get() {
+        return instance.get();
+    }
+
+    @Override
+    public void close() throws Exception {
+        final T instance = this.instance.getAndSet(null);
+        if (instance instanceof AutoCloseable) {
+            ((AutoCloseable) instance).close();
+        }
     }
 }

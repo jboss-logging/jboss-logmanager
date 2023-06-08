@@ -22,6 +22,7 @@ package org.jboss.logmanager.configuration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.logging.ErrorManager;
@@ -29,6 +30,7 @@ import java.util.logging.Filter;
 import java.util.logging.Formatter;
 import java.util.logging.Handler;
 
+import org.jboss.logmanager.LogContext;
 import org.jboss.logmanager.Logger;
 
 /**
@@ -40,30 +42,72 @@ import org.jboss.logmanager.Logger;
  * handlers, filters and formatters.
  * </p>
  * <p>
- * {@linkplain Supplier Suppliers} are used to lazily create objects. Note the passed in supplier is wrapped and invoked
- * at most once.
+ * If the {@linkplain Supplier supplier} os not already an instance of a {@link ConfigurationResource}, then it is
+ * wrapped and considered a {@linkplain ConfigurationResource#of(Supplier) lazy resource}.
  * </p>
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 @SuppressWarnings({ "UnusedReturnValue", "unused" })
-public class ContextConfiguration {
+public class ContextConfiguration implements AutoCloseable {
     public static final Logger.AttachmentKey<ContextConfiguration> CONTEXT_CONFIGURATION_KEY = new Logger.AttachmentKey<>();
-    private final Map<String, Supplier<ErrorManager>> errorManagers;
-    private final Map<String, Supplier<Filter>> filters;
-    private final Map<String, Supplier<Formatter>> formatters;
-    private final Map<String, Supplier<Handler>> handlers;
-    private final Map<String, Supplier<Object>> objects;
+    private final LogContext context;
+    private final Map<String, ConfigurationResource<ErrorManager>> errorManagers;
+    private final Map<String, ConfigurationResource<Filter>> filters;
+    private final Map<String, ConfigurationResource<Formatter>> formatters;
+    private final Map<String, ConfigurationResource<Handler>> handlers;
+    private final Map<String, ConfigurationResource<Object>> objects;
 
     /**
      * Creates a new context configuration.
      */
-    public ContextConfiguration() {
+    public ContextConfiguration(final LogContext context) {
+        this.context = context;
         errorManagers = new ConcurrentHashMap<>();
         handlers = new ConcurrentHashMap<>();
         formatters = new ConcurrentHashMap<>();
         filters = new ConcurrentHashMap<>();
         objects = new ConcurrentHashMap<>();
+    }
+
+    /**
+     * Returns the {@linkplain LogContext context} for this configuration.
+     *
+     * @return the context for this configuration
+     */
+    public LogContext getContext() {
+        return context;
+    }
+
+    /**
+     * Checks if the logger exists in this context.
+     *
+     * @param name the logger name
+     *
+     * @return {@code true} if the logger exists in this context, otherwise {@code false}
+     */
+    public boolean hasLogger(final String name) {
+        return getContext().getLoggerIfExists(Objects.requireNonNull(name, "The name cannot be null")) != null;
+    }
+
+    /**
+     * Gets the logger if it exists.
+     *
+     * @param name the name of the logger
+     *
+     * @return the logger or {@code null} if the logger does not exist
+     */
+    public Logger getLogger(final String name) {
+        return getContext().getLogger(Objects.requireNonNull(name, "The name cannot be null"));
+    }
+
+    /**
+     * Returns an unmodifiable set of the configured logger names
+     *
+     * @return an unmodified set of the logger names
+     */
+    public Set<String> getLoggers() {
+        return Set.copyOf(Collections.list(getContext().getLoggerNames()));
     }
 
     /**
@@ -74,12 +118,12 @@ public class ContextConfiguration {
      *
      * @return the previous error manager associated with the name or {@code null} if one did not exist
      */
-    public Supplier<ErrorManager> addErrorManager(final String name, final Supplier<ErrorManager> errorManager) {
+    public ConfigurationResource<ErrorManager> addErrorManager(final String name, final Supplier<ErrorManager> errorManager) {
         if (errorManager == null) {
             return removeErrorManager(name);
         }
         return errorManagers.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(errorManager));
+                ConfigurationResource.of(errorManager));
     }
 
     /**
@@ -89,7 +133,7 @@ public class ContextConfiguration {
      *
      * @return the error manager removed or {@code null} if the error manager did not exist
      */
-    public Supplier<ErrorManager> removeErrorManager(final String name) {
+    public ConfigurationResource<ErrorManager> removeErrorManager(final String name) {
         return errorManagers.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -123,7 +167,7 @@ public class ContextConfiguration {
      *
      * @return an unmodified map of the error managers
      */
-    public Map<String, Supplier<ErrorManager>> getErrorManagers() {
+    public Map<String, ConfigurationResource<ErrorManager>> getErrorManagers() {
         return Collections.unmodifiableMap(errorManagers);
     }
 
@@ -135,12 +179,12 @@ public class ContextConfiguration {
      *
      * @return the previous handler associated with the name or {@code null} if one did not exist
      */
-    public Supplier<Handler> addHandler(final String name, final Supplier<Handler> handler) {
+    public ConfigurationResource<Handler> addHandler(final String name, final Supplier<Handler> handler) {
         if (handler == null) {
             return removeHandler(name);
         }
         return handlers.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(handler));
+                ConfigurationResource.of(handler));
     }
 
     /**
@@ -150,7 +194,7 @@ public class ContextConfiguration {
      *
      * @return the handler removed or {@code null} if the handler did not exist
      */
-    public Supplier<Handler> removeHandler(final String name) {
+    public ConfigurationResource<Handler> removeHandler(final String name) {
         return handlers.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -184,7 +228,7 @@ public class ContextConfiguration {
      *
      * @return an unmodified map of the handlers
      */
-    public Map<String, Supplier<Handler>> getHandlers() {
+    public Map<String, ConfigurationResource<Handler>> getHandlers() {
         return Collections.unmodifiableMap(handlers);
     }
 
@@ -196,12 +240,12 @@ public class ContextConfiguration {
      *
      * @return the previous formatter associated with the name or {@code null} if one did not exist
      */
-    public Supplier<Formatter> addFormatter(final String name, final Supplier<Formatter> formatter) {
+    public ConfigurationResource<Formatter> addFormatter(final String name, final Supplier<Formatter> formatter) {
         if (formatter == null) {
             return removeFormatter(name);
         }
         return formatters.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(formatter));
+                ConfigurationResource.of(formatter));
     }
 
     /**
@@ -211,7 +255,7 @@ public class ContextConfiguration {
      *
      * @return the formatter removed or {@code null} if the formatter did not exist
      */
-    public Supplier<Formatter> removeFormatter(final String name) {
+    public ConfigurationResource<Formatter> removeFormatter(final String name) {
         return formatters.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -257,12 +301,12 @@ public class ContextConfiguration {
      *
      * @return the previous filter associated with the name or {@code null} if one did not exist
      */
-    public Supplier<Filter> addFilter(final String name, final Supplier<Filter> filter) {
+    public ConfigurationResource<Filter> addFilter(final String name, final Supplier<Filter> filter) {
         if (filter == null) {
             return removeFilter(name);
         }
         return filters.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(filter));
+                ConfigurationResource.of(filter));
     }
 
     /**
@@ -272,7 +316,7 @@ public class ContextConfiguration {
      *
      * @return the filter removed or {@code null} if the filter did not exist
      */
-    public Supplier<Filter> removeFilter(final String name) {
+    public ConfigurationResource<Filter> removeFilter(final String name) {
         return filters.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -306,7 +350,7 @@ public class ContextConfiguration {
      *
      * @return an unmodified map of the filters
      */
-    public Map<String, Supplier<Filter>> getFilters() {
+    public Map<String, ConfigurationResource<Filter>> getFilters() {
         return Collections.unmodifiableMap(filters);
     }
 
@@ -319,12 +363,12 @@ public class ContextConfiguration {
      *
      * @return the previous configuration object associated with the name or {@code null} if one did not exist
      */
-    public Supplier<Object> addObject(final String name, final Supplier<Object> object) {
+    public ConfigurationResource<Object> addObject(final String name, final Supplier<Object> object) {
         if (object == null) {
             return removeObject(name);
         }
         return objects.putIfAbsent(Objects.requireNonNull(name, "The name cannot be null"),
-                SingletonSupplier.of(object));
+                ConfigurationResource.of(object));
     }
 
     /**
@@ -334,7 +378,7 @@ public class ContextConfiguration {
      *
      * @return the configuration object removed or {@code null} if the configuration object did not exist
      */
-    public Supplier<Object> removeObject(final String name) {
+    public ConfigurationResource<Object> removeObject(final String name) {
         return objects.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -368,32 +412,31 @@ public class ContextConfiguration {
      *
      * @return an unmodified map of the configuration objects
      */
-    public Map<String, Supplier<Object>> getObjects() {
+    public Map<String, ConfigurationResource<Object>> getObjects() {
         return Collections.unmodifiableMap(objects);
     }
 
-    private static class SingletonSupplier<T> implements Supplier<T> {
-        private final Supplier<T> supplier;
-        private volatile T instance;
+    @Override
+    public void close() throws Exception {
+        context.close();
+        closeResources(handlers);
+        closeResources(filters);
+        closeResources(formatters);
+        closeResources(errorManagers);
+        closeResources(objects);
+    }
 
-        private SingletonSupplier(final Supplier<T> supplier) {
-            this.supplier = supplier;
-        }
-
-        static <T> Supplier<T> of(final Supplier<T> supplier) {
-            return new SingletonSupplier<>(supplier);
-        }
-
-        @Override
-        public T get() {
-            if (instance == null) {
-                synchronized (this) {
-                    if (instance == null) {
-                        instance = supplier.get();
-                    }
-                }
+    private static void closeResources(final Map<String, ? extends ConfigurationResource<?>> resources) {
+        final var iter = resources.entrySet().iterator();
+        while (iter.hasNext()) {
+            var entry = iter.next();
+            iter.remove();
+            try {
+                entry.getValue().close();
+            } catch (Throwable ignore) {
+                // do nothing
             }
-            return instance;
         }
     }
+
 }

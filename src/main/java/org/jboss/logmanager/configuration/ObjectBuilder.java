@@ -33,7 +33,6 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.regex.Pattern;
 
-import org.jboss.logmanager.LogContext;
 import org.jboss.modules.Module;
 import org.jboss.modules.ModuleLoader;
 
@@ -44,8 +43,6 @@ import org.jboss.modules.ModuleLoader;
  */
 @SuppressWarnings({ "UnusedReturnValue" })
 class ObjectBuilder<T> {
-
-    private final LogContext logContext;
     private final ContextConfiguration contextConfiguration;
     private final Class<? extends T> baseClass;
     private final String className;
@@ -55,9 +52,8 @@ class ObjectBuilder<T> {
     private final Set<String> postConstructMethods;
     private String moduleName;
 
-    private ObjectBuilder(final LogContext logContext, final ContextConfiguration contextConfiguration,
+    private ObjectBuilder(final ContextConfiguration contextConfiguration,
             final Class<? extends T> baseClass, final String className) {
-        this.logContext = logContext;
         this.contextConfiguration = contextConfiguration;
         this.baseClass = baseClass;
         this.className = className;
@@ -70,16 +66,15 @@ class ObjectBuilder<T> {
     /**
      * Create a new {@link ObjectBuilder}.
      *
-     * @param logContext the log context being configured
-     * @param baseClass  the base type
-     * @param className  the name of the class to create
-     * @param <T>        the type being created
+     * @param baseClass the base type
+     * @param className the name of the class to create
+     * @param <T>       the type being created
      *
      * @return a new {@link ObjectBuilder}
      */
-    static <T> ObjectBuilder<T> of(final LogContext logContext, final ContextConfiguration contextConfiguration,
+    static <T> ObjectBuilder<T> of(final ContextConfiguration contextConfiguration,
             final Class<? extends T> baseClass, final String className) {
-        return new ObjectBuilder<>(logContext, contextConfiguration, baseClass, className);
+        return new ObjectBuilder<>(contextConfiguration, baseClass, className);
     }
 
     /**
@@ -272,39 +267,40 @@ class ObjectBuilder<T> {
             }
             return null;
         }
+        final var trimmedValue = value.trim();
         if (paramType == String.class) {
             // Don't use the trimmed value for strings
             return value;
         } else if (paramType == java.util.logging.Level.class) {
-            return logContext.getLevelForName(value);
+            return contextConfiguration.getContext().getLevelForName(trimmedValue);
         } else if (paramType == java.util.logging.Logger.class) {
-            return logContext.getLogger(value);
+            return contextConfiguration.getContext().getLogger(trimmedValue);
         } else if (paramType == boolean.class || paramType == Boolean.class) {
-            return Boolean.valueOf(value);
+            return Boolean.valueOf(trimmedValue);
         } else if (paramType == byte.class || paramType == Byte.class) {
-            return Byte.valueOf(value);
+            return Byte.valueOf(trimmedValue);
         } else if (paramType == short.class || paramType == Short.class) {
-            return Short.valueOf(value);
+            return Short.valueOf(trimmedValue);
         } else if (paramType == int.class || paramType == Integer.class) {
-            return Integer.valueOf(value);
+            return Integer.valueOf(trimmedValue);
         } else if (paramType == long.class || paramType == Long.class) {
-            return Long.valueOf(value);
+            return Long.valueOf(trimmedValue);
         } else if (paramType == float.class || paramType == Float.class) {
-            return Float.valueOf(value);
+            return Float.valueOf(trimmedValue);
         } else if (paramType == double.class || paramType == Double.class) {
-            return Double.valueOf(value);
+            return Double.valueOf(trimmedValue);
         } else if (paramType == char.class || paramType == Character.class) {
-            return value.length() > 0 ? value.charAt(0) : 0;
+            return trimmedValue.length() > 0 ? trimmedValue.charAt(0) : 0;
         } else if (paramType == TimeZone.class) {
-            return TimeZone.getTimeZone(value);
+            return TimeZone.getTimeZone(trimmedValue);
         } else if (paramType == Charset.class) {
-            return Charset.forName(value);
+            return Charset.forName(trimmedValue);
         } else if (paramType.isAssignableFrom(Level.class)) {
-            return Level.parse(value);
+            return Level.parse(trimmedValue);
         } else if (paramType.isEnum()) {
-            return Enum.valueOf(paramType.asSubclass(Enum.class), value);
-        } else if (contextConfiguration.hasObject(value)) {
-            return contextConfiguration.getObject(value);
+            return Enum.valueOf(paramType.asSubclass(Enum.class), trimmedValue);
+        } else if (contextConfiguration.hasObject(trimmedValue)) {
+            return contextConfiguration.getObject(trimmedValue);
         } else if (definedPropertiesContains(propertyName)) {
             final PropertyValue propertyValue = findDefinedProperty(propertyName);
             if (propertyValue == null) {

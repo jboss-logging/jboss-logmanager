@@ -19,25 +19,40 @@
 
 package org.jboss.logmanager.configuration;
 
-import org.jboss.logmanager.ConfiguratorFactory;
-import org.jboss.logmanager.LogContextConfigurator;
-import org.kohsuke.MetaInfServices;
+import java.util.function.Supplier;
 
 /**
- * The default configuration factory which has a priority of 100.
+ * A configuration resource
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@MetaInfServices
-public class DefaultConfiguratorFactory implements ConfiguratorFactory {
+class LazyConfigurationResource<T> implements ConfigurationResource<T> {
+    private final Supplier<T> supplier;
+    private volatile T instance;
 
-    @Override
-    public LogContextConfigurator create() {
-        return new PropertyLogContextConfigurator();
+    LazyConfigurationResource(final Supplier<T> supplier) {
+        this.supplier = supplier;
     }
 
     @Override
-    public int priority() {
-        return 100;
+    public T get() {
+        if (instance == null) {
+            synchronized (this) {
+                if (instance == null) {
+                    instance = supplier.get();
+                }
+            }
+        }
+        return instance;
+    }
+
+    @Override
+    public void close() throws Exception {
+        synchronized (this) {
+            if (instance instanceof AutoCloseable) {
+                ((AutoCloseable) instance).close();
+            }
+            instance = null;
+        }
     }
 }
