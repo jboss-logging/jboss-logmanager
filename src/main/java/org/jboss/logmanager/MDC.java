@@ -140,6 +140,15 @@ public final class MDC {
     }
 
     /**
+     * Checks of the MDC map is empty.
+     *
+     * @return {@code true} if the MDC map is empty, otherwise {@code false}
+     */
+    public static boolean isEmpty() {
+        return mdcProvider.isEmpty();
+    }
+
+    /**
      * Clear the current MDC map.
      */
     public static void clear() {

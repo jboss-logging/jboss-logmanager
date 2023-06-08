@@ -59,6 +59,11 @@ final class ThreadLocalMDC implements MDCProvider {
     }
 
     @Override
+    public boolean isEmpty() {
+        return mdc.get().isEmpty();
+    }
+
+    @Override
     public void clear() {
         mdc.get().clear();
     }
