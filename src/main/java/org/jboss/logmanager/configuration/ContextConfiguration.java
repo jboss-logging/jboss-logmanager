@@ -19,7 +19,6 @@
 
 package org.jboss.logmanager.configuration;
 
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
@@ -43,8 +42,8 @@ import org.jboss.logmanager.Logger;
  * handlers, filters and formatters.
  * </p>
  * <p>
- * {@linkplain Supplier Suppliers} are used to lazily create objects. Note the passed in supplier is wrapped and invoked
- * at most once.
+ * If the {@linkplain Supplier supplier} os not already an instance of a {@link ConfigurationResource}, then it is
+ * wrapped and considered a {@linkplain ConfigurationResource#of(Supplier) lazy resource}.
  * </p>
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
@@ -119,7 +118,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the previous error manager associated with the name or {@code null} if one did not exist
      */
-    public Supplier<ErrorManager> addErrorManager(final String name, final Supplier<ErrorManager> errorManager) {
+    public ConfigurationResource<ErrorManager> addErrorManager(final String name, final Supplier<ErrorManager> errorManager) {
         if (errorManager == null) {
             return removeErrorManager(name);
         }
@@ -134,7 +133,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the error manager removed or {@code null} if the error manager did not exist
      */
-    public Supplier<ErrorManager> removeErrorManager(final String name) {
+    public ConfigurationResource<ErrorManager> removeErrorManager(final String name) {
         return errorManagers.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -168,7 +167,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return an unmodified map of the error managers
      */
-    public Map<String, Supplier<ErrorManager>> getErrorManagers() {
+    public Map<String, ConfigurationResource<ErrorManager>> getErrorManagers() {
         return Collections.unmodifiableMap(errorManagers);
     }
 
@@ -180,7 +179,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the previous handler associated with the name or {@code null} if one did not exist
      */
-    public Supplier<Handler> addHandler(final String name, final Supplier<Handler> handler) {
+    public ConfigurationResource<Handler> addHandler(final String name, final Supplier<Handler> handler) {
         if (handler == null) {
             return removeHandler(name);
         }
@@ -195,7 +194,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the handler removed or {@code null} if the handler did not exist
      */
-    public Supplier<Handler> removeHandler(final String name) {
+    public ConfigurationResource<Handler> removeHandler(final String name) {
         return handlers.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -229,7 +228,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return an unmodified map of the handlers
      */
-    public Map<String, Supplier<Handler>> getHandlers() {
+    public Map<String, ConfigurationResource<Handler>> getHandlers() {
         return Collections.unmodifiableMap(handlers);
     }
 
@@ -241,7 +240,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the previous formatter associated with the name or {@code null} if one did not exist
      */
-    public Supplier<Formatter> addFormatter(final String name, final Supplier<Formatter> formatter) {
+    public ConfigurationResource<Formatter> addFormatter(final String name, final Supplier<Formatter> formatter) {
         if (formatter == null) {
             return removeFormatter(name);
         }
@@ -256,7 +255,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the formatter removed or {@code null} if the formatter did not exist
      */
-    public Supplier<Formatter> removeFormatter(final String name) {
+    public ConfigurationResource<Formatter> removeFormatter(final String name) {
         return formatters.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -302,7 +301,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the previous filter associated with the name or {@code null} if one did not exist
      */
-    public Supplier<Filter> addFilter(final String name, final Supplier<Filter> filter) {
+    public ConfigurationResource<Filter> addFilter(final String name, final Supplier<Filter> filter) {
         if (filter == null) {
             return removeFilter(name);
         }
@@ -317,7 +316,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the filter removed or {@code null} if the filter did not exist
      */
-    public Supplier<Filter> removeFilter(final String name) {
+    public ConfigurationResource<Filter> removeFilter(final String name) {
         return filters.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -351,7 +350,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return an unmodified map of the filters
      */
-    public Map<String, Supplier<Filter>> getFilters() {
+    public Map<String, ConfigurationResource<Filter>> getFilters() {
         return Collections.unmodifiableMap(filters);
     }
 
@@ -364,7 +363,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the previous configuration object associated with the name or {@code null} if one did not exist
      */
-    public Supplier<Object> addObject(final String name, final Supplier<Object> object) {
+    public ConfigurationResource<Object> addObject(final String name, final Supplier<Object> object) {
         if (object == null) {
             return removeObject(name);
         }
@@ -379,7 +378,7 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return the configuration object removed or {@code null} if the configuration object did not exist
      */
-    public Supplier<Object> removeObject(final String name) {
+    public ConfigurationResource<Object> removeObject(final String name) {
         return objects.remove(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
@@ -413,30 +412,27 @@ public class ContextConfiguration implements AutoCloseable {
      *
      * @return an unmodified map of the configuration objects
      */
-    public Map<String, Supplier<Object>> getObjects() {
+    public Map<String, ConfigurationResource<Object>> getObjects() {
         return Collections.unmodifiableMap(objects);
     }
 
     @Override
     public void close() throws Exception {
         context.close();
-        // TODO (jrp) these are not really thread safe
-        closeResources(handlers.values());
-        handlers.clear();
-        closeResources(filters.values());
-        filters.clear();
-        closeResources(formatters.values());
-        formatters.clear();
-        closeResources(errorManagers.values());
-        errorManagers.clear();
-        closeResources(objects.values());
-        objects.clear();
+        closeResources(handlers);
+        closeResources(filters);
+        closeResources(formatters);
+        closeResources(errorManagers);
+        closeResources(objects);
     }
 
-    private static void closeResources(final Collection<? extends AutoCloseable> closeables) {
-        for (var closeable : closeables) {
+    private static void closeResources(final Map<String, ? extends ConfigurationResource<?>> resources) {
+        final var iter = resources.entrySet().iterator();
+        while (iter.hasNext()) {
+            var entry = iter.next();
+            iter.remove();
             try {
-                closeable.close();
+                entry.getValue().close();
             } catch (Throwable ignore) {
                 // do nothing
             }

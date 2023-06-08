@@ -22,44 +22,35 @@ package org.jboss.logmanager.configuration;
 import java.util.function.Supplier;
 
 /**
- * A configuration resource
+ * Represents a configuration resource. If the resource is a {@link AutoCloseable}, then invoking {@link #close()} on
+ * this resource will close the resource.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-class ConfigurationResource<T> implements Supplier<T>, AutoCloseable {
-    private final Supplier<T> supplier;
-    private volatile T instance;
+public interface ConfigurationResource<T> extends Supplier<T>, AutoCloseable {
 
-    private ConfigurationResource(final Supplier<T> supplier) {
-        this.supplier = supplier;
-    }
-
+    /**
+     * Creates a configuration resource which lazily invokes the supplier. Note that {@link #close()} will only close
+     * the resource if {@link #get()} was first invoked to retrieve the value from the supplier.
+     *
+     * @param supplier the supplier used to create the configuration resource
+     * @return the configuration resource represented by a lazy instance
+     */
     static <T> ConfigurationResource<T> of(final Supplier<T> supplier) {
         if (supplier instanceof ConfigurationResource) {
             return (ConfigurationResource<T>) supplier;
         }
-        return new ConfigurationResource<>(supplier);
+        return new LazyConfigurationResource<>(supplier);
     }
 
-    @Override
-    public T get() {
-        if (instance == null) {
-            synchronized (this) {
-                if (instance == null) {
-                    instance = supplier.get();
-                }
-            }
-        }
-        return instance;
-    }
-
-    @Override
-    public void close() throws Exception {
-        synchronized (this) {
-            if (instance instanceof AutoCloseable) {
-                ((AutoCloseable) instance).close();
-            }
-            instance = null;
-        }
+    /**
+     * Creates a configuration resource with the instance as a constant. Note that if {@link #close()} is invoked,
+     * {@link #get()} will return {@code null}.
+     *
+     * @param instance the constant instance
+     * @return the configuration resource represented by a constant instance
+     */
+    static <T> ConfigurationResource<T> of(final T instance) {
+        return new ConstantConfigurationResource<>(instance);
     }
 }
