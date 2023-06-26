@@ -34,6 +34,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Filter;
 
+import org.jboss.logmanager.configuration.PropertyLogContextConfigurator;
+
 import io.smallrye.common.constraint.Assert;
 
 /**
@@ -135,7 +137,7 @@ public final class LogManager extends java.util.logging.LogManager {
                     configurator = factory == null ? null : factory.create();
                     if (configurator == null) {
                         if (problems == null) {
-                            configuratorRef.set(configurator = LogContextConfigurator.EMPTY);
+                            configuratorRef.set(configurator = new PropertyLogContextConfigurator());
                         } else {
                             final ServiceConfigurationError e = new ServiceConfigurationError(
                                     "Failed to configure log configurator service");
