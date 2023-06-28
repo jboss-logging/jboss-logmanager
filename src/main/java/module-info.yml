@@ -1,0 +1,17 @@
+name: org.jboss.logmanager
+
+requires:
+  - module: java.logging
+    transitive: true
+  - module: java.xml
+    static: true
+  - module: jakarta.json
+    static: true
+  - module: io.smallrye.common.constraint
+  - module: io.smallrye.common.cpu
+  - module: io.smallrye.common.expression
+  - module: io.smallrye.common.net
+  - module: io.smallrye.common.os
+  - module: io.smallrye.common.ref
+  - module: org.jboss.modules
+    static: true
