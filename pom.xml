@@ -58,10 +58,13 @@
         <version.jakarta.json.jakarta-json-api>2.1.2</version.jakarta.json.jakarta-json-api>
         <version.org.byteman>4.0.21</version.org.byteman>
         <version.org.eclipse.parsson.jakarta.json>1.1.2</version.org.eclipse.parsson.jakarta.json>
-        <version.org.jboss.logging.jboss-logging>3.5.1.Final</version.org.jboss.logging.jboss-logging>
+        <version.org.jboss.logging.jboss-logging>3.5.2.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.modules.jboss-modules>2.1.0.Final</version.org.jboss.modules.jboss-modules>
         <version.org.junit>5.9.3</version.org.junit>
         <version.org.kohsuke.metainf-services>1.8</version.org.kohsuke.metainf-services>
+
+        <!-- Plugin versions -->
+        <version.module-info>2.0</version.module-info>
 
         <!-- Test properties -->
         <org.jboss.test.address>127.0.0.1</org.jboss.test.address>
@@ -147,7 +150,7 @@
         <!-- JSON implementation -->
         <dependency>
             <groupId>org.eclipse.parsson</groupId>
-            <artifactId>jakarta.json</artifactId>
+            <artifactId>parsson</artifactId>
             <version>${version.org.eclipse.parsson.jakarta.json}</version>
         </dependency>
 
@@ -190,6 +193,8 @@
                 <configuration>
                     <skipTests>${skipTests}</skipTests>
                     <skipITs>${skipITs}</skipITs>
+                    <!-- For now we will not use the module path -->
+                    <useModulePath>false</useModulePath>
                     <systemPropertyVariables>
                         <java.io.tmpdir>${project.build.directory}</java.io.tmpdir>
                     </systemPropertyVariables>
@@ -210,7 +215,7 @@
                     <includes>
                         <include>**/*Tests.java</include>
                     </includes>
-                    <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.attach.allowAttachSelf=true ${client.jvm.jpms.args}</argLine>
+                    <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager --add-modules=org.eclipse.parsson -Djdk.attach.allowAttachSelf=true ${client.jvm.jpms.args}</argLine>
                     <reuseForks>false</reuseForks>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
@@ -260,6 +265,20 @@
                         <phase>process-classes</phase>
                         <goals>
                             <goal>manifest</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>io.github.dmlloyd.module-info</groupId>
+                <artifactId>module-info</artifactId>
+                <version>${version.module-info}</version>
+                <executions>
+                    <execution>
+                        <id>module-info</id>
+                        <phase>process-classes</phase>
+                        <goals>
+                            <goal>generate</goal>
                         </goals>
                     </execution>
                 </executions>
