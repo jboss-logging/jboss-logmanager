@@ -19,12 +19,9 @@
 
 package org.jboss.logmanager;
 
-import org.kohsuke.MetaInfServices;
-
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@MetaInfServices
 public class TestConfiguratorFactory implements ConfiguratorFactory {
     @Override
     public LogContextConfigurator create() {

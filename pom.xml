@@ -61,7 +61,6 @@
         <version.org.jboss.logging.jboss-logging>3.5.2.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.modules.jboss-modules>2.1.0.Final</version.org.jboss.modules.jboss-modules>
         <version.org.junit>5.9.3</version.org.junit>
-        <version.org.kohsuke.metainf-services>1.8</version.org.kohsuke.metainf-services>
 
         <!-- Plugin versions -->
         <version.module-info>2.0</version.module-info>
@@ -106,14 +105,6 @@
             <groupId>org.jboss.modules</groupId>
             <artifactId>jboss-modules</artifactId>
             <version>${version.org.jboss.modules.jboss-modules}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.kohsuke.metainf-services</groupId>
-            <artifactId>metainf-services</artifactId>
-            <version>${version.org.kohsuke.metainf-services}</version>
-            <!-- Optional and provided as this is only a compile-time dependency -->
-            <optional>true</optional>
-            <scope>provided</scope>
         </dependency>
 
         <!-- SmallRye -->
@@ -174,7 +165,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <doclint>none</doclint>
-                    <javadocExecutable>${java.home}${file.separator}bin</javadocExecutable>
+                    <sourcepath>${project.build.sourceDirectory}</sourcepath>
                 </configuration>
             </plugin>
             <plugin>

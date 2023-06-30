@@ -21,14 +21,12 @@ package org.jboss.logmanager.configuration;
 
 import org.jboss.logmanager.ConfiguratorFactory;
 import org.jboss.logmanager.LogContextConfigurator;
-import org.kohsuke.MetaInfServices;
 
 /**
  * The default configuration factory which has a priority of 100.
  *
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
-@MetaInfServices
 public class DefaultConfiguratorFactory implements ConfiguratorFactory {
 
     @Override
