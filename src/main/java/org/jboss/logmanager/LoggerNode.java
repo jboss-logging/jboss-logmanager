@@ -299,8 +299,13 @@ final class LoggerNode implements AutoCloseable {
     }
 
     Logger createLogger() {
-        final Logger logger = new Logger(this, fullName);
-        activeLoggers.add(new PhantomReference<Logger, LoggerNode>(logger, LoggerNode.this, REAPER));
+        final Logger logger;
+        if (System.getSecurityManager() == null) {
+            logger = new Logger(this, fullName);
+        } else {
+            logger = AccessController.doPrivileged((PrivilegedAction<Logger>) () -> new Logger(this, fullName));
+        }
+        activeLoggers.add(new PhantomReference<>(logger, LoggerNode.this, REAPER));
         return logger;
     }
 
