@@ -63,7 +63,7 @@
         <version.org.junit>5.9.3</version.org.junit>
 
         <!-- Plugin versions -->
-        <version.module-info>2.0</version.module-info>
+        <version.module-info>2.1</version.module-info>
 
         <!-- Test properties -->
         <org.jboss.test.address>127.0.0.1</org.jboss.test.address>
