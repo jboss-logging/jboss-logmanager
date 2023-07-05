@@ -56,6 +56,7 @@ public class ContextConfiguration implements AutoCloseable {
     private final Map<String, ConfigurationResource<Filter>> filters;
     private final Map<String, ConfigurationResource<Formatter>> formatters;
     private final Map<String, ConfigurationResource<Handler>> handlers;
+    private final Map<String, Logger> loggers;
     private final Map<String, ConfigurationResource<Object>> objects;
 
     /**
@@ -67,6 +68,7 @@ public class ContextConfiguration implements AutoCloseable {
         handlers = new ConcurrentHashMap<>();
         formatters = new ConcurrentHashMap<>();
         filters = new ConcurrentHashMap<>();
+        loggers = new ConcurrentHashMap<>();
         objects = new ConcurrentHashMap<>();
     }
 
@@ -80,6 +82,29 @@ public class ContextConfiguration implements AutoCloseable {
     }
 
     /**
+     * Adds a defined logger to the configuration. If the logger already exists in the configuration, it is replaced and
+     * the old logger will be returned.
+     *
+     * @param logger the logger to add
+     * @return the old logger or {@code null} if the old logger did not exist
+     */
+    public Logger addLogger(final Logger logger) {
+        Objects.requireNonNull(logger, "The logger cannot be null");
+        return loggers.put(logger.getName(), logger);
+    }
+
+    /**
+     * Removes the logger from the context configuration.
+     *
+     * @param name the name of the logger
+     *
+     * @return the removed logger or {@code null} if the logger did not exist
+     */
+    public Logger removeLogger(final String name) {
+        return loggers.remove(Objects.requireNonNull(name, "The name cannot be null"));
+    }
+
+    /**
      * Checks if the logger exists in this context.
      *
      * @param name the logger name
@@ -87,18 +112,18 @@ public class ContextConfiguration implements AutoCloseable {
      * @return {@code true} if the logger exists in this context, otherwise {@code false}
      */
     public boolean hasLogger(final String name) {
-        return getContext().getLoggerIfExists(Objects.requireNonNull(name, "The name cannot be null")) != null;
+        return loggers.containsKey(Objects.requireNonNull(name, "The name cannot be null"));
     }
 
     /**
-     * Gets the logger if it exists.
+     * Gets or creates a logger
      *
      * @param name the name of the logger
      *
-     * @return the logger or {@code null} if the logger does not exist
+     * @return the logger
      */
     public Logger getLogger(final String name) {
-        return getContext().getLogger(Objects.requireNonNull(name, "The name cannot be null"));
+        return loggers.computeIfAbsent(Objects.requireNonNull(name, "The name cannot be null"), s -> getContext().getLogger(s));
     }
 
     /**
@@ -107,7 +132,7 @@ public class ContextConfiguration implements AutoCloseable {
      * @return an unmodified set of the logger names
      */
     public Set<String> getLoggers() {
-        return Set.copyOf(Collections.list(getContext().getLoggerNames()));
+        return Set.copyOf(loggers.keySet());
     }
 
     /**
@@ -419,6 +444,7 @@ public class ContextConfiguration implements AutoCloseable {
     @Override
     public void close() throws Exception {
         context.close();
+        loggers.clear();
         closeResources(handlers);
         closeResources(filters);
         closeResources(formatters);
