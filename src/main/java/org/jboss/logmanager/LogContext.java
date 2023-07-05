@@ -33,6 +33,7 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReentrantLock;
@@ -75,6 +76,8 @@ public final class LogContext implements AutoCloseable {
     private final LoggerNode rootLogger;
     private final boolean strong;
     private final LogContextInitializer initializer;
+
+    private final Set<LoggerNode> pinnedSet;
 
     private volatile Map<Logger.AttachmentKey<?>, Object> attachments;
 
@@ -134,6 +137,7 @@ public final class LogContext implements AutoCloseable {
         rootLogger = new LoggerNode(this);
         closeHandlers = new LinkedHashSet<>();
         attachments = Map.of();
+        pinnedSet = this.strong ? Set.of() : ConcurrentHashMap.newKeySet();
     }
 
     /**
@@ -505,6 +509,9 @@ public final class LogContext implements AutoCloseable {
                     }
                 }
             }
+            if (!pinnedSet.isEmpty()) {
+                pinnedSet.clear();
+            }
         } finally {
             treeLock.unlock();
         }
@@ -600,6 +607,14 @@ public final class LogContext implements AutoCloseable {
 
     ConcurrentMap<String, LoggerNode> createChildMap() {
         return strong ? new CopyOnWriteMap<String, LoggerNode>() : new CopyOnWriteWeakMap<String, LoggerNode>();
+    }
+
+    boolean pin(LoggerNode node) {
+        return !strong && pinnedSet.add(node);
+    }
+
+    boolean unpin(LoggerNode node) {
+        return !strong && pinnedSet.remove(node);
     }
 
     LogContextInitializer getInitializer() {

@@ -346,6 +346,9 @@ final class LoggerNode implements AutoCloseable {
 
     void setFilter(final Filter filter) {
         this.filter = filter;
+        if (filter != null) {
+            context.pin(this);
+        }
     }
 
     Filter getFilter() {
@@ -358,6 +361,9 @@ final class LoggerNode implements AutoCloseable {
 
     void setUseParentFilters(final boolean useParentFilter) {
         this.useParentFilter = useParentFilter;
+        if (useParentFilter) {
+            context.pin(this);
+        }
     }
 
     int getEffectiveLevel() {
@@ -386,9 +392,13 @@ final class LoggerNode implements AutoCloseable {
 
     void addHandler(final Handler handler) {
         handlersUpdater.add(this, handler);
+        context.pin(this);
     }
 
     Handler[] setHandlers(final Handler[] handlers) {
+        if (handlers.length > 0) {
+            context.pin(this);
+        }
         return handlersUpdater.getAndSet(this, handlers);
     }
 
@@ -402,6 +412,9 @@ final class LoggerNode implements AutoCloseable {
 
     void setUseParentHandlers(final boolean useParentHandlers) {
         this.useParentHandlers = useParentHandlers;
+        if (!useParentHandlers) {
+            context.pin(this);
+        }
     }
 
     void publish(final ExtLogRecord record) {
@@ -448,6 +461,7 @@ final class LoggerNode implements AutoCloseable {
             if (newLevel != null) {
                 level = newLevel;
                 newEffectiveLevel = newLevel.intValue();
+                context.pin(this);
             } else {
                 final LoggerNode parent = this.parent;
                 if (parent == null) {
