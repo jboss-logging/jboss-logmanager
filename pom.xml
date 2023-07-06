@@ -58,7 +58,7 @@
         <version.jakarta.json.jakarta-json-api>2.1.2</version.jakarta.json.jakarta-json-api>
         <version.org.byteman>4.0.21</version.org.byteman>
         <version.org.eclipse.parsson.jakarta.json>1.1.2</version.org.eclipse.parsson.jakarta.json>
-        <version.org.jboss.logging.jboss-logging>3.5.2.Final</version.org.jboss.logging.jboss-logging>
+        <version.org.jboss.logging.jboss-logging>3.5.3.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.modules.jboss-modules>2.1.0.Final</version.org.jboss.modules.jboss-modules>
         <version.org.junit>5.9.3</version.org.junit>
 
