@@ -203,6 +203,21 @@ public final class LoggerTests {
     }
 
     @Test
+    public void testJulResourceBundle() {
+        final ListHandler handler = new ListHandler();
+        final java.util.logging.Logger logger = java.util.logging.Logger.getLogger("rbLogger", getClass().getName());
+        assertNotNull(logger.getResourceBundleName(), "Resource bundle name was expected");
+        assertNotNull(logger.getResourceBundle(), "Resource bundle was expected");
+        logger.setLevel(Level.INFO);
+        handler.setLevel(Level.INFO);
+        logger.addHandler(handler);
+        logger.log(Level.INFO, null, new IllegalArgumentException());
+        logger.log(Level.INFO, "test", new IllegalArgumentException());
+        assertNull(handler.messages.get(0));
+        assertEquals("Test message", handler.messages.get(1));
+    }
+
+    @Test
     public void testInheritedFilter() {
         final ListHandler handler = new ListHandler();
         final Logger parent = Logger.getLogger("parent", getClass().getName());

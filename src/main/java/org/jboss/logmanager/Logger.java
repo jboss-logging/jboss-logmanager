@@ -22,15 +22,13 @@ package org.jboss.logmanager;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.Locale;
 import java.util.ResourceBundle;
-import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-
-import io.smallrye.common.constraint.Assert;
 
 /**
  * An actual logger instance. This is the end-user interface into the logging system.
@@ -39,6 +37,17 @@ import io.smallrye.common.constraint.Assert;
 public final class Logger extends java.util.logging.Logger implements Serializable {
 
     private static final long serialVersionUID = 5093333069125075416L;
+    private static final ResourceBundle TOMBSTONE = new ResourceBundle() {
+        @Override
+        protected Object handleGetObject(final String key) {
+            return null;
+        }
+
+        @Override
+        public Enumeration<String> getKeys() {
+            return null;
+        }
+    };
 
     /**
      * The named logger tree node.
@@ -49,12 +58,6 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * The resource bundle for this logger.
      */
     private volatile ResourceBundle resourceBundle;
-
-    /**
-     * Atomic updater for {@link #resourceBundle}.
-     */
-    private static final AtomicReferenceFieldUpdater<Logger, ResourceBundle> resourceBundleUpdater = AtomicReferenceFieldUpdater
-            .newUpdater(Logger.class, ResourceBundle.class, "resourceBundle");
 
     private static final String LOGGER_CLASS_NAME = Logger.class.getName();
 
@@ -880,45 +883,36 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
-     * Set the resource bundle for this logger. Unlike {@link java.util.logging.Logger#setResourceBundle(ResourceBundle)},
-     * there is no parent search performed for resource bundles by this implementation.
+     * Set the resource bundle for this logger.
      *
      * @param resourceBundle the resource bundle (must not be {@code null})
      */
     @Override
     public void setResourceBundle(ResourceBundle resourceBundle) {
-        Assert.checkNotNullParam("resourceBundle", resourceBundle);
-        LogContext.checkAccess();
-        ResourceBundle old;
-        do {
-            old = this.resourceBundle;
-            if (old != null && !old.getBaseBundleName().equals(resourceBundle.getBaseBundleName())) {
-                throw new IllegalArgumentException("Bundle base name does not match existing bundle");
-            }
-        } while (!resourceBundleUpdater.compareAndSet(this, old, resourceBundle));
+        super.setResourceBundle(resourceBundle);
+        synchronized (this) {
+            this.resourceBundle = resourceBundle;
+        }
     }
 
     /**
-     * Get the resource bundle for this logger. Unlike {@link java.util.logging.Logger#getResourceBundle()},
-     * there is no parent search performed for resource bundles by this implementation.
+     * Get the resource bundle for this logger.
      *
      * @return the resource bundle, or {@code null} if none is configured for this logger
      */
     @Override
     public ResourceBundle getResourceBundle() {
-        return resourceBundle;
-    }
-
-    /**
-     * Get the resource bundle name for this logger. Unlike {@link java.util.logging.Logger#getResourceBundleName()},
-     * there is no parent search performed for resource bundles by this implementation.
-     *
-     * @return the resource bundle, or {@code null} if none is configured for this logger
-     */
-    @Override
-    public String getResourceBundleName() {
-        final ResourceBundle resourceBundle = getResourceBundle();
-        return resourceBundle == null ? null : resourceBundle.getBaseBundleName();
+        if (resourceBundle == null) {
+            synchronized (this) {
+                if (resourceBundle == null) {
+                    resourceBundle = super.getResourceBundle();
+                    if (resourceBundle == null) {
+                        resourceBundle = TOMBSTONE;
+                    }
+                }
+            }
+        }
+        return resourceBundle == TOMBSTONE ? null : resourceBundle;
     }
 
     /**
