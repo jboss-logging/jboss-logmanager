@@ -906,6 +906,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Deprecated(since = "3.0", forRemoval = true)
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName,
             final String msg) {
         if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null)
@@ -917,6 +918,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Deprecated(since = "3.0", forRemoval = true)
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName,
             final String msg, final Object param1) {
         if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null)
@@ -928,6 +930,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Deprecated(since = "3.0", forRemoval = true)
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName,
             final String msg, final Object[] params) {
         if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null)
@@ -939,6 +942,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /** {@inheritDoc} */
+    @Deprecated(since = "3.0", forRemoval = true)
     public void logrb(final Level level, final String sourceClass, final String sourceMethod, final String bundleName,
             final String msg, final Throwable thrown) {
         if (!(LogManager.PER_THREAD_LOG_FILTER && LogManager.getThreadLocalLogFilter() != null)
