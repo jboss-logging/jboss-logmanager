@@ -33,7 +33,7 @@
     <description>An implementation of java.util.logging.LogManager</description>
     <groupId>org.jboss.logmanager</groupId>
     <artifactId>jboss-logmanager</artifactId>
-    <version>3.0.0.Final-SNAPSHOT</version>
+    <version>3.0.0.Beta3</version>
 
     <licenses>
         <license>
