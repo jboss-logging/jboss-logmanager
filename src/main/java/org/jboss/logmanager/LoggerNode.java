@@ -377,20 +377,31 @@ final class LoggerNode implements AutoCloseable {
     }
 
     Handler[] getHandlers() {
+        Handler[] handlers = this.handlers;
+        if (handlers == null) {
+            synchronized (this) {
+                handlers = this.handlers;
+                if (handlers == null) {
+                    handlers = this.handlers = safeCloneHandlers(context.getInitializer().getInitialHandlers(fullName));
+                }
+            }
+        }
         return handlers;
     }
 
     Handler[] clearHandlers() {
         final Handler[] handlers = this.handlers;
         handlersUpdater.clear(this);
-        return handlers.length > 0 ? handlers.clone() : handlers;
+        return safeCloneHandlers(handlers);
     }
 
     void removeHandler(final Handler handler) {
+        getHandlers();
         handlersUpdater.remove(this, handler, true);
     }
 
     void addHandler(final Handler handler) {
+        getHandlers();
         handlersUpdater.add(this, handler);
         context.pin(this);
     }
@@ -418,7 +429,7 @@ final class LoggerNode implements AutoCloseable {
     }
 
     void publish(final ExtLogRecord record) {
-        for (Handler handler : handlers)
+        for (Handler handler : getHandlers())
             try {
                 handler.publish(record);
             } catch (VirtualMachineError e) {
