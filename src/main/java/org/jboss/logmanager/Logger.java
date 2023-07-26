@@ -86,6 +86,11 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         // We have to propagate our level to an internal data structure in the superclass
         super.setLevel(loggerNode.getLevel());
         this.loggerNode = loggerNode;
+
+        // synchronize handlers in backing j.u.l.Logger.config, to make Logger#mergeWithSystemLogger() work
+        for (Handler h: loggerNode.getHandlers()) {
+            super.addHandler(h);
+        }
     }
 
     // Serialization
@@ -223,6 +228,9 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             throw new NullPointerException("handler is null");
         }
         loggerNode.addHandler(handler);
+
+        // synchronize handlers in backing j.u.l.Logger.config, to make Logger#mergeWithSystemLogger() work
+        super.addHandler(handler);
     }
 
     /** {@inheritDoc} */
@@ -232,6 +240,9 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             return;
         }
         loggerNode.removeHandler(handler);
+
+        // synchronize handlers in backing j.u.l.Logger.config, to make Logger#mergeWithSystemLogger() work
+        super.removeHandler(handler);
     }
 
     /** {@inheritDoc} */
@@ -255,6 +266,14 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             }
         }
         loggerNode.setHandlers(safeHandlers);
+
+        // synchronize handlers in backing j.u.l.Logger.config, to make Logger#mergeWithSystemLogger() work
+        for (Handler h: super.getHandlers()) {
+            super.removeHandler(h);
+        }
+        for (Handler h: handlers) {
+            super.addHandler(h);
+        }
     }
 
     /**
