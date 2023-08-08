@@ -371,11 +371,18 @@ class ObjectBuilder<T> {
         }
 
         static ClassLoader getClassLoader(final String moduleName) throws Exception {
-            ModuleLoader moduleLoader = ModuleLoader.forClass(ModuleFinder.class);
-            if (moduleLoader == null) {
-                moduleLoader = Module.getBootModuleLoader();
+            return Holder.getClassLoader(moduleName);
+        }
+
+        private static class Holder {
+
+            static ClassLoader getClassLoader(final String moduleName) throws Exception {
+                ModuleLoader moduleLoader = ModuleLoader.forClass(ModuleFinder.class);
+                if (moduleLoader == null) {
+                    moduleLoader = Module.getBootModuleLoader();
+                }
+                return moduleLoader.loadModule(moduleName).getClassLoader();
             }
-            return moduleLoader.loadModule(moduleName).getClassLoader();
         }
     }
 
