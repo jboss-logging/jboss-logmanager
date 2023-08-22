@@ -33,12 +33,13 @@ import org.jboss.logmanager.ExtLogRecord;
  * A handler which writes to any {@code Writer}.
  */
 public class WriterHandler extends ExtHandler {
-    private static final AtomicLongFieldUpdater<WriterHandler> CLAIMED_WRITES_UPDATER =
-        AtomicLongFieldUpdater.newUpdater(WriterHandler.class, "claimedWrites");
+    private static final AtomicLongFieldUpdater<WriterHandler> CLAIMED_WRITES_UPDATER = AtomicLongFieldUpdater
+            .newUpdater(WriterHandler.class, "claimedWrites");
     private volatile boolean checkHeadEncoding = true;
     private volatile boolean checkTailEncoding = true;
     private Writer writer;
     private volatile long claimedWrites;
+
     private static final class WriteRequest {
         final ExtLogRecord record;
         final String formatted;
@@ -48,6 +49,7 @@ public class WriterHandler extends ExtHandler {
             this.formatted = formatted;
         }
     }
+
     private final Queue<WriteRequest> writes = new ConcurrentLinkedQueue<>();
 
     /**
