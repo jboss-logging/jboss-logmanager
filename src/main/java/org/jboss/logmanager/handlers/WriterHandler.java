@@ -19,10 +19,10 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.io.BufferedWriter;
-import java.io.Closeable;
-import java.io.Flushable;
-import java.io.Writer;
+import java.io.*;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
@@ -33,10 +33,22 @@ import org.jboss.logmanager.ExtLogRecord;
  * A handler which writes to any {@code Writer}.
  */
 public class WriterHandler extends ExtHandler {
-
+    private static final AtomicLongFieldUpdater<WriterHandler> CLAIMED_WRITES_UPDATER =
+        AtomicLongFieldUpdater.newUpdater(WriterHandler.class, "claimedWrites");
     private volatile boolean checkHeadEncoding = true;
     private volatile boolean checkTailEncoding = true;
     private Writer writer;
+    private volatile long claimedWrites;
+    private static final class WriteRequest {
+        final ExtLogRecord record;
+        final String formatted;
+
+        WriteRequest(ExtLogRecord record, String formatted) {
+            this.record = record;
+            this.formatted = formatted;
+        }
+    }
+    private final Queue<WriteRequest> writes = new ConcurrentLinkedQueue<>();
 
     /**
      * Construct a new instance.
@@ -59,25 +71,66 @@ public class WriterHandler extends ExtHandler {
             return;
         }
         try {
-            lock.lock();
-            try {
-                if (writer == null) {
-                    return;
-                }
-                preWrite(record);
-                final Writer writer = this.writer;
-                if (writer == null) {
-                    return;
-                }
-                writer.write(formatted);
-                // only flush if something was written
-                super.doPublish(record);
-            } finally {
-                lock.unlock();
-            }
+            write(record, formatted);
         } catch (Exception ex) {
             reportError("Error writing log message", ex, ErrorManager.WRITE_FAILURE);
-            return;
+        }
+    }
+
+    private void lockedWrite(ExtLogRecord record, String formatted) throws IOException {
+        lock.lock();
+        try {
+            doWrite(record, formatted);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private boolean doWrite(ExtLogRecord record, String formatted) throws IOException {
+        assert lock.isHeldByCurrentThread();
+        if (writer == null) {
+            return true;
+        }
+        preWrite(record);
+        final Writer writer = this.writer;
+        if (writer == null) {
+            return true;
+        }
+        writer.write(formatted);
+        // only flush if something was written
+        super.doPublish(record);
+        return false;
+    }
+
+    private void write(final ExtLogRecord record, final String formatted) throws IOException {
+        if (CLAIMED_WRITES_UPDATER.compareAndSet(this, 0, 1)) {
+            lockedWrite(record, formatted);
+            if (CLAIMED_WRITES_UPDATER.decrementAndGet(this) == 0) {
+                return;
+            }
+        } else {
+            writes.offer(new WriteRequest(record, formatted));
+            if (CLAIMED_WRITES_UPDATER.getAndIncrement(this) != 0) {
+                return;
+            }
+        }
+        IOException firstIoEx = null;
+        do {
+            final WriteRequest writeRequest = writes.poll();
+            assert writeRequest != null;
+            try {
+                lockedWrite(writeRequest.record, writeRequest.formatted);
+            } catch (IOException ex) {
+                if (firstIoEx == null) {
+                    firstIoEx = ex;
+                } else {
+                    firstIoEx.addSuppressed(ex);
+                }
+            }
+        } while (CLAIMED_WRITES_UPDATER.decrementAndGet(this) != 0);
+        if (firstIoEx != null) {
+            // it can bring all the others suppressed ones
+            throw firstIoEx;
         }
     }
 
