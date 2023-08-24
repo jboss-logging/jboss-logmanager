@@ -23,6 +23,8 @@ import java.io.*;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.concurrent.locks.LockSupport;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
@@ -33,6 +35,7 @@ import org.jboss.logmanager.ExtLogRecord;
  * A handler which writes to any {@code Writer}.
  */
 public class WriterHandler extends ExtHandler {
+    private static final long MAX_PENDING_WRITES = 1024;
     private static final AtomicLongFieldUpdater<WriterHandler> CLAIMED_WRITES_UPDATER = AtomicLongFieldUpdater
             .newUpdater(WriterHandler.class, "claimedWrites");
     private volatile boolean checkHeadEncoding = true;
@@ -41,12 +44,36 @@ public class WriterHandler extends ExtHandler {
     private volatile long claimedWrites;
 
     private static final class WriteRequest {
+
+        private static final Object UNPARKED = new Object();
+        private static final AtomicReferenceFieldUpdater<WriteRequest, Object> BLOCKED = AtomicReferenceFieldUpdater
+                .newUpdater(WriteRequest.class, Object.class, "blocked");
         final ExtLogRecord record;
         final String formatted;
+        private volatile Thread blocked;
 
         WriteRequest(ExtLogRecord record, String formatted) {
             this.record = record;
             this.formatted = formatted;
+        }
+
+        public void weakBlockUntilCompletion() {
+            if (BLOCKED.compareAndSet(this, null, Thread.currentThread())) {
+                // we have won, so we can park for real
+                LockSupport.park();
+                // spurious wakeup or interrupt can cause this so...
+                BLOCKED.compareAndSet(this, Thread.currentThread(), UNPARKED);
+            }
+        }
+
+        public void unblockIfAny() {
+            if (blocked == null) {
+                return;
+            }
+            Object maybeBlocked = BLOCKED.getAndSet(this, UNPARKED);
+            if (maybeBlocked != null && maybeBlocked != UNPARKED) {
+                LockSupport.unpark((Thread) maybeBlocked);
+            }
         }
     }
 
@@ -105,14 +132,20 @@ public class WriterHandler extends ExtHandler {
     }
 
     private void write(final ExtLogRecord record, final String formatted) throws IOException {
+        boolean block;
         if (CLAIMED_WRITES_UPDATER.compareAndSet(this, 0, 1)) {
             lockedWrite(record, formatted);
             if (CLAIMED_WRITES_UPDATER.decrementAndGet(this) == 0) {
                 return;
             }
         } else {
-            writes.offer(new WriteRequest(record, formatted));
-            if (CLAIMED_WRITES_UPDATER.getAndIncrement(this) != 0) {
+            WriteRequest writeRequest = new WriteRequest(record, formatted);
+            writes.offer(writeRequest);
+            long pendingWrites = CLAIMED_WRITES_UPDATER.getAndIncrement(this);
+            if (pendingWrites != 0) {
+                if (pendingWrites >= MAX_PENDING_WRITES) {
+                    writeRequest.weakBlockUntilCompletion();
+                }
                 return;
             }
         }
@@ -128,6 +161,8 @@ public class WriterHandler extends ExtHandler {
                 } else {
                     firstIoEx.addSuppressed(ex);
                 }
+            } finally {
+                writeRequest.unblockIfAny();
             }
         } while (CLAIMED_WRITES_UPDATER.decrementAndGet(this) != 0);
         if (firstIoEx != null) {
