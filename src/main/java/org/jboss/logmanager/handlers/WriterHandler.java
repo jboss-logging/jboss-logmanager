@@ -67,9 +67,6 @@ public class WriterHandler extends ExtHandler {
         }
 
         public void unblockIfAny() {
-            if (blocked == null) {
-                return;
-            }
             Object maybeBlocked = BLOCKED.getAndSet(this, UNPARKED);
             if (maybeBlocked != null && maybeBlocked != UNPARKED) {
                 LockSupport.unpark((Thread) maybeBlocked);
