@@ -36,7 +36,7 @@ jobs:
               17
               21
       - name: Build and Test
-        run: mvn -B clean verify "-Djava11.home=${{env.JAVA_HOME_11_X64}}" "-Djava17.home=${{env.JAVA_HOME_17_X64}}"
+        run: mvn -B clean verify "-Djava11.home=${{env.JAVA_HOME_11_X64}}" "-Djava17.home=${{env.JAVA_HOME_17_X64}}" "-Dorg.jboss.test.timeout=60"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:

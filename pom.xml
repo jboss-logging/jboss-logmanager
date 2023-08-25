@@ -240,6 +240,7 @@
                         <org.jboss.test.address>${org.jboss.test.address}</org.jboss.test.address>
                         <org.jboss.test.port>${org.jboss.test.port}</org.jboss.test.port>
                         <org.jboss.test.alt.port>${org.jboss.test.alt.port}</org.jboss.test.alt.port>
+                        <org.jboss.test.timeout>10</org.jboss.test.timeout>
 
                         <config.dir>${project.build.testOutputDirectory}${file.separator}configs</config.dir>
                     </systemPropertyVariables>
