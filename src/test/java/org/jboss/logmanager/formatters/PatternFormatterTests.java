@@ -19,6 +19,10 @@
 
 package org.jboss.logmanager.formatters;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.MDC;
 import org.jboss.logmanager.NDC;
@@ -270,6 +274,28 @@ public class PatternFormatterTests {
     }
 
     @Test
+    public void dateFormat() {
+        final var now = Instant.now();
+        final var record = createLogRecord("test", now);
+        var formatter = new PatternFormatter("%d{ISO8601}");
+        Assert.assertEquals(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss,SSS").format(now.atZone(ZoneId.systemDefault())),
+                formatter.format(record));
+
+        formatter = new PatternFormatter("%d");
+        Assert.assertEquals(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS").format(now.atZone(ZoneId.systemDefault())),
+                formatter.format(record));
+
+        formatter = new PatternFormatter("%d{ABSOLUTE}");
+        Assert.assertEquals(DateTimeFormatter.ofPattern("HH:mm:ss,SSS").format(now.atZone(ZoneId.systemDefault())),
+                formatter.format(record));
+
+        formatter = new PatternFormatter("%d{compact}");
+        Assert.assertEquals(DateTimeFormatter.ofPattern("yyyyMMddHHmmssSSS").format(now.atZone(ZoneId.systemDefault())),
+                formatter.format(record));
+
+    }
+
+    @Test
     public void qualifiedHost() {
         final String hostName = "logmanager.jboss.org";
         final ExtLogRecord record = createLogRecord("test");
@@ -330,8 +356,13 @@ public class PatternFormatterTests {
     }
 
     protected static ExtLogRecord createLogRecord(final String msg) {
+        return createLogRecord(msg, Instant.now());
+    }
+
+    protected static ExtLogRecord createLogRecord(final String msg, final Instant instant) {
         final ExtLogRecord result = new ExtLogRecord(org.jboss.logmanager.Level.INFO, msg,
                 PatternFormatterTests.class.getName());
+        result.setInstant(instant);
         result.setSourceClassName(PatternFormatterTests.class.getName());
         result.setLoggerName(CATEGORY);
         return result;
