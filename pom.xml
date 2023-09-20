@@ -274,6 +274,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- Do not compress JAR, for faster startup times -->
+            <plugin>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <configuration>
+                            <archive>
+                                <compress>false</compress>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
