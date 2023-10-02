@@ -54,7 +54,7 @@
 
     <properties>
         <!-- Dependency versions -->
-        <version.io.smallrye.common.smallrye-common>2.1.0</version.io.smallrye.common.smallrye-common>
+        <version.io.smallrye.common.smallrye-common>2.2.0</version.io.smallrye.common.smallrye-common>
         <version.jakarta.json.jakarta-json-api>2.1.2</version.jakarta.json.jakarta-json-api>
         <version.org.byteman>4.0.21</version.org.byteman>
         <version.org.eclipse.parsson.jakarta.json>1.1.4</version.org.eclipse.parsson.jakarta.json>
