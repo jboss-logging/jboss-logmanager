@@ -478,7 +478,7 @@ public final class Formatters {
             final boolean truncateBeginning, final int maximumWidth) {
         return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
             final DateTimeFormatter dtf = DateTimeFormatter
-                    .ofPattern(formatString == null ? "yyyy-MM-DD HH:mm:ss,SSS" : formatString);
+                    .ofPattern(formatString == null ? "yyyy-MM-dd HH:mm:ss,SSS" : formatString);
 
             public ItemType getItemType() {
                 return ItemType.DATE;
