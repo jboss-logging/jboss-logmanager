@@ -102,6 +102,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      */
     public ConsoleHandler(final Target target, final Formatter formatter) {
         super(formatter);
+        setCharset(JDKSpecific.consoleCharset());
         switch (target) {
             case SYSTEM_OUT:
                 setOutputStream(wrap(out));

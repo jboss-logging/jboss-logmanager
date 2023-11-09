@@ -26,7 +26,7 @@
     <parent>
         <groupId>org.jboss.logging</groupId>
         <artifactId>logging-parent</artifactId>
-        <version>1.0.1.Final</version>
+        <version>1.0.2.Final</version>
     </parent>
 
     <name>JBoss Log Manager</name>
@@ -54,7 +54,7 @@
 
     <properties>
         <!-- Dependency versions -->
-        <version.io.smallrye.common.smallrye-common>2.1.0</version.io.smallrye.common.smallrye-common>
+        <version.io.smallrye.common.smallrye-common>2.2.0</version.io.smallrye.common.smallrye-common>
         <version.jakarta.json.jakarta-json-api>2.1.2</version.jakarta.json.jakarta-json-api>
         <version.org.byteman>4.0.21</version.org.byteman>
         <version.org.eclipse.parsson.jakarta.json>1.1.4</version.org.eclipse.parsson.jakarta.json>
@@ -75,6 +75,9 @@
         <skipUTs>${skipTests}</skipUTs>
 
         <client.jvm.jpms.args></client.jvm.jpms.args>
+
+        <!-- JDK configuration: require Java 17 to build -->
+        <jdk.min.version>17</jdk.min.version>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -170,6 +173,15 @@
             </plugin>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-compile</id>
+                        <configuration>
+                            <!-- TODO: remove if we stop using logging-parent -->
+                            <release>11</release>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>net.revelc.code.formatter</groupId>
@@ -201,12 +213,19 @@
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-test</id>
+                    </execution>
+                </executions>
                 <configuration>
+                    <!-- TODO: module path mode currently won't load optional modules -->
+                    <useModulePath>false</useModulePath>
                     <skipTests>${skipUTs}</skipTests>
                     <includes>
                         <include>**/*Tests.java</include>
                     </includes>
-                    <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager --add-modules=org.eclipse.parsson -Djdk.attach.allowAttachSelf=true ${client.jvm.jpms.args}</argLine>
+                    <argLine>-Djava.util.logging.manager=org.jboss.logmanager.LogManager -Djdk.attach.allowAttachSelf=true ${client.jvm.jpms.args}</argLine>
                     <reuseForks>false</reuseForks>
                     <systemPropertyVariables>
                         <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>

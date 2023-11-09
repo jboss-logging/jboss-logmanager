@@ -23,18 +23,20 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        java: ['11', '17']
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK ${{ matrix.java }}
+      - name: Set up JDKs
         uses: actions/setup-java@v3
         with:
-          java-version: ${{ matrix.java }}
           distribution: 'temurin'
           cache: 'maven'
-      - name: Build and Test with Java ${{ matrix.java }}
-        run: mvn -B clean verify
+          java-version: |
+              11
+              17
+              21
+      - name: Build and Test
+        run: mvn -B clean verify "-Djava11.home=${{env.JAVA_HOME_11_X64}}" "-Djava17.home=${{env.JAVA_HOME_17_X64}}"
 
   format-check:
     runs-on: ubuntu-latest
