@@ -148,6 +148,13 @@ public class AsyncHandler extends ExtHandler {
             // In case serialization is required by a child handler
             record.getFormattedMessage();
         }
+        if (Thread.currentThread() == thread) {
+            final Handler[] handlers = this.handlers;
+            for (Handler handler : handlers) {
+                handler.publish(record);
+            }
+            return;
+        }
         if (overflowAction == OverflowAction.DISCARD) {
             recordQueue.offer(record);
         } else {
