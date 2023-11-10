@@ -146,6 +146,10 @@ public class AsyncHandler extends ExtHandler {
             // Copy the MDC over
             record.copyMdc();
         }
+        if (Thread.currentThread() == thread) {
+            publishToNestedHandlers(record);
+            return;
+        }
         if (overflowAction == OverflowAction.DISCARD) {
             recordQueue.offer(record);
         } else {
