@@ -22,6 +22,7 @@ package org.jboss.logmanager.handlers;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Handler;
 
 import org.jboss.logmanager.AssertingErrorManager;
 import org.jboss.logmanager.ExtHandler;
@@ -49,7 +50,7 @@ public class AsyncHandlerTests {
         handler = new BlockingQueueHandler();
 
         asyncHandler = new AsyncHandler();
-        asyncHandler.setOverflowAction(OverflowAction.DISCARD);
+        asyncHandler.setOverflowAction(OverflowAction.BLOCK);
         asyncHandler.addHandler(handler);
     }
 
@@ -100,6 +101,37 @@ public class AsyncHandlerTests {
         Assert.assertEquals(mdcValue, handler.getFirst());
     }
 
+    @Test
+    public void reentry() throws Exception {
+        final ExtHandler reLogHandler = new ExtHandler() {
+            private final ThreadLocal<Boolean> entered = ThreadLocal.withInitial(() -> false);
+
+            @Override
+            protected void doPublish(final ExtLogRecord record) {
+                if (entered.get()) {
+                    return;
+                }
+                try {
+                    entered.set(true);
+                    super.doPublish(record);
+                    // Create a new record and act is if this was through a logger
+                    asyncHandler.publish(createRecord());
+                } finally {
+                    entered.set(false);
+                }
+            }
+        };
+        handler.addHandler(reLogHandler);
+        handler.setFormatter(new PatternFormatter("%s"));
+        asyncHandler.publish(createRecord());
+        // We should end up with two messages and a third should not happen
+        Assert.assertEquals("Test message", handler.getFirst());
+        Assert.assertEquals("Test message", handler.getFirst());
+        // This should time out. Then we end up with a null value. We could instead sleep for a shorter time and check
+        // if the queue is empty. However, a 5 second delay does not seem too long.
+        Assert.assertNull("Expected no more entries, but found " + handler.queue, handler.getFirst());
+    }
+
     static ExtLogRecord createRecord() {
         return new ExtLogRecord(Level.INFO, "Test message", AsyncHandlerTests.class.getName());
     }
@@ -108,13 +140,17 @@ public class AsyncHandlerTests {
         private final BlockingDeque<String> queue;
 
         BlockingQueueHandler() {
-            queue = new LinkedBlockingDeque<String>();
+            queue = new LinkedBlockingDeque<>();
             setErrorManager(AssertingErrorManager.of());
         }
 
         @Override
         protected void doPublish(final ExtLogRecord record) {
             queue.addLast(getFormatter().format(record));
+            final Handler[] handlers = this.handlers;
+            for (Handler handler : handlers) {
+                handler.publish(record);
+            }
             super.doPublish(record);
         }
 
