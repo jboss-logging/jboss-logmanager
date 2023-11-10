@@ -22,6 +22,10 @@ package org.jboss.logmanager;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.UndeclaredThrowableException;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.MissingResourceException;
@@ -37,6 +41,24 @@ import io.smallrye.common.net.HostName;
 public class ExtLogRecord extends LogRecord {
 
     private static final long serialVersionUID = -9174374711278052369L;
+
+    private static final MethodHandle superGetLongThreadID;
+    private static final MethodHandle superSetLongThreadID;
+
+    static {
+        MethodHandle getter = null, setter = null;
+        try {
+            MethodHandles.Lookup pl = MethodHandles.lookup();
+            //noinspection JavaLangInvokeHandleSignature
+            getter = pl.findSpecial(LogRecord.class, "getLongThreadID", MethodType.methodType(long.class), ExtLogRecord.class);
+            //noinspection JavaLangInvokeHandleSignature
+            setter = pl.findSpecial(LogRecord.class, "setLongThreadID", MethodType.methodType(LogRecord.class, long.class),
+                    ExtLogRecord.class);
+        } catch (NoSuchMethodException | IllegalAccessException ignored) {
+        }
+        superGetLongThreadID = getter;
+        superSetLongThreadID = setter;
+    }
 
     /**
      * The format style to use.
@@ -83,6 +105,7 @@ public class ExtLogRecord extends LogRecord {
         this.loggerClassName = loggerClassName;
         ndc = NDC.get();
         threadName = Thread.currentThread().getName();
+        longThreadID = Thread.currentThread().getId(); // todo: threadId() on 19+
         hostName = HostName.getQualifiedHostName();
         processName = io.smallrye.common.os.Process.getProcessName();
         processId = io.smallrye.common.os.Process.getProcessId();
@@ -102,7 +125,6 @@ public class ExtLogRecord extends LogRecord {
         setResourceBundle(original.getResourceBundle());
         setResourceBundleName(original.getResourceBundleName());
         setSequenceNumber(original.getSequenceNumber());
-        setThreadID(original.getThreadID());
         setThrown(original.getThrown());
         if (!original.calculateCaller) {
             setSourceClassName(original.getSourceClassName());
@@ -112,6 +134,7 @@ public class ExtLogRecord extends LogRecord {
             sourceModuleName = original.sourceModuleName;
             sourceModuleVersion = original.sourceModuleVersion;
         }
+        setLongThreadID(original.getLongThreadID());
         formatStyle = original.formatStyle;
         marker = original.marker;
         mdcCopy = original.mdcCopy;
@@ -155,6 +178,7 @@ public class ExtLogRecord extends LogRecord {
     private String sourceModuleName;
     private String sourceModuleVersion;
     private Object marker;
+    private long longThreadID;
 
     private void writeObject(ObjectOutputStream oos) throws IOException {
         copyAll();
@@ -176,6 +200,15 @@ public class ExtLogRecord extends LogRecord {
         sourceModuleName = (String) fields.get("sourceModuleName", null);
         sourceModuleVersion = (String) fields.get("sourceModuleVersion", null);
         marker = fields.get("marker", null);
+        long id = fields.get("longThreadID", superGetLongThreadID());
+        // replicate the 17+ behavior
+        if (id >= 0 && id <= Integer.MAX_VALUE) {
+            super.setThreadID((int) id);
+        } else {
+            int hash = Long.hashCode(id);
+            super.setThreadID(hash < 0 ? hash : (-1 - hash));
+        }
+        longThreadID = id;
     }
 
     /**
@@ -630,5 +663,53 @@ public class ExtLogRecord extends LogRecord {
 
     public Object getMarker() {
         return marker;
+    }
+
+    @Override
+    public void setThreadID(final int threadID) {
+        super.setThreadID(threadID);
+        this.longThreadID = threadID;
+    }
+
+    long superGetLongThreadID() {
+        try {
+            return superGetLongThreadID == null ? getThreadID() : (long) superGetLongThreadID.invokeExact(this);
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Throwable e) {
+            throw new UndeclaredThrowableException(e);
+        }
+    }
+
+    // @Override (17+)
+    public long getLongThreadID() {
+        return longThreadID;
+    }
+
+    void superSetLongThreadID(final long id) {
+        if (superSetLongThreadID != null) {
+            try {
+                superSetLongThreadID.invokeExact(this, id);
+            } catch (RuntimeException | Error e) {
+                throw e;
+            } catch (Throwable e) {
+                throw new UndeclaredThrowableException(e);
+            }
+        } else {
+            // replicate the 17+ behavior
+            if (id >= 0 && id <= Integer.MAX_VALUE) {
+                super.setThreadID((int) id);
+            } else {
+                int hash = Long.hashCode(id);
+                super.setThreadID(hash < 0 ? hash : (-1 - hash));
+            }
+        }
+    }
+
+    // @Override (17+)
+    public ExtLogRecord setLongThreadID(final long id) {
+        superSetLongThreadID(id);
+        this.longThreadID = id;
+        return this;
     }
 }
