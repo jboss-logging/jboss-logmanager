@@ -1202,7 +1202,7 @@ public final class Formatters {
             }
 
             public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
-                builder.append(record.getThreadID());
+                builder.append(record.getLongThreadID());
             }
         };
     }
