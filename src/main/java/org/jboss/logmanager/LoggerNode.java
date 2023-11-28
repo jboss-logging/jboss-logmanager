@@ -40,6 +40,7 @@ import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
+import java.util.logging.LogRecord;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.common.ref.PhantomReference;
@@ -428,10 +429,27 @@ final class LoggerNode implements AutoCloseable {
         }
     }
 
+    @SuppressWarnings("deprecation") // record#getFormattedMessage
     void publish(final ExtLogRecord record) {
+        LogRecord oldRecord = null;
         for (Handler handler : getHandlers())
             try {
-                handler.publish(record);
+                if (handler instanceof ExtHandler || handler.getFormatter() instanceof ExtFormatter) {
+                    handler.publish(record);
+                } else {
+                    // old-style handlers generally don't know how to handle printf formatting
+                    if (oldRecord == null) {
+                        if (record.getFormatStyle() == ExtLogRecord.FormatStyle.PRINTF) {
+                            // reformat it in a simple way, but only for legacy handler usage
+                            oldRecord = new ExtLogRecord(record);
+                            oldRecord.setMessage(record.getFormattedMessage());
+                            oldRecord.setParameters(null);
+                        } else {
+                            oldRecord = record;
+                        }
+                    }
+                    handler.publish(oldRecord);
+                }
             } catch (VirtualMachineError e) {
                 throw e;
             } catch (Throwable t) {
