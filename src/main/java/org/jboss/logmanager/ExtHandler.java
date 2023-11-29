@@ -114,12 +114,29 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
      *
      * @param record the log record to publish
      */
+    @SuppressWarnings("deprecation") // record.getFormattedMessage()
     protected void publishToNestedHandlers(final ExtLogRecord record) {
         if (record != null) {
+            LogRecord oldRecord = null;
             for (Handler handler : getHandlers())
                 try {
                     if (handler != null) {
-                        handler.publish(record);
+                        if (handler instanceof ExtHandler || handler.getFormatter() instanceof ExtFormatter) {
+                            handler.publish(record);
+                        } else {
+                            // old-style handlers generally don't know how to handle printf formatting
+                            if (oldRecord == null) {
+                                if (record.getFormatStyle() == ExtLogRecord.FormatStyle.PRINTF) {
+                                    // reformat it in a simple way, but only for legacy handler usage
+                                    oldRecord = new ExtLogRecord(record);
+                                    oldRecord.setMessage(record.getFormattedMessage());
+                                    oldRecord.setParameters(null);
+                                } else {
+                                    oldRecord = record;
+                                }
+                            }
+                            handler.publish(oldRecord);
+                        }
                     }
                 } catch (Exception e) {
                     reportError(handler, "Nested handler publication threw an exception", e, ErrorManager.WRITE_FAILURE);
