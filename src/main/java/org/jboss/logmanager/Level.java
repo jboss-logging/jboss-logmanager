@@ -39,4 +39,5 @@ public final class Level extends java.util.logging.Level {
     public static final Level INFO = new Level("INFO", 800);
     public static final Level DEBUG = new Level("DEBUG", 500);
     public static final Level TRACE = new Level("TRACE", 400);
+    public static final Level ALL = new Level("ALL", Integer.MIN_VALUE);
 }
