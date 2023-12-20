@@ -689,7 +689,7 @@ public class ExtLogRecord extends LogRecord {
     void superSetLongThreadID(final long id) {
         if (superSetLongThreadID != null) {
             try {
-                superSetLongThreadID.invokeExact(this, id);
+                LogRecord ignored = (LogRecord) superSetLongThreadID.invokeExact(this, id);
             } catch (RuntimeException | Error e) {
                 throw e;
             } catch (Throwable e) {
