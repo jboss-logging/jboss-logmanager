@@ -25,6 +25,7 @@ import java.util.EnumMap;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 /**
  * Implements the {@code System.LoggerFinder}. It will make an attempt to set the {@code java.util.logging.manager}
@@ -94,6 +95,36 @@ public class JBossLoggerFinder extends System.LoggerFinder {
         @Override
         public boolean isLoggable(final Level level) {
             return delegate.isLoggable(LEVELS.getOrDefault(level, java.util.logging.Level.INFO));
+        }
+
+        public void log(final Level level, final String msg) {
+            log(level, null, msg, (Object[]) null);
+        }
+
+        public void log(final Level level, final Supplier<String> msgSupplier) {
+            if (isLoggable(level)) {
+                log(level, null, msgSupplier.get(), (Object[]) null);
+            }
+        }
+
+        public void log(final Level level, final Object obj) {
+            if (isLoggable(level)) {
+                this.log(level, null, obj.toString(), (Object[]) null);
+            }
+        }
+
+        public void log(final Level level, final String msg, final Throwable thrown) {
+            this.log(level, null, msg, thrown);
+        }
+
+        public void log(final Level level, final Supplier<String> msgSupplier, final Throwable thrown) {
+            if (isLoggable(level)) {
+                this.log(level, null, msgSupplier.get(), thrown);
+            }
+        }
+
+        public void log(final Level level, final String format, final Object... params) {
+            this.log(level, null, format, params);
         }
 
         @Override
