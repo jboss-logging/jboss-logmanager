@@ -19,7 +19,7 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,6 +29,7 @@ import java.util.logging.ErrorManager;
 import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.WithByteman;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -38,7 +39,14 @@ import org.junit.jupiter.api.Test;
 public class PeriodicSizeRotatingFileHandlerFailureTests extends AbstractHandlerTest {
     private final static String FILENAME = "rotating-file-handler.log";
 
-    private final File logFile = new File(BASE_LOG_DIR, FILENAME);
+    private Path logFile;
+
+    @BeforeEach
+    public void setup() throws IOException {
+        if (logFile == null) {
+            logFile = resolvePath(FILENAME);
+        }
+    }
 
     @Test
     @BMRule(name = "Test failed rotated", targetClass = "java.nio.file.Files", targetMethod = "move", targetLocation = "AT ENTRY", condition = "$2.getFileName().toString().equals(\"rotating-file-handler.log.2\")", action = "throw new IOException(\"Fail on purpose\")")
@@ -48,7 +56,7 @@ public class PeriodicSizeRotatingFileHandlerFailureTests extends AbstractHandler
         handler.setErrorManager(AssertingErrorManager.of(ErrorManager.GENERIC_FAILURE));
         handler.setRotateSize(1024L);
         handler.setMaxBackupIndex(5);
-        handler.setFile(logFile);
+        handler.setFile(logFile.toFile());
 
         // Allow a few rotates
         for (int i = 0; i < 100; i++) {
@@ -58,12 +66,12 @@ public class PeriodicSizeRotatingFileHandlerFailureTests extends AbstractHandler
         handler.close();
 
         // The log file should exist, as should one rotated file since we fail the rotation on the second rotate
-        Assertions.assertTrue(logFile.exists(), () -> String.format("Expected log file %s to exist", logFile));
-        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + ".1");
+        Assertions.assertTrue(Files.exists(logFile), () -> String.format("Expected log file %s to exist", logFile));
+        final Path rotatedFile = resolvePath(FILENAME + ".1");
         Assertions.assertTrue(Files.exists(rotatedFile), () -> String.format("Expected rotated file %s to exist", rotatedFile));
 
         // The last line of the log file should end with "99" as it should be the last record
-        final List<String> lines = Files.readAllLines(logFile.toPath(), StandardCharsets.UTF_8);
+        final List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
         final String lastLine = lines.get(lines.size() - 1);
         Assertions.assertTrue(lastLine.endsWith("99"), "Expected the last line to end with 99: " + lastLine);
     }

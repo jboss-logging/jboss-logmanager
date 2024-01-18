@@ -37,6 +37,14 @@ jobs:
               21
       - name: Build and Test
         run: mvn -B clean verify "-Djava11.home=${{env.JAVA_HOME_11_X64}}" "-Djava17.home=${{env.JAVA_HOME_17_X64}}"
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+            name: surefire-reports-${{ matrix.os }}-${{ matrix.java }}
+            path: |
+              **/logs/
+              **/failsafe-reports/
+              **/surefire-reports/
 
   format-check:
     runs-on: ubuntu-latest

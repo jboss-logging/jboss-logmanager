@@ -20,7 +20,6 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URI;
@@ -32,74 +31,80 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 import java.util.zip.GZIPInputStream;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
 import org.jboss.logmanager.formatters.PatternFormatter;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInfo;
 
 /**
  * @author <a href="mailto:jperkins@redhat.com">James R. Perkins</a>
  */
 public class AbstractHandlerTest {
-    static final File BASE_LOG_DIR;
+
+    private static final Path BASE_LOG_DIR;
 
     static {
-        BASE_LOG_DIR = new File(System.getProperty("log.dir"));
+        BASE_LOG_DIR = Path.of(System.getProperty("log.dir"));
     }
 
     final static PatternFormatter FORMATTER = new PatternFormatter("%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n");
 
+    private TestInfo testInfo;
+
     @BeforeEach
-    public void setup() throws Exception {
-        BASE_LOG_DIR.mkdir();
+    public void setup(final TestInfo testInfo) throws Exception {
+        this.testInfo = testInfo;
+        deletePath(logDirectory(testInfo));
     }
 
-    @AfterEach
-    public void cleanUp() throws Exception {
-        deleteChildrenRecursively(BASE_LOG_DIR);
+    @Test
+    public void simple() {
+        Assertions.assertTrue(testInfo.getTestMethod().isPresent());
     }
 
-    static boolean deleteRecursively(final File dir) {
-        if (dir.isDirectory()) {
-            final File[] files = dir.listFiles();
-            if (files != null) {
-                for (final File f : files) {
-                    if (f.isDirectory()) {
-                        if (!deleteRecursively(f)) {
-                            return false;
-                        }
-                    }
-                    if (!f.delete()) {
-                        return false;
-                    }
-                }
-            }
+    protected Path resolvePath(final String filename) throws IOException {
+        return logDirectory().resolve(filename);
+    }
+
+    protected Path logDirectory() throws IOException {
+        return logDirectory(testInfo);
+    }
+
+    protected Path logDirectory(final TestInfo testInfo) throws IOException {
+        Assertions.assertTrue(testInfo.getTestClass().isPresent());
+        Assertions.assertTrue(testInfo.getTestMethod().isPresent());
+        final Path dir = BASE_LOG_DIR
+                .resolve(testInfo.getTestClass().get().getSimpleName() + "-" + testInfo.getTestMethod().get().getName());
+        if (Files.notExists(dir)) {
+            Files.createDirectories(dir);
         }
-        return dir.delete();
+        return dir;
     }
 
-    static boolean deleteChildrenRecursively(final File dir) {
-        if (dir.isDirectory()) {
-            final File[] files = dir.listFiles();
-            if (files != null) {
-                for (final File f : files) {
-                    if (f.isDirectory()) {
-                        if (!deleteRecursively(f)) {
-                            return false;
-                        }
-                    }
-                    if (!f.delete()) {
-                        return false;
-                    }
-                }
+    private static void deletePath(final Path path) throws IOException {
+        if (Files.isDirectory(path)) {
+            try (Stream<Path> paths = Files.walk(path)) {
+                paths.sorted(Comparator.reverseOrder())
+                        .forEach(p -> {
+                            try {
+                                Files.delete(p);
+                            } catch (IOException e) {
+                                System.out.printf("Failed to delete path %s%n", p);
+                                e.printStackTrace(System.out);
+                            }
+                        });
             }
+        } else {
+            Files.delete(path);
         }
-        return true;
     }
 
     protected static void configureHandlerDefaults(final ExtHandler handler) {
