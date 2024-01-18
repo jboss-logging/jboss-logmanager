@@ -19,7 +19,7 @@
 
 package org.jboss.logmanager.handlers;
 
-import java.io.File;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,11 +32,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.ErrorManager;
+import java.util.stream.Stream;
 
 import org.jboss.byteman.contrib.bmunit.BMRule;
 import org.jboss.byteman.contrib.bmunit.WithByteman;
 import org.jboss.logmanager.ExtLogRecord;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
@@ -47,7 +49,7 @@ import org.junit.jupiter.api.Test;
 public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
     private final static String FILENAME = "rotating-file-handler.log";
 
-    private final File logFile = new File(BASE_LOG_DIR, FILENAME);
+    private Path logFile;
 
     private static final List<Integer> supportedPeriods = new ArrayList<Integer>();
     private static final Map<Integer, SimpleDateFormat> periodFormatMap = new HashMap<Integer, SimpleDateFormat>();
@@ -71,6 +73,13 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         periodFormatMap.put(Calendar.MINUTE, new SimpleDateFormat("yyyy-MM-dd-HH-mm"));
     }
 
+    @BeforeEach
+    public void setup() throws IOException {
+        if (logFile == null) {
+            logFile = resolvePath(FILENAME);
+        }
+    }
+
     @Test
     public void testSizeRotate() throws Exception {
         final SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd");
@@ -82,7 +91,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setRotateSize(1024L);
         handler.setMaxBackupIndex(2);
         handler.setSuffix("." + fmt.toPattern());
-        handler.setFile(logFile);
+        handler.setFile(logFile.toFile());
 
         // Allow a few rotates
         for (int i = 0; i < 100; i++) {
@@ -92,15 +101,11 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.close();
 
         // We should end up with 3 files, 2 rotated and the default log
-        final File file1 = new File(BASE_LOG_DIR, FILENAME + extension + ".1");
-        final File file2 = new File(BASE_LOG_DIR, FILENAME + extension + ".2");
-        Assertions.assertTrue(logFile.exists());
-        Assertions.assertTrue(file1.exists());
-        Assertions.assertTrue(file2.exists());
-
-        // Clean up files
-        file1.delete();
-        file2.delete();
+        final Path file1 = resolvePath(FILENAME + extension + ".1");
+        final Path file2 = resolvePath(FILENAME + extension + ".2");
+        Assertions.assertTrue(Files.exists(logFile));
+        Assertions.assertTrue(Files.exists(file1));
+        Assertions.assertTrue(Files.exists(file2));
     }
 
     @Test
@@ -116,11 +121,11 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setMaxBackupIndex(1);
         handler.setSuffix("." + fmt.toPattern());
         handler.setRotateOnBoot(true);
-        handler.setFile(logFile);
-        final File rotatedFile = new File(BASE_LOG_DIR, FILENAME + extension + ".1");
+        handler.setFile(logFile.toFile());
+        final Path rotatedFile = resolvePath(FILENAME + extension + ".1");
 
         // The rotated file should not exist
-        Assertions.assertFalse(rotatedFile.exists(), "Rotated file should not exist");
+        Assertions.assertFalse(Files.exists(rotatedFile), "Rotated file should not exist");
 
         // Log a few records
         for (int i = 0; i < 5; i++) {
@@ -129,20 +134,20 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
 
         // Close the handler and create a new one
         handler.close();
-        final long size = logFile.length();
+        final long size = Files.size(logFile);
         handler = new PeriodicSizeRotatingFileHandler();
         configureHandlerDefaults(handler);
         handler.setRotateSize(5000L);
         handler.setMaxBackupIndex(1);
         handler.setSuffix("." + fmt.toPattern());
         handler.setRotateOnBoot(true);
-        handler.setFile(logFile);
+        handler.setFile(logFile.toFile());
 
         // The rotated file should exist
-        Assertions.assertTrue(rotatedFile.exists(), "Rotated file should exist");
+        Assertions.assertTrue(Files.exists(rotatedFile), "Rotated file should exist");
 
         // Rotated file size should match the size of the previous file
-        Assertions.assertEquals(size, rotatedFile.length());
+        Assertions.assertEquals(size, Files.size(rotatedFile));
 
         // Log a few records
         for (int i = 0; i < 10; i++) {
@@ -152,15 +157,12 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.close();
 
         // File should have been rotated
-        Assertions.assertTrue(logFile.exists());
-        Assertions.assertTrue(rotatedFile.exists());
+        Assertions.assertTrue(Files.exists(logFile));
+        Assertions.assertTrue(Files.exists(rotatedFile));
 
         // Neither file should be empty
-        Assertions.assertTrue(logFile.length() > 0L);
-        Assertions.assertTrue(rotatedFile.length() > 0L);
-
-        // Clean up files
-        rotatedFile.delete();
+        Assertions.assertTrue(Files.size(logFile) > 0L);
+        Assertions.assertTrue(Files.size(rotatedFile) > 0L);
     }
 
     @Test
@@ -216,7 +218,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setErrorManager(AssertingErrorManager.of(ErrorManager.GENERIC_FAILURE));
         handler.setRotateSize(1024L);
         handler.setMaxBackupIndex(5);
-        handler.setFile(logFile);
+        handler.setFile(logFile.toFile());
 
         // Allow a few rotates
         for (int i = 0; i < 100; i++) {
@@ -226,12 +228,12 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.close();
 
         // The log file should exist, as should one rotated file since we fail the rotation on the second rotate
-        Assertions.assertTrue(logFile.exists(), () -> String.format("Expected log file %s to exist", logFile));
-        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + ".1");
+        Assertions.assertTrue(Files.exists(logFile), () -> String.format("Expected log file %s to exist", logFile));
+        final Path rotatedFile = resolvePath(FILENAME + ".1");
         Assertions.assertTrue(Files.exists(rotatedFile), () -> String.format("Expected rotated file %s to exist", rotatedFile));
 
         // The last line of the log file should end with "99" as it should be the last record
-        final List<String> lines = Files.readAllLines(logFile.toPath(), StandardCharsets.UTF_8);
+        final List<String> lines = Files.readAllLines(logFile, StandardCharsets.UTF_8);
         final String lastLine = lines.get(lines.size() - 1);
         Assertions.assertTrue(lastLine.endsWith("99"), "Expected the last line to end with 99: " + lastLine);
     }
@@ -244,7 +246,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setRotateSize(1024L);
         handler.setMaxBackupIndex(2);
         handler.setRotateOnBoot(rotateOnBoot);
-        handler.setFile(logFile);
+        handler.setFile(logFile.toFile());
         handler.setSuffix((dateSuffix == null ? "" : dateSuffix) + archiveSuffix);
         // Set append to true to ensure the rotated file is overwritten
         handler.setAppend(true);
@@ -257,10 +259,10 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.close();
 
         // We should end up with 3 files, 2 rotated and the default log
-        final Path logDir = BASE_LOG_DIR.toPath();
+        final Path logDir = logDirectory();
         final Path path1 = logDir.resolve(FILENAME + currentDate + ".1" + archiveSuffix);
         final Path path2 = logDir.resolve(FILENAME + currentDate + ".2" + archiveSuffix);
-        Assertions.assertTrue(logFile.exists());
+        Assertions.assertTrue(Files.exists(logDir));
         Assertions.assertTrue(Files.exists(path1));
         Assertions.assertTrue(Files.exists(path2));
 
@@ -269,17 +271,13 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
             validateGzipContents(path1, "Test message:");
             validateGzipContents(path2, "Test message:");
         } else if (archiveSuffix.endsWith(".zip")) {
-            validateZipContents(path1, logFile.getName(), "Test message:");
-            validateZipContents(path2, logFile.getName(), "Test message:");
+            validateZipContents(path1, logFile.getFileName().toString(), "Test message:");
+            validateZipContents(path2, logFile.getFileName().toString(), "Test message:");
         } else {
             Assertions.fail("Unknown archive suffix: " + archiveSuffix);
         }
 
-        compareArchiveContents(path1, path2, logFile.getName());
-
-        // Clean up files
-        Files.deleteIfExists(path1);
-        Files.deleteIfExists(path2);
+        compareArchiveContents(path1, path2, logFile.getFileName().toString());
     }
 
     private void testPeriodicAndSizeRotate0(int handlerPeriod, int logMessagePeriod, boolean testSize) throws Exception {
@@ -298,23 +296,24 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.setRotateSize(rotateSize);
         handler.setMaxBackupIndex(2);
         handler.setSuffix("." + fmt.toPattern());
-        handler.setFile(logFile);
+        handler.setFile(logFile.toFile());
 
         // Write a record
         for (int i = 0; i < logCount; i++) {
             handler.publish(createLogRecord("Test message: %d", i));
         }
 
-        File rotatedFile1, rotatedFile2;
+        Path rotatedFile1, rotatedFile2;
         if (testSize) {
-            rotatedFile1 = new File(BASE_LOG_DIR, FILENAME + extension + ".1");
-            rotatedFile2 = new File(BASE_LOG_DIR, FILENAME + extension + ".2");
+            rotatedFile1 = resolvePath(FILENAME + extension + ".1");
+            rotatedFile2 = resolvePath(FILENAME + extension + ".2");
 
             // File should have been rotated
-            String message = "Log should have rotated, but it did not\n";
-            Assertions.assertTrue(logFile.exists());
-            Assertions.assertTrue(rotatedFile1.exists(), message + rotatedFile1.getPath());
-            Assertions.assertTrue(rotatedFile2.exists(), message + rotatedFile2.getPath());
+            Assertions.assertTrue(Files.exists(logFile));
+            Assertions.assertTrue(Files.exists(rotatedFile1),
+                    String.format("Log should have rotated, but it did not%n%s", rotatedFile1));
+            Assertions.assertTrue(Files.exists(rotatedFile2),
+                    String.format("Log should have rotated, but it did not%n%s", rotatedFile2));
         }
 
         // Increase the calender to force a rotation
@@ -333,35 +332,28 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
             // The extension name will be the new period since the size rotation
             // has happened since the date rotation
             extension = "." + fmt.format(cal.getTimeInMillis());
-            rotatedFile1 = new File(BASE_LOG_DIR, FILENAME + extension + ".1");
-            rotatedFile2 = new File(BASE_LOG_DIR, FILENAME + extension + ".2");
+            rotatedFile1 = resolvePath(FILENAME + extension + ".1");
+            rotatedFile2 = resolvePath(FILENAME + extension + ".2");
         } else {
             // The extension name will still be the old period since no size rotation
             // has happened to bump up the new period
-            rotatedFile1 = new File(BASE_LOG_DIR, FILENAME + extension);
-            rotatedFile2 = new File(BASE_LOG_DIR, FILENAME + extension);
+            rotatedFile1 = resolvePath(FILENAME + extension);
+            rotatedFile2 = resolvePath(FILENAME + extension);
         }
 
-        Assertions.assertTrue(logFile.exists());
-        Assertions.assertTrue(logFile.length() > 0L);
-
-        try {
-            ErrorCreator errorCreator = new ErrorCreator(handlerPeriod, logMessagePeriod, testSize);
-            if (shouldRotate(logMessagePeriod, handlerPeriod, testSize)) {
-                Assertions.assertTrue(rotatedFile1.exists(), errorCreator.create(true, rotatedFile1));
-                Assertions.assertTrue(rotatedFile2.exists(), errorCreator.create(true, rotatedFile2));
-                Assertions.assertTrue(rotatedFile1.length() > 0L);
-                Assertions.assertTrue(rotatedFile2.length() > 0L);
-            } else {
-                Assertions.assertFalse(rotatedFile1.exists(), errorCreator.create(false, rotatedFile1));
-                Assertions.assertFalse(rotatedFile2.exists(), errorCreator.create(false, rotatedFile2));
-                Assertions.assertFalse(rotatedFile1.length() > 0L);
-                Assertions.assertFalse(rotatedFile2.length() > 0L);
-            }
-        } finally {
-            for (String logFile : BASE_LOG_DIR.list()) {
-                new File(BASE_LOG_DIR + File.separator + logFile).delete();
-            }
+        Assertions.assertTrue(Files.exists(logFile));
+        Assertions.assertTrue(Files.size(logFile) > 0L);
+        ErrorCreator errorCreator = new ErrorCreator(handlerPeriod, logMessagePeriod, testSize);
+        if (shouldRotate(logMessagePeriod, handlerPeriod, testSize)) {
+            Assertions.assertTrue(Files.exists(rotatedFile1), errorCreator.create(true, rotatedFile1));
+            Assertions.assertTrue(Files.exists(rotatedFile2), errorCreator.create(true, rotatedFile2));
+            Assertions.assertTrue(Files.size(rotatedFile1) > 0L);
+            Assertions.assertTrue(Files.size(rotatedFile2) > 0L);
+        } else {
+            Assertions.assertFalse(Files.exists(rotatedFile1), errorCreator.create(true, rotatedFile1));
+            Assertions.assertFalse(Files.exists(rotatedFile2), errorCreator.create(true, rotatedFile2));
+            Assertions.assertFalse(Files.size(rotatedFile1) > 0L);
+            Assertions.assertFalse(Files.size(rotatedFile2) > 0L);
         }
     }
 
@@ -399,7 +391,7 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
         return (supportedPeriods.indexOf(period1) - supportedPeriods.indexOf(period2)) == 1;
     }
 
-    private static final class ErrorCreator {
+    private final class ErrorCreator {
         private int handlerPeriod, logMessagePeriod;
         private boolean testSize;
 
@@ -409,25 +401,27 @@ public class PeriodicSizeRotatingFileHandlerTests extends AbstractHandlerTest {
             this.testSize = testSize;
         }
 
-        public String create(boolean expectRotation, File log) throws Exception {
+        public String create(boolean expectRotation, Path log) throws Exception {
             StringBuilder builder = new StringBuilder();
             if (expectRotation) {
-                builder.append("Expected log rotation, but it didn't happen\n");
+                builder.append("Expected log rotation, but it didn't happen").append(System.lineSeparator());
             } else {
-                builder.append("Expected NO log rotation, but it happened anyways\n");
+                builder.append("Expected NO log rotation, but it happened anyways").append(System.lineSeparator());
             }
 
-            builder.append("Handler: " + periodFormatMap.get(handlerPeriod).toPattern());
+            builder.append("Handler: ").append(periodFormatMap.get(handlerPeriod).toPattern());
             builder.append(" ; ");
-            builder.append("Message: " + periodFormatMap.get(logMessagePeriod).toPattern());
+            builder.append("Message: ").append(periodFormatMap.get(logMessagePeriod).toPattern());
             builder.append(" ; ");
-            builder.append("testSize=" + testSize);
+            builder.append("testSize=").append(testSize);
 
-            builder.append("\nChecking for log file here: ");
-            builder.append(log.getPath() + "\n");
-            builder.append("List of log files:\n");
-            for (String f : BASE_LOG_DIR.list()) {
-                builder.append("\t" + f + "\n");
+            builder.append(System.lineSeparator()).append("Checking for log file here: ");
+            builder.append(log).append(System.lineSeparator());
+            builder.append("List of log files:").append(System.lineSeparator());
+            try (Stream<Path> paths = Files.walk(logDirectory())) {
+                paths.forEach(path -> {
+                    builder.append('\t').append(path).append(System.lineSeparator());
+                });
             }
             builder.append("-- End of listing --");
             return builder.toString();

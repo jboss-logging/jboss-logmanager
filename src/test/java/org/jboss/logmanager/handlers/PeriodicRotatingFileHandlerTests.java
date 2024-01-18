@@ -20,7 +20,7 @@
 package org.jboss.logmanager.handlers;
 
 import java.io.BufferedWriter;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,13 +47,16 @@ import org.junit.jupiter.api.Test;
 public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     private final static String FILENAME = "periodic-rotating-file-handler.log";
 
-    private final Path logFile = BASE_LOG_DIR.toPath().resolve(FILENAME);
+    private Path logFile;
 
     private final SimpleDateFormat rotateFormatter = new SimpleDateFormat(".dd");
     private PeriodicRotatingFileHandler handler;
 
     @BeforeEach
-    public void createHandler() throws FileNotFoundException {
+    public void createHandler() throws IOException {
+        if (logFile == null) {
+            logFile = resolvePath(FILENAME);
+        }
         // Create the handler
         handler = new PeriodicRotatingFileHandler(logFile.toFile(), rotateFormatter.toPattern(), false);
         handler.setFormatter(FORMATTER);
@@ -71,14 +74,14 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     @Test
     public void testRotate() throws Exception {
         final Calendar cal = Calendar.getInstance();
-        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
+        final Path rotatedFile = resolvePath(FILENAME + rotateFormatter.format(cal.getTime()));
         testRotate(cal, rotatedFile);
     }
 
     @Test
     public void testOverwriteRotate() throws Exception {
         final Calendar cal = Calendar.getInstance();
-        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
+        final Path rotatedFile = resolvePath(FILENAME + rotateFormatter.format(cal.getTime()));
 
         // Create the rotated file to ensure at some point it gets overwritten
         Files.deleteIfExists(rotatedFile);
@@ -102,7 +105,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     @BMRule(name = "Test failed rotated", targetClass = "java.nio.file.Files", targetMethod = "move", targetLocation = "AT ENTRY", condition = "$2.getFileName().toString().matches(\"periodic-rotating-file-handler\\\\.log\\\\.\\\\d+\")", action = "throw new IOException(\"Fail on purpose\")")
     public void testFailedRotate() throws Exception {
         final Calendar cal = Calendar.getInstance();
-        final Path rotatedFile = BASE_LOG_DIR.toPath().resolve(FILENAME + rotateFormatter.format(cal.getTime()));
+        final Path rotatedFile = resolvePath(FILENAME + rotateFormatter.format(cal.getTime()));
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
         final int currentDay = cal.get(Calendar.DAY_OF_MONTH);
         final int nextDay = currentDay + 1;
@@ -209,7 +212,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         handler.publish(record);
 
         // There should be three files
-        final Path logDir = BASE_LOG_DIR.toPath();
+        final Path logDir = logDirectory();
         final Path rotated1 = logDir.resolve(FILENAME + firstDateSuffix + archiveSuffix);
         final Path rotated2 = logDir.resolve(FILENAME + secondDateSuffix + archiveSuffix);
         Assertions.assertTrue(Files.exists(logFile), () -> "Missing file " + logFile);
