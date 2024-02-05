@@ -60,7 +60,7 @@
         <version.org.eclipse.parsson.jakarta.json>1.1.5</version.org.eclipse.parsson.jakarta.json>
         <version.org.jboss.logging.jboss-logging>3.5.3.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.modules.jboss-modules>2.1.2.Final</version.org.jboss.modules.jboss-modules>
-        <version.org.junit>5.10.1</version.org.junit>
+        <version.org.junit>5.10.2</version.org.junit>
 
         <!-- Plugin versions -->
         <version.module-info>2.1</version.module-info>
