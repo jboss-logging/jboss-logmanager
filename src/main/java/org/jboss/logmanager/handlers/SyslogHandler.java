@@ -19,6 +19,7 @@
 
 package org.jboss.logmanager.handlers;
 
+import static java.security.AccessController.doPrivileged;
 import static java.time.temporal.ChronoField.DAY_OF_MONTH;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
@@ -34,6 +35,7 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
+import java.security.PrivilegedAction;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
 import java.time.ZoneId;
@@ -346,7 +348,6 @@ public class SyslogHandler extends ExtHandler {
     private String hostname;
     private Facility facility;
     private SyslogType syslogType;
-    private final String pid;
     private OutputStream out;
     private Protocol protocol;
     private boolean useCountingFraming;
@@ -503,8 +504,6 @@ public class SyslogHandler extends ExtHandler {
         this.serverAddress = serverAddress;
         this.port = port;
         this.facility = facility;
-        final long pid = io.smallrye.common.os.Process.getProcessId();
-        this.pid = (pid != -1 ? Long.toString(pid) : null);
         this.appName = "java";
         this.hostname = checkPrintableAscii("host name", hostname);
         this.syslogType = (syslogType == null ? SyslogType.RFC5424 : syslogType);
@@ -780,14 +779,11 @@ public class SyslogHandler extends ExtHandler {
      * Returns the pid being used as the PROCID for RFC5424 messages.
      *
      * @return the pid or {@code null} if the pid could not be determined
+     * @deprecated Always returns the current process ID, as a string.
      */
+    @Deprecated(forRemoval = true, since = "3.1")
     public String getPid() {
-        lock.lock();
-        try {
-            return pid;
-        } finally {
-            lock.unlock();
-        }
+        return String.valueOf(doPrivileged((PrivilegedAction<ProcessHandle>) ProcessHandle::current).pid());
     }
 
     /**
@@ -1308,9 +1304,6 @@ public class SyslogHandler extends ExtHandler {
         if (recordProcId != -1) {
             buffer.append(recordProcId);
             buffer.append(' ');
-        } else if (pid != null) {
-            buffer.appendPrintUSASCII(pid, 128);
-            buffer.append(' ');
         } else {
             buffer.appendUSASCII(NILVALUE_SP);
         }
@@ -1380,9 +1373,6 @@ public class SyslogHandler extends ExtHandler {
         final long recordProcId = record.getProcessId();
         if (recordProcId != -1) {
             buffer.append('[').append(recordProcId).append(']');
-            colon = true;
-        } else if (pid != null) {
-            buffer.append('[').appendUSASCII(pid).append(']');
             colon = true;
         }
         if (colon) {
