@@ -19,6 +19,8 @@
 
 package org.jboss.logmanager;
 
+import static java.security.AccessController.doPrivileged;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -26,6 +28,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.reflect.UndeclaredThrowableException;
+import java.security.PrivilegedAction;
 import java.text.MessageFormat;
 import java.util.Map;
 import java.util.MissingResourceException;
@@ -108,7 +111,7 @@ public class ExtLogRecord extends LogRecord {
         longThreadID = Thread.currentThread().getId(); // todo: threadId() on 19+
         hostName = HostName.getQualifiedHostName();
         processName = io.smallrye.common.os.Process.getProcessName();
-        processId = io.smallrye.common.os.Process.getProcessId();
+        processId = doPrivileged((PrivilegedAction<ProcessHandle>) ProcessHandle::current).pid();
     }
 
     /**
