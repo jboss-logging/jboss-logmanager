@@ -29,6 +29,7 @@ import java.security.PrivilegedAction;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoField;
 import java.time.temporal.ChronoUnit;
 import java.util.TimeZone;
 import java.util.logging.ErrorManager;
@@ -248,13 +249,13 @@ public class PeriodicRotatingFileHandler extends FileHandler {
         switch (period) {
             default:
             case YEAR:
-                zdt = zdt.truncatedTo(ChronoUnit.YEARS).plusYears(1);
+                zdt = zdt.withDayOfYear(1).truncatedTo(ChronoUnit.DAYS).plusYears(1);
                 break;
             case MONTH:
-                zdt = zdt.truncatedTo(ChronoUnit.MONTHS).plusYears(1);
+                zdt = zdt.withDayOfMonth(1).truncatedTo(ChronoUnit.DAYS).plusMonths(1);
                 break;
             case WEEK:
-                zdt = zdt.truncatedTo(ChronoUnit.WEEKS).plusWeeks(1);
+                zdt = zdt.with(ChronoField.DAY_OF_WEEK, 1).truncatedTo(ChronoUnit.DAYS).plusWeeks(1);
                 break;
             case DAY:
                 zdt = zdt.truncatedTo(ChronoUnit.DAYS).plusDays(1);

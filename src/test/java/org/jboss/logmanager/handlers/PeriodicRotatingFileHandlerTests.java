@@ -25,6 +25,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Calendar;
@@ -58,11 +60,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
             logFile = resolvePath(FILENAME);
         }
         // Create the handler
-        handler = new PeriodicRotatingFileHandler(logFile.toFile(), rotateFormatter.toPattern(), false);
-        handler.setFormatter(FORMATTER);
-        // Set append to true to ensure the rotated file is overwritten
-        handler.setAppend(true);
-        handler.setErrorManager(AssertingErrorManager.of());
+        handler = createHandler(rotateFormatter.toPattern());
     }
 
     @AfterEach
@@ -76,6 +74,47 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         final Calendar cal = Calendar.getInstance();
         final Path rotatedFile = resolvePath(FILENAME + rotateFormatter.format(cal.getTime()));
         testRotate(cal, rotatedFile);
+    }
+
+    @Test
+    public void testRotateEveryYear() throws Exception {
+        closeHandler();
+        String suffix = ".yyyy";
+        handler = createHandler(suffix);
+        final Calendar cal = Calendar.getInstance();
+        final Path rotatedFile = resolvePath(FILENAME + DateTimeFormatter.ofPattern(suffix).format(LocalDate.now()));
+        testRotate(cal, rotatedFile, Calendar.YEAR);
+    }
+
+    @Test
+    public void testRotateEveryMonth() throws Exception {
+        closeHandler();
+        String suffix = ".yyyy-MM";
+        handler = createHandler(suffix);
+        final Calendar cal = Calendar.getInstance();
+        final Path rotatedFile = resolvePath(FILENAME + DateTimeFormatter.ofPattern(suffix).format(LocalDate.now()));
+        testRotate(cal, rotatedFile, Calendar.MONTH);
+    }
+
+    @Test
+    public void testRotateEveryWeek() throws Exception {
+        closeHandler();
+        String suffix = ".yyyy-ww";
+        handler = createHandler(suffix);
+        final Calendar cal = Calendar.getInstance();
+        final Path rotatedFile = resolvePath(FILENAME + DateTimeFormatter.ofPattern(suffix).format(LocalDate.now()));
+        testRotate(cal, rotatedFile, Calendar.WEEK_OF_YEAR);
+    }
+
+    @Test
+    public void testRotateEveryHourOfDay() throws Exception {
+        closeHandler();
+        String suffix = ".yyyy-MM-dd.HH";
+        handler = createHandler(suffix);
+        final Calendar cal = Calendar.getInstance();
+        final Path rotatedFile = resolvePath(FILENAME + DateTimeFormatter.ofPattern(suffix)
+                .format(LocalDateTime.now()));
+        testRotate(cal, rotatedFile, Calendar.HOUR_OF_DAY);
     }
 
     @Test
@@ -145,8 +184,12 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
     }
 
     private void testRotate(final Calendar cal, final Path rotatedFile) throws Exception {
+        testRotate(cal, rotatedFile, Calendar.DAY_OF_MONTH);
+    }
+
+    private void testRotate(final Calendar cal, final Path rotatedFile, int calendarField) throws Exception {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        final int currentDay = cal.get(Calendar.DAY_OF_MONTH);
+        final int currentDay = cal.get(calendarField);
         final int nextDay = currentDay + 1;
 
         final String currentDate = sdf.format(cal.getTime());
@@ -163,7 +206,7 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         Assertions.assertTrue(lines.get(0).contains(currentDate), "Expected the line to contain the date: " + currentDate);
 
         // Create a new record, increment the day by one and validate
-        cal.add(Calendar.DAY_OF_MONTH, nextDay);
+        cal.set(calendarField, nextDay);
         final String nextDate = sdf.format(cal.getTime());
         record = createLogRecord(Level.INFO, "Date: %s", nextDate);
         record.setMillis(cal.getTimeInMillis());
@@ -230,5 +273,15 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
             Assertions.fail("Unknown archive suffix: " + archiveSuffix);
         }
         compareArchiveContents(rotated1, rotated2, logFile.getFileName().toString());
+    }
+
+    private PeriodicRotatingFileHandler createHandler(String suffix) throws IOException {
+        // Create the handler
+        PeriodicRotatingFileHandler handler = new PeriodicRotatingFileHandler(logFile.toFile(), suffix, false);
+        handler.setFormatter(FORMATTER);
+        // Set append to true to ensure the rotated file is overwritten
+        handler.setAppend(true);
+        handler.setErrorManager(AssertingErrorManager.of());
+        return handler;
     }
 }
