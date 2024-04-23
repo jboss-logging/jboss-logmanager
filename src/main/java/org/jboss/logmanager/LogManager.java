@@ -43,7 +43,9 @@ import io.smallrye.common.constraint.Assert;
  */
 public final class LogManager extends java.util.logging.LogManager {
 
+    @Deprecated(forRemoval = true, since = "3.0.5")
     public static final String PER_THREAD_LOG_FILTER_KEY = "org.jboss.logmanager.useThreadLocalFilter";
+    @Deprecated(forRemoval = true, since = "3.0.5")
     static final boolean PER_THREAD_LOG_FILTER;
 
     static {
@@ -244,7 +246,10 @@ public final class LogManager extends java.util.logging.LogManager {
      * </p>
      *
      * @return the filter set for the thread or {@code null} if no level was set
+     * @deprecated this is mainly un-used code and a {@link Filter} attached to the root logger with
+     *             {@link Logger#setUseParentFilters(boolean)} set to {@code true} should be enough
      */
+    @Deprecated(forRemoval = true, since = "3.0.5")
     public static Filter getThreadLocalLogFilter() {
         return PER_THREAD_LOG_FILTER ? LocalFilterHolder.LOCAL_FILTER.get() : null;
     }
@@ -256,7 +261,10 @@ public final class LogManager extends java.util.logging.LogManager {
      * </p>
      *
      * @param filter the filter to set for all loggers on this thread
+     * @deprecated this is mainly un-used code and a {@link Filter} attached to the root logger with
+     *             {@link Logger#setUseParentFilters(boolean)} set to {@code true} should be enough
      */
+    @Deprecated(forRemoval = true, since = "3.0.5")
     public static void setThreadLocalLogLevel(final Filter filter) {
         if (PER_THREAD_LOG_FILTER) {
             LocalFilterHolder.LOCAL_FILTER.set(filter);
