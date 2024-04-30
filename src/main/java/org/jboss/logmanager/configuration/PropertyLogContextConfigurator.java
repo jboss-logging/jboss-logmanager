@@ -77,7 +77,8 @@ public class PropertyLogContextConfigurator implements LogContextConfigurator {
             context.attachIfAbsent(ContextConfiguration.CONTEXT_CONFIGURATION_KEY, configurator);
         } else {
             // Next check the service loader
-            final Iterator<LogContextConfigurator> serviceLoader = ServiceLoader.load(LogContextConfigurator.class).iterator();
+            final Iterator<LogContextConfigurator> serviceLoader = ServiceLoader
+                    .load(LogContextConfigurator.class, PropertyLogContextConfigurator.class.getClassLoader()).iterator();
             if (serviceLoader.hasNext()) {
                 serviceLoader.next().configure(context, null);
             } else {
@@ -95,20 +96,18 @@ public class PropertyLogContextConfigurator implements LogContextConfigurator {
 
     private static InputStream findConfiguration() {
         final String propLoc = System.getProperty("logging.configuration");
-        if (propLoc != null)
+        if (propLoc != null) {
             try {
                 return new URL(propLoc).openStream();
             } catch (IOException e) {
                 StandardOutputStreams.printError("Unable to read the logging configuration from '%s' (%s)%n", propLoc, e);
             }
-        final ClassLoader tccl = Thread.currentThread().getContextClassLoader();
-        if (tccl != null)
-            try {
-                final InputStream stream = tccl.getResourceAsStream("logging.properties");
-                if (stream != null)
-                    return stream;
-            } catch (Exception ignore) {
-            }
-        return PropertyLogContextConfigurator.class.getResourceAsStream("logging.properties");
+        }
+        final ClassLoader cl = PropertyLogContextConfigurator.class.getClassLoader();
+        try {
+            return cl.getResourceAsStream("logging.properties");
+        } catch (Exception ignore) {
+            return null;
+        }
     }
 }

@@ -119,7 +119,8 @@ public final class LogManager extends java.util.logging.LogManager {
                 if (configurator == null) {
                     int best = Integer.MAX_VALUE;
                     ConfiguratorFactory factory = null;
-                    final ServiceLoader<ConfiguratorFactory> serviceLoader = ServiceLoader.load(ConfiguratorFactory.class);
+                    final ServiceLoader<ConfiguratorFactory> serviceLoader = ServiceLoader.load(ConfiguratorFactory.class,
+                            LogManager.class.getClassLoader());
                     final Iterator<ConfiguratorFactory> iterator = serviceLoader.iterator();
                     List<Throwable> problems = null;
                     for (;;)
