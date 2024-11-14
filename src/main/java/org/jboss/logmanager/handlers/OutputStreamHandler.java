@@ -79,15 +79,6 @@ public class OutputStreamHandler extends WriterHandler {
         }
     }
 
-    public Charset getCharset() {
-        lock.lock();
-        try {
-            return super.getCharset();
-        } finally {
-            lock.unlock();
-        }
-    }
-
     /** {@inheritDoc} Setting a writer will replace any target output stream. */
     public void setWriter(final Writer writer) {
         lock.lock();

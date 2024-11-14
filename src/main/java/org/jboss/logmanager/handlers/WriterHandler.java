@@ -23,6 +23,8 @@ import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.Writer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
@@ -175,9 +177,11 @@ public class WriterHandler extends ExtHandler {
             final Formatter formatter = getFormatter();
             if (formatter != null) {
                 final String head = formatter.getHead(this);
-                if (checkHeadEncoding) {
-                    if (!getCharset().newEncoder().canEncode(head)) {
-                        reportError("Section header cannot be encoded into charset \"" + getCharset().name() + "\"", null,
+                if (!head.isEmpty() && checkHeadEncoding) {
+                    Charset cs = getCharset();
+                    // UTF-8 is always safe since the UTF-16 chars in String(s) are always encodable
+                    if (!StandardCharsets.UTF_8.equals(cs) && cs.newEncoder().canEncode(head)) {
+                        reportError("Section header cannot be encoded into charset \"" + cs.name() + "\"", null,
                                 ErrorManager.GENERIC_FAILURE);
                         return;
                     }
