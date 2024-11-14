@@ -23,6 +23,9 @@ import java.io.BufferedWriter;
 import java.io.Closeable;
 import java.io.Flushable;
 import java.io.Writer;
+import java.lang.invoke.ConstantBootstraps;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.logging.ErrorManager;
 import java.util.logging.Formatter;
 
@@ -33,9 +36,19 @@ import org.jboss.logmanager.ExtLogRecord;
  * A handler which writes to any {@code Writer}.
  */
 public class WriterHandler extends ExtHandler {
+    private static final VarHandle waitingWritersHandle = ConstantBootstraps.fieldVarHandle(MethodHandles.lookup(),
+            "waitingWriters", VarHandle.class, WriterHandler.class, int.class);
 
     private volatile boolean checkHeadEncoding = true;
     private volatile boolean checkTailEncoding = true;
+    /**
+     * The number of waiting writers.
+     * Accessed via {@link #waitingWritersHandle} (not unused).
+     *
+     * @see #waitingWritersHandle
+     */
+    @SuppressWarnings("unused")
+    private volatile int waitingWriters;
     private Writer writer;
 
     /**
@@ -54,24 +67,46 @@ public class WriterHandler extends ExtHandler {
             reportError("Formatting error", ex, ErrorManager.FORMAT_FAILURE);
             return;
         }
-        if (formatted.length() == 0) {
+        if (formatted.isEmpty()) {
             // nothing to write; don't bother
             return;
         }
         try {
+            waitingWritersHandle.getAndAdd(this, 1);
             lock.lock();
             try {
                 if (writer == null) {
+                    // nothing to write to
+                    waitingWritersHandle.getAndAdd(this, -1);
                     return;
                 }
-                preWrite(record);
+                try {
+                    preWrite(record);
+                } catch (Throwable t) {
+                    // the decrement was missed
+                    waitingWritersHandle.getAndAdd(this, -1);
+                    throw t;
+                }
+                // writer may have been changed by preWrite; re-check it
                 final Writer writer = this.writer;
                 if (writer == null) {
+                    // nothing to write to
+                    waitingWritersHandle.getAndAdd(this, -1);
                     return;
                 }
-                writer.write(formatted);
-                // only flush if something was written
-                super.doPublish(record);
+                try {
+                    writer.write(formatted);
+                } catch (Throwable t) {
+                    // the decrement was missed
+                    waitingWritersHandle.getAndAdd(this, -1);
+                    throw t;
+                }
+                // only flush if something was written and we're the last one
+                int remainingWaitersIncludingUs = (int) waitingWritersHandle.getAndAdd(this, -1);
+                // at this point the count is reconciled
+                if (remainingWaitersIncludingUs == 1 && isAutoFlush()) {
+                    flush();
+                }
             } finally {
                 lock.unlock();
             }
