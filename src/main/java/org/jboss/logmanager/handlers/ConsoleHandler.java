@@ -26,6 +26,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Base64;
 import java.util.Objects;
 import java.util.logging.ErrorManager;
@@ -60,14 +62,7 @@ public class ConsoleHandler extends OutputStreamHandler {
         CONSOLE,
     }
 
-    private static final PrintWriter console;
-
     private final ErrorManager localErrorManager = new HandlerErrorManager(this);
-
-    static {
-        final Console con = System.console();
-        console = con == null ? null : con.writer();
-    }
 
     /**
      * Construct a new instance.
@@ -82,7 +77,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @param formatter the formatter to use
      */
     public ConsoleHandler(final Formatter formatter) {
-        this(console == null ? Target.SYSTEM_OUT : Target.CONSOLE, formatter);
+        this(defaultTarget(), formatter);
     }
 
     /**
@@ -111,7 +106,7 @@ public class ConsoleHandler extends OutputStreamHandler {
                 setOutputStream(wrap(err));
                 break;
             case CONSOLE:
-                setWriter(wrap(console));
+                setWriter(wrap(ConsoleHolder.console));
                 break;
             default:
                 throw new IllegalArgumentException();
@@ -124,7 +119,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @param target the target to write to, or {@code null} to clear the target
      */
     public void setTarget(Target target) {
-        final Target t = (target == null ? console == null ? Target.SYSTEM_OUT : Target.CONSOLE : target);
+        final Target t = (target == null ? defaultTarget() : target);
         switch (t) {
             case SYSTEM_OUT:
                 setOutputStream(wrap(out));
@@ -133,7 +128,7 @@ public class ConsoleHandler extends OutputStreamHandler {
                 setOutputStream(wrap(err));
                 break;
             case CONSOLE:
-                setWriter(wrap(console));
+                setWriter(wrap(ConsoleHolder.console));
                 break;
             default:
                 throw new IllegalArgumentException();
@@ -260,7 +255,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      * @return {@code true} if there is a console, {@code false} otherwise
      */
     public static boolean hasConsole() {
-        return console != null;
+        return ConsoleHolder.console != null;
     }
 
     /**
@@ -296,5 +291,29 @@ public class ConsoleHandler extends OutputStreamHandler {
                 || term.equalsIgnoreCase("xterm-kitty")
                 || term.equalsIgnoreCase("wezterm")
                 || term.equalsIgnoreCase("konsole")) || termProgram != null && termProgram.equalsIgnoreCase("wezterm");
+    }
+
+    private static Target defaultTarget() {
+        return ConsoleHolder.console == null ? Target.SYSTEM_OUT : Target.CONSOLE;
+    }
+
+    private static final class ConsoleHolder {
+        private static final PrintWriter console;
+
+        static {
+            AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                // prevent jline from being used if we are the first console user
+                String res = System.getProperty("jdk.console");
+                if (res == null) {
+                    System.setProperty("jdk.console", "java.base");
+                }
+                return null;
+            });
+            Console cons = System.console();
+            console = cons == null ? null : cons.writer();
+        }
+
+        private ConsoleHolder() {
+        }
     }
 }
