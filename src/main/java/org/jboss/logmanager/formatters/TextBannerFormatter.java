@@ -37,7 +37,9 @@ public final class TextBannerFormatter extends ExtFormatter.Delegating {
     public String getHead(final Handler h) {
         final String dh = Objects.requireNonNullElse(delegate.getHead(h), "");
         final String banner = Objects.requireNonNullElse(bannerSupplier.get(), "");
-        return banner + dh;
+        // it doesn't use + because dh can be empty and we both don't want to create an indy and
+        // we don't want to create a new string
+        return banner.concat(dh);
     }
 
     /**
