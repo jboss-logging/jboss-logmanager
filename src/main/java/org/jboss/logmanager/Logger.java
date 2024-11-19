@@ -19,6 +19,9 @@
 
 package org.jboss.logmanager;
 
+import static org.jboss.logmanager.ExtLogRecord.FormatStyle.MESSAGE_FORMAT;
+import static org.jboss.logmanager.ExtLogRecord.FormatStyle.NO_FORMAT;
+
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
@@ -407,7 +410,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY", LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "ENTRY", NO_FORMAT, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         logRaw(rec);
@@ -431,11 +434,16 @@ public final class Logger extends java.util.logging.Logger implements Serializab
             return;
         }
         final StringBuilder builder = new StringBuilder("ENTRY");
-        if (params != null)
+        ExtLogRecord.FormatStyle style;
+        if (params != null && params.length > 0) {
             for (int i = 0; i < params.length; i++) {
                 builder.append(" {").append(i).append('}');
             }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, builder.toString(), LOGGER_CLASS_NAME);
+            style = MESSAGE_FORMAT;
+        } else {
+            style = NO_FORMAT;
+        }
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, builder.toString(), style, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         if (params != null)
@@ -448,7 +456,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN", LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "RETURN", NO_FORMAT, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         logRaw(rec);
@@ -471,7 +479,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "THROW", LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, "THROW", NO_FORMAT, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setThrown(thrown);
@@ -483,7 +491,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(SEVERE_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.SEVERE, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.SEVERE, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -492,7 +500,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(SEVERE_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.SEVERE, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.SEVERE, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -501,7 +509,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(WARNING_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.WARNING, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.WARNING, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -510,7 +518,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(WARNING_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.WARNING, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.WARNING, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -519,7 +527,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(INFO_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.INFO, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.INFO, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -528,7 +536,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(INFO_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.INFO, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.INFO, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -537,7 +545,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(CONFIG_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.CONFIG, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.CONFIG, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -546,7 +554,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(CONFIG_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.CONFIG, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.CONFIG, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -555,7 +563,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(FINE_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINE, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINE, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -564,7 +572,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(FINE_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINE, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINE, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -573,7 +581,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -582,7 +590,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(FINER_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINER, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -591,7 +599,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(FINEST_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINEST, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINEST, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -600,7 +608,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(FINEST_INT)) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(Level.FINEST, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(Level.FINEST, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -609,7 +617,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -618,7 +626,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(level, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         logRaw(rec);
     }
 
@@ -637,9 +645,13 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
-        if (params != null)
+        final ExtLogRecord rec;
+        if (params != null && params.length > 0) {
+            rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
             rec.setParameters(params);
+        } else {
+            rec = new ExtLogRecord(level, msg, NO_FORMAT, LOGGER_CLASS_NAME);
+        }
         logRaw(rec);
     }
 
@@ -648,7 +660,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         rec.setThrown(thrown);
         logRaw(rec);
     }
@@ -658,7 +670,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(level, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         rec.setThrown(thrown);
         logRaw(rec);
     }
@@ -668,7 +680,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         logRaw(rec);
@@ -680,7 +692,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(level, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         logRaw(rec);
@@ -705,11 +717,15 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec;
+        if (params != null && params.length > 0) {
+            rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+            rec.setParameters(params);
+        } else {
+            rec = new ExtLogRecord(level, msg, NO_FORMAT, LOGGER_CLASS_NAME);
+        }
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
-        if (params != null)
-            rec.setParameters(params);
         logRaw(rec);
     }
 
@@ -719,7 +735,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msg, LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(level, msg, NO_FORMAT, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setThrown(thrown);
@@ -732,7 +748,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
         if (!loggerNode.isLoggableLevel(level.intValue())) {
             return;
         }
-        final ExtLogRecord rec = new ExtLogRecord(level, msgSupplier.get(), LOGGER_CLASS_NAME);
+        final ExtLogRecord rec = new ExtLogRecord(level, msgSupplier.get(), NO_FORMAT, LOGGER_CLASS_NAME);
         rec.setSourceClassName(sourceClass);
         rec.setSourceMethodName(sourceMethod);
         rec.setThrown(thrown);
@@ -877,7 +893,7 @@ public final class Logger extends java.util.logging.Logger implements Serializab
      * @param t       the throwable, if any
      */
     public void log(final String fqcn, final Level level, final String message, final Throwable t) {
-        log(fqcn, level, message, ExtLogRecord.FormatStyle.MESSAGE_FORMAT, null, t);
+        log(fqcn, level, message, NO_FORMAT, null, t);
     }
 
     /**
