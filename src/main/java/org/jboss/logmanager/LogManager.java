@@ -222,4 +222,25 @@ public final class LogManager extends java.util.logging.LogManager {
     public Logger getLogger(String name) {
         return LogContext.getLogContext().getLogger(name);
     }
+
+    public static final class Provider {
+        /**
+         * The service provider method.
+         * This method is used when the log manager service is loaded from a modular application.
+         *
+         * @return the log manager instance (not {@code null})
+         * @throws ClassCastException if the log manager is not initialized to this class
+         */
+        public static LogManager provider() {
+            Thread ct = Thread.currentThread();
+            ClassLoader old = ct.getContextClassLoader();
+            ct.setContextClassLoader(Provider.class.getClassLoader());
+            try {
+                System.setProperty("java.util.logging.manager", LogManager.class.getName());
+                return (LogManager) getLogManager();
+            } finally {
+                ct.setContextClassLoader(old);
+            }
+        }
+    }
 }

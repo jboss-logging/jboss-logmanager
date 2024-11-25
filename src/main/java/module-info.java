@@ -29,7 +29,7 @@ module org.jboss.logmanager {
     exports org.jboss.logmanager.formatters;
     exports org.jboss.logmanager.handlers;
 
-    provides java.util.logging.LogManager with LogManager;
+    provides java.util.logging.LogManager with LogManager.Provider;
     provides System.LoggerFinder with JBossLoggerFinder;
     provides ConfiguratorFactory with DefaultConfiguratorFactory;
 
