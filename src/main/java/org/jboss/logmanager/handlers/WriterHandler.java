@@ -180,7 +180,7 @@ public class WriterHandler extends ExtHandler {
                 if (!head.isEmpty() && checkHeadEncoding) {
                     Charset cs = getCharset();
                     // UTF-8 is always safe since the UTF-16 chars in String(s) are always encodable
-                    if (!StandardCharsets.UTF_8.equals(cs) && cs.newEncoder().canEncode(head)) {
+                    if (!StandardCharsets.UTF_8.equals(cs) && !cs.newEncoder().canEncode(head)) {
                         reportError("Section header cannot be encoded into charset \"" + cs.name() + "\"", null,
                                 ErrorManager.GENERIC_FAILURE);
                         return;
