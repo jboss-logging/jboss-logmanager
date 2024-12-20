@@ -15,14 +15,21 @@ final class JDKSpecific {
     private static final Charset CONSOLE_CHARSET;
 
     static {
-        // Make various guesses as to what the encoding of the console is
-        String encodingName = AccessController
-                .doPrivileged((PrivilegedAction<String>) () -> System.getProperty("stdout.encoding"));
-        if (encodingName == null) {
-            encodingName = AccessController
-                    .doPrivileged((PrivilegedAction<String>) () -> System.getProperty("native.encoding"));
+        Console console = System.console();
+        Charset charset;
+        if (console != null) {
+            charset = console.charset();
+        } else {
+            // Make various guesses as to what the encoding of the console is
+            String encodingName = AccessController
+                    .doPrivileged((PrivilegedAction<String>) () -> System.getProperty("stdout.encoding"));
+            if (encodingName == null) {
+                encodingName = AccessController
+                        .doPrivileged((PrivilegedAction<String>) () -> System.getProperty("native.encoding"));
+            }
+            charset = encodingName == null ? Charset.defaultCharset() : Charset.forName(encodingName);
         }
-        CONSOLE_CHARSET = encodingName == null ? Charset.defaultCharset() : Charset.forName(encodingName);
+        CONSOLE_CHARSET = charset;
     }
 
     static Charset consoleCharset() {
