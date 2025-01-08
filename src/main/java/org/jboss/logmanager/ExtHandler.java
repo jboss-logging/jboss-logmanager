@@ -117,7 +117,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
     @SuppressWarnings("deprecation") // record.getFormattedMessage()
     protected void publishToNestedHandlers(final ExtLogRecord record) {
         if (record != null) {
-            LogRecord oldRecord = null;
+            ExtLogRecord oldRecord = null;
             for (Handler handler : getHandlers())
                 try {
                     if (handler != null) {
@@ -129,7 +129,7 @@ public abstract class ExtHandler extends Handler implements AutoCloseable, Flush
                                 if (record.getFormatStyle() == ExtLogRecord.FormatStyle.PRINTF) {
                                     // reformat it in a simple way, but only for legacy handler usage
                                     oldRecord = new ExtLogRecord(record);
-                                    oldRecord.setMessage(record.getFormattedMessage());
+                                    oldRecord.setMessage(record.getFormattedMessage(), ExtLogRecord.FormatStyle.NO_FORMAT);
                                     oldRecord.setParameters(null);
                                 } else {
                                     oldRecord = record;
