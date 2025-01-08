@@ -40,7 +40,6 @@ import java.util.logging.ErrorManager;
 import java.util.logging.Filter;
 import java.util.logging.Handler;
 import java.util.logging.Level;
-import java.util.logging.LogRecord;
 
 import io.smallrye.common.constraint.Assert;
 import io.smallrye.common.ref.PhantomReference;
@@ -431,7 +430,7 @@ final class LoggerNode implements AutoCloseable {
 
     @SuppressWarnings("deprecation") // record#getFormattedMessage
     void publish(final ExtLogRecord record) {
-        LogRecord oldRecord = null;
+        ExtLogRecord oldRecord = null;
         for (Handler handler : getHandlers())
             try {
                 if (handler instanceof ExtHandler || handler.getFormatter() instanceof ExtFormatter) {
@@ -442,7 +441,7 @@ final class LoggerNode implements AutoCloseable {
                         if (record.getFormatStyle() == ExtLogRecord.FormatStyle.PRINTF) {
                             // reformat it in a simple way, but only for legacy handler usage
                             oldRecord = new ExtLogRecord(record);
-                            oldRecord.setMessage(record.getFormattedMessage());
+                            oldRecord.setMessage(record.getFormattedMessage(), ExtLogRecord.FormatStyle.NO_FORMAT);
                             oldRecord.setParameters(null);
                         } else {
                             oldRecord = record;
