@@ -245,7 +245,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
 
                 if (isFormattedExceptionOutputType()) {
                     final StringBuilder sb = new StringBuilder();
-                    StackTraceFormatter.renderStackTrace(sb, thrown, -1);
+                    BasicStackTraceFormatter.renderStackTrace(sb, thrown, -1);
                     generator.add(getKey(Key.STACK_TRACE), sb.toString());
                 }
             }

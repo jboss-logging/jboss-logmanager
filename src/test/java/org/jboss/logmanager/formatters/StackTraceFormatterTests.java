@@ -40,7 +40,7 @@ public class StackTraceFormatterTests {
         e.printStackTrace(new PrintWriter(writer));
 
         final StringBuilder sb = new StringBuilder();
-        StackTraceFormatter.renderStackTrace(sb, e, false, -1);
+        BasicStackTraceFormatter.renderStackTrace(sb, e, false, -1);
 
         Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
@@ -53,7 +53,7 @@ public class StackTraceFormatterTests {
         e.printStackTrace(new PrintWriter(writer));
 
         final StringBuilder sb = new StringBuilder();
-        StackTraceFormatter.renderStackTrace(sb, e, false, -1);
+        BasicStackTraceFormatter.renderStackTrace(sb, e, false, -1);
 
         Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
@@ -73,7 +73,7 @@ public class StackTraceFormatterTests {
         cause.printStackTrace(new PrintWriter(writer));
 
         final StringBuilder sb = new StringBuilder();
-        StackTraceFormatter.renderStackTrace(sb, cause, false, -1);
+        BasicStackTraceFormatter.renderStackTrace(sb, cause, false, -1);
 
         Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
@@ -97,7 +97,7 @@ public class StackTraceFormatterTests {
         cause.printStackTrace(new PrintWriter(writer));
 
         final StringBuilder sb = new StringBuilder();
-        StackTraceFormatter.renderStackTrace(sb, cause, false, -1);
+        BasicStackTraceFormatter.renderStackTrace(sb, cause, false, -1);
 
         Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
@@ -111,7 +111,7 @@ public class StackTraceFormatterTests {
         cause.printStackTrace(new PrintWriter(writer));
 
         final StringBuilder sb = new StringBuilder();
-        StackTraceFormatter.renderStackTrace(sb, cause, false, -1);
+        BasicStackTraceFormatter.renderStackTrace(sb, cause, false, -1);
 
         Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
@@ -126,7 +126,7 @@ public class StackTraceFormatterTests {
         cause.printStackTrace(new PrintWriter(writer));
 
         final StringBuilder sb = new StringBuilder();
-        StackTraceFormatter.renderStackTrace(sb, cause, false, -1);
+        BasicStackTraceFormatter.renderStackTrace(sb, cause, false, -1);
 
         Assertions.assertEquals(writer.toString(), sanitize(sb.toString()));
     }
@@ -145,7 +145,7 @@ public class StackTraceFormatterTests {
         final Throwable cause = createMultiNestedCause();
 
         final StringBuilder sb = new StringBuilder();
-        StackTraceFormatter.renderStackTrace(sb, cause, false, depth);
+        BasicStackTraceFormatter.renderStackTrace(sb, cause, false, depth);
 
         String msg = sb.toString();
 
