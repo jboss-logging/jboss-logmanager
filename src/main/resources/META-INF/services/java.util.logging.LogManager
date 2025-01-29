@@ -1,0 +1,2 @@
+# In class path mode, we use LogManager itself; in module mode we use LogManager.Provider instead
+org.jboss.logmanager.LogManager
