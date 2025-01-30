@@ -302,13 +302,19 @@
             <plugin>
                 <groupId>io.github.dmlloyd.maven</groupId>
                 <artifactId>module-services-plugin</artifactId>
-                <version>1.0</version>
+                <version>1.1</version>
                 <executions>
                     <execution>
                         <id>generate-services</id>
                         <goals>
                             <goal>generate</goal>
                         </goals>
+                        <configuration>
+                            <excludeServices>
+                                <!-- Modular impl is different from non-modular impl -->
+                                <excludeService>java.util.logging.LogManager</excludeService>
+                            </excludeServices>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
