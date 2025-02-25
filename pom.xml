@@ -178,7 +178,7 @@
                         <id>default-compile</id>
                         <configuration>
                             <!-- TODO: remove if we stop using logging-parent -->
-                            <release>11</release>
+                            <release>17</release>
                         </configuration>
                     </execution>
                 </executions>
@@ -188,6 +188,7 @@
                 <artifactId>formatter-maven-plugin</artifactId>
                 <configuration>
                     <excludes>module-info.java</excludes>
+                    <compilerCompliance>17</compilerCompliance>
                 </configuration>
             </plugin>
             <plugin>
@@ -195,6 +196,7 @@
                 <artifactId>impsort-maven-plugin</artifactId>
                 <configuration>
                     <excludes>module-info.java</excludes>
+                    <compliance>17</compliance>
                 </configuration>
             </plugin>
             <plugin>
