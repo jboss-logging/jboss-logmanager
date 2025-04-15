@@ -23,6 +23,7 @@ import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.security.AccessController.doPrivileged;
 
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.security.PrivilegedAction;
 import java.time.Duration;
@@ -884,7 +885,57 @@ public final class Formatters {
      */
     public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth, final int maximumWidth,
             final boolean extended) {
-        return exceptionFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, null, extended);
+        return exceptionFormatStep(leftJustify, minimumWidth, DEFAULT_TRUNCATE_BEGINNING, maximumWidth, null, extended,
+                StackTraceFormatter.instance());
+    }
+
+    /**
+     * Create a format step which emits the stack trace of an exception with the given justification rules.
+     *
+     * @param leftJustify       {@code true} to left justify, {@code false} to right justify
+     * @param minimumWidth      the minimum field width, or 0 for none
+     * @param truncateBeginning {@code true} to truncate the beginning, otherwise {@code false} to truncate the end
+     * @param maximumWidth      the maximum field width (must be greater than {@code minimumFieldWidth}), or 0 for none
+     * @param extended          {@code true} if the stack trace should attempt to include extended JAR version information
+     * @param formatter         the stack trace formatter to use (must not be {@code null})
+     * @return the format step
+     */
+    public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth,
+            final boolean truncateBeginning, final int maximumWidth, final String argument, final boolean extended,
+            final StackTraceFormatter formatter) {
+        int depth = -1;
+        try {
+            depth = Integer.parseInt(argument);
+        } catch (NumberFormatException ignored) {
+        }
+        final int finalDepth = depth;
+        StackTraceFormatter.Parameters params = new StackTraceFormatter.Parameters() {
+            public boolean extended() {
+                return extended;
+            }
+
+            public int suppressedDepth() {
+                return finalDepth;
+            }
+        };
+        return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
+            // not really correct but doesn't matter for now
+            public ItemType getItemType() {
+                return ItemType.EXCEPTION_TRACE;
+            }
+
+            public void renderRaw(Formatter fmt, final StringBuilder builder, final ExtLogRecord record) {
+                if (System.getSecurityManager() != null)
+                    doPrivileged(new PrivilegedAction<Void>() {
+                        public Void run() {
+                            doExceptionFormatStep(builder, record, argument, extended, formatter, params);
+                            return null;
+                        }
+                    });
+                else
+                    doExceptionFormatStep(builder, record, argument, extended, formatter, params);
+            }
+        };
     }
 
     /**
@@ -899,38 +950,18 @@ public final class Formatters {
      */
     public static FormatStep exceptionFormatStep(final boolean leftJustify, final int minimumWidth,
             final boolean truncateBeginning, final int maximumWidth, final String argument, final boolean extended) {
-        return new JustifyingFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth) {
-            // not really correct but doesn't matter for now
-            public ItemType getItemType() {
-                return ItemType.EXCEPTION_TRACE;
-            }
-
-            public void renderRaw(Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
-                if (System.getSecurityManager() != null)
-                    doPrivileged(new PrivilegedAction<Void>() {
-                        public Void run() {
-                            doExceptionFormatStep(builder, record, argument, extended);
-                            return null;
-                        }
-                    });
-                else
-                    doExceptionFormatStep(builder, record, argument, extended);
-            }
-        };
+        return exceptionFormatStep(leftJustify, minimumWidth, truncateBeginning, maximumWidth, argument, extended,
+                StackTraceFormatter.instance());
     }
 
     private static void doExceptionFormatStep(final StringBuilder builder, final ExtLogRecord record, final String argument,
-            final boolean extended) {
+            final boolean extended, final StackTraceFormatter formatter, final StackTraceFormatter.Parameters params) {
         final Throwable t = record.getThrown();
         if (t != null) {
-            int depth = -1;
-            if (argument != null) {
-                try {
-                    depth = Integer.parseInt(argument);
-                } catch (NumberFormatException ignore) {
-                }
+            try {
+                formatter.render(t, builder, params);
+            } catch (IOException ignored) {
             }
-            StackTraceFormatter.renderStackTrace(builder, t, extended, depth);
         }
     }
 
