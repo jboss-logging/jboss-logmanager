@@ -20,6 +20,9 @@
 package org.jboss.logmanager.formatters;
 
 import java.io.Writer;
+import java.lang.invoke.ConstantBootstraps;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -45,6 +48,8 @@ import org.jboss.logmanager.PropertyValues;
  */
 @SuppressWarnings({ "unused", "WeakerAccess" })
 public abstract class StructuredFormatter extends ExtFormatter {
+    private static final VarHandle dateTimeFormatterHandle = ConstantBootstraps.fieldVarHandle(
+            MethodHandles.lookup(), "dateTimeFormatter", VarHandle.class, StructuredFormatter.class, DateTimeFormatter.class);
 
     /**
      * The key used for the structured log record data.
@@ -128,10 +133,8 @@ public abstract class StructuredFormatter extends ExtFormatter {
     private Map<String, String> metaDataMap;
     private volatile boolean printDetails;
     private volatile String eorDelimiter = "\n";
-    // Guarded by this
-    private DateTimeFormatter dateTimeFormatter;
-    // Guarded by this
-    private ZoneId zoneId;
+    @SuppressWarnings("FieldMayBeFinal") // dateTimeFormatterHandle
+    private volatile DateTimeFormatter dateTimeFormatter;
     private volatile ExceptionOutputType exceptionOutputType;
     private final StringBuilderWriter writer = new StringBuilderWriter();
     // Guarded by this
@@ -152,8 +155,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
     private StructuredFormatter(final Map<Key, String> keyOverrides, final String keyOverridesValue) {
         this.keyOverridesValue = keyOverridesValue;
         this.printDetails = false;
-        zoneId = ZoneId.systemDefault();
-        dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(zoneId);
+        dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(ZoneId.systemDefault());
         this.keyOverrides = (keyOverrides == null ? Collections.emptyMap() : new EnumMap<>(keyOverrides));
         exceptionOutputType = ExceptionOutputType.DETAILED;
     }
@@ -349,7 +351,7 @@ public abstract class StructuredFormatter extends ExtFormatter {
      *
      * @return the current formatter
      */
-    public synchronized DateTimeFormatter getDateTimeFormatter() {
+    public DateTimeFormatter getDateTimeFormatter() {
         return dateTimeFormatter;
     }
 
@@ -364,11 +366,16 @@ public abstract class StructuredFormatter extends ExtFormatter {
      *
      * @param pattern the pattern to use or {@code null} to use a default pattern
      */
-    public synchronized void setDateFormat(final String pattern) {
-        if (pattern == null) {
-            dateTimeFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME.withZone(zoneId);
-        } else {
-            dateTimeFormatter = DateTimeFormatter.ofPattern(pattern).withZone(zoneId);
+    public void setDateFormat(final String pattern) {
+        DateTimeFormatter oldVal = dateTimeFormatter;
+        DateTimeFormatter newVal = pattern == null ? DateTimeFormatter.ISO_OFFSET_DATE_TIME
+                : DateTimeFormatter.ofPattern(pattern);
+        DateTimeFormatter witness = (DateTimeFormatter) dateTimeFormatterHandle.compareAndExchange(
+                this, oldVal, newVal.withZone(oldVal.getZone()));
+        while (oldVal != witness) {
+            oldVal = witness;
+            witness = (DateTimeFormatter) dateTimeFormatterHandle.compareAndExchange(
+                    this, oldVal, newVal.withZone(oldVal.getZone()));
         }
     }
 
@@ -377,8 +384,8 @@ public abstract class StructuredFormatter extends ExtFormatter {
      *
      * @return the current zone id
      */
-    public synchronized ZoneId getZoneId() {
-        return zoneId;
+    public ZoneId getZoneId() {
+        return dateTimeFormatter.getZone();
     }
 
     /**
@@ -392,15 +399,14 @@ public abstract class StructuredFormatter extends ExtFormatter {
      * @see ZoneId#of(String)
      */
     public void setZoneId(final String zoneId) {
-        final ZoneId changed;
-        if (zoneId == null) {
-            changed = ZoneId.systemDefault();
-        } else {
-            changed = ZoneId.of(zoneId);
-        }
-        synchronized (this) {
-            this.zoneId = changed;
-            dateTimeFormatter = dateTimeFormatter.withZone(changed);
+        DateTimeFormatter oldVal = dateTimeFormatter;
+        ZoneId newVal = zoneId == null ? ZoneId.systemDefault() : ZoneId.of(zoneId);
+        DateTimeFormatter witness = (DateTimeFormatter) dateTimeFormatterHandle.compareAndExchange(
+                this, oldVal, oldVal.withZone(newVal));
+        while (oldVal != witness) {
+            oldVal = witness;
+            witness = (DateTimeFormatter) dateTimeFormatterHandle.compareAndExchange(
+                    this, oldVal, oldVal.withZone(newVal));
         }
     }
 
