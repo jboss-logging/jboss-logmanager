@@ -131,6 +131,10 @@ public class DelayedHandler extends ExtHandler {
             publishToNestedHandlers(record);
             super.doPublish(record);
         } else {
+            // avoid reentrancy, which will generally cause a stack overflow
+            if (lock.isHeldByCurrentThread()) {
+                return;
+            }
             lock.lock();
             try {
                 // Check one more time to see if we've been activated before queuing the messages

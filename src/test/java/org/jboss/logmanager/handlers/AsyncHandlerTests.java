@@ -122,8 +122,7 @@ public class AsyncHandlerTests {
         handler.addHandler(reLogHandler);
         handler.setFormatter(new PatternFormatter("%s"));
         asyncHandler.publish(createRecord());
-        // We should end up with two messages and a third should not happen
-        Assertions.assertEquals("Test message", handler.getFirst());
+        // We should end up with just one message, since reentrancy is forbidden
         Assertions.assertEquals("Test message", handler.getFirst());
         // This should time out. Then we end up with a null value. We could instead sleep for a shorter time and check
         // if the queue is empty. However, a 5 second delay does not seem too long.
