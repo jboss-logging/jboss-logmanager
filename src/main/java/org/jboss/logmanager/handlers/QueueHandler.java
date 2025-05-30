@@ -73,6 +73,10 @@ public class QueueHandler extends ExtHandler {
     }
 
     protected void doPublish(final ExtLogRecord record) {
+        // avoid reentrancy, which will generally cause a stack overflow
+        if (lock.isHeldByCurrentThread()) {
+            return;
+        }
         lock.lock();
         try {
             if (isLoggable(record)) {
