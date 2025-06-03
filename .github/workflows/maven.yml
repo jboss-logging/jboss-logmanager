@@ -32,15 +32,15 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
           java-version: |
-              11
               17
               21
+              23
       - name: Build and Test
-        run: mvn -B clean verify "-Djava11.home=${{env.JAVA_HOME_11_X64}}" "-Djava17.home=${{env.JAVA_HOME_17_X64}}"
+        run: mvn -B clean verify "-Djava17.home=${{env.JAVA_HOME_17_X64}}" "-Djava21.home=${{env.JAVA_HOME_21_X64}}"
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-            name: surefire-reports-${{ matrix.os }}-${{ matrix.java }}
+            name: surefire-reports-${{ matrix.os }}
             path: |
               **/logs/
               **/failsafe-reports/
@@ -52,10 +52,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - name: Set up JDK 11
+      - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          java-version: 11
+          java-version: 17
           distribution: 'temurin'
           cache: 'maven'
       - name: Validate Formatting

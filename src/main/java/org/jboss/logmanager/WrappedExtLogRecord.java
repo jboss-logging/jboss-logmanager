@@ -19,10 +19,6 @@
 
 package org.jboss.logmanager;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
-import java.lang.reflect.UndeclaredThrowableException;
 import java.time.Instant;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
@@ -33,33 +29,12 @@ class WrappedExtLogRecord extends ExtLogRecord {
     private static final long serialVersionUID = 980830752574061944L;
     private static final String LOGGER_CLASS_NAME = java.util.logging.Logger.class.getName();
 
-    private static final MethodHandle getLongThreadID;
-    private static final MethodHandle setLongThreadID;
-
-    static {
-        MethodHandle getter = null, setter = null;
-        try {
-            MethodHandles.Lookup pl = MethodHandles.publicLookup();
-            //noinspection JavaLangInvokeHandleSignature
-            getter = pl.findVirtual(LogRecord.class, "getLongThreadID", MethodType.methodType(long.class));
-            //noinspection JavaLangInvokeHandleSignature
-            setter = pl.findVirtual(LogRecord.class, "setLongThreadID", MethodType.methodType(LogRecord.class, long.class));
-        } catch (NoSuchMethodException | IllegalAccessException ignored) {
-        }
-        getLongThreadID = getter;
-        setLongThreadID = setter;
-    }
-
     private transient final LogRecord orig;
     private transient boolean resolved;
 
     WrappedExtLogRecord(final LogRecord orig) {
         super(orig.getLevel(), orig.getMessage(), LOGGER_CLASS_NAME);
         this.orig = orig;
-        if (getLongThreadID == null) {
-            // we have to initialize our long thread ID field because this JDK doesn't have one
-            setLongThreadID(getThreadID());
-        }
     }
 
     public String getLoggerName() {
@@ -205,29 +180,15 @@ class WrappedExtLogRecord extends ExtLogRecord {
         orig.setThreadID(threadID);
     }
 
-    // @Override (17+)
+    @Override
     public long getLongThreadID() {
-        try {
-            return getLongThreadID == null ? super.getLongThreadID() : (long) getLongThreadID.invokeExact(orig);
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Throwable e) {
-            throw new UndeclaredThrowableException(e);
-        }
+        return orig.getLongThreadID();
     }
 
-    // @Override (17+)
+    @Override
     public ExtLogRecord setLongThreadID(final long id) {
         super.setLongThreadID(id);
-        if (setLongThreadID != null) {
-            try {
-                setLongThreadID.invokeExact(orig, id);
-            } catch (RuntimeException | Error e) {
-                throw e;
-            } catch (Throwable e) {
-                throw new UndeclaredThrowableException(e);
-            }
-        }
+        orig.setLongThreadID(id);
         return this;
     }
 
