@@ -58,7 +58,7 @@ import org.jboss.logmanager.ExtLogRecord;
 /**
  * A syslog handler for logging to syslogd.
  * <p/>
- * This handler can write to syslog servers that accept the <a href="http://tools.ietf.org/html/rfc3164">RFC3164</a>
+ * This handler can write to syslog servers that accept the <a href="http://tools.ietf.org/html/rfc3164">RFC3164</a> (obsolete)
  * and <a href="http://tools.ietf.org/html/rfc5424">RFC5424</a> formats. Writes can be done via TCP, SSL over TCP or
  * UDP protocols. You can also override the {@link #setOutputStream(OutputStream) output stream} if a custom
  * protocol is needed.
@@ -322,7 +322,10 @@ public class SyslogHandler extends ExtHandler {
         /**
          * Formats the message according the the RFC-3164 specification
          * (<a href="http://tools.ietf.org/html/rfc3164#section-4.1">http://tools.ietf.org/html/rfc3164#section-4.1</a>
+         * <p>
+         * Obsoleted by the {@link SyslogType#RFC5424}
          */
+        @Deprecated
         RFC3164,
     }
 
