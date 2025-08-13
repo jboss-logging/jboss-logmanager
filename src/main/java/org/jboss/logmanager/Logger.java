@@ -368,12 +368,11 @@ public final class Logger extends java.util.logging.Logger implements Serializab
     }
 
     /**
-     * <b>Not allowed.</b> This method may never be called.
-     *
-     * @throws SecurityException always
+     * This method should never be called and any calls to it will be ignored. Some libraries attempt to call this,
+     * so we have to implement as noop so they don't fail horribly.
      */
     public void setParent(java.util.logging.Logger parent) {
-        throw new SecurityException("setParent() disallowed");
+        // No-op.
     }
 
     /**
