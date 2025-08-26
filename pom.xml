@@ -54,13 +54,13 @@
 
     <properties>
         <!-- Dependency versions -->
-        <version.io.smallrye.common.smallrye-common>2.2.0</version.io.smallrye.common.smallrye-common>
+        <version.io.smallrye.common.smallrye-common>2.13.7</version.io.smallrye.common.smallrye-common>
         <version.jakarta.json.jakarta-json-api>2.1.3</version.jakarta.json.jakarta-json-api>
-        <version.org.byteman>4.0.24</version.org.byteman>
-        <version.org.eclipse.parsson.jakarta.json>1.1.6</version.org.eclipse.parsson.jakarta.json>
-        <version.org.jboss.logging.jboss-logging>3.5.3.Final</version.org.jboss.logging.jboss-logging>
+        <version.org.byteman>4.0.25</version.org.byteman>
+        <version.org.eclipse.parsson.jakarta.json>1.1.7</version.org.eclipse.parsson.jakarta.json>
+        <version.org.jboss.logging.jboss-logging>3.6.1.Final</version.org.jboss.logging.jboss-logging>
         <version.org.jboss.modules.jboss-modules>2.1.6.Final</version.org.jboss.modules.jboss-modules>
-        <version.org.junit>5.11.4</version.org.junit>
+        <version.org.junit>5.13.4</version.org.junit>
 
         <!-- Plugin versions -->
         <version.module-info>2.1</version.module-info>
@@ -178,7 +178,7 @@
                         <id>default-compile</id>
                         <configuration>
                             <!-- TODO: remove if we stop using logging-parent -->
-                            <release>11</release>
+                            <release>17</release>
                         </configuration>
                     </execution>
                 </executions>
@@ -188,6 +188,7 @@
                 <artifactId>formatter-maven-plugin</artifactId>
                 <configuration>
                     <excludes>module-info.java</excludes>
+                    <compilerCompliance>17</compilerCompliance>
                 </configuration>
             </plugin>
             <plugin>
@@ -195,6 +196,7 @@
                 <artifactId>impsort-maven-plugin</artifactId>
                 <configuration>
                     <excludes>module-info.java</excludes>
+                    <compliance>17</compliance>
                 </configuration>
             </plugin>
             <plugin>

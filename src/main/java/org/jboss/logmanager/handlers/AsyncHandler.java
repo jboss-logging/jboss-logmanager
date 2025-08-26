@@ -24,7 +24,6 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
-import java.util.logging.Handler;
 
 import org.jboss.logmanager.ExtHandler;
 import org.jboss.logmanager.ExtLogRecord;
@@ -147,7 +146,7 @@ public class AsyncHandler extends ExtHandler {
             record.copyMdc();
         }
         if (Thread.currentThread() == thread) {
-            publishToNestedHandlers(record);
+            // avoid reentrancy, which will generally cause a stack overflow
             return;
         }
         if (overflowAction == OverflowAction.DISCARD) {
@@ -174,12 +173,11 @@ public class AsyncHandler extends ExtHandler {
     private final class AsyncTask implements Runnable {
         public void run() {
             final BlockingQueue<ExtLogRecord> recordQueue = AsyncHandler.this.recordQueue;
-            final Handler[] handlers = AsyncHandler.this.handlers;
 
             boolean intr = false;
             try {
                 for (;;) {
-                    ExtLogRecord rec = null;
+                    ExtLogRecord rec;
                     try {
                         if (state == 2) {
                             rec = recordQueue.poll();

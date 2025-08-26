@@ -48,6 +48,10 @@ public class WriterHandler extends ExtHandler {
 
     /** {@inheritDoc} */
     protected void doPublish(final ExtLogRecord record) {
+        // avoid reentrancy, which will generally cause a stack overflow
+        if (lock.isHeldByCurrentThread()) {
+            return;
+        }
         final String formatted;
         final Formatter formatter = getFormatter();
         try {
