@@ -40,7 +40,6 @@ public interface ClientSocketFactory {
      * Creates a datagram socket for UDP communication.
      *
      * @return the newly created socket
-     *
      * @throws SocketException if binding the socket fails
      */
     DatagramSocket createDatagramSocket() throws SocketException;
@@ -49,7 +48,6 @@ public interface ClientSocketFactory {
      * Creates a TCP socket.
      *
      * @return the newly created socket
-     *
      * @throws IOException if an error occurs creating the socket
      */
     Socket createSocket() throws IOException;
@@ -69,6 +67,12 @@ public interface ClientSocketFactory {
     int getPort();
 
     /**
+     * Returns the socket timeout (SO_TIMEOUT) in milliseconds for the created sockets
+     * @return the socket timeout in milliseconds. A timeout of zero is interpreted as an infinite timeout.
+     */
+    int getSoSocketTimeout();
+
+    /**
      * A convenience method to return the socket address.
      * <p>
      * The default implementation simply returns {@code new InetSocketAddress(getAddress(), getPort())}.
@@ -86,11 +90,23 @@ public interface ClientSocketFactory {
      *
      * @param address the address to bind to
      * @param port    the port to bind to
-     *
      * @return the client socket factory
      */
     static ClientSocketFactory of(final InetAddress address, final int port) {
-        return of(SocketFactory.getDefault(), address, port);
+        return of(SocketFactory.getDefault(), address, port, 0);
+    }
+
+    /**
+     * Creates a new default implementation of the factory which uses {@link SocketFactory#getDefault()} for TCP
+     * sockets and {@code new DatagramSocket()} for UDP sockets.
+     *
+     * @param address       the address to bind to
+     * @param port          the port to bind to
+     * @param socketTimeout the socket timeout for sockets in milliseconds
+     * @return the client socket factory
+     */
+    static ClientSocketFactory of(final InetAddress address, final int port, int socketTimeout) {
+        return of(SocketFactory.getDefault(), address, port, socketTimeout);
     }
 
     /**
@@ -102,24 +118,43 @@ public interface ClientSocketFactory {
      *                      {@linkplain SocketFactory#getDefault() default} socket factory will be used
      * @param address       the address to bind to
      * @param port          the port to bind to
-     *
      * @return the client socket factory
      */
     static ClientSocketFactory of(final SocketFactory socketFactory, final InetAddress address, final int port) {
+        return of(socketFactory, address, port, 0);
+    }
+
+    /**
+     * Creates a new default implementation of the factory which uses the provided
+     * {@linkplain SocketFactory#createSocket(InetAddress, int) socket factory} to create TCP connections and
+     * {@code new DatagramSocket()} for UDP sockets.
+     *
+     * @param socketFactory the socket factory used for TCP connections, if {@code null} the
+     *                      {@linkplain SocketFactory#getDefault() default} socket factory will be used
+     * @param address       the address to bind to
+     * @param port          the port to bind to
+     * @param socketTimeout the socket timeout for sockets in milliseconds
+     * @return the client socket factory
+     */
+    static ClientSocketFactory of(final SocketFactory socketFactory, final InetAddress address, final int port, int socketTimeout) {
         if (address == null || port < 0) {
             throw new IllegalArgumentException(String
-                    .format("The address cannot be null (%s) and the port must be a positive integer (%d)", address, port));
+                .format("The address cannot be null (%s) and the port must be a positive integer (%d)", address, port));
         }
         final SocketFactory factory = (socketFactory == null ? SocketFactory.getDefault() : socketFactory);
         return new ClientSocketFactory() {
             @Override
             public DatagramSocket createDatagramSocket() throws SocketException {
-                return new DatagramSocket();
+                DatagramSocket socket = new DatagramSocket();
+                socket.setSoTimeout(socketTimeout);
+                return socket;
             }
 
             @Override
             public Socket createSocket() throws IOException {
-                return factory.createSocket(address, port);
+                Socket socket = factory.createSocket(address, port);
+                socket.setSoTimeout(socketTimeout);
+                return socket;
             }
 
             @Override
@@ -130,6 +165,11 @@ public interface ClientSocketFactory {
             @Override
             public int getPort() {
                 return port;
+            }
+
+            @Override
+            public int getSoSocketTimeout() {
+                return socketTimeout;
             }
         };
     }
