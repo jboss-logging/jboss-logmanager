@@ -71,6 +71,7 @@ public class SocketHandler extends ExtHandler {
     private SocketFactory socketFactory;
     private InetAddress address;
     private int port;
+    private int soTimeout = 0;
     private Protocol protocol;
     private boolean blockOnReconnect;
     private Writer writer;
@@ -185,6 +186,7 @@ public class SocketHandler extends ExtHandler {
         if (clientSocketFactory != null) {
             address = clientSocketFactory.getAddress();
             port = clientSocketFactory.getPort();
+            soTimeout = clientSocketFactory.getSoSocketTimeout();
         }
         this.protocol = (protocol == null ? Protocol.TCP : protocol);
         initialize = true;
@@ -403,6 +405,28 @@ public class SocketHandler extends ExtHandler {
     }
 
     /**
+     * Sets the socket timeout (SO_TIMEOUT) in milliseconds for the created sockets
+     * <p>
+     * Note that is resets the {@linkplain #setClientSocketFactory(ClientSocketFactory) client socket factory}.
+     * </p>
+     *
+     * @param soTimeout the socket timeout in milliseconds. A timeout of zero is interpreted as an infinite timeout.
+     */
+    public void setSoTimeout(final int  soTimeout) {
+        checkAccess();
+        lock.lock();
+        try {
+            if (this.soTimeout != soTimeout) {
+                initialize = true;
+                clientSocketFactory = null;
+            }
+            this.soTimeout = soTimeout;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
      * Sets the socket factory to use for creating {@linkplain Protocol#TCP TCP} or {@linkplain Protocol#SSL_TCP SSL}
      * connections.
      * <p>
@@ -505,12 +529,12 @@ public class SocketHandler extends ExtHandler {
             final ClientSocketFactory clientSocketFactory;
             if (socketFactory == null) {
                 if (protocol == Protocol.SSL_TCP) {
-                    clientSocketFactory = ClientSocketFactory.of(SSLSocketFactory.getDefault(), address, port);
+                    clientSocketFactory = ClientSocketFactory.of(SSLSocketFactory.getDefault(), address, port, soTimeout);
                 } else {
-                    clientSocketFactory = ClientSocketFactory.of(address, port);
+                    clientSocketFactory = ClientSocketFactory.of(address, port, soTimeout);
                 }
             } else {
-                clientSocketFactory = ClientSocketFactory.of(socketFactory, address, port);
+                clientSocketFactory = ClientSocketFactory.of(socketFactory, address, port, soTimeout);
             }
             return clientSocketFactory;
         } finally {
