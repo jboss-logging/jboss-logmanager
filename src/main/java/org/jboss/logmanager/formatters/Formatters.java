@@ -53,7 +53,7 @@ public final class Formatters {
     public static final String THREAD_ID = "id";
 
     private static final boolean DEFAULT_TRUNCATE_BEGINNING = false;
-    private static final String NEW_LINE = String.format("%n");
+    private static final String NEW_LINE = System.lineSeparator();
     private static final Pattern PRECISION_INT_PATTERN = Pattern.compile("\\d+");
 
     private Formatters() {
