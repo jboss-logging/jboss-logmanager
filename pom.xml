@@ -24,9 +24,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>org.jboss.logging</groupId>
-        <artifactId>logging-parent</artifactId>
-        <version>1.0.3.Final</version>
+        <groupId>org.jboss</groupId>
+        <artifactId>jboss-parent</artifactId>
+        <version>51</version>
     </parent>
 
     <name>JBoss Log Manager</name>
@@ -63,6 +63,8 @@
         <version.org.junit>6.0.2</version.org.junit>
 
         <!-- Plugin versions -->
+        <version.formatter.maven.plugin>2.29.0</version.formatter.maven.plugin>
+        <version.impsort.maven.plugin>1.13.0</version.impsort.maven.plugin>
         <version.module-info>2.1</version.module-info>
 
         <!-- Test properties -->
@@ -74,10 +76,11 @@
         <skipITs>${skipTests}</skipITs>
         <skipUTs>${skipTests}</skipUTs>
 
-        <client.jvm.jpms.args></client.jvm.jpms.args>
+        <client.jvm.jpms.args/>
 
         <!-- JDK configuration: require Java 17 to build -->
         <jdk.min.version>17</jdk.min.version>
+        <maven.compiler.release>17</maven.compiler.release>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -172,31 +175,40 @@
                 </configuration>
             </plugin>
             <plugin>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>default-compile</id>
-                        <configuration>
-                            <!-- TODO: remove if we stop using logging-parent -->
-                            <release>17</release>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-            <plugin>
                 <groupId>net.revelc.code.formatter</groupId>
                 <artifactId>formatter-maven-plugin</artifactId>
+                <version>${version.formatter.maven.plugin}</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.jboss.logging</groupId>
+                        <artifactId>ide-config</artifactId>
+                        <version>1.0.4.Final</version>
+                    </dependency>
+                </dependencies>
                 <configuration>
                     <excludes>module-info.java</excludes>
-                    <compilerCompliance>17</compilerCompliance>
+                    <compilerCompliance>${maven.compiler.release}</compilerCompliance>
+                    <!-- store outside of target to speed up formatting when mvn clean is used -->
+                    <cachedir>.cache</cachedir>
+                    <configFile>eclipse-code-formatter.xml</configFile>
+                    <configXmlFile>wildfly-xml.properties</configXmlFile>
+                    <lineEnding>LF</lineEnding>
+                    <includeResources>true</includeResources>
+                    <removeTrailingWhitespace>true</removeTrailingWhitespace>
                 </configuration>
             </plugin>
             <plugin>
                 <groupId>net.revelc.code</groupId>
                 <artifactId>impsort-maven-plugin</artifactId>
+                <version>${version.impsort.maven.plugin}</version>
                 <configuration>
                     <excludes>module-info.java</excludes>
-                    <compliance>17</compliance>
+                    <compliance>${maven.compiler.release}</compliance>
+                    <!-- store outside of target to speed up formatting when mvn clean is used -->
+                    <cachedir>.cache</cachedir>
+                    <groups>java.,javax.,jakarta.,org.,com.</groups>
+                    <staticGroups>*</staticGroups>
+                    <removeUnused>true</removeUnused>
                 </configuration>
             </plugin>
             <plugin>
@@ -227,8 +239,6 @@
                     </execution>
                 </executions>
                 <configuration>
-                    <!-- TODO: module path mode currently won't load optional modules -->
-                    <useModulePath>false</useModulePath>
                     <skipTests>${skipUTs}</skipTests>
                     <includes>
                         <include>**/*Tests.java</include>
