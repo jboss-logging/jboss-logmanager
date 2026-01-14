@@ -63,6 +63,7 @@
         <version.org.junit>6.0.2</version.org.junit>
 
         <!-- Plugin versions -->
+        <version.central.publishing.maven.plugin>0.10.0</version.central.publishing.maven.plugin>
         <version.formatter.maven.plugin>2.29.0</version.formatter.maven.plugin>
         <version.impsort.maven.plugin>1.13.0</version.impsort.maven.plugin>
         <version.module-info>2.1</version.module-info>
@@ -81,6 +82,24 @@
         <!-- JDK configuration: require Java 17 to build -->
         <jdk.min.version>17</jdk.min.version>
         <maven.compiler.release>17</maven.compiler.release>
+
+        <!-- maven-release-plugin configuration -->
+        <autoVersionSubmodules>true</autoVersionSubmodules>
+        <releaseProfiles>central-release</releaseProfiles>
+        <signTag>true</signTag>
+        <tagNameFormat>@{project.version}</tagNameFormat>
+        <arguments>-DskipTests -DautoPublish=${autoPublish}</arguments>
+        <!-- Do not push changes by default when using the maven-release-plugin:prepare -->
+        <pushChanges>true</pushChanges>
+        <!-- Use the local directory when using perform -->
+        <localCheckout>true</localCheckout>
+        <!-- Maven Central properties -->
+        <repo.sonatype.url>https://central.sonatype.com</repo.sonatype.url>
+        <sonatype.server.id>central</sonatype.server.id>
+        <deploymentName>jboss-logmanager-${project.version}</deploymentName>
+        <autoPublish>true</autoPublish>
+        <waitUntil>validated</waitUntil>
+        <skipPublishing>false</skipPublishing>
     </properties>
     <dependencyManagement>
         <dependencies>
@@ -364,6 +383,79 @@
                                 </goals>
                             </execution>
                         </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>central-release</id>
+
+            <distributionManagement>
+                <snapshotRepository>
+                    <id>${sonatype.server.id}</id>
+                    <url>${repo.sonatype.url}</url>
+                </snapshotRepository>
+                <repository>
+                    <id>${sonatype.server.id}</id>
+                    <url>${repo.sonatype.url}</url>
+                </repository>
+            </distributionManagement>
+
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-source-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>attach-sources</id>
+                                <goals>
+                                    <goal>jar-no-fork</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-javadoc-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>aggregate-javadoc</id>
+                                <goals>
+                                    <goal>aggregate</goal>
+                                </goals>
+                                <phase>package</phase>
+                            </execution>
+                            <execution>
+                                <id>attach-javadocs</id>
+                                <goals>
+                                    <goal>jar</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <artifactId>maven-gpg-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>sign-artifacts</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>sign</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.sonatype.central</groupId>
+                        <artifactId>central-publishing-maven-plugin</artifactId>
+                        <version>${version.central.publishing.maven.plugin}</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <publishingServerId>${sonatype.server.id}</publishingServerId>
+                            <autoPublish>${autoPublish}</autoPublish>
+                            <waitUntil>${waitUntil}</waitUntil>
+                            <deploymentName>${deploymentName}</deploymentName>
+                            <skipPublishing>${skipPublishing}</skipPublishing>
+                        </configuration>
                     </plugin>
                 </plugins>
             </build>
