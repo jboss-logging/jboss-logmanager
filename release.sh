@@ -148,7 +148,7 @@ fi
 
 printf "Performing release for version %s with the next version of %s\n" "${RELEASE_VERSION}" "${DEVEL_VERSION}"
 
-TAG_NAME="${RELEASE_VERSION}"
+TAG_NAME="v${RELEASE_VERSION}"
 MVN_FLAGS=()
 
 if ${DRY_RUN}; then

@@ -87,7 +87,7 @@
         <autoVersionSubmodules>true</autoVersionSubmodules>
         <releaseProfiles>central-release</releaseProfiles>
         <signTag>true</signTag>
-        <tagNameFormat>@{project.version}</tagNameFormat>
+        <tagNameFormat>v@{project.version}</tagNameFormat>
         <arguments>-DskipTests -DautoPublish=${autoPublish}</arguments>
         <!-- Do not push changes by default when using the maven-release-plugin:prepare -->
         <pushChanges>true</pushChanges>
