@@ -17,9 +17,7 @@
   ~ limitations under the License.
   -->
 
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -33,7 +31,7 @@
     <description>An implementation of java.util.logging.LogManager</description>
     <groupId>org.jboss.logmanager</groupId>
     <artifactId>jboss-logmanager</artifactId>
-    <version>3.2.0.Final-SNAPSHOT</version>
+    <version>3.2.0.Final</version>
 
     <licenses>
         <license>
@@ -44,12 +42,11 @@
     </licenses>
 
 
-    <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false"
-         child.scm.url.inherit.append.path="false">
+    <scm child.scm.connection.inherit.append.path="false" child.scm.developerConnection.inherit.append.path="false" child.scm.url.inherit.append.path="false">
         <connection>scm:git:git://github.com/jboss-logging/jboss-logmanager.git</connection>
         <developerConnection>scm:git:git@github.com:jboss-logging/jboss-logmanager.git</developerConnection>
         <url>https://github.com/jboss-logging/jboss-logmanager/tree/main/</url>
-        <tag>HEAD</tag>
+        <tag>v3.2.0.Final</tag>
     </scm>
 
     <properties>
@@ -77,7 +74,7 @@
         <skipITs>${skipTests}</skipITs>
         <skipUTs>${skipTests}</skipUTs>
 
-        <client.jvm.jpms.args/>
+        <client.jvm.jpms.args />
 
         <!-- JDK configuration: require Java 17 to build -->
         <jdk.min.version>17</jdk.min.version>
