@@ -85,14 +85,14 @@ and include the library on your class path.
 |====
 | Filter Type | Expression | Description | Parameter(s)
 | accept | `accept` | Accepts all log messages. | None
-| deny | `deny` | enies all log messages. | None
-| not | `not(filterExpression)` | Accepts a filter as an argument and inverts the returned value. | The expression takes a single filter for it's argument.
-| all | `all(filterExpressions)` | A filter consisting of several filters in a chain. If any filter find the log message to be unloggable, the message will not be logged and subsequent filters will not be checked. | The expression takes a comma delimited list of filters for it's argument.
-| any | `any(filterExpressions)` | A filter consisting of several filters in a chain. If any filter fins the log message to be loggable, the message will be logged and the subsequent filters will not be checked. | The expression takes a comma delimited list of filters for it's argument.
-| levelChange | `levelChange(level)` | A filter which modifies the log record with a new level. | The expression takes a single string based level for it's argument.
-| levels | `levels(levels)` | A filter which includes log messages with a level that is listed in the list of levels. | The expression takes a comma delimited list of string based levels for it's argument.
-| levelRange | `levelRange([minLevel,maxLevel])` | A filter which logs records that are within the level range. | The filter expression uses a "[" to indicate a minimum inclusive level and a "]" to indicate a maximum inclusive level. Otherwise use "(" or ")" respectively indicate exclusive. The first argument for the expression is the minimum level allowed, the second argument is the maximum level allowed.
-| match | `match("pattern")` | A regular-expression based filter. The raw unformatted message is used against the pattern. | The expression takes a regular expression for it's argument.`
+| deny | `deny` | Denies all log messages. | None
+| not | `not(filterExpression)` | Accepts a filter as an argument and inverts the returned value. | The expression takes a single filter for its argument.
+| all | `all(filterExpressions)` | A filter consisting of several filters in a chain. If any filter find the log message to be unloggable, the message will not be logged and subsequent filters will not be checked. | The expression takes a comma-delimited list of filters for its argument.
+| any | `any(filterExpressions)` | A filter consisting of several filters in a chain. If any filter fins the log message to be loggable, the message will be logged and the subsequent filters will not be checked. | The expression takes a comma-delimited list of filters for its argument.
+| levelChange | `levelChange(level)` | A filter which modifies the log record with a new level. | The expression takes a single string based level for its argument.
+| levels | `levels(levels)` | A filter which includes log messages with a level that is listed in the list of levels. | The expression takes a comma-delimited list of string based levels for its argument.
+| levelRange | `levelRange([minLevel,maxLevel])` | A filter which logs records that are within the level range. | The filter expression uses a "[" to indicate a minimum inclusive level and a "]" to indicate a maximum inclusive level. Otherwise, use "(" or ")" respectively indicate exclusive. The first argument for the expression is the minimum level allowed, the second argument is the maximum level allowed.
+| match | `match("pattern")` | A regular-expression based filter. The raw unformatted message is used against the pattern. | The expression takes a regular expression for its argument.`
 | substitute | `substitute("pattern", "replacement value")` | A filter which replaces the first match to the pattern with the replacement value. | The first argument for the expression is the pattern the second argument is the replacement text.
 | substituteAll | `substituteAll("pattern", "replacement value")` | A filter which replaces all matches of the pattern with the replacement value. | The first argument for the expression is the pattern the second argument is the replacement text.
 |====
@@ -148,27 +148,15 @@ Once everything is setup, you simply need to run the `./release.sh` script. Ther
 1. `-r` or `--release` which is the version you want to release
 2. `-d` or `--development` which is the next development version.
 
-By default the release version cannot contain `SNAPSHOT` and the development version, must container `SNAPSHOT`.
+By default, the release version cannot contain `SNAPSHOT` and the development version, must contain `SNAPSHOT`.
 
 [source,bash]
 .Example Command
 ----
-./release -r 1.0.0.Final -d 1.0.1.Final-SNAPSHOT
+./release.sh -r 1.0.0.Final -d 1.0.1.Final-SNAPSHOT
 ----
 
 === Supported Arguments
-
-        --notes-start-tag)
-            START_TAG=("--notes-from-tag" "${2}")
-            shift
-            ;;
-        -p|--prerelease)
-            GH_RELEASE_TYPE="--prerelease"
-            ;;
-        -r|--release)
-            RELEASE_VERSION="${2}"
-            shift
-            ;;
 
 |===
 |Argument | Requires Value | Description
