@@ -47,7 +47,7 @@
     <properties>
         <!-- Dependency versions -->
         <version.jakarta.json>1.1.6</version.jakarta.json>
-        <version.org.byteman>4.0.22</version.org.byteman>
+        <version.org.byteman>4.0.26</version.org.byteman>
         <version.org.glassfish.jakarta.json>1.1.6</version.org.glassfish.jakarta.json>
         <version.org.jboss.modules.jboss-modules>1.9.2.Final</version.org.jboss.modules.jboss-modules>
         <version.org.wildfly.common.wildfly-common>1.5.1.Final</version.org.wildfly.common.wildfly-common>
