@@ -26,12 +26,54 @@ final class ColorUtil {
     private ColorUtil() {
     }
 
-    static StringBuilder startFgColor(StringBuilder target, boolean trueColor, int r, int g, int b) {
-        return startColor(target, 38, trueColor, r, g, b);
+    static StringBuilder startFgColor(StringBuilder target, boolean trueColor, float hue, float sat, float lite,
+            boolean darken) {
+        return startColor(target, 38, trueColor, hue, sat, darken ? 1f - (lite * .8f) : lite);
     }
 
     static StringBuilder startBgColor(StringBuilder target, boolean trueColor, int r, int g, int b) {
         return startColor(target, 48, trueColor, r, g, b);
+    }
+
+    static StringBuilder startColor(StringBuilder target, int mode, boolean trueColor, float hue, float sat, float lite) {
+        // lock hue into range (hue is periodic) (color phase angle in degrees)
+        hue = hue / 360;
+        hue = hue - (float) Math.floor(hue);
+        // lock sat and lite into range via clipping (%)
+        sat = Math.max(0f, Math.min(1f, sat));
+        lite = Math.max(0f, Math.min(1f, lite));
+
+        float c = (1 - Math.abs(2 * lite - 1)) * sat;
+        float x = c * (1 - Math.abs((hue * 6f) % 2 - 1));
+        float m = lite - c / 2;
+        float r = m, g = m, b = m;
+        switch ((int) (hue * 6f)) {
+            case 0 -> {
+                r += c;
+                g += x;
+            }
+            case 1 -> {
+                r += x;
+                g += c;
+            }
+            case 2 -> {
+                g += c;
+                b += x;
+            }
+            case 3 -> {
+                g += x;
+                b += c;
+            }
+            case 4 -> {
+                r += x;
+                b += c;
+            }
+            case 5 -> {
+                r += c;
+                b += x;
+            }
+        }
+        return startColor(target, mode, trueColor, (int) (r * 255), (int) (g * 255), (int) (b * 255));
     }
 
     static StringBuilder startColor(StringBuilder target, int mode, boolean trueColor, int r, int g, int b) {
