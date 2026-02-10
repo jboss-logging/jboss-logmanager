@@ -81,9 +81,9 @@ final class ColorUtil {
             return target.appendCodePoint(27).append('[').append(mode).append(';').append(2).append(';').append(clip(r))
                     .append(';').append(clip(g)).append(';').append(clip(b)).append('m');
         } else {
-            int ar = (5 * clip(r)) / 255;
-            int ag = (5 * clip(g)) / 255;
-            int ab = (5 * clip(b)) / 255;
+            int ar = (5 * clip(r) + 127) / 255;
+            int ag = (5 * clip(g) + 127) / 255;
+            int ab = (5 * clip(b) + 127) / 255;
             int col = 16 + 36 * ar + 6 * ag + ab;
             return target.appendCodePoint(27).append('[').append(mode).append(';').append('5').append(';').append(col)
                     .append('m');
