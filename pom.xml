@@ -346,6 +346,20 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <executions>
+                    <!-- Run this via `mvn exec:java@show-example` -->
+                    <execution>
+                        <id>show-example</id>
+                        <configuration>
+                            <mainClass>org.jboss.logmanager.formatters.ColorPatternFormatterTests</mainClass>
+                            <classpathScope>test</classpathScope>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
