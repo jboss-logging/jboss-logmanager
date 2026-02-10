@@ -25,10 +25,11 @@ public final class ColorPatternFormatterTests {
         System.out.printf("True color: %s%n", trueColor);
         // darken = 0
         for (int darken = 0; darken <= 1; darken++) {
-            for (int bg = 0; bg < 2; bg++) {
+            for (int bg = 0; bg < 3; bg++) {
                 System.out.print(switch (bg) {
                     case 0 -> ColorUtil.startBgColor(new StringBuilder(), trueColor, 0, 0, 0);
-                    default -> ColorUtil.startBgColor(new StringBuilder(), trueColor, 255, 255, 255);
+                    case 1 -> ColorUtil.startBgColor(new StringBuilder(), trueColor, 255, 255, 255);
+                    default -> ColorUtil.endBgColor(new StringBuilder());
                 });
                 ColorPatternFormatter fmt = new ColorPatternFormatter(darken, "%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n");
                 System.out.println("Darken = " + darken);
