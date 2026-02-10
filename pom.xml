@@ -350,7 +350,11 @@
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
                 <executions>
-                    <!-- Run this via `mvn exec:java@show-example` -->
+                    <!--
+                        Run this as follows: "mvn exec:java@show-example"
+                        To test 256 colors you have to set MAVEN_OPTS="-Djansi.colors=256" and unset "COLORTERM="
+                        If you do not configure jansi, it will (poorly) map 256 colors to 16 colors.
+                    -->
                     <execution>
                         <id>show-example</id>
                         <configuration>
