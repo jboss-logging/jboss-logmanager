@@ -81,10 +81,22 @@ final class ColorUtil {
             return target.appendCodePoint(27).append('[').append(mode).append(';').append(2).append(';').append(clip(r))
                     .append(';').append(clip(g)).append(';').append(clip(b)).append('m');
         } else {
+            // try RGB
             int ar = (5 * clip(r) + 127) / 255;
             int ag = (5 * clip(g) + 127) / 255;
             int ab = (5 * clip(b) + 127) / 255;
-            int col = 16 + 36 * ar + 6 * ag + ab;
+            int col;
+            if (ar == ag && ar == ab) {
+                // do a more accurate grayscale calculation instead
+                col = ((clip(r) + clip(g) + clip(b)) * 25 + 382) / 765;
+                switch (col) {
+                    case 0 -> col = 16;
+                    case 25 -> col = 231;
+                    default -> col = 231 + col;
+                }
+            } else {
+                col = 16 + 36 * ar + 6 * ag + ab;
+            }
             return target.appendCodePoint(27).append('[').append(mode).append(';').append('5').append(';').append(col)
                     .append('m');
         }
