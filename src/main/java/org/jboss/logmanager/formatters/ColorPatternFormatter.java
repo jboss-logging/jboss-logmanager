@@ -167,6 +167,17 @@ public class ColorPatternFormatter extends PatternFormatter {
             this.darken = darken;
         }
 
+        /**
+         * Render the level using HSL coloring.
+         * The most severe levels (1000 or greater) will have a phase angle of 0° (red),
+         * and the least severe (300 or less) will have a phase angle of 270° (a purplish blue),
+         * with the remaining levels being linearly interpolated to colors in between these two extremes
+         * based on their integer value.
+         *
+         * @param formatter the formatter to render to (must not be {@code null})
+         * @param builder   the string builder to append to (must not be {@code null})
+         * @param record    the record being rendered (must not be {@code null})
+         */
         public void render(final Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
             // clip level at the "ends" of their reasonable ranges
             // we also have to swap the "direction" so that lower severity has a higher hue
