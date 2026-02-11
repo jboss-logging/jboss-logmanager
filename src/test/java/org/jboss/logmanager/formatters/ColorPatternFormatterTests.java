@@ -26,11 +26,6 @@ public final class ColorPatternFormatterTests {
         // darken = 0
         for (int darken = 0; darken <= 1; darken++) {
             for (int bg = 0; bg < 3; bg++) {
-                System.out.print(switch (bg) {
-                    case 0 -> ColorUtil.startBgColor(new StringBuilder(), trueColor, 0, 0, 0);
-                    case 1 -> ColorUtil.startBgColor(new StringBuilder(), trueColor, 255, 255, 255);
-                    default -> ColorUtil.endBgColor(new StringBuilder());
-                });
                 ColorPatternFormatter fmt = new ColorPatternFormatter(darken, "%d{HH:mm:ss,SSS} %-5p [%c] (%t) %s%E%n");
                 System.out.println("Darken = " + darken);
                 for (Level l : List.of(
@@ -54,6 +49,11 @@ public final class ColorPatternFormatterTests {
                             ColorPatternFormatterTests.class.getName());
                     record.setLoggerName("com.acme.logger");
                     record.setParameters(new Object[] { Class.class, "Some text" });
+                    System.out.print(switch (bg) {
+                        case 0 -> ColorUtil.startBgColor(new StringBuilder(), trueColor, 0, 0, 0);
+                        case 1 -> ColorUtil.startBgColor(new StringBuilder(), trueColor, 255, 255, 255);
+                        default -> ColorUtil.endBgColor(new StringBuilder());
+                    });
                     System.out.print(fmt.format(record));
                 }
                 System.out.print(ColorUtil.endBgColor(new StringBuilder()));
