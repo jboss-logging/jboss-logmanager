@@ -93,7 +93,7 @@
         <!-- Maven Central properties -->
         <central.sonatype.url>https://central.sonatype.com</central.sonatype.url>
         <central.serverId>central</central.serverId>
-        <central.deploymentName>commons-logging-jboss-logging-${project.version}</central.deploymentName>
+        <central.deploymentName>${project.artifactId}-${project.version}</central.deploymentName>
         <central.autoPublish>true</central.autoPublish>
         <central.waitUntil>validated</central.waitUntil>
         <central.skipPublishing>false</central.skipPublishing>
