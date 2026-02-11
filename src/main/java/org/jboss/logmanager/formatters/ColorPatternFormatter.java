@@ -19,8 +19,6 @@
 
 package org.jboss.logmanager.formatters;
 
-import static java.lang.Math.abs;
-
 import java.util.logging.Formatter;
 import java.util.logging.LogRecord;
 
@@ -34,22 +32,30 @@ import org.jboss.logmanager.handlers.ConsoleHandler;
 public class ColorPatternFormatter extends PatternFormatter {
 
     private final Printf printf;
-    private final int darken;
+    private final boolean darken;
 
     public ColorPatternFormatter() {
-        this(0);
+        this(false);
     }
 
     public ColorPatternFormatter(final String pattern) {
-        this(0, pattern);
+        this(false, pattern);
     }
 
     public ColorPatternFormatter(int darken) {
+        this(darken > 0);
+    }
+
+    public ColorPatternFormatter(boolean darken) {
         this.darken = darken;
         printf = new ColorPrintf(darken);
     }
 
     public ColorPatternFormatter(int darken, final String pattern) {
+        this(darken > 0, pattern);
+    }
+
+    public ColorPatternFormatter(boolean darken, final String pattern) {
         this(darken);
         setPattern(pattern);
     }
@@ -63,58 +69,33 @@ public class ColorPatternFormatter extends PatternFormatter {
     }
 
     private FormatStep colorize(final FormatStep step) {
-        switch (step.getItemType()) {
-            case LEVEL:
-                return new LevelColorStep(step, darken);
-            case SOURCE_CLASS_NAME:
-                return new ColorStep(step, 0xff, 0xff, 0x44, darken);
-            case DATE:
-                return new ColorStep(step, 0xc0, 0xc0, 0xc0, darken);
-            case SOURCE_FILE_NAME:
-                return new ColorStep(step, 0xff, 0xff, 0x44, darken);
-            case HOST_NAME:
-                return new ColorStep(step, 0x44, 0xff, 0x44, darken);
-            case SOURCE_LINE_NUMBER:
-                return new ColorStep(step, 0xff, 0xff, 0x44, darken);
-            case LINE_SEPARATOR:
-                return step;
-            case CATEGORY:
-                return new ColorStep(step, 0x44, 0x88, 0xff, darken);
-            case MDC:
-                return new ColorStep(step, 0x44, 0xff, 0xaa, darken);
-            case MESSAGE:
-                return new ColorStep(step, 0xff, 0xff, 0xff, darken);
-            case EXCEPTION_TRACE:
-                return new ColorStep(step, 0xff, 0x44, 0x44, darken);
-            case SOURCE_METHOD_NAME:
-                return new ColorStep(step, 0xff, 0xff, 0x44, darken);
-            case SOURCE_MODULE_NAME:
-                return new ColorStep(step, 0x88, 0xff, 0x44, darken);
-            case SOURCE_MODULE_VERSION:
-                return new ColorStep(step, 0x44, 0xff, 0x44, darken);
-            case NDC:
-                return new ColorStep(step, 0x44, 0xff, 0xaa, darken);
-            case PROCESS_ID:
-                return new ColorStep(step, 0xdd, 0xbb, 0x77, darken);
-            case PROCESS_NAME:
-                return new ColorStep(step, 0xdd, 0xdd, 0x77, darken);
-            case RELATIVE_TIME:
-                return new ColorStep(step, 0xc0, 0xc0, 0xc0, darken);
-            case RESOURCE_KEY:
-                return new ColorStep(step, 0x44, 0xff, 0x44, darken);
-            case SYSTEM_PROPERTY:
-                return new ColorStep(step, 0x88, 0x88, 0x00, darken);
-            case TEXT:
-                return new ColorStep(step, 0xd0, 0xd0, 0xd0, darken);
-            case THREAD_ID:
-                return new ColorStep(step, 0x44, 0xaa, 0x44, darken);
-            case THREAD_NAME:
-                return new ColorStep(step, 0x44, 0xaa, 0x44, darken);
-            case COMPOUND:
-            case GENERIC:
-            default:
-                return new ColorStep(step, 0xb0, 0xd0, 0xb0, darken);
-        }
+        return switch (step.getItemType()) {
+            case LEVEL -> new LevelColorStep(step, darken);
+            case SOURCE_CLASS_NAME, SOURCE_METHOD_NAME, SOURCE_LINE_NUMBER, SOURCE_FILE_NAME ->
+                new ColorStep(step, 60f, 1f, .8f, darken);
+            case DATE, RELATIVE_TIME, TEXT, MESSAGE ->
+                new ColorStep(step, 0, 0, .8f, darken);
+            case HOST_NAME, RESOURCE_KEY, SOURCE_MODULE_VERSION ->
+                new ColorStep(step, 120f, 1f, .8f, darken);
+            case LINE_SEPARATOR -> step;
+            case CATEGORY ->
+                new ColorStep(step, 220f, .9f, .8f, darken);
+            case MDC, NDC ->
+                new ColorStep(step, 153f, 1f, .7f, darken);
+            case EXCEPTION_TRACE ->
+                new ColorStep(step, 0, 1f, .6f, darken);
+            case SOURCE_MODULE_NAME ->
+                new ColorStep(step, 100f, 1f, .8f, darken);
+            case PROCESS_ID ->
+                new ColorStep(step, 40f, 0.6f, .7f, darken);
+            case PROCESS_NAME ->
+                new ColorStep(step, 60f, 0.6f, .7f, darken);
+            case SYSTEM_PROPERTY ->
+                new ColorStep(step, 60f, 1f, .6f, darken);
+            case THREAD_ID, THREAD_NAME ->
+                new ColorStep(step, 120f, 0.429f, .8f, darken);
+            default -> new ColorStep(step, 120f, .254f, .8f, darken);
+        };
     }
 
     private String colorizePlain(final String str) {
@@ -122,8 +103,7 @@ public class ColorPatternFormatter extends PatternFormatter {
     }
 
     public String formatMessage(final LogRecord logRecord) {
-        if (logRecord instanceof ExtLogRecord) {
-            final ExtLogRecord record = (ExtLogRecord) logRecord;
+        if (logRecord instanceof ExtLogRecord record) {
             if (record.getFormatStyle() != ExtLogRecord.FormatStyle.PRINTF || record.getParameters() == null
                     || record.getParameters().length == 0) {
                 return colorizePlain(super.formatMessage(record));
@@ -135,20 +115,24 @@ public class ColorPatternFormatter extends PatternFormatter {
     }
 
     static final class ColorStep implements FormatStep {
-        private final int r, g, b;
         private final FormatStep delegate;
+        private final float hue;
+        private final float sat;
+        private final float lite;
+        private final boolean darken;
         // capture current console state
         private final boolean trueColor = ConsoleHandler.isTrueColor();
 
-        ColorStep(final FormatStep delegate, final int r, final int g, final int b, final int darken) {
-            this.r = r >>> darken;
-            this.g = g >>> darken;
-            this.b = b >>> darken;
+        ColorStep(final FormatStep delegate, final float hue, final float sat, final float lite, final boolean darken) {
             this.delegate = delegate;
+            this.hue = hue;
+            this.sat = sat;
+            this.lite = lite;
+            this.darken = darken;
         }
 
         public void render(final Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
-            ColorUtil.startFgColor(builder, trueColor, r, g, b);
+            ColorUtil.startFgColor(builder, trueColor, hue, sat, lite, darken);
             delegate.render(formatter, builder, record);
             ColorUtil.endFgColor(builder);
         }
@@ -172,25 +156,39 @@ public class ColorPatternFormatter extends PatternFormatter {
 
     static final class LevelColorStep implements FormatStep {
         private static final int LARGEST_LEVEL = Level.ERROR.intValue();
-        private static final int SMALLEST_LEVEL = Level.TRACE.intValue();
-        private static final int SATURATION = 66;
+        private static final int SMALLEST_LEVEL = Level.FINEST.intValue();
         private final FormatStep delegate;
-        private final int darken;
+        private final boolean darken;
         // capture current console state
         private final boolean trueColor = ConsoleHandler.isTrueColor();
 
-        LevelColorStep(final FormatStep delegate, final int darken) {
+        LevelColorStep(final FormatStep delegate, final boolean darken) {
             this.delegate = delegate;
             this.darken = darken;
         }
 
+        /**
+         * Render the level using HSL coloring.
+         * The most severe levels (1000 or greater) will have a phase angle of 0° (red),
+         * and the least severe (300 or less) will have a phase angle of 270° (a purplish blue),
+         * with the remaining levels being linearly interpolated to colors in between these two extremes
+         * based on their integer value.
+         *
+         * @param formatter the formatter to render to (must not be {@code null})
+         * @param builder   the string builder to append to (must not be {@code null})
+         * @param record    the record being rendered (must not be {@code null})
+         */
         public void render(final Formatter formatter, final StringBuilder builder, final ExtLogRecord record) {
-            final int level = Math.max(Math.min(record.getLevel().intValue(), LARGEST_LEVEL), SMALLEST_LEVEL) - SMALLEST_LEVEL;
-            // really crappy linear interpolation
-            int r = ((level < 300 ? 0 : (level - 300) * (255 - SATURATION) / 300) + SATURATION) >>> darken;
-            int g = ((300 - abs(level - 300)) * (255 - SATURATION) / 300 + SATURATION) >>> darken;
-            int b = ((level > 300 ? 0 : level * (255 - SATURATION) / 300) + SATURATION) >>> darken;
-            ColorUtil.startFgColor(builder, trueColor, r, g, b);
+            // clip level at the "ends" of their reasonable ranges
+            // we also have to swap the "direction" so that lower severity has a higher hue
+            final int level = LARGEST_LEVEL - Math.max(Math.min(record.getLevel().intValue(), LARGEST_LEVEL), SMALLEST_LEVEL);
+            // hue is periodic in the range [0..360°), but we want to stop somewhere in the purple-ish range, so [0..270°]
+            final float hue = ((float) level) * 270f / ((float) LARGEST_LEVEL - (float) SMALLEST_LEVEL);
+            // saturation/chroma is locked here for levels (we could make this configurable but this looks pretty good)
+            final float sat = 1f;
+            // lightness depends on "darken"
+            final float lite = 0.75f;
+            ColorUtil.startFgColor(builder, trueColor, hue, sat, lite, darken);
             delegate.render(formatter, builder, record);
             ColorUtil.endFgColor(builder);
         }
@@ -201,10 +199,6 @@ public class ColorPatternFormatter extends PatternFormatter {
 
         public int estimateLength() {
             return delegate.estimateLength() + 30;
-        }
-
-        public boolean isCallerInformationRequired() {
-            return false;
         }
     }
 }
