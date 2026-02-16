@@ -347,6 +347,7 @@ public class SyslogHandler extends ExtHandler {
 
     private InetAddress serverAddress;
     private int port;
+    private int soTimeout;
     private String appName;
     private String hostname;
     private Facility facility;
@@ -820,6 +821,25 @@ public class SyslogHandler extends ExtHandler {
         lock.lock();
         try {
             this.port = port;
+            initializeConnection = true;
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * Sets the socket timeout (SO_TIMEOUT) in milliseconds for the created sockets
+     * <p>
+     * Note that is resets the {@linkplain #setClientSocketFactory(ClientSocketFactory) client socket factory}.
+     * </p>
+     *
+     * @param soTimeout the socket timeout in milliseconds. A timeout of zero is interpreted as an infinite timeout.
+     */
+    public void setSoTimeout(final int  soTimeout) {
+        checkAccess();
+        lock.lock();
+        try {
+            this.soTimeout = soTimeout;
             initializeConnection = true;
         } finally {
             lock.unlock();
@@ -1396,7 +1416,7 @@ public class SyslogHandler extends ExtHandler {
             }
             final SocketFactory socketFactory = (protocol == Protocol.SSL_TCP ? SSLSocketFactory.getDefault()
                     : SocketFactory.getDefault());
-            return ClientSocketFactory.of(socketFactory, serverAddress, port);
+            return ClientSocketFactory.of(socketFactory, serverAddress, port, soTimeout);
         } finally {
             lock.unlock();
         }
