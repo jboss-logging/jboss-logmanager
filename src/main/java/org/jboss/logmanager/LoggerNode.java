@@ -26,6 +26,7 @@ import java.lang.reflect.UndeclaredThrowableException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -533,9 +534,16 @@ final class LoggerNode implements AutoCloseable {
         V old;
         do {
             oldAttachments = attachments;
-            newAttachments = new HashMap<>(oldAttachments);
-            old = (V) newAttachments.put(key, value);
-        } while (!attachmentHandle.compareAndSet(this, oldAttachments, Map.copyOf(newAttachments)));
+            if (oldAttachments.isEmpty()) {
+                newAttachments = Map.of(key, value);
+                old = null;
+            } else {
+                newAttachments = new HashMap<>((int) Math.ceil((oldAttachments.size() + 1) / 0.75));
+                newAttachments.putAll(oldAttachments);
+                old = (V) newAttachments.put(key, value);
+                newAttachments = Collections.unmodifiableMap(newAttachments);
+            }
+        } while (!attachmentHandle.compareAndSet(this, oldAttachments, newAttachments));
         return old;
     }
 
@@ -547,12 +555,19 @@ final class LoggerNode implements AutoCloseable {
         Map<Logger.AttachmentKey<?>, Object> newAttachments;
         do {
             oldAttachments = attachments;
-            if (oldAttachments.containsKey(key)) {
-                return (V) oldAttachments.get(key);
+            V existing = (V) oldAttachments.get(key);
+            if (existing != null) {
+                return existing;
             }
-            newAttachments = new HashMap<>(oldAttachments);
-            newAttachments.put(key, value);
-        } while (!attachmentHandle.compareAndSet(this, oldAttachments, Map.copyOf(newAttachments)));
+            if (oldAttachments.isEmpty()) {
+                newAttachments = Map.of(key, value);
+            } else {
+                newAttachments = new HashMap<>((int) Math.ceil((oldAttachments.size() + 1) / 0.75));
+                newAttachments.putAll(oldAttachments);
+                newAttachments.put(key, value);
+                newAttachments = Collections.unmodifiableMap(newAttachments);
+            }
+        } while (!attachmentHandle.compareAndSet(this, oldAttachments, newAttachments));
         return null;
     }
 
@@ -570,13 +585,17 @@ final class LoggerNode implements AutoCloseable {
             }
             final int size = oldAttachments.size();
             if (size == 1) {
-                // special case - the new map is empty
                 newAttachments = Map.of();
             } else {
-                newAttachments = new HashMap<>(oldAttachments);
-                newAttachments.remove(key);
+                newAttachments = new HashMap<>((int) Math.ceil((size - 1) / 0.75));
+                for (Map.Entry<Logger.AttachmentKey<?>, Object> entry : oldAttachments.entrySet()) {
+                    if (!entry.getKey().equals(key)) {
+                        newAttachments.put(entry.getKey(), entry.getValue());
+                    }
+                }
+                newAttachments = Collections.unmodifiableMap(newAttachments);
             }
-        } while (!attachmentHandle.compareAndSet(this, oldAttachments, Map.copyOf(newAttachments)));
+        } while (!attachmentHandle.compareAndSet(this, oldAttachments, newAttachments));
         return result;
     }
 
