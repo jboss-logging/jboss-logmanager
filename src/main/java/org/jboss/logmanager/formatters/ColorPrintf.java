@@ -30,17 +30,18 @@ import java.util.UUID;
 import org.jboss.logmanager.handlers.ConsoleHandler;
 
 class ColorPrintf extends Printf {
-    private final int darken;
+    private final boolean darken;
     private final boolean trueColor = ConsoleHandler.isTrueColor();
 
-    ColorPrintf(final int darken) {
+    ColorPrintf(final boolean darken) {
         super(Locale.getDefault());
         this.darken = darken;
     }
 
     public StringBuilder formatDirect(final StringBuilder destination, final String format, final Object... params) {
-        ColorUtil.endFgColor(destination);
+        ColorUtil.startFgColor(destination, trueColor, 0f, 0f, 1f, darken);
         super.formatDirect(destination, format, params);
+        ColorUtil.endFgColor(destination);
         return destination;
     }
 
@@ -80,14 +81,15 @@ class ColorPrintf extends Printf {
     protected void formatPlainString(final StringBuilder target, final Object item, final GeneralFlags genFlags,
             final int width, final int precision) {
         if (item instanceof Class || item instanceof Executable || item instanceof Field) {
-            ColorUtil.startFgColor(target, trueColor, 0xff >>> darken, 0xff >>> darken, 0xdd >>> darken);
+            ColorUtil.startFgColor(target, trueColor, 60f, 1f, 0.75f, darken);
         } else if (item instanceof UUID) {
-            ColorUtil.startFgColor(target, trueColor, 0xdd >>> darken, 0xff >>> darken, 0xdd >>> darken);
+            ColorUtil.startFgColor(target, trueColor, 120f, 1f, 0.75f, darken);
         } else {
-            ColorUtil.startFgColor(target, trueColor, 0xdd >>> darken, 0xdd >>> darken, 0xdd >>> darken);
+            ColorUtil.startFgColor(target, trueColor, 0f, 0f, 0.9f, darken);
         }
         super.formatPlainString(target, item, genFlags, width, precision);
-        ColorUtil.endFgColor(target);
+        // reset to "normal"
+        ColorUtil.startFgColor(target, trueColor, 0f, 0f, 1f, darken);
     }
 
     protected void formatBoolean(final StringBuilder target, final Object item, final GeneralFlags genFlags, final int width,
