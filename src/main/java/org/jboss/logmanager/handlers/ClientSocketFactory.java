@@ -68,6 +68,7 @@ public interface ClientSocketFactory {
 
     /**
      * Returns the socket timeout (SO_TIMEOUT) in milliseconds for the created sockets
+     *
      * @return the socket timeout in milliseconds. A timeout of zero is interpreted as an infinite timeout.
      */
     int getSoSocketTimeout();
@@ -136,10 +137,11 @@ public interface ClientSocketFactory {
      * @param socketTimeout the socket timeout for sockets in milliseconds
      * @return the client socket factory
      */
-    static ClientSocketFactory of(final SocketFactory socketFactory, final InetAddress address, final int port, int socketTimeout) {
+    static ClientSocketFactory of(final SocketFactory socketFactory, final InetAddress address, final int port,
+            int socketTimeout) {
         if (address == null || port < 0) {
             throw new IllegalArgumentException(String
-                .format("The address cannot be null (%s) and the port must be a positive integer (%d)", address, port));
+                    .format("The address cannot be null (%s) and the port must be a positive integer (%d)", address, port));
         }
         final SocketFactory factory = (socketFactory == null ? SocketFactory.getDefault() : socketFactory);
         return new ClientSocketFactory() {

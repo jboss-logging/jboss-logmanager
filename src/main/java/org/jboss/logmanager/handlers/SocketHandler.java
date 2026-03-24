@@ -412,7 +412,7 @@ public class SocketHandler extends ExtHandler {
      *
      * @param soTimeout the socket timeout in milliseconds. A timeout of zero is interpreted as an infinite timeout.
      */
-    public void setSoTimeout(final int  soTimeout) {
+    public void setSoTimeout(final int soTimeout) {
         checkAccess();
         lock.lock();
         try {
