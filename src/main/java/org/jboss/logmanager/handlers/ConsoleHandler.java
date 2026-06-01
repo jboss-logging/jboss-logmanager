@@ -62,6 +62,7 @@ public class ConsoleHandler extends OutputStreamHandler {
         CONSOLE,
     }
 
+    private volatile Target target;
     private final ErrorManager localErrorManager = new HandlerErrorManager(this);
 
     /**
@@ -98,6 +99,7 @@ public class ConsoleHandler extends OutputStreamHandler {
     public ConsoleHandler(final Target target, final Formatter formatter) {
         super(formatter);
         setCharset(JDKSpecific.consoleCharset());
+        this.target = target;
         switch (target) {
             case SYSTEM_OUT:
                 setOutputStream(wrap(out));
@@ -120,6 +122,7 @@ public class ConsoleHandler extends OutputStreamHandler {
      */
     public void setTarget(Target target) {
         final Target t = (target == null ? defaultTarget() : target);
+        this.target = t;
         switch (t) {
             case SYSTEM_OUT:
                 setOutputStream(wrap(out));
@@ -133,6 +136,15 @@ public class ConsoleHandler extends OutputStreamHandler {
             default:
                 throw new IllegalArgumentException();
         }
+    }
+
+    /**
+     * Get the target for this console handler.
+     *
+     * @return the target (not {@code null})
+     */
+    public Target getTarget() {
+        return target;
     }
 
     public void setErrorManager(final ErrorManager em) {
