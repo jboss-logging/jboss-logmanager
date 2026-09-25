@@ -245,6 +245,16 @@ public class ExtLogRecord extends LogRecord {
     }
 
     /**
+     * Get a copy of all the MDC properties for this log record without conversions. If the MDC has not yet been copied, this method will copy it.
+     *
+     * @return a copy of the MDC map
+     */
+    public Map<String, Object> getExactMdcCopy() {
+        copyMdc();
+        return mdcCopy.clone();
+    }
+
+    /**
      * Change an MDC value on this record. If the MDC has not yet been copied, this method will copy it.
      *
      * @param key   the key to set
