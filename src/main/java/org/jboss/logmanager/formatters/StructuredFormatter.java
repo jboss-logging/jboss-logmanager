@@ -568,7 +568,9 @@ public abstract class StructuredFormatter extends ExtFormatter {
         /**
          * Writes an integer value.
          *
-         * @param key   they key
+         * @param key   the key, or {@code null} if this value is
+         *              {@linkplain #startArray(String) added to an array} and the {@link #wrapArrays()} is
+         *              {@code false}
          * @param value the value
          *
          * @return the generator
@@ -583,7 +585,9 @@ public abstract class StructuredFormatter extends ExtFormatter {
         /**
          * Writes a long value.
          *
-         * @param key   they key
+         * @param key   the key, or {@code null} if this value is
+         *              {@linkplain #startArray(String) added to an array} and the {@link #wrapArrays()} is
+         *              {@code false}
          * @param value the value
          *
          * @return the generator
@@ -598,7 +602,9 @@ public abstract class StructuredFormatter extends ExtFormatter {
         /**
          * Writes a map value
          *
-         * @param key   the key for the map
+         * @param key   the key for the map, or {@code null} if this map is
+         *              {@linkplain #startArray(String) added to an array} and the {@link #wrapArrays()} is
+         *              {@code false}
          * @param value the map
          *
          * @return the generator
@@ -610,7 +616,9 @@ public abstract class StructuredFormatter extends ExtFormatter {
         /**
          * Writes a string value.
          *
-         * @param key   the key for the value
+         * @param key   the key for the value, or {@code null} if this value is
+         *              {@linkplain #startArray(String) added to an array} and the {@link #wrapArrays()} is
+         *              {@code false}
          * @param value the string value
          *
          * @return the generator
