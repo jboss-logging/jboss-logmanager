@@ -100,6 +100,34 @@ public class JsonFormatterTests extends AbstractTest {
         compare(record, formatter, metaDataMap);
     }
 
+    @Test
+    public void testArrayValues() throws Exception {
+        final JsonFormatter formatter = new JsonFormatter() {
+            @Override
+            protected void after(final Generator generator, final ExtLogRecord record) throws Exception {
+                generator.startArray("values")
+                        .add("text")
+                        .add((String) null)
+                        .add(1)
+                        .add(2L)
+                        .add(Map.of("key", "value"))
+                        .endArray();
+            }
+        };
+        final String formatted = formatter.format(createLogRecord("Test Message"));
+        try (JsonReader reader = Json.createReader(new StringReader(formatted))) {
+            Assertions.assertEquals(
+                    Json.createArrayBuilder()
+                            .add("text")
+                            .addNull()
+                            .add(1)
+                            .add(2L)
+                            .add(Json.createObjectBuilder().add("key", "value"))
+                            .build(),
+                    reader.readObject().getJsonArray("values"));
+        }
+    }
+
     private static int getInt(final JsonObject json, final Key key) {
         final String name = getKey(key);
         if (json.containsKey(name) && !json.isNull(name)) {
