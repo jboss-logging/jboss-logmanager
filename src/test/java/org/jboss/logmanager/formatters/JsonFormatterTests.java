@@ -106,11 +106,11 @@ public class JsonFormatterTests extends AbstractTest {
             @Override
             protected void after(final Generator generator, final ExtLogRecord record) throws Exception {
                 generator.startArray("values")
-                        .add(null, "text")
-                        .add(null, (String) null)
-                        .add(null, 1)
-                        .add(null, 2L)
-                        .add(null, Map.of("key", "value"))
+                        .add("text")
+                        .add((String) null)
+                        .add(1)
+                        .add(2L)
+                        .add(Map.of("key", "value"))
                         .endArray();
             }
         };

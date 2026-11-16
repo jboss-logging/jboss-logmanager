@@ -143,31 +143,19 @@ public class JsonFormatter extends StructuredFormatter {
 
         @Override
         public Generator add(final String key, final int value) {
-            if (key == null) {
-                generator.write(value);
-            } else {
-                generator.write(key, value);
-            }
+            generator.write(key, value);
             return this;
         }
 
         @Override
         public Generator add(final String key, final long value) {
-            if (key == null) {
-                generator.write(value);
-            } else {
-                generator.write(key, value);
-            }
+            generator.write(key, value);
             return this;
         }
 
         @Override
         public Generator add(final String key, final Map<String, ?> value) {
-            if (key == null) {
-                generator.writeStartObject();
-            } else {
-                generator.writeStartObject(key);
-            }
+            generator.writeStartObject(key);
             if (value != null) {
                 for (Map.Entry<String, ?> entry : value.entrySet()) {
                     writeObject(entry.getKey(), entry.getValue());
@@ -179,16 +167,44 @@ public class JsonFormatter extends StructuredFormatter {
 
         @Override
         public Generator add(final String key, final String value) {
-            if (key == null) {
-                if (value == null) {
-                    generator.writeNull();
-                } else {
-                    generator.write(value);
-                }
-            } else if (value == null) {
+            if (value == null) {
                 generator.writeNull(key);
             } else {
                 generator.write(key, value);
+            }
+            return this;
+        }
+
+        @Override
+        public Generator add(final int value) {
+            generator.write(value);
+            return this;
+        }
+
+        @Override
+        public Generator add(final long value) {
+            generator.write(value);
+            return this;
+        }
+
+        @Override
+        public Generator add(final Map<String, ?> value) {
+            generator.writeStartObject();
+            if (value != null) {
+                for (Map.Entry<String, ?> entry : value.entrySet()) {
+                    writeObject(entry.getKey(), entry.getValue());
+                }
+            }
+            generator.writeEnd();
+            return this;
+        }
+
+        @Override
+        public Generator add(final String value) {
+            if (value == null) {
+                generator.writeNull();
+            } else {
+                generator.write(value);
             }
             return this;
         }
