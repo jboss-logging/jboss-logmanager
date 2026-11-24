@@ -189,8 +189,6 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
 
     private void testRotate(final Calendar cal, final Path rotatedFile, int calendarField) throws Exception {
         final SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        final int currentDay = cal.get(calendarField);
-        final int nextDay = currentDay + 1;
 
         final String currentDate = sdf.format(cal.getTime());
 
@@ -205,8 +203,8 @@ public class PeriodicRotatingFileHandlerTests extends AbstractHandlerTest {
         Assertions.assertEquals(1, lines.size(), "More than 1 line found");
         Assertions.assertTrue(lines.get(0).contains(currentDate), "Expected the line to contain the date: " + currentDate);
 
-        // Create a new record, increment the day by one and validate
-        cal.set(calendarField, nextDay);
+        // Create a new record, increment the calendar field by one and validate
+        cal.add(calendarField, 1);
         final String nextDate = sdf.format(cal.getTime());
         record = createLogRecord(Level.INFO, "Date: %s", nextDate);
         record.setMillis(cal.getTimeInMillis());
