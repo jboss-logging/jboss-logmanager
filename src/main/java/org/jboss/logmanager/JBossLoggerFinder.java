@@ -73,7 +73,7 @@ public class JBossLoggerFinder extends System.LoggerFinder {
         if (!logger.getClass().getName().equals("org.jboss.logmanager.Logger")) {
             if (LOGGED.compareAndSet(false, true)) {
                 logger.log(Level.ERROR,
-                        "The LogManager accessed before the \"java.util.logging.manager\" system property was set to \"org.jboss.logmanager.LogManager\". Results may be unexpected.");
+                        "The LogManager was accessed before the \"java.util.logging.manager\" system property was set to \"org.jboss.logmanager.LogManager\". Results may be unexpected.");
             }
         }
         return new JBossSystemLogger(logger);
