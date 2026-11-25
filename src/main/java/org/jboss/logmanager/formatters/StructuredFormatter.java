@@ -620,6 +620,66 @@ public abstract class StructuredFormatter extends ExtFormatter {
         Generator add(String key, String value) throws Exception;
 
         /**
+         * Writes an integer value without a key, as an element of an array started with {@link #startArray(String)}.
+         * <p>
+         * By default this uses {@link #add(String)} to add the value.
+         * </p>
+         *
+         * @param value the value
+         *
+         * @return the generator
+         *
+         * @throws Exception if an error occurs while adding the data
+         */
+        default Generator add(final int value) throws Exception {
+            return add(Integer.toString(value));
+        }
+
+        /**
+         * Writes a long value without a key, as an element of an array started with {@link #startArray(String)}.
+         * <p>
+         * By default this uses {@link #add(String)} to add the value.
+         * </p>
+         *
+         * @param value the value
+         *
+         * @return the generator
+         *
+         * @throws Exception if an error occurs while adding the data
+         */
+        default Generator add(final long value) throws Exception {
+            return add(Long.toString(value));
+        }
+
+        /**
+         * Writes a map value without a key, as an element of an array started with {@link #startArray(String)}.
+         *
+         * @param value the map
+         *
+         * @return the generator
+         *
+         * @throws Exception                     if an error occurs while adding the data
+         * @throws UnsupportedOperationException if the generator does not support values without a key
+         */
+        default Generator add(final Map<String, ?> value) throws Exception {
+            throw new UnsupportedOperationException("Values without a key are not supported by " + getClass().getName());
+        }
+
+        /**
+         * Writes a string value without a key, as an element of an array started with {@link #startArray(String)}.
+         *
+         * @param value the string value
+         *
+         * @return the generator
+         *
+         * @throws Exception                     if an error occurs while adding the data
+         * @throws UnsupportedOperationException if the generator does not support values without a key
+         */
+        default Generator add(final String value) throws Exception {
+            throw new UnsupportedOperationException("Values without a key are not supported by " + getClass().getName());
+        }
+
+        /**
          * Adds the meta data to the structured format.
          * <p>
          * By default this processes the map and uses {@link #add(String, String)} to add entries.

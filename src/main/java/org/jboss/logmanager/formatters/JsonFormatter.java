@@ -176,6 +176,40 @@ public class JsonFormatter extends StructuredFormatter {
         }
 
         @Override
+        public Generator add(final int value) {
+            generator.write(value);
+            return this;
+        }
+
+        @Override
+        public Generator add(final long value) {
+            generator.write(value);
+            return this;
+        }
+
+        @Override
+        public Generator add(final Map<String, ?> value) {
+            generator.writeStartObject();
+            if (value != null) {
+                for (Map.Entry<String, ?> entry : value.entrySet()) {
+                    writeObject(entry.getKey(), entry.getValue());
+                }
+            }
+            generator.writeEnd();
+            return this;
+        }
+
+        @Override
+        public Generator add(final String value) {
+            if (value == null) {
+                generator.writeNull();
+            } else {
+                generator.write(value);
+            }
+            return this;
+        }
+
+        @Override
         public Generator startObject(final String key) throws Exception {
             if (key == null) {
                 generator.writeStartObject();
